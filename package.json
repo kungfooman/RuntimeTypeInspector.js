@@ -1,0 +1,19 @@
+{
+  "name": "runtime-type-checker",
+  "version": "1.0.0",
+  "description": "Checking JSDoc types at runtime for high-quality types - Trust is good, control is better.",
+  "main": "src/index.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kungfooman/RuntimeTypeChecker.js.git"
+  },
+  "author": "Hermann Rolfes (kungfooman)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kungfooman/RuntimeTypeChecker.js/issues"
+  },
+  "homepage": "https://github.com/kungfooman/RuntimeTypeChecker.js#readme"
+}
