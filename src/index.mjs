@@ -1,1 +1,1 @@
-console.warn("RuntimeTypeChecker.js received no funding yet.");
+console.warn("RuntimeTypeValidator.js received no funding yet.");

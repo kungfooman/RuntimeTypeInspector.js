@@ -1,7 +1,7 @@
 {
-  "name": "runtime-type-checker",
+  "name": "runtime-type-validator",
   "version": "1.0.0",
-  "description": "Checking JSDoc types at runtime for high-quality types - Trust is good, control is better.",
+  "description": "Validating JSDoc types at runtime for high-quality types - Trust is good, control is better.",
   "main": "src/index.mjs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
