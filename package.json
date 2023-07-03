@@ -1,5 +1,5 @@
 {
-  "name": "runtime-type-validator",
+  "name": "runtime-type-inspector",
   "version": "1.0.0",
   "description": "Validating JSDoc types at runtime for high-quality types - Trust is good, control is better.",
   "main": "src/index.mjs",
@@ -8,12 +8,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kungfooman/RuntimeTypeChecker.js.git"
+    "url": "git+https://github.com/kungfooman/RuntimeTypeInspector.js.git"
   },
   "author": "Hermann Rolfes (kungfooman)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/kungfooman/RuntimeTypeChecker.js/issues"
+    "url": "https://github.com/kungfooman/RuntimeTypeInspector.js/issues"
   },
-  "homepage": "https://github.com/kungfooman/RuntimeTypeChecker.js#readme"
+  "homepage": "https://github.com/kungfooman/RuntimeTypeInspector.js#readme"
 }
