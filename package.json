@@ -4,7 +4,7 @@
   "description": "Validating JSDoc types at runtime for high-quality types - Trust is good, control is better.",
   "main": "src/index.mjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "eslint --ext .js,.mjs,.cjs src test"
   },
   "repository": {
     "type": "git",
@@ -15,5 +15,12 @@
   "bugs": {
     "url": "https://github.com/kungfooman/RuntimeTypeInspector.js/issues"
   },
-  "homepage": "https://github.com/kungfooman/RuntimeTypeInspector.js#readme"
+  "homepage": "https://github.com/kungfooman/RuntimeTypeInspector.js#readme",
+  "devDependencies": {
+    "eslint": "^8.44.0"
+  },
+  "dependencies": {
+    "@babel/core": "^7.22.6",
+    "typescript": "^5.1.6"
+  }
 }
