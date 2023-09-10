@@ -1,0 +1,16 @@
+<html>
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.7.1/ace.js"></script>
+  </head>
+  <body>
+    <select id="action">
+      <option value="typechecking">Add full typechecking</option>
+      <option value="ast">Show AST</option>
+      <option value="jsdoc">Show parsed JSDoc</option>
+    </select>
+    <script type="module">
+      import * as Index from "./index.mjs";
+      Object.assign(window, { ...Index });
+    </script>
+  </body>
+</html>
