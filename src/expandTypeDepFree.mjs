@@ -13,11 +13,11 @@
  * 'DepFree' refers to the fact that this function has no dependencies,
  * while `expandType` depends on TypeScript itself for maximum compatibility.
  * @example
- * expandTypeDepFree('(123)                   '); // Outputs: 123
- * expandTypeDepFree('Array<number>           '); // Outputs: {type: 'array', elementType: 'number'}
- * expandTypeDepFree('Array<(123) >           '); // Outputs: {type: 'array', elementType: '123'}
- * expandTypeDepFree('  ( ( 123 ) )           '); // Outputs: 123
- * expandTypeDepFree('  (string ) |(number )  '); // Outputs: {type: 'union', members: ['string', 'number']}
+ * expandTypeDepFree('(123)                   '); // Outputs: '123'
+ * expandTypeDepFree('Array<number>           '); // Outputs: { type: 'array', elementType: 'number' }
+ * expandTypeDepFree('Array<(123) >           '); // Outputs: { type: 'array', elementType: '123' }
+ * expandTypeDepFree('  ( ( 123 ) )           '); // Outputs: '123'
+ * expandTypeDepFree('  (string ) |(number )  '); // Outputs: { type: 'union', members: ['string', 'number'] }
  * @param {string} type
  * @returns {ExpandTypeReturnValue} Object containing parsed information from type string.
  */

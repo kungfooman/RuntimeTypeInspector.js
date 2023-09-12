@@ -1,15 +1,16 @@
 import ts from 'typescript';
 
 /**
- * @todo Handle FirstLiteralToken
+ * @todo implement TypeQuery, e.g. for expandType('typeof Number');
  * @example
  * const { expandType } = await import("./src/expandType.mjs");
- * expandType('(123)                    '); // Outputs: TODO
+ * expandType('(123)                    '); // Outputs: '123'
  * expandType('Array<number>            '); // Outputs: { type: 'array', elementType: 'number' }
- * expandType('Array<(123) >            '); // Outputs: TODO
- * expandType('  ( ( 123 ) )            '); // Outputs: TODO
+ * expandType('Array<(123) >            '); // Outputs: { type: 'array', elementType: '123' }
+ * expandType('  ( ( 123 ) )            '); // Outputs: '123'
  * expandType('  (string ) |(number )   '); // Outputs: { type: 'union', members: [ 'string', 'number' ] }
  * expandType(' "apples" | ( "bananas") '); // Outputs: { type: 'union', members: [ '"apples"', '"bananas"' ] }
+ * expandType('Array<"abc" | 123>       '); // Outputs: { type: 'array', elementType: { type: 'union', members: [ '"abc"', '123' ] } }
  * @param {string} type
  */
 function expandType(type) {
@@ -34,6 +35,31 @@ function parseType(str) {
   return ast.statements[0].type;
 }
 
+const {
+  AnyKeyword,
+  ArrayType,
+  BooleanKeyword,
+  Identifier,
+  IntersectionType,
+  JSDocAllType,
+  LastTypeNode,
+  LiteralType,
+  NullKeyword,
+  NumberKeyword,
+  NumericLiteral,
+  ObjectKeyword,
+  ParenthesizedType,
+  PropertySignature,
+  StringKeyword,
+  StringLiteral,
+  ThisType,
+  TupleType,
+  TypeLiteral,
+  TypeReference,
+  UndefinedKeyword,
+  UnionType,
+} = ts.SyntaxKind;
+
 /**
  * @param {TypeScriptType} node 
  * @returns 
@@ -42,8 +68,8 @@ function toSourceTS(node) {
   const { typeArguments, typeName } = node;
   const kind_ = ts.SyntaxKind[node.kind];
   // console.log({ typeArguments, typeName, kind_, node });
-  switch (kind_) {
-    case 'TypeReference':
+  switch (node.kind) {
+    case TypeReference:
       if (typeName.text === 'Object' && typeArguments.length === 2) {
         return {
           type: 'record',
@@ -70,26 +96,26 @@ function toSourceTS(node) {
         };
       }
       break;
-    case 'StringKeyword':
+    case StringKeyword:
       return node.getText();
-    case 'NumberKeyword':
+    case NumberKeyword:
       return node.getText();
-    case 'IntersectionType':
+    case IntersectionType:
       return {
         type: 'intersection',
         members: node.types.map(toSourceTS)
       }
-    case 'TupleType':
+    case TupleType:
       return {
         type: 'tuple',
         elements: node.elements.map(toSourceTS)
       }
-    case 'UnionType':
+    case UnionType:
       return {
         type: 'union',
         members: node.types.map(toSourceTS)
       }
-    case 'TypeLiteral':
+    case TypeLiteral:
       const properties = {};
       node.members.forEach(member => {
         const name = toSourceTS(member.name);
@@ -100,39 +126,49 @@ function toSourceTS(node) {
         type: 'object',
         properties
       }
-    case 'PropertySignature':
+    case PropertySignature:
       console.warn('toSourceTS> should not happen, handled by TypeLiteral directly');
       return `${toSourceTS(node.name)}: ${toSourceTS(node.type)}`;
-    case 'Identifier':
+    case Identifier:
       return node.text;
-    case 'ArrayType':
+    case ArrayType:
       return {
         type: 'array',
         elementType: toSourceTS(node.elementType)
       };
-    case 'LiteralType':
+    case LiteralType:
       return toSourceTS(node.literal);
-    case 'UndefinedKeyword':
-    case 'NullKeyword':
-    case 'BooleanKeyword':
-    case 'JSDocAllType':
-    case 'ThisType':
-    case 'AnyKeyword':
-    case 'StringLiteral': // 'a'|'b'
+    case AnyKeyword:
+    case BooleanKeyword:
+    case JSDocAllType:
+    case NullKeyword:
+    case NumericLiteral:
+    case StringLiteral:
+    case ThisType:
+    case UndefinedKeyword:
       return node.getText();
-    case 'ObjectKeyword':
+    case ObjectKeyword:
       return {
         type: 'object',
         properties: {}
       }
-    case 'ParenthesizedType':
+    case ParenthesizedType:
       // fall-through for parentheses
       return toSourceTS(node.type);
-    case 'LastTypeNode':
+    case LastTypeNode:
       return toSourceTS(node.qualifier);
     default:
+        // const test = {};
+        // Object.entries(ts.SyntaxKind).forEach(([name, id]) => {
+        //     test[id] = (test[id] || []);
+        //     test[id].push(name);
+        // });
+        // console.log(test);
+      console.warn('toSourceTS> unhandled kind - make sure to understand you cannot reverse TS enums');
+      console.warn('if they contain range aliases, for example:');
+      console.warn('ts.SyntaxKind.NumericLiteral === ts.SyntaxKind.FirstLiteralToken');
+      console.warn('so this "kind" could be wrong, but requires handling anyway:', kind_, node);
       debugger;
-      console.log('unhandled', kind_, node);
   }
 }
 
