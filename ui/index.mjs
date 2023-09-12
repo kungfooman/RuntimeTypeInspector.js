@@ -1,6 +1,9 @@
 // import * as runtimeTypeChecker from '../src-runtime/runtime-type-checker.mjs';
 import { expandTypeDepFree } from '../src/expandTypeDepFree.mjs';
 import { parseJSDoc } from '../src/parseJSDoc.mjs';
+import { parseSync } from '@babel/core';
+import { TypeStringifier } from '../src/TypeStringifier.mjs';
+import { addTypeChecks } from '../src/addTypeChecks.mjs';
 const currentAction = location.hash.slice(1).split('=')[1] || 'jsdoc';
 const selectAction = document.getElementById("action");
 if (!(selectAction instanceof HTMLSelectElement)) {
@@ -10,6 +13,8 @@ selectAction.value = currentAction;
 Object.assign(window, {
   expandTypeDepFree,
   parseJSDoc,
+  parseSync,
+  TypeStringifier, addTypeChecks,
   // runtimeTypeChecker
 });
 let lastStats = {};
@@ -32,7 +37,10 @@ async function actionJSDoc() {
   aceEditorRight.setValue(out);
 }
 async function actionTypeChecking() {
-  aceEditorRight.setValue('actionTypeChecking unimplemented');
+  const content = aceEditorLeft.getValue();
+  const out = addTypeChecks(content);
+  aceEditorRight.setValue(out);
+  aceEditorRight.clearSelection(); // setValue() selects everything, so unselect it now
 }
 async function runAction() {
   switch (getAction()) {
