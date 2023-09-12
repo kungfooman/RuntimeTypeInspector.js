@@ -4,6 +4,7 @@ function importFile(content) {
 const imports = {
   "@babel/core": "./babel-core.mjs",
   "fs": importFile("export default {};"),
+  "typescript": importFile("export default ts;"), // UMD import
   /*
   "path": importFile("export default {};"),
   "stream/web": importFile("export default {};"),

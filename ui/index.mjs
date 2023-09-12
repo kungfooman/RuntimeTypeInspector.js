@@ -1,4 +1,5 @@
 // import * as runtimeTypeChecker from '../src-runtime/runtime-type-checker.mjs';
+import { expandType } from '../src/expandType.mjs';
 import { expandTypeDepFree } from '../src/expandTypeDepFree.mjs';
 import { parseJSDoc } from '../src/parseJSDoc.mjs';
 import { parseSync } from '@babel/core';
@@ -11,6 +12,7 @@ if (!(selectAction instanceof HTMLSelectElement)) {
 }
 selectAction.value = currentAction;
 Object.assign(window, {
+  expandType,
   expandTypeDepFree,
   parseJSDoc,
   parseSync,
