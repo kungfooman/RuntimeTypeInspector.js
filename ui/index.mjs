@@ -24,7 +24,16 @@ function statsPrint() {
   console.table(lastStats);
 }
 async function actionAST() {
-  aceEditorRight.setValue('actionAST unimplemented');
+  const content = aceEditorLeft.getValue();
+  const ast = parseSync(content);
+  const out = JSON.stringify(ast, function(name, val) {
+    if (name == "loc" || name == "start" || name == "end") {
+      return undefined; // remove
+    }
+    return val; // keep
+  }, 2);
+  aceEditorRight.setValue(out);
+  aceEditorRight.clearSelection(); // setValue() selects everything, so unselect it now
 }
 async function actionJSDoc() {
   const content = aceEditorLeft.getValue();
@@ -71,24 +80,6 @@ async function insertTypes() {
     if (ret.insertTypesAndEval) {
       eval(ret.result.replaceAll('export ', ''));
     }
-  } else {
-    aceEditorRight.setValue(JSON.stringify(ret, null, 2));
-  }
-  aceEditorRight.clearSelection(); // setValue() selects everything, so unselect it now
-}
-async function showAST() {
-  const ret = await postData('showAST', {
-    file: aceEditorLeft.getValue()
-  });
-  ret.logs ?.map(_ => console.log (..._));
-  ret.warns?.map(_ => console.warn(..._));
-  if (ret.success) {
-    aceEditorRight.setValue(JSON.stringify(ret.ast, function(name, val) {
-      if (name == "loc" || name == "start" || name == "end") {
-        return undefined; // remove
-      }
-      return val; // keep
-    }, 2));
   } else {
     aceEditorRight.setValue(JSON.stringify(ret, null, 2));
   }
@@ -184,7 +175,7 @@ const aceEditorLeft = setupAce(
   '// Shift-Enter: convert content of left editor,\n//              write result to right editor\n// Tip: open Devtools to see warnings',
   //editor => insertTypes(),
   editor => runAction(),
-  editor => showAST()
+  editor => actionAST()
 );
 const aceEditorRight = setupAce(
   'aceDivRight',
