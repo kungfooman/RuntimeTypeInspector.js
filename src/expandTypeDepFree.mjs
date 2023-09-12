@@ -4,8 +4,9 @@
  * @property {object} [elementType]
  * @property {object} [key]
  * @property {object} [val]
- * @property {object[]} [members]
- * @property {object[]} [properties]
+ * @property {object[]} [members] - For unions.
+ * @property {object[]} [properties] - For objects.
+ * @property {object[]} [elements] - For tuples.
  */
 
 /**
@@ -89,10 +90,10 @@ function expandTypeDepFree(type) {
   }
   // Sixth priority: expand tuples
   if (type[0] == '[' && type[type.length - 1] == ']') {
-    const properties = type.slice(1, -1).split(','); // ['null', ' Texture', ' Texture', ' Texture', ' Texture', ' Texture', ' Texture']
+    const elements = type.slice(1, -1).split(','); // ['null', ' Texture', ' Texture', ' Texture', ' Texture', ' Texture', ' Texture']
     return {
       type: 'tuple',
-      properties: properties.map(expandTypeDepFree)
+      elements: elements.map(expandTypeDepFree)
     }
   }
   if (type === 'object') {
