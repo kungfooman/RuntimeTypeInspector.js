@@ -1,25 +1,37 @@
 /**
+ * @typedef {object} ExpandTypeReturnValue
+ * @property {'array'|'union'|'record'|'tuple'|'object'} type
+ * @property {object} [elementType]
+ * @property {object} [key]
+ * @property {object} [val]
+ * @property {object[]} [members]
+ * @property {object[]} [properties]
+ */
+
+/**
  * 'DepFree' refers to the fact that this function has no dependencies,
  * while `expandType` depends on TypeScript itself for maximum compatibility.
  * @example
- * expandTypeDepFree("(123)        "); // Outputs: 123
- * expandTypeDepFree("Array<number>"); // Outputs: {type: 'array', elementType: 'number'}
- * expandTypeDepFree("Array<(123) >"); // Outputs: {type: 'array', elementType: '123'}
+ * expandTypeDepFree('(123)                   '); // Outputs: 123
+ * expandTypeDepFree('Array<number>           '); // Outputs: {type: 'array', elementType: 'number'}
+ * expandTypeDepFree('Array<(123) >           '); // Outputs: {type: 'array', elementType: '123'}
+ * expandTypeDepFree('  ( ( 123 ) )           '); // Outputs: 123
+ * expandTypeDepFree('  (string ) |(number )  '); // Outputs: {type: 'union', members: ['string', 'number']}
  * @param {string} type
+ * @returns {ExpandTypeReturnValue} Object containing parsed information from type string.
  */
 function expandTypeDepFree(type) {
   type = type.trim();
   // '(123)' -> '123'
-  if (type[0] == '(' && type[type.length - 1] == ')') {
-    type = type.slice(1, -1);
+  while (!type.includes('|') && type[0] == '(' && type[type.length - 1] == ')') {
+    type = type.slice(1, -1).trim();
   }
-  type = type.trim();
   // First priority: Array<...>
   if (type.startsWith("Array<") && type.endsWith('>')) {
     const typeSlice = type.slice(6, -1);
     return {
       type: "array",
-      elementType: expandType(typeSlice)
+      elementType: expandTypeDepFree(typeSlice)
     }
   }
   // Second priority:
@@ -33,14 +45,14 @@ function expandTypeDepFree(type) {
     const recordSlice = type.slice(7, -1);
     const firstComma = recordSlice.indexOf(',');
     if (firstComma === -1) {
-      console.warn("expandType> invalid Object/Record");
+      console.warn("expandTypeDepFree> invalid Object/Record");
     }
     const key = recordSlice.slice(0, firstComma).trim();
     const val = recordSlice.slice(firstComma + 1).trim();
     return {
       type: "record",
-      key: expandType(key),
-      val: expandType(val),
+      key: expandTypeDepFree(key),
+      val: expandTypeDepFree(val),
     }
   }
   // Third priority: { ... }
@@ -50,7 +62,7 @@ function expandTypeDepFree(type) {
     propertiesArray.forEach(_ => {
       const [propName, propType] = _.split(":").map(_=>_.trim());
       if (!propName || !propType) {
-        console.warn('expandType> unexpected type format, fix');
+        console.warn('expandTypeDepFree> unexpected type format, fix');
         return false;
       }
       properties[propName] = propType;
@@ -63,7 +75,7 @@ function expandTypeDepFree(type) {
     members.forEach((_, i) => members[i]=_.trim());
     return {
       type: 'union',
-      members: members.map(expandType),
+      members: members.map(expandTypeDepFree),
     }
   }
   // Fifth priority: expand [] Arrays
@@ -72,7 +84,7 @@ function expandTypeDepFree(type) {
     const typeSlice = type.slice(0, -2);
     return {
       type: 'array',
-      elementType: expandType(typeSlice)
+      elementType: expandTypeDepFree(typeSlice)
     }
   }
   // Sixth priority: expand tuples
@@ -80,7 +92,7 @@ function expandTypeDepFree(type) {
     const properties = type.slice(1, -1).split(','); // ['null', ' Texture', ' Texture', ' Texture', ' Texture', ' Texture', ' Texture']
     return {
       type: 'tuple',
-      properties: properties.map(expandType)
+      properties: properties.map(expandTypeDepFree)
     }
   }
   if (type === 'object') {
@@ -91,4 +103,5 @@ function expandTypeDepFree(type) {
   }
   return type;
 }
+
 export { expandTypeDepFree };
