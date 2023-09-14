@@ -2,11 +2,9 @@ import { parseJSDoc } from './parseJSDoc.mjs';
 import { expandType } from './expandType.mjs';
 import { parseJSDocSetter } from './parseJSDocSetter.mjs';
 import { statReset } from './stat.mjs';
-
 /**
  * @typedef {import("@babel/types").Node} Node
  */
-
 class TypeStringifier {
   /** @type {Record<string, import('./stat.mjs').Stat>} */
   stats = {
@@ -18,12 +16,10 @@ class TypeStringifier {
     'ClassMethod#set'        : {checked: 0, unchecked: 0},
     'ClassMethod#get'        : {checked: 0, unchecked: 0},
   };
-
   /** @type {Node[]} */
   parents = [];
-
   /**
-   * @param {Node} node 
+   * @param {Node} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   toSource(node) {
@@ -55,9 +51,8 @@ class TypeStringifier {
     this.parents.pop();
     return out;
   }
-
   /**
-   * @param {Node} node 
+   * @param {Node} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   toSource_(node) {
@@ -75,12 +70,12 @@ class TypeStringifier {
     const notOfInterest = ["start", "end", "loc", "type"];
     const ofInterest = Object.keys(node).filter(_ => !notOfInterest.includes(_));
     console.warn(`TODO ADD METHOD: ${type}(node) {\n  const { ${ofInterest.join(', ')} } = node;\n  return ;\n}`);
-    return `rtcUnhandled("${node.type}");\n`;
+    return `rtiUnhandled("${node.type}");\n`;
   }
   /**
    * Always force { and }
    * showAST("if (true) 2;") vs showAST("if (true) {2}")
-   * @param {Node} node 
+   * @param {Node} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   toSourceCurly(node) {
@@ -112,7 +107,6 @@ class TypeStringifier {
            t != "ForInStatement" &&
            t != "ForOfStatement";
   }
-
   /**
    * @param {Node[]} arr
    * @returns {string[]}
@@ -120,7 +114,6 @@ class TypeStringifier {
   mapToSource(arr) {
     return arr.map(_ => this.toSource(_));
   }
-
   /**
    * @param {Node} node
    * @param {string} type
@@ -135,9 +128,8 @@ class TypeStringifier {
       return _.type === type;
     });
   }
-
   /**
-   * @param {Node} node 
+   * @param {Node} node - The Babel AST node.
    * @returns {undefined | {}}
    */
   getJSDoc(node) {
@@ -195,9 +187,8 @@ class TypeStringifier {
   statsPrint() {
     console.table(this.stats);
   }
-
   /**
-   * @param {Node} node 
+   * @param {Node} node - The Babel AST node.
    * @returns {Stat}
    */
   getStatsForNode(node) {
@@ -215,9 +206,8 @@ class TypeStringifier {
     }
     return stat;
   }
-
   /**
-   * @param {Node} node 
+   * @param {Node} node - The Babel AST node.
    * @param {string} name
    * @returns {boolean}
    */
@@ -238,9 +228,8 @@ class TypeStringifier {
       return false;
     })
   }
-
   /**
-   * @param {Node} node 
+   * @param {Node} node - The Babel AST node.
    * @returns {string}
    */
   generateTypeChecks(node) {
@@ -295,7 +284,6 @@ class TypeStringifier {
     }
     return out;
   }
-
   /**
    * Start from File->Program->... while ignoring BlockStatements aswell
    * @returns {string} A string of two spaces per indentation.
@@ -346,9 +334,8 @@ class TypeStringifier {
     }
     return '  '.repeat(n);
   }
-
   /**
-   * @param {Node} node 
+   * @param {Node} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   getName(node) {
@@ -389,7 +376,6 @@ class TypeStringifier {
         return '/*MISSING*/';
     }
   }
-
   /**
    * > await something();
    *
@@ -400,14 +386,13 @@ class TypeStringifier {
     const { argument } = node;
     return `await ${this.toSource(argument)}`;
   }
-
   /**
    * > asd;
    * > asd = 1;
    * > static asd;
    * > static asd = 1;
    *
-   * @param {import("@babel/types").ClassProperty} node 
+   * @param {import("@babel/types").ClassProperty} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ClassProperty(node) {
@@ -437,7 +422,7 @@ class TypeStringifier {
     return '(' + this.mapToSource(params).join(', ') + ')';
   }
   /**
-   * @param {import("@babel/types").FunctionDeclaration} node 
+   * @param {import("@babel/types").FunctionDeclaration} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   FunctionDeclaration(node) {
@@ -499,7 +484,6 @@ class TypeStringifier {
     }
     return out;
   }
-
   /**
    * @param {import("@babel/types").BlockStatement} node - The Babel AST node.
    * @returns {string} Stringification of the node.
@@ -519,7 +503,6 @@ class TypeStringifier {
     out += '}';
     return out;
   }
-
   /**
    * > 'use strict';
    *
@@ -530,7 +513,6 @@ class TypeStringifier {
     const { value } = node;
     return this.toSource(value);
   }
-
   /**
    * > 'use strict';
    *
@@ -542,7 +524,6 @@ class TypeStringifier {
     const { spaces } = this;
     return `${spaces}${extra.raw};`;
   }
-
   /**
    * @param {import("@babel/types").ReturnStatement} node - The Babel AST node.
    * @returns {string} Stringification of the node.
@@ -555,7 +536,6 @@ class TypeStringifier {
     }
     return spaces + 'return ' + this.toSource(argument) + ';';
   }
-
   /**
    * @param {import("@babel/types").Identifier} node - The Babel AST node.
    * @returns {string} Stringification of the node.
@@ -563,7 +543,6 @@ class TypeStringifier {
   Identifier(node) {
     return node.name;
   }
-
   /**
    * @param {import("@babel/types").IfStatement} node - The Babel AST node.
    * @returns {string} Stringification of the node.
@@ -583,7 +562,6 @@ class TypeStringifier {
     }
     return out;
   }
-
   /**
    * ts = require("typescript")
    * ts.createSourceFile("repl.ts", "a = 1", ts.ScriptTarget.Latest)
@@ -609,9 +587,8 @@ class TypeStringifier {
     out += this.toSource(argument);
     return out;
   }
-
   /**
-   * @param {import("@babel/types").MemberExpression} node 
+   * @param {import("@babel/types").MemberExpression} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   MemberExpression(node) {
@@ -621,9 +598,8 @@ class TypeStringifier {
     }
     return `${this.toSource(object)}.${this.toSource(property)}`;
   }
-
   /**
-   * @param {import("@babel/types").ExpressionStatement} node 
+   * @param {import("@babel/types").ExpressionStatement} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ExpressionStatement(node) {
@@ -636,18 +612,16 @@ class TypeStringifier {
      */
     return this.spaces + this.toSource(expression) + ';';
   }
-
   /**
-   * @param {import("@babel/types").CallExpression} node 
+   * @param {import("@babel/types").CallExpression} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   CallExpression(node) {
     const {callee, arguments: args} = node;
     return this.toSource(callee) + "(" + this.mapToSource(args).join(', ') + ")";
   }
-
   /**
-   * @param {import("@babel/types").ObjectExpression} node 
+   * @param {import("@babel/types").ObjectExpression} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ObjectExpression(node) {
@@ -657,9 +631,8 @@ class TypeStringifier {
     }
     return '{\n' + this.mapToSource(properties).join(',\n') + '\n' + this.spaces.slice(2) + '}';
   }
-
   /**
-   * @param {import("@babel/types").ObjectProperty} node 
+   * @param {import("@babel/types").ObjectProperty} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ObjectProperty(node) {
@@ -673,17 +646,15 @@ class TypeStringifier {
     }
     return `${spaces}${left}: ${right}`;
   }
-
   /**
-   * @param {import("@babel/types").BooleanLiteral} node 
+   * @param {import("@babel/types").BooleanLiteral} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   BooleanLiteral(node) {
     return node.value.toString();
   }
-
   /**
-   * @param {import("@babel/types").AssignmentExpression} node 
+   * @param {import("@babel/types").AssignmentExpression} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   AssignmentExpression(node) {
@@ -693,9 +664,8 @@ class TypeStringifier {
     // operator is for example: = |= &=
     return `${left_} ${operator} ${right_}`;
   }
-
   /**
-   * @param {import("@babel/types").BinaryExpression} node 
+   * @param {import("@babel/types").BinaryExpression} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   BinaryExpression(node) {
@@ -707,26 +677,23 @@ class TypeStringifier {
     }
     return `${left_} ${operator} ${right_}`;
   }
-
   /**
-   * @param {import("@babel/types").ThisExpression} node 
+   * @param {import("@babel/types").ThisExpression} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ThisExpression(node) {
     return 'this';
   }
-
   /**
-   * @param {import("@babel/types").ArrayExpression} node 
+   * @param {import("@babel/types").ArrayExpression} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ArrayExpression(node) {
     const { elements } = node;
     return '[' + this.mapToSource(elements).join(', ') + ']';
   }
-
   /**
-   * @param {import("@babel/types").VariableDeclaration} node 
+   * @param {import("@babel/types").VariableDeclaration} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   VariableDeclaration(node) {
@@ -739,9 +706,8 @@ class TypeStringifier {
     }
     return `${spaces}${kind} ${this.mapToSource(declarations).join(', ')}${semicolon}`;
   }
-
   /**
-   * @param {import("@babel/types").VariableDeclarator} node 
+   * @param {import("@babel/types").VariableDeclarator} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   VariableDeclarator(node) {
@@ -751,20 +717,18 @@ class TypeStringifier {
     }
     return this.toSource(id);
   }
-
   /**
-   * @param {import("@babel/types").ConditionalExpression} node 
+   * @param {import("@babel/types").ConditionalExpression} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ConditionalExpression(node) {
     const { alternate, consequent, test } = node;
     return `${this.toSource(test)} ? ${this.toSource(consequent)} : ${this.toSource(alternate)}`;
   }
-
   /**
    * if (...)
    *
-   * @param {import("@babel/types").LogicalExpression} node 
+   * @param {import("@babel/types").LogicalExpression} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   LogicalExpression(node) {
@@ -779,11 +743,10 @@ class TypeStringifier {
     }
     return `${l} ${operator} ${r}`;
   }
-
   /**
    * TODO TEST: can init be undefined in for(;;)
    *
-   * @param {import("@babel/types").ForStatement} node 
+   * @param {import("@babel/types").ForStatement} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ForStatement(node) {
@@ -795,11 +758,10 @@ class TypeStringifier {
     const b = this.toSourceCurly(body);
     return `${spaces}for (${i}; ${t}; ${u})${b}`;
   }
-
   /**
    * showAST("++i")
    *
-   * @param {import("@babel/types").UpdateExpression} node 
+   * @param {import("@babel/types").UpdateExpression} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   UpdateExpression(node) {
@@ -810,9 +772,8 @@ class TypeStringifier {
       return `${this.toSource(argument)}${operator}`;
     }
   }
-
   /**
-   * @param {import("@babel/types").NewExpression} node 
+   * @param {import("@babel/types").NewExpression} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   NewExpression(node) {
@@ -821,9 +782,8 @@ class TypeStringifier {
     const args = this.mapToSource(args_).join(', ');
     return `new ${c}(${args})`;
   }
-
   /**
-   * @param {import("@babel/types").ClassDeclaration} node 
+   * @param {import("@babel/types").ClassDeclaration} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ClassDeclaration(node) {
@@ -839,7 +799,6 @@ class TypeStringifier {
     out += '\n}';
     return out;
   }
-
   /**
    * @example
    *
@@ -851,7 +810,7 @@ class TypeStringifier {
    *   )
    * );
    *
-   * @param {import("@babel/types").TemplateLiteral} node 
+   * @param {import("@babel/types").TemplateLiteral} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   TemplateLiteral(node) {
@@ -866,18 +825,16 @@ class TypeStringifier {
     out += '`';
     return out ;
   }
-
   /**
-   * @param {import("@babel/types").TemplateElement} node 
+   * @param {import("@babel/types").TemplateElement} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   TemplateElement(node) {
     const { value } = node;
     return value.raw;
   }
-
   /**
-   * @param {import("@babel/types").ContinueStatement} node 
+   * @param {import("@babel/types").ContinueStatement} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ContinueStatement(node) {
@@ -887,18 +844,16 @@ class TypeStringifier {
     }
     return this.spaces + 'continue;';
   }
-
   /**
-   * @param {import("@babel/types").ClassBody} node 
+   * @param {import("@babel/types").ClassBody} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ClassBody(node) {
     const { body } = node;
     return this.mapToSource(body).join('\n');
   }
-
   /**
-   * @param {import("@babel/types").ClassMethod} node 
+   * @param {import("@babel/types").ClassMethod} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ClassMethod(node) {
@@ -933,17 +888,15 @@ class TypeStringifier {
     out += this.toSource(body);
     return out;
   }
-
   /**
-   * @param {import("@babel/types").ExportAllDeclaration} node 
+   * @param {import("@babel/types").ExportAllDeclaration} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ExportAllDeclaration(node) {
     return `export * from ${node.source.extra.raw};`;
   }
-
   /**
-   * @param {import("@babel/types").ExportNamedDeclaration} node 
+   * @param {import("@babel/types").ExportNamedDeclaration} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ExportNamedDeclaration(node) {
@@ -970,9 +923,8 @@ class TypeStringifier {
     }
     return out;
   }
-
   /**
-   * @param {import("@babel/types").ExportDefaultDeclaration} node 
+   * @param {import("@babel/types").ExportDefaultDeclaration} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ExportDefaultDeclaration(node) {
@@ -980,9 +932,8 @@ class TypeStringifier {
     const a = this.toSource(declaration);
     return `export default ${a};`;
   }
-
   /**
-   * @param {import("@babel/types").ExportSpecifier} node 
+   * @param {import("@babel/types").ExportSpecifier} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ExportSpecifier(node) {
@@ -998,17 +949,15 @@ class TypeStringifier {
     // createMesh: createMesh$1\n
     return `${spaces}${right} as ${left}`;
   }
-
   /**
-   * @param {import("@babel/types").Super} node 
+   * @param {import("@babel/types").Super} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   Super(node) {
     return 'super';
   }
-
   /**
-   * @param {import("@babel/types").ForInStatement} node 
+   * @param {import("@babel/types").ForInStatement} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ForInStatement(node) {
@@ -1019,9 +968,8 @@ class TypeStringifier {
     const b = this.toSourceCurly(body);
     return `${spaces}for (${l} in ${r})${b}`;
   }
-
   /**
-   * @param {import("@babel/types").ThrowStatement} node 
+   * @param {import("@babel/types").ThrowStatement} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ThrowStatement(node) {
@@ -1030,9 +978,8 @@ class TypeStringifier {
     const arg = this.toSource(argument);
     return `${spaces}throw ${arg};`;
   }
-
   /**
-   * @param {import("@babel/types").WhileStatement} node 
+   * @param {import("@babel/types").WhileStatement} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   WhileStatement(node) {
@@ -1042,9 +989,8 @@ class TypeStringifier {
     const b = this.toSourceCurly(body);
     return `${spaces}while (${t})${b}`;
   }
-
   /**
-   * @param {import("@babel/types").BreakStatement} node 
+   * @param {import("@babel/types").BreakStatement} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   BreakStatement(node) {
@@ -1054,9 +1000,8 @@ class TypeStringifier {
     }
     return this.spaces + 'break;';
   }
-
   /**
-   * @param {import("@babel/types").ForOfStatement} node 
+   * @param {import("@babel/types").ForOfStatement} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ForOfStatement(node) {
@@ -1068,12 +1013,11 @@ class TypeStringifier {
     const a = await_ ? 'await ' : '';
     return `${spaces}for ${a}(${l} of ${r})${b}`;
   }
-
   /**
    * for (const [a, b] in c)
    * --> [a, b] is the array pattern
    *
-   * @param {import("@babel/types").ArrayPattern} node 
+   * @param {import("@babel/types").ArrayPattern} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ArrayPattern(node) {
@@ -1081,9 +1025,8 @@ class TypeStringifier {
     const e = this.mapToSource(elements).join(', ');
     return `[${e}]`;
   }
-
   /**
-   * @param {import("@babel/types").SwitchStatement} node 
+   * @param {import("@babel/types").SwitchStatement} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   SwitchStatement(node) {
@@ -1095,9 +1038,8 @@ class TypeStringifier {
     out += spaces + '}';
     return out;
   }
-
   /**
-   * @param {import("@babel/types").SwitchCase} node 
+   * @param {import("@babel/types").SwitchCase} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   SwitchCase(node) {
@@ -1110,9 +1052,8 @@ class TypeStringifier {
     }
     return `${spaces}default:\n${c}`;
   }
-
   /**
-   * @param {import("@babel/types").RegExpLiteral} node 
+   * @param {import("@babel/types").RegExpLiteral} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   RegExpLiteral(node) {
@@ -1121,31 +1062,28 @@ class TypeStringifier {
     const {extra, value, pattern, flags} = node;
     return extra.raw;
   }
-
   /**
    * for (var i=0, n=arr.length; i<n; i++)
    * sequence expression: var i=0, n=arr.length
    *
-   * @param {import("@babel/types").SequenceExpression} node 
+   * @param {import("@babel/types").SequenceExpression} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   SequenceExpression(node) {
     const { expressions } = node;
     return this.mapToSource(expressions).join(', ');
   }
-
   /**
    * showAST("if (true);");
    *
-   * @param {import("@babel/types").EmptyStatement} node 
+   * @param {import("@babel/types").EmptyStatement} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   EmptyStatement(node) {
     return ';';
   }
-
   /**
-   * @param {import("@babel/types").SpreadElement} node 
+   * @param {import("@babel/types").SpreadElement} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   SpreadElement(node) {
@@ -1153,16 +1091,14 @@ class TypeStringifier {
     const a = this.toSource(argument);
     return `...${a}`;
   }
-
   /**
-   * @param {import("@babel/types").ObjectPattern} node 
+   * @param {import("@babel/types").ObjectPattern} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ObjectPattern(node) {
     const { properties } = node;
     return '{\n' + this.mapToSource(properties).join(',\n') + '\n' + this.spaces.slice(2) + '}';
   }
-
   /**
    * > x?.y
    * > x?.y.z
@@ -1170,7 +1106,7 @@ class TypeStringifier {
    * > x?.[y?.z]
    * > b?.file?.variants[variant]
    *
-   * @param {import("@babel/types").OptionalMemberExpression} node 
+   * @param {import("@babel/types").OptionalMemberExpression} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   OptionalMemberExpression(node) {
@@ -1188,13 +1124,12 @@ class TypeStringifier {
     // Can only be case 4 now (computed && optional):
     return `${a}?.[${b}]`;
   }
-
   /**
    * > version?.indexOf('$');
    * > version?.indexOf?.('$');
    * > this.passEncoder?.pushDebugGroup(name);
    *
-   * @param {import("@babel/types").OptionalCallExpression} node 
+   * @param {import("@babel/types").OptionalCallExpression} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   OptionalCallExpression(node) {
@@ -1206,9 +1141,8 @@ class TypeStringifier {
     }
     return `${a}(${b})`;
   }
-
   /**
-   * @param {import("@babel/types").DoWhileStatement} node 
+   * @param {import("@babel/types").DoWhileStatement} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   DoWhileStatement(node) {
@@ -1220,9 +1154,8 @@ class TypeStringifier {
     out += ` while (${this.toSource(test)});`;
     return out;
   }
-
   /**
-   * @param {import("@babel/types").TryStatement} node 
+   * @param {import("@babel/types").TryStatement} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   TryStatement(node) {
@@ -1238,9 +1171,8 @@ class TypeStringifier {
     }
     return out;
   }
-
   /**
-   * @param {import("@babel/types").CatchClause} node 
+   * @param {import("@babel/types").CatchClause} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   CatchClause(node) {
@@ -1249,44 +1181,39 @@ class TypeStringifier {
     const b = this.toSource(body);
     return `catch (${p}) ${b}`;
   }
-
   /**
-   * @param {import("@babel/types").RestElement} node 
+   * @param {import("@babel/types").RestElement} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   RestElement(node) {
     const { argument } = node;
     return `...${this.toSource(argument)}`;
   }
-
   /**
-   * @param {import("@babel/types").DebuggerStatement} node 
+   * @param {import("@babel/types").DebuggerStatement} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   DebuggerStatement(node) {
     return `${this.spaces}debugger;`;
   }
-
   /**
-   * @param {import("@babel/types").CommentBlock} node 
+   * @param {import("@babel/types").CommentBlock} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   CommentBlock(node) {
     const { value } = node;
     return `${this.spaces.slice(2)}/*${value}*/`;
   }
-
   /**
-   * @param {import("@babel/types").CommentLine} node 
+   * @param {import("@babel/types").CommentLine} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   CommentLine(node) {
     const { value } = node;
     return `${this.spaces.slice(2)}//${value}`;
   }
-
   /**
-   * @param {import("@babel/types").ImportDeclaration} node 
+   * @param {import("@babel/types").ImportDeclaration} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ImportDeclaration(node) {
@@ -1304,9 +1231,8 @@ class TypeStringifier {
     }
     return `import { ${a} } from ${b};`;
   }
-
   /**
-   * @param {import("@babel/types").ImportSpecifier} node 
+   * @param {import("@babel/types").ImportSpecifier} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ImportSpecifier(node) {
@@ -1318,43 +1244,38 @@ class TypeStringifier {
     }
     return a;
   }
-
   /**
-   * @param {import("@babel/types").ImportDefaultSpecifier} node 
+   * @param {import("@babel/types").ImportDefaultSpecifier} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ImportDefaultSpecifier(node) {
     const { local } = node;
     return this.toSource(local);
   }
-
   /**
-   * @param {import("@babel/types").ImportNamespaceSpecifier} node 
+   * @param {import("@babel/types").ImportNamespaceSpecifier} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ImportNamespaceSpecifier(node) {
     const {local} = node;
     return `* as ${this.toSource(local)}`;
   }
-
   /**
-   * @param {import("@babel/types").File} node 
+   * @param {import("@babel/types").File} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   File(node) {
     return this.toSource(node.program) + '\n';
   }
-
   /**
-   * @param {import("@babel/types").Program} node 
+   * @param {import("@babel/types").Program} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   Program(node) {
     return this.mapToSource(node.body).join('\n');
   }
-
   /**
-   * @param {import("@babel/types").StringLiteral} node 
+   * @param {import("@babel/types").StringLiteral} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   StringLiteral(node) {
@@ -1370,31 +1291,27 @@ class TypeStringifier {
     }
     return extra.raw;
   }
-
   /**
-   * @param {import("@babel/types").NumericLiteral} node 
+   * @param {import("@babel/types").NumericLiteral} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   NumericLiteral(node) {
     return node.extra.raw;
   }
-
   /**
-   * @param {import("@babel/types").AssignmentPattern} node 
+   * @param {import("@babel/types").AssignmentPattern} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   AssignmentPattern(node) {
     const { left, right } = node;
     return `${this.toSource(left)} = ${this.toSource(right)}`;
   }
-
   /**
-   * @param {import("@babel/types").NullLiteral} node 
+   * @param {import("@babel/types").NullLiteral} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   NullLiteral(node) {
     return 'null';
   }
 }
-
 export { TypeStringifier };
