@@ -63,9 +63,13 @@ function parseJSDoc(src, expandType = expandTypeDepFree) {
         typeObject.properties[parts1] = simplifiedType;
       } else if (toptype?.type == "array") {
         toptype.elementType.properties[parts1] = simplifiedType;
-      } else {
+      } else if (toptype?.type == "object") {
         toptype.properties = toptype.properties || {};
         toptype.properties[parts1] = simplifiedType;
+      } else {
+        console.warn("parseJSDoc> skipping @param, unseen syntax detected, please check if your JSDoc is valid or open an issue about this", {
+          src, toptype, parts0, parts1, simplifiedType
+        })
       }
     } else {
       params[name] = simplifiedType;
@@ -77,4 +81,4 @@ function parseJSDoc(src, expandType = expandTypeDepFree) {
   return params;
 }
 
-export { parseJSDoc };
+export { stripDefaultValue, isOptional, stripOptional, parseJSDoc };
