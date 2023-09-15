@@ -1,6 +1,5 @@
 import { parseSync } from '@babel/core';
 import { TypeStringifier } from './TypeStringifier.mjs';
-
 /**
  * Simple facade which does all the processing.
  *
@@ -18,5 +17,4 @@ function addTypeChecks(src) {
     return `/*<addTypeChecks-error>*/${src}/*</addTypeChecks-error>*/`;
   }
 }
-
 export { addTypeChecks };

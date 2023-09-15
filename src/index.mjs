@@ -1,3 +1,4 @@
+export * from './addTypeChecks.mjs';
 export * from './ast2json.mjs';
 export * from './expandType.mjs';
 export * from './expandTypeDepFree.mjs';

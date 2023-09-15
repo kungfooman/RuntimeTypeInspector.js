@@ -69,7 +69,8 @@ class TypeStringifier {
     console.log(node);
     const notOfInterest = ["start", "end", "loc", "type"];
     const ofInterest = Object.keys(node).filter(_ => !notOfInterest.includes(_));
-    console.warn(`TODO ADD METHOD: ${type}(node) {\n  const { ${ofInterest.join(', ')} } = node;\n  return ;\n}`);
+    const fn = `${type}(node) {\n  const { ${ofInterest.join(', ')} } = node;\n  return ;\n}`;
+    console.warn('TODO ADD METHOD:', fn);
     return `rtiUnhandled("${node.type}");\n`;
   }
   /**
@@ -85,7 +86,8 @@ class TypeStringifier {
     let out = '';
     if (needCurly) {
       out += ' {\n';
-      //out += spaces + `/* toSourceCurly> needCurly=${needCurly} type=${type} parents=${parents.map(_=>_.type).join('->')}*/\n`;
+      //out += spaces + `/* toSourceCurly> needCurly=${needCurly} type=${type}
+      //parents=${parents.map(_=>_.type).join('->')}*/\n`;
     }
     out += this.toSource(node);
     if (needCurly) {
@@ -174,7 +176,8 @@ class TypeStringifier {
             console.warn("getJSDoc> setters require exactly one argument");
           }
           return {
-            [paramName]: parseJSDocSetter(lastComment.value, expandType) // todo: make class potentially dep free using e.g. this.expandType
+            // todo: make class potentially dep free using e.g. this.expandType
+            [paramName]: parseJSDocSetter(lastComment.value, expandType)
           }
         }
         return parseJSDoc(lastComment.value);
@@ -254,7 +257,8 @@ class TypeStringifier {
       spaces += '  ';
     }
     let out = '';
-    //out += `${spaces}/*${spaces}  node.type=${node.type}\n${spaces}  ${JSON.stringify(jsdoc)}\n${parent}\n${spaces}*/\n`;
+    //out += `${spaces}/*${spaces}  node.type=${node.type}\n${spaces}
+    //  ${JSON.stringify(jsdoc)}\n${parent}\n${spaces}*/\n`;
     for (const name in jsdoc) {
       const type = jsdoc[name];
       if (!this.nodeHasParamName(node, name)) {
@@ -272,7 +276,8 @@ class TypeStringifier {
       }
       const loc = this.getName(node);
       let prevCheck = '';
-      // JSDoc doesn't support multiple function signatures yet, but this is exactly what we would need to deal with ObjectPool'ing
+      // JSDoc doesn't support multiple function signatures yet, but this is
+      // exactly what we would need to deal with ObjectPool'ing
       if (
         loc === 'ContactPoint#constructor' ||
         loc === 'ContactResult#constructor' ||
@@ -280,7 +285,8 @@ class TypeStringifier {
       ) {
         prevCheck = 'arguments.length !== 0 && ';
       }
-      out += `${spaces}if (${prevCheck}!assertType(${name}, ${t}, '${loc}', '${name}')) {\n${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
+      out += `${spaces}if (${prevCheck}!assertType(${name}, ${t}, '${loc}', '${name}')) {\n`;
+      out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
     }
     return out;
   }
@@ -325,7 +331,10 @@ class TypeStringifier {
         //|| _.type === 'ExpressionStatement'
     ).length;
     n -= 1; // Do not count last frame we are in right now.
-    if (parents.some(_ => _.type === 'CallExpression') && parents.some(_ => _.type === 'ObjectExpression')) {
+    if (
+      parents.some(_ => _.type === 'CallExpression') &&
+      parents.some(_ => _.type === 'ObjectExpression')
+    ) {
       n--;
     }
     if (n < 0) {
@@ -629,7 +638,10 @@ class TypeStringifier {
     if (properties.length === 0) {
       return '{}';
     }
-    return '{\n' + this.mapToSource(properties).join(',\n') + '\n' + this.spaces.slice(2) + '}';
+    return '{\n' +
+      this.mapToSource(properties).join(',\n') +
+      '\n' +
+      this.spaces.slice(2) + '}';
   }
   /**
    * @param {import("@babel/types").ObjectProperty} node - The Babel AST node.
@@ -801,15 +813,7 @@ class TypeStringifier {
   }
   /**
    * @example
-   *
-   * console.log(
-   *   JSON.stringify(
-   *     parseSync("`${1} b ${2+3}c`").program.body[0],
-   *     function(name, val) {console.log(arguments); if (name == "loc" || name == "start" || name == "end") { return undefined; } return val;},
-   *     2
-   *   )
-   * );
-   *
+   * console.log(ast2json(parseSync("`${1} b ${2+3}c`").program.body[0]));
    * @param {import("@babel/types").TemplateLiteral} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
