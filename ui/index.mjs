@@ -1,27 +1,70 @@
 // import * as runtimeTypeChecker from '../src-runtime/runtime-type-checker.mjs';
-import { expandType } from '../src/expandType.mjs';
-import { expandTypeDepFree } from '../src/expandTypeDepFree.mjs';
 import { parseJSDoc } from '../src/parseJSDoc.mjs';
 import { parseSync } from '@babel/core';
-import { TypeStringifier } from '../src/TypeStringifier.mjs';
 import { addTypeChecks } from '../src/addTypeChecks.mjs';
+import * as RuntimeTypeInspector from '../src/index.mjs';
 const currentAction = location.hash.slice(1).split('=')[1] || 'jsdoc';
 const selectAction = document.getElementById("action");
 if (!(selectAction instanceof HTMLSelectElement)) {
   throw 'This module requires a <select id="action" ...';
 }
 selectAction.value = currentAction;
+const buttonREPL = document.getElementById('repl');
+if (!(buttonREPL instanceof HTMLButtonElement)) {
+  throw 'This module requires a <button id="repl" ...';
+}
+function activateREPL() {
+  const code = Object.values(RuntimeTypeInspector).map(_ => _.toString()).join('\n');
+  const leftContent = aceEditorLeft.getValue();
+  const leftContentAsCode = `const jsdoc = \`${leftContent}\`;`;
+  const extraCode = `
+  ${leftContentAsCode}
+  const ret = parseJSDoc(jsdoc);
+  setRight(JSON.stringify(ret, null, 2));
+  `;
+  setLeft(`${code}\n${extraCode}`);
+  // @ts-ignore
+  selectAction.value = "eval";
+}
+buttonREPL.onclick = activateREPL;
 Object.assign(window, {
-  expandType,
-  expandTypeDepFree,
-  parseJSDoc,
   parseSync,
-  TypeStringifier, addTypeChecks,
+  addTypeChecks,
   // runtimeTypeChecker
+  RuntimeTypeInspector,
+  ...RuntimeTypeInspector,
 });
 let lastStats = {};
 function statsPrint() {
   console.table(lastStats);
+}
+/**
+ * @param {string} value
+ */
+function setLeft(value) {
+  if (typeof value !== 'string') {
+    aceEditorRight.setValue(`Cannot set type ${typeof value}`);
+    return;
+  }
+  aceEditorLeft.setValue(value);
+  aceEditorLeft.clearSelection(); // setValue() selects everything, so unselect it now
+}
+/**
+ * @param {string} value
+ */
+function setRight(value) {
+  if (typeof value !== 'string') {
+    aceEditorRight.setValue(`Cannot set type ${typeof value}`);
+    return;
+  }
+  aceEditorRight.setValue(value);
+  aceEditorRight.clearSelection(); // setValue() selects everything, so unselect it now
+}
+function getLeft() {
+  return aceEditorLeft.getValue();
+}
+function getRight() {
+  return aceEditorRight.getValue();
 }
 async function actionAST() {
   const content = aceEditorLeft.getValue();
@@ -54,7 +97,8 @@ async function actionTypeChecking() {
   aceEditorRight.clearSelection(); // setValue() selects everything, so unselect it now
 }
 async function runAction() {
-  switch (getAction()) {
+  const action = getAction();
+  switch (action) {
     case 'ast':
       await actionAST();
       break;
@@ -64,6 +108,11 @@ async function runAction() {
     case 'typechecking':
       await actionTypeChecking();
       break;
+    case 'eval':
+      eval(aceEditorLeft.getValue());
+      break;
+    default:
+      setRight(`Action ${action} not implemented`);
   }
 }
 async function insertTypes() {
@@ -85,27 +134,8 @@ async function insertTypes() {
   }
   aceEditorRight.clearSelection(); // setValue() selects everything, so unselect it now
 }
-async function postData(url = '', data = {}) {
-  // Default options are marked with *
-  const response = await fetch(url, {
-    method: 'POST', // *GET, POST, PUT, DELETE, etc.
-    mode: 'cors', // no-cors, *cors, same-origin
-    cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-    credentials: 'same-origin', // include, *same-origin, omit
-    headers: {
-      'Content-Type': 'application/json'
-      // 'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    redirect: 'follow', // manual, *follow, error
-    referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-    body: JSON.stringify(data) // body data type must match "Content-Type" header
-  });
-  return response.json(); // parses JSON response into native JavaScript objects
-}
-
 /** @returns {'typechecking'|'ast'|'jsdoc'} */
 const getAction = () => selectAction.value;
-
 /**
  * @param {string} id - The ID.
  * @returns {HTMLDivElement} - The DIV element.
@@ -129,16 +159,15 @@ Object.assign(aceDivLeft.style, {
   left: "0px",
   top: "40px",
   width: "50vw",
-  height: "100vh",
+  height: "calc(100vh - 40px)",
 });
 Object.assign(aceDivRight.style, {
   position: "absolute",
   left: "50vw",
   top: "40px",
   width: "50vw",
-  height: "100vh",
+  height: "calc(100vh - 40px)",
 });
-
 /**
  * @param {string} id - ID of editor.
  * @param {string} txt - Initial text of editor.
@@ -186,3 +215,15 @@ const aceEditorRight = setupAce(
 function runRightEditor() {
   eval(aceEditorRight.getValue());
 }
+export {
+  selectAction,
+  buttonREPL,
+  aceDivLeft,
+  aceDivRight,
+  aceEditorLeft,
+  aceEditorRight,
+  setLeft,
+  setRight,
+  getLeft,
+  getRight,
+};

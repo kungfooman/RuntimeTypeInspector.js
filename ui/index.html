@@ -9,7 +9,9 @@
       <option value="typechecking">Add full typechecking</option>
       <option value="ast">Show AST</option>
       <option value="jsdoc">Show parsed JSDoc</option>
+      <option value="eval">Eval</option>
     </select>
+    <button id="repl">REPL</button>
     <script type="module">
       import * as Index from "./index.mjs";
       Object.assign(window, { ...Index });
