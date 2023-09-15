@@ -1,14 +1,13 @@
 /**
  * @typedef {object} ExpandTypeReturnValue
- * @property {'array'|'union'|'record'|'tuple'|'object'} type
- * @property {object} [elementType]
- * @property {object} [key]
- * @property {object} [val]
- * @property {object[]} [members] - For unions.
- * @property {object[]} [properties] - For objects.
- * @property {object[]} [elements] - For tuples.
+ * @property {'array' | 'union' | 'record' | 'tuple' | 'object'} type
+ * @property {object | string} [elementType]
+ * @property {object | string} [key]
+ * @property {object | string} [val]
+ * @property {(object | string)[]} [members] - For unions.
+ * @property {object | string} [properties] - For objects.
+ * @property {(object | string)[]} [elements] - For tuples.
  */
-
 /**
  * 'DepFree' refers to the fact that this function has no dependencies,
  * while `expandType` depends on TypeScript itself for maximum compatibility.
@@ -18,8 +17,9 @@
  * expandTypeDepFree('Array<(123) >           '); // Outputs: { type: 'array', elementType: '123' }
  * expandTypeDepFree('  ( ( 123 ) )           '); // Outputs: '123'
  * expandTypeDepFree('  (string ) |(number )  '); // Outputs: { type: 'union', members: ['string', 'number'] }
+ * expandTypeDepFree(' ((  Object  ) )        '); // Outputs: { type: 'object', properties: {} }
  * @param {string} type
- * @returns {ExpandTypeReturnValue} Object containing parsed information from type string.
+ * @returns {string | ExpandTypeReturnValue} Object containing parsed information from type string.
  */
 function expandTypeDepFree(type) {
   type = type.trim();
@@ -96,13 +96,12 @@ function expandTypeDepFree(type) {
       elements: elements.map(expandTypeDepFree)
     }
   }
-  if (type === 'object') {
-    type = {
+  if (type === 'object' || type === 'Object') {
+    return {
       type: 'object',
       properties: {},
     }
   }
   return type;
 }
-
 export { expandTypeDepFree };
