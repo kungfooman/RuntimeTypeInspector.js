@@ -13,6 +13,52 @@ const buttonREPL = document.getElementById('repl');
 if (!(buttonREPL instanceof HTMLButtonElement)) {
   throw 'This module requires a <button id="repl" ...';
 }
+const inputLeft = document.getElementById('left');
+if (!(inputLeft instanceof HTMLInputElement)) {
+  throw 'This module requires a <input id="left" ...';
+}
+const inputRight = document.getElementById('right');
+if (!(inputRight instanceof HTMLInputElement)) {
+  throw 'This module requires a <input id="right" ...';
+}
+inputLeft.onchange = (event) => {
+  const { checked } = event.target;
+  if (checked) {
+    // Unhide right editor and resize right one to half size again
+    aceDivLeft.style.display = "";
+    setHalfSizeLeft();
+    setHalfSizeRight();
+  } else {
+    // Hide left editor and resize right one to full size
+    aceDivLeft.style.display = "none";
+    Object.assign(aceDivRight.style, {
+      position: "absolute",
+      left: "0vw",
+      top: "40px",
+      width: "100vw",
+      height: "calc(100vh - 40px)",
+    });
+  }
+}
+inputRight.onchange = (event) => {
+  const { checked } = event.target;
+  if (checked) {
+    // Unhide left editor and resize right one to half size again
+    aceDivRight.style.display = "";
+    setHalfSizeLeft();
+    setHalfSizeRight();
+  } else {
+    // Hide left editor and resize right one to full size
+    aceDivRight.style.display = "none";
+    Object.assign(aceDivLeft.style, {
+      position: "absolute",
+      left: "0vw",
+      top: "40px",
+      width: "100vw",
+      height: "calc(100vh - 40px)",
+    });
+  }
+}
 function getCodeForAction() {
   switch (getAction()) {
     case 'typechecking':
@@ -159,20 +205,26 @@ function createDivWithId(id) {
 const aceDivLeft = createDivWithId("aceDivLeft");
 const aceDivRight = createDivWithId("aceDivRight");
 document.body.append(aceDivLeft, aceDivRight);
-Object.assign(aceDivLeft.style, {
-  position: "absolute",
-  left: "0px",
-  top: "40px",
-  width: "50vw",
-  height: "calc(100vh - 40px)",
-});
-Object.assign(aceDivRight.style, {
-  position: "absolute",
-  left: "50vw",
-  top: "40px",
-  width: "50vw",
-  height: "calc(100vh - 40px)",
-});
+function setHalfSizeLeft() {
+  Object.assign(aceDivLeft.style, {
+    position: "absolute",
+    left: "0px",
+    top: "40px",
+    width: "50vw",
+    height: "calc(100vh - 40px)",
+  });
+}
+function setHalfSizeRight() {
+  Object.assign(aceDivRight.style, {
+    position: "absolute",
+    left: "50vw",
+    top: "40px",
+    width: "50vw",
+    height: "calc(100vh - 40px)",
+  });
+}
+setHalfSizeLeft();
+setHalfSizeRight();
 /**
  * @param {string} id - ID of editor.
  * @param {string} txt - Initial text of editor.
