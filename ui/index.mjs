@@ -13,16 +13,21 @@ const buttonREPL = document.getElementById('repl');
 if (!(buttonREPL instanceof HTMLButtonElement)) {
   throw 'This module requires a <button id="repl" ...';
 }
+function getCodeForAction() {
+  switch (getAction()) {
+    case 'typechecking':
+      return "const ret = addTypeChecks(jsdoc);\nsetRight(ret);";
+    case 'jsdoc':
+      return "const ret = parseJSDoc(jsdoc);\nsetRight(JSON.stringify(ret, null, 2));";
+  }
+  return '// This action has no special code';
+}
 function activateREPL() {
   const code = Object.values(RuntimeTypeInspector).map(_ => _.toString()).join('\n');
   const leftContent = aceEditorLeft.getValue();
   const leftContentAsCode = `const jsdoc = \`${leftContent}\`;`;
-  const extraCode = `
-  ${leftContentAsCode}
-  const ret = parseJSDoc(jsdoc);
-  setRight(JSON.stringify(ret, null, 2));
-  `;
-  setLeft(`${code}\n${extraCode}`);
+  const out = [code, leftContentAsCode, getCodeForAction()].join('\n');
+  setLeft(out);
   // @ts-ignore
   selectAction.value = "eval";
 }
