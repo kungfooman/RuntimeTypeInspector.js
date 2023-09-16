@@ -1,6 +1,5 @@
 import { expandTypeDepFree } from "./expandTypeDepFree.mjs";
 import { simplifyType } from "./simplifyType.mjs";
-
 /**
  * @param {string} str - The type.
  * @returns {string} The type with stripped default value.
@@ -8,7 +7,6 @@ import { simplifyType } from "./simplifyType.mjs";
 function stripDefaultValue(str) {
   return str.split("=")[0];
 }
-
 /**
  * @param {string} str - The type.
  * @returns {boolean} Whether the type is optional or not.
@@ -16,7 +14,6 @@ function stripDefaultValue(str) {
 function isOptional(str) {
   return str[0] === '[' && str[str.length - 1] === ']';
 }
-
 /**
  * @param {string} str - The type.
  * @returns {string}
@@ -27,7 +24,6 @@ function stripOptional(str) {
   }
   return str;
 }
-
 /**
  * @param {string} src 
  * @returns {{} | undefined}
@@ -36,7 +32,7 @@ function parseJSDoc(src, expandType = expandTypeDepFree) {
   const regex = /@param \{(.*?)\} ([\[\]a-zA-Z0-9_$=\.' ]+)/g;
   const matches = [...src.matchAll(regex)];
   /** @type {Record<string, any>} */
-  const params = {};
+  const params = Object.create(null);
   matches.forEach(_ => {
     const type = expandType(_[1].trim());
     let name = _[2].split(' ')[0].trim(); // If people don't use a dash, we need to strip the rest (which is the description).
@@ -80,5 +76,4 @@ function parseJSDoc(src, expandType = expandTypeDepFree) {
   }
   return params;
 }
-
 export { stripDefaultValue, isOptional, stripOptional, parseJSDoc };
