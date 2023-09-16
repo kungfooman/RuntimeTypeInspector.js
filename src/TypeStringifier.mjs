@@ -685,7 +685,7 @@ class TypeStringifier {
     let left_ = this.toSource(left);
     let right_ = this.toSource(right);
     if (operator === '/') {
-      return `runtimeTypeCheckerDiv(${left_}, ${right_})`;
+      return `validateDivision(${left_}, ${right_})`;
     }
     return `${left_} ${operator} ${right_}`;
   }
