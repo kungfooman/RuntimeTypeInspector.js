@@ -1,8 +1,8 @@
-// import * as runtimeTypeChecker from '../src-runtime/runtime-type-checker.mjs';
 import { parseJSDoc } from '../src/parseJSDoc.mjs';
 import { parseSync } from '@babel/core';
 import { addTypeChecks } from '../src/addTypeChecks.mjs';
 import * as RuntimeTypeInspector from '../src/index.mjs';
+import * as RuntimeTypeInspectorRuntime from '../src-runtime/index.mjs';
 const currentAction = location.hash.slice(1).split('=')[1] || 'jsdoc';
 const selectAction = document.getElementById("action");
 if (!(selectAction instanceof HTMLSelectElement)) {
@@ -80,10 +80,10 @@ function activateREPL() {
 buttonREPL.onclick = activateREPL;
 Object.assign(window, {
   parseSync,
-  addTypeChecks,
-  // runtimeTypeChecker
   RuntimeTypeInspector,
   ...RuntimeTypeInspector,
+  RuntimeTypeInspectorRuntime,
+  ...RuntimeTypeInspectorRuntime,
 });
 let lastStats = {};
 function statsPrint() {
