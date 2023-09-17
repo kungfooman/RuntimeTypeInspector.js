@@ -19,8 +19,8 @@ function niceDiv(div) {
 function createDiv() {
   const div = document.createElement("div");
   div.style.position = "absolute";
-  div.style.top = "0px";
-  div.style.left = "0px";
+  div.style.bottom = "0px";
+  div.style.right = "0px";
   div.style.zIndex = "1";
   niceDiv(div);
   const spanErrors = document.createElement("span");
@@ -36,7 +36,12 @@ function createDiv() {
     }
   }
   input.checked = true;
-  div.append(spanErrors, span, input);
+  const buttonHide = document.createElement("button");
+  buttonHide.textContent = 'Hide';
+  buttonHide.onclick = () => {
+    div.style.display = 'none';
+  };
+  div.append(spanErrors, span, input, buttonHide);
   // add when page is loaded
   document.addEventListener("DOMContentLoaded", () => document.body.append(div));
   setInterval(() => {
