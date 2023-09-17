@@ -222,7 +222,7 @@ class TypeStringifier {
     return node.params.some(node => {
       const {type} = node;
       if (type === "AssignmentPattern") {
-        console.assert(node.left.type === 'Identifier');
+        console.assert(node.left.type === 'Identifier' || node.left.type === 'ObjectPattern', 'Expected Identifier or ObjectPattern');
         return node.left.name === name;
       }
       if (type == 'Identifier') {
@@ -259,12 +259,27 @@ class TypeStringifier {
     let out = '';
     //out += `${spaces}/*${spaces}  node.type=${node.type}\n${spaces}
     //  ${JSON.stringify(jsdoc)}\n${parent}\n${spaces}*/\n`;
-    for (const name in jsdoc) {
+    for (let name in jsdoc) {
       const type = jsdoc[name];
-      if (!this.nodeHasParamName(node, name)) {
-        const loc = this.getName(node);
-        console.warn(`generateTypeChecks> ${loc}> Missing param: ${name}`);
-        continue;
+      const hasParam = this.nodeHasParamName(node, name);
+      if (!hasParam) {
+        let testNode = node;
+        if (node.type === 'BlockStatement') {
+          testNode = this.parent;
+        }
+        const paramIndex = Object.keys(jsdoc).findIndex(_ => _ === name);
+        const isObjectPattern = testNode.params[paramIndex]?.left?.type === 'ObjectPattern';
+        if (isObjectPattern) {
+          // The name doesn't matter any longer, because an ObjectPattern inherently
+          // drops the identifier from the AST, for example:
+          // function test({x = 123} = {}) {return x;}
+          // But we can access it via arguments[paramIndex] anyway.
+          name = `arguments[${paramIndex}]`;
+        } else {
+          const loc = this.getName(node);
+          console.warn(`generateTypeChecks> ${loc}> Missing param: ${name}`);
+          continue;
+        }
       }
       let t = JSON.stringify(type, null, 2).replaceAll('\n', '\n' + spaces);
       if (type === 'this') {
