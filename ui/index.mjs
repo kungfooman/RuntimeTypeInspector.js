@@ -1,8 +1,8 @@
 import { parseJSDoc } from '../src/parseJSDoc.mjs';
 import { parseSync } from '@babel/core';
 import { addTypeChecks } from '../src/addTypeChecks.mjs';
-import * as TypeInspector from '../src/index.mjs';
-import * as RuntimeTypeInspector from '../src-rti/index.mjs';
+import * as ti from '../src/index.mjs';
+import * as rti from '../src-rti/index.mjs';
 const currentAction = location.hash.slice(1).split('=')[1] || 'jsdoc';
 const selectAction = document.getElementById("action");
 if (!(selectAction instanceof HTMLSelectElement)) {
@@ -68,8 +68,21 @@ function getCodeForAction() {
   }
   return '// This action has no special code';
 }
+/**
+ * @param {string} name - The name.
+ * @param {any} data - Function or object.
+ * @returns {string}
+ */
+function data2code(name, data) {
+  if (data instanceof Function) {
+    return data.toString();
+  } else if (data instanceof Object && data !== null) {
+    return `let ${name} = ${JSON.stringify(data, null, 2)};`;
+  }
+  return `// data2code> unhandled type: name=${name}, type of data: ${typeof data}`;
+}
 function activateREPL() {
-  const code = Object.values(RuntimeTypeInspector).map(_ => _.toString()).join('\n');
+  const code = Object.entries(ti).map(([key, val]) => data2code(key, val)).join('\n');
   const leftContent = aceEditorLeft.getValue();
   const leftContentAsCode = `const jsdoc = \`${leftContent}\`;`;
   const out = [code, leftContentAsCode, getCodeForAction()].join('\n');
@@ -80,10 +93,8 @@ function activateREPL() {
 buttonREPL.onclick = activateREPL;
 Object.assign(window, {
   parseSync,
-  TypeInspector,
-  ...TypeInspector,
-  RuntimeTypeInspector,
-  ...RuntimeTypeInspector,
+  ti, ...ti,
+  rti, ...rti,
 });
 let lastStats = {};
 function statsPrint() {
