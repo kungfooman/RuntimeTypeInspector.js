@@ -1,6 +1,5 @@
-import { expandTypeDepFree } from "./expandTypeDepFree.mjs";
-import { simplifyType } from "./simplifyType.mjs";
-
+import {expandTypeDepFree} from "./expandTypeDepFree.mjs";
+import {simplifyType} from "./simplifyType.mjs";
 /**
  * @param {string} src - JSDoc comment of the setter.
  */
@@ -14,5 +13,4 @@ function parseJSDocSetter(src, expandType = expandTypeDepFree) {
     return simplifiedType;
   }
 }
-
-export { parseJSDocSetter };
+export {parseJSDocSetter};

@@ -1,6 +1,6 @@
-import { typecheckOptions } from "./typecheckOptions.mjs";
-import { typecheckWarn } from "./typecheckWarn.mjs";
-import { validateType } from "./validateType.mjs";
+import {typecheckOptions} from "./typecheckOptions.mjs";
+import {typecheckWarn} from "./typecheckWarn.mjs";
+import {validateType} from "./validateType.mjs";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.

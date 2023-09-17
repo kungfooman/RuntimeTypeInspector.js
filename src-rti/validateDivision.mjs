@@ -1,4 +1,4 @@
-import { typecheckWarn } from "./typecheckWarn.mjs";
+import {typecheckWarn} from "./typecheckWarn.mjs";
 /**
  * @param {number} lhs - The left hand side.
  * @param {number} rhs - The right hand side.
@@ -28,4 +28,4 @@ function validateDivision(lhs, rhs) {
   }
   return ret;
 }
-export { validateDivision };
+export {validateDivision};

@@ -1,4 +1,4 @@
-import { typecheckOptions } from "./typecheckOptions.mjs";
+import {typecheckOptions} from "./typecheckOptions.mjs";
 /**
  * @param {HTMLDivElement} div - The <div>.
  */
@@ -44,4 +44,4 @@ function createDiv() {
   }, 100);
   return div;
 }
-export { createDiv };
+export {createDiv};

@@ -9,13 +9,13 @@
  * @returns {boolean} True if every callback call is true aswell.
  */
 function typecheckEvery(arr, fn) {
-    const n = arr.length;
-    for (let i = 0; i < n; i++) {
-        const ret = fn(arr[i], i, arr);
-        if (!ret) {
-            return false;
-        }
+  const n = arr.length;
+  for (let i = 0; i < n; i++) {
+    const ret = fn(arr[i], i, arr);
+    if (!ret) {
+      return false;
     }
-    return true;
+  }
+  return true;
 }
-export { typecheckEvery };
+export {typecheckEvery};

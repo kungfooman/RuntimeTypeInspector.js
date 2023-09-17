@@ -37,4 +37,4 @@ function makeJSDoc(loc, names, values) {
     console.log(jsdoc);
   }
 }
-export { jsdocCache, makeJSDoc };
+export {jsdocCache, makeJSDoc};

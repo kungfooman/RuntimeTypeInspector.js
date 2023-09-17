@@ -1,4 +1,4 @@
-import { createDiv } from "./createDiv.mjs";
+import {createDiv} from "./createDiv.mjs";
 function typecheckReport() {
   console.table(typecheckOptions.warned);
 }
@@ -59,4 +59,4 @@ const typecheckOptions = {
   div: createDiv(),
   count: 0,
 };
-export { typecheckReport, clearObject, typecheckReset, typecheckOptions };
+export {typecheckReport, clearObject, typecheckReset, typecheckOptions};

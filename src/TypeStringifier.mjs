@@ -1,7 +1,7 @@
-import { parseJSDoc } from './parseJSDoc.mjs';
-import { expandType } from './expandType.mjs';
-import { parseJSDocSetter } from './parseJSDocSetter.mjs';
-import { statReset } from './stat.mjs';
+import {parseJSDoc} from './parseJSDoc.mjs';
+import {expandType} from './expandType.mjs';
+import {parseJSDocSetter} from './parseJSDocSetter.mjs';
+import {statReset} from './stat.mjs';
 /**
  * @typedef {import("@babel/types").Node} Node
  */
@@ -1233,7 +1233,7 @@ class TypeStringifier {
     if (specifiers[0].type !== 'ImportSpecifier') {
       return `import ${a} from ${b};`;
     }
-    return `import { ${a} } from ${b};`;
+    return `import {${a}} from ${b};`;
   }
   /**
    * @param {import("@babel/types").ImportSpecifier} node - The Babel AST node.
@@ -1318,4 +1318,4 @@ class TypeStringifier {
     return 'null';
   }
 }
-export { TypeStringifier };
+export {TypeStringifier};

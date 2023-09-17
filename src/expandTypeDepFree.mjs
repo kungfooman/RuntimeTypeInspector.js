@@ -104,4 +104,4 @@ function expandTypeDepFree(type) {
   }
   return type;
 }
-export { expandTypeDepFree };
+export {expandTypeDepFree};

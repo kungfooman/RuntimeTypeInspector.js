@@ -2,7 +2,6 @@
  * @typedef DocType
  * @property {boolean} optional
  */
-
 /**
  * @param {string | DocType} type - The type.
  * @param {boolean} optional - Optionality
@@ -18,10 +17,7 @@ function simplifyType(type, optional) {
       // console.log("simplify", type);
       return type;
     }
-    type = {
-      type,
-      optional
-    };
+    type = {type, optional};
   } else {
     debugger;
     console.warn("simplifyType> neither object nor string for type", type);
@@ -32,5 +28,4 @@ function simplifyType(type, optional) {
   }
   return type;
 }
-
-export { simplifyType };
+export {simplifyType};

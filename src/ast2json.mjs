@@ -10,4 +10,4 @@ function ast2json(ast) {
     return val; // keep
   }, 2);
 }
-export { ast2json };
+export {ast2json};

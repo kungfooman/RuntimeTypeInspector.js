@@ -1,5 +1,5 @@
-import { expandTypeDepFree } from "./expandTypeDepFree.mjs";
-import { simplifyType } from "./simplifyType.mjs";
+import {expandTypeDepFree} from "./expandTypeDepFree.mjs";
+import {simplifyType} from "./simplifyType.mjs";
 /**
  * @param {string} str - The type.
  * @returns {string} The type with stripped default value.
@@ -76,4 +76,4 @@ function parseJSDoc(src, expandType = expandTypeDepFree) {
   }
   return params;
 }
-export { stripDefaultValue, isOptional, stripOptional, parseJSDoc };
+export {stripDefaultValue, isOptional, stripOptional, parseJSDoc};

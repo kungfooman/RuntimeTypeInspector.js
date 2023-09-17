@@ -1,8 +1,7 @@
-import { parseSync } from '@babel/core';
-import { TypeStringifier } from './TypeStringifier.mjs';
+import {parseSync} from '@babel/core';
+import {TypeStringifier} from './TypeStringifier.mjs';
 /**
  * Simple facade which does all the processing.
- *
  * @param {string} src - The input source with JSDoc comments.
  * @returns {string} The output source with runtime type testing.
  */
@@ -17,4 +16,4 @@ function addTypeChecks(src) {
     return `/*<addTypeChecks-error>*/${src}/*</addTypeChecks-error>*/`;
   }
 }
-export { addTypeChecks };
+export {addTypeChecks};

@@ -1,11 +1,11 @@
-import { typecheckWarn } from "./typecheckWarn.mjs";
+import {typecheckWarn} from "./typecheckWarn.mjs";
 /**
  * Validates if a given property is neither NaN nor +-Infinity
  * @param {Object<string|number, number>} obj - The object to test a property of.
  * @param {string|number} prop - Name or index or property.
  * @returns {boolean} True if property is a "proper" number (neither Nan nor Infinity)
  */
-export function validateNumber(obj, prop) {
+function validateNumber(obj, prop) {
   const val = obj[prop];
   const type = typeof obj;
   if (val === null) {
@@ -26,3 +26,4 @@ export function validateNumber(obj, prop) {
   }
   return true;
 }
+export {validateNumber};

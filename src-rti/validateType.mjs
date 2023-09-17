@@ -1,8 +1,8 @@
-import { assertType } from "./assertType.mjs";
-import { typecheckEvery } from "./typecheckEvery.mjs";
-import { typecheckOptions } from "./typecheckOptions.mjs";
-import { typecheckWarn } from "./typecheckWarn.mjs";
-import { validateNumber } from "./validateNumber.mjs";
+import {assertType} from "./assertType.mjs";
+import {typecheckEvery} from "./typecheckEvery.mjs";
+import {typecheckOptions} from "./typecheckOptions.mjs";
+import {typecheckWarn} from "./typecheckWarn.mjs";
+import {validateNumber} from "./validateNumber.mjs";
 // For quickly checking props of Vec2/Vec3/Vec4/Quat/Mat3/Mat4 without GC
 const propsXY   = ['x', 'y'];
 const propsXYZ  = ['x', 'y', 'z'];
@@ -27,7 +27,7 @@ const props16   = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
  * @param {boolean} critical - Only false for unions.
  * @returns {boolean} - Returns wether `value` is in the shape of `expect`.
  */
-export function validateType(value, expect, loc, name, critical = true) {
+function validateType(value, expect, loc, name, critical = true) {
   if (typeof expect === 'string') {
     expect = {
       type: expect,
@@ -267,3 +267,4 @@ export function validateType(value, expect, loc, name, critical = true) {
   typecheckWarn("unchecked", { value, type, loc, name });
   return false;
 }
+export {validateType};

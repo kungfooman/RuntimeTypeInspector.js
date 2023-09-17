@@ -6,6 +6,6 @@ let breakpointID = 0;
  * @returns {number} The breakpointID.
  */
 function youCanAddABreakpointHere() {
-    return breakpointID++;
+  return breakpointID++;
 }
-export { breakpointID,  youCanAddABreakpointHere };
+export {breakpointID,  youCanAddABreakpointHere};

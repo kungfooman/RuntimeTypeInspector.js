@@ -1,5 +1,4 @@
 import ts from 'typescript';
-
 /**
  * @todo implement TypeQuery, e.g. for expandType('typeof Number');
  * @example
@@ -17,14 +16,12 @@ function expandType(type) {
   const ast = parseType(type);
   return toSourceTS(ast);
 }
-
 /**
  * @typedef TypeScriptType
  * @property {*} typeArguments
  * @property {*} typeName
  * @property {number} kind
  */
-
 /**
  * @param {string} str - The type string.
  * @returns {TypeScriptType}
@@ -34,7 +31,6 @@ function parseType(str) {
   let ast = ts.createSourceFile('repl.ts', str, ts.ScriptTarget.Latest, true /*setParentNodes*/);
   return ast.statements[0].type;
 }
-
 const {
   AnyKeyword,
   ArrayType,
@@ -59,7 +55,6 @@ const {
   UndefinedKeyword,
   UnionType,
 } = ts.SyntaxKind;
-
 /**
  * @param {TypeScriptType} node 
  * @returns 
@@ -171,5 +166,4 @@ function toSourceTS(node) {
       debugger;
   }
 }
-
-export { expandType };
+export {expandType};
