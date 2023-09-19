@@ -224,9 +224,12 @@ class TypeStringifier {
       if (type === "AssignmentPattern") {
         console.assert(node.left.type === 'Identifier' || node.left.type === 'ObjectPattern', 'Expected Identifier or ObjectPattern');
         return node.left.name === name;
-      }
-      if (type == 'Identifier') {
+      } else if (type == 'Identifier') {
         return node.name === name;
+      } else if (type == 'ArrayPattern') {
+        return false;
+      } else {
+        console.log("Unknown type to test params for", type, node);
       }
       return false;
     })
@@ -268,8 +271,10 @@ class TypeStringifier {
           testNode = this.parent;
         }
         const paramIndex = Object.keys(jsdoc).findIndex(_ => _ === name);
-        const isObjectPattern = testNode.params[paramIndex]?.left?.type === 'ObjectPattern';
-        if (isObjectPattern) {
+        const param = testNode.params[paramIndex];
+        const isObjectPattern = param?.left?.type === 'ObjectPattern';
+        const isArrayPattern = param.type === 'ArrayPattern';
+        if (isObjectPattern || isArrayPattern) {
           // The name doesn't matter any longer, because an ObjectPattern inherently
           // drops the identifier from the AST, for example:
           // function test({x = 123} = {}) {return x;}
