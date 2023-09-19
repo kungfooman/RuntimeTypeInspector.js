@@ -222,8 +222,12 @@ class TypeStringifier {
     return node.params.some(node => {
       const {type} = node;
       if (type === "AssignmentPattern") {
-        console.assert(node.left.type === 'Identifier' || node.left.type === 'ObjectPattern', 'Expected Identifier or ObjectPattern');
-        return node.left.name === name;
+        const left = {node};
+        console.assert(
+          left.type === 'Identifier' || left.type === 'ObjectPattern',
+          'Expected Identifier or ObjectPattern'
+        );
+        return left.name === name;
       } else if (type == 'Identifier') {
         return node.name === name;
       } else if (type == 'ArrayPattern') {
@@ -272,14 +276,28 @@ class TypeStringifier {
         }
         const paramIndex = Object.keys(jsdoc).findIndex(_ => _ === name);
         const param = testNode.params[paramIndex];
-        const isObjectPattern = param?.left?.type === 'ObjectPattern';
+        const isObjectPattern = param.type === 'ObjectPattern';
         const isArrayPattern = param.type === 'ArrayPattern';
-        if (isObjectPattern || isArrayPattern) {
-          // The name doesn't matter any longer, because an ObjectPattern inherently
-          // drops the identifier from the AST, for example:
-          // function test({x = 123} = {}) {return x;}
-          // But we can access it via arguments[paramIndex] anyway.
+        const isSupportedPattern = isObjectPattern || isArrayPattern;
+        // There are four kinds of patterns:
+        //   ObjectPattern:
+        //     function test({x = 123}) {return x;} test({x: 456});
+        //   ArrayPattern:
+        //     function test([x = 123]) {return x;}; test([456]);
+        //   AssignmentPattern made up of ObjectPattern:
+        //     function test({x = 123} = {}) {return x;} test();
+        //   AssignmentPattern made up of ArrayPattern:
+        //     function test([x = 123] = []) {return x;} test();
+        if (isSupportedPattern) {
+          // The name doesn't matter any longer, because any pattern inherently
+          // drops the identifier from the AST. But we can access it
+          // via arguments[paramIndex] anyway.
           name = `arguments[${paramIndex}]`;
+        } else if (param.type === 'AssignmentPattern') {
+          const loc = this.getName(node);
+          console.warn(`generateTypeChecks> ${loc}> todo implement` +
+                       `AssignmentPattern for parameter ${name}`);
+          continue;
         } else {
           const loc = this.getName(node);
           console.warn(`generateTypeChecks> ${loc}> Missing param: ${name}`);
