@@ -218,13 +218,19 @@ class TypeStringifier {
     if (node.type === 'BlockStatement') {
       node = this.parent;
     }
-    // TODO - instanceof check to ensure proper type having .params.
-    return node.params.some(node => {
+    const {params} = node;
+    if (!params) {
+      console.warn("nodeHasParamName> Expected params for", {node, name});
+      return false;
+    }
+    return params.some(node => {
       const {type} = node;
       if (type === "AssignmentPattern") {
         const left = {node};
         console.assert(
-          left.type === 'Identifier' || left.type === 'ObjectPattern',
+          left.type === 'Identifier' ||
+          left.type === 'ObjectPattern' ||
+          left.type === 'AssignmentPattern',
           'Expected Identifier or ObjectPattern'
         );
         return left.name === name;
@@ -644,6 +650,16 @@ class TypeStringifier {
       return `${this.toSource(object)}[${this.toSource(property)}]`;
     }
     return `${this.toSource(object)}.${this.toSource(property)}`;
+  }
+  /**
+   * @param {import("@babel/types").MetaProperty} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  MetaProperty(node) {
+    const { meta, property } = node;
+    const lhs = this.toSource(meta);
+    const rhs = this.toSource(property);
+    return `${lhs}.${rhs}`;
   }
   /**
    * @param {import("@babel/types").ExpressionStatement} node - The Babel AST node.
