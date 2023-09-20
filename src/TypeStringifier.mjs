@@ -69,7 +69,8 @@ class TypeStringifier {
     console.log(node);
     const notOfInterest = ["start", "end", "loc", "type"];
     const ofInterest = Object.keys(node).filter(_ => !notOfInterest.includes(_));
-    const fn = `${type}(node) {\n  const { ${ofInterest.join(', ')} } = node;\n  return ;\n}`;
+    const props = ofInterest.join(', ');
+    const fn = `${type}(node) {\n  const {${props}} = node;\n  return ;\n}`;
     console.warn('TODO ADD METHOD:', fn);
     return `rtiUnhandled("${node.type}");\n`;
   }
@@ -539,11 +540,11 @@ class TypeStringifier {
     return out;
   }
   /**
-   * @param {import("@babel/types").BlockStatement} node - The Babel AST node.
+   * @param {import("@babel/types").BigIntLiteral} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   BigIntLiteral(node) {
-    const { extra, value } = node;
+    const {extra, value} = node;
     return extra.raw;
   }
   /**
@@ -563,6 +564,24 @@ class TypeStringifier {
     out += this.mapToSource(body).join('\n') + '\n';
     out += spaces;
     out += '}';
+    return out;
+  }
+  /**
+   * @param {import("@babel/types").ClassExpression} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  ClassExpression(node) {
+    const {id, superClass, body} = node;
+    let out = 'class ';
+    if (id !== null) {
+      console.warn('ClassExpression> unhandled id', {id});
+    }
+    if (superClass !== null) {
+      const s = this.toSource(superClass);
+      out += `extends ${s} `;
+    }
+    const c = this.toSource(body);
+    out += `{\n${c}\n}`;
     return out;
   }
   /**
