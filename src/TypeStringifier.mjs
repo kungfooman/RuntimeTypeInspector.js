@@ -542,6 +542,14 @@ class TypeStringifier {
    * @param {import("@babel/types").BlockStatement} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
+  BigIntLiteral(node) {
+    const { extra, value } = node;
+    return extra.raw;
+  }
+  /**
+   * @param {import("@babel/types").BlockStatement} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
   BlockStatement(node) {
     const {body, directives} = node;
     const spaces = this.spaces;
