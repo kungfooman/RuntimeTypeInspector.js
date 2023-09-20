@@ -955,14 +955,11 @@ class TypeStringifier {
   ClassMethod(node) {
     const {static: static_, key, computed, kind, id, generator, async, params, body} = node;
     let out = this.spaces;
-    if (computed) {
-      console.warn('TypeStringifier#ClassMethod> unhandled computed', node);
+    if (generator) {
+      out += '*';
     }
     if (id) {
       console.warn('TypeStringifier#ClassMethod> unhandled id', node);
-    }
-    if (generator) {
-      console.warn('TypeStringifier#ClassMethod> unhandled generator', node);
     }
     if (static_) {
       out += 'static ';
@@ -979,7 +976,11 @@ class TypeStringifier {
     } else {
       console.warn("unhandled kind", kind, "for", node);
     }
-    out += this.toSource(key); // method name
+    let methodName = this.toSource(key);
+    if (computed) {
+      methodName = `[${methodName}]`;
+    }
+    out += methodName;
     out += `(${this.mapToSource(params).join(', ')})`;
     out += this.toSource(body);
     return out;
