@@ -340,7 +340,7 @@ class TypeStringifier {
    * @returns {string} A string of two spaces per indentation.
    */
   get spaces() {
-    const { parents } = this;
+    const {parents} = this;
     // This needs a bit refactoring to fix spaces in all cases
     if (false) {
       let n = parents.filter(_ => _.type === 'IfStatement' || _.type === 'BlockStatementasd').length;
@@ -437,7 +437,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   AwaitExpression(node) {
-    const { argument } = node;
+    const {argument} = node;
     return `await ${this.toSource(argument)}`;
   }
   /**
@@ -591,7 +591,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   Directive(node) {
-    const { value } = node;
+    const {value} = node;
     return this.toSource(value);
   }
   /**
@@ -601,8 +601,8 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   DirectiveLiteral(node) {
-    const { extra, value } = node;
-    const { spaces } = this;
+    const {extra, value} = node;
+    const {spaces} = this;
     return `${spaces}${extra.raw};`;
   }
   /**
@@ -610,8 +610,8 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   ReturnStatement(node) {
-    const { argument } = node;
-    const { spaces } = this;
+    const {argument} = node;
+    const {spaces} = this;
     if (!argument) {
       return spaces + 'return;';
     }
@@ -644,11 +644,11 @@ class TypeStringifier {
     return out;
   }
   /**
-   * ts = require("typescript")
-   * ts.createSourceFile("repl.ts", "a = 1", ts.ScriptTarget.Latest)
-   * ts.createSourceFile("repl.ts", "!!(a = 1 + 2)", ts.ScriptTarget.Latest)
-   * showAST('!!(a = 1)')
-   *
+   * @example
+   * ts = require("typescript");
+   * ts.createSourceFile("repl.ts", "a = 1", ts.ScriptTarget.Latest);
+   * ts.createSourceFile("repl.ts", "!!(a = 1 + 2)", ts.ScriptTarget.Latest);
+   * showAST('!!(a = 1)');
    * @param {import("@babel/types").UnaryExpression} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
@@ -684,7 +684,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   MetaProperty(node) {
-    const { meta, property } = node;
+    const {meta, property} = node;
     const lhs = this.toSource(meta);
     const rhs = this.toSource(property);
     return `${lhs}.${rhs}`;
@@ -694,7 +694,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   ExpressionStatement(node) {
-    const { expression } = node;
+    const {expression} = node;
     /**
      * Not just a fall-through, adds a semicolon when it has semantic meaning.
      * E.g. invalid:
@@ -730,7 +730,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   ObjectProperty(node) {
-    const { computed, key, method, shorthand, value } = node;
+    const {computed, key, method, shorthand, value} = node;
     if (method || shorthand) {
       console.warn("ObjectProperty> unhandled properties:", {method, shorthand});
     }
@@ -762,7 +762,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   AssignmentExpression(node) {
-    const { left, operator, right } = node;
+    const {left, operator, right} = node;
     const left_ = this.toSource(left);
     const right_ = this.toSource(right);
     // operator is for example: = |= &=
@@ -793,7 +793,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   ArrayExpression(node) {
-    const { elements } = node;
+    const {elements} = node;
     return '[' + this.mapToSource(elements).join(', ') + ']';
   }
   /**
@@ -801,7 +801,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   VariableDeclaration(node) {
-    const { declarations, kind } = node;
+    const {declarations, kind} = node;
     let spaces = '';
     let semicolon = '';
     if (this.needSpaces) {
@@ -815,7 +815,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   VariableDeclarator(node) {
-    const { id, init } = node;
+    const {id, init} = node;
     if (init) {
       return this.toSource(id) + ' = ' + this.toSource(init);
     }
@@ -826,7 +826,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   ConditionalExpression(node) {
-    const { alternate, consequent, test } = node;
+    const {alternate, consequent, test} = node;
     return `${this.toSource(test)} ? ${this.toSource(consequent)} : ${this.toSource(alternate)}`;
   }
   /**
@@ -854,7 +854,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   ForStatement(node) {
-    const { init, test, update, body } = node;
+    const {init, test, update, body} = node;
     const spaces = this.spaces;
     const i = this.toSource(init);
     const t = this.toSource(test);
@@ -881,7 +881,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   NewExpression(node) {
-    const { callee, arguments: args_ } = node;
+    const {callee, arguments: args_} = node;
     const c = this.toSource(callee);
     const args = this.mapToSource(args_).join(', ');
     return `new ${c}(${args})`;
@@ -926,7 +926,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   TemplateElement(node) {
-    const { value } = node;
+    const {value} = node;
     return value.raw;
   }
   /**
@@ -934,7 +934,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   ContinueStatement(node) {
-    const { label } = node;
+    const {label} = node;
     if (label) {
       console.warn('ContinueStatement> unhandled label', label);
     }
@@ -945,7 +945,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   ClassBody(node) {
-    const { body } = node;
+    const {body} = node;
     return this.mapToSource(body).join('\n');
   }
   /**
@@ -997,7 +997,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   ExportNamedDeclaration(node) {
-    const { declaration, source, specifiers } = node;
+    const {declaration, source, specifiers} = node;
     let out = this.spaces;
     if (specifiers.length) {
       if (!source) {
@@ -1025,7 +1025,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   ExportDefaultDeclaration(node) {
-    const { declaration } = node;
+    const {declaration} = node;
     const a = this.toSource(declaration);
     return `export default ${a};`;
   }
@@ -1058,8 +1058,8 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   ForInStatement(node) {
-    const { left, right, body } = node;
-    const { spaces } = this;
+    const {left, right, body} = node;
+    const {spaces} = this;
     const l = this.toSource(left);
     const r = this.toSource(right);
     const b = this.toSourceCurly(body);
@@ -1070,8 +1070,8 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   ThrowStatement(node) {
-    const { argument } = node;
-    const { spaces } = this;
+    const {argument} = node;
+    const {spaces} = this;
     const arg = this.toSource(argument);
     return `${spaces}throw ${arg};`;
   }
@@ -1080,8 +1080,8 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   WhileStatement(node) {
-    const { test, body } = node;
-    const { spaces } = this;
+    const {test, body} = node;
+    const {spaces} = this;
     const t = this.toSource(test);
     const b = this.toSourceCurly(body);
     return `${spaces}while (${t})${b}`;
@@ -1091,7 +1091,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   BreakStatement(node) {
-    const { label } = node;
+    const {label} = node;
     if (label) {
       console.warn("TypeStringifier#BreakStatement> unhandled label", label, "for", node);
     }
@@ -1102,8 +1102,8 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   ForOfStatement(node) {
-    const { await: await_, left, right, body } = node;
-    const { spaces } = this;
+    const {await: await_, left, right, body} = node;
+    const {spaces} = this;
     const l = this.toSource(left);
     const r = this.toSource(right);
     const b = this.toSourceCurly(body);
@@ -1127,8 +1127,8 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   SwitchStatement(node) {
-    const { discriminant, cases } = node;
-    const { spaces } = this;
+    const {discriminant, cases} = node;
+    const {spaces} = this;
     let out = '';
     out += spaces + `switch (${this.toSource(discriminant)}) {\n`;
     out += this.mapToSource(cases).join('\n') + '\n';
@@ -1140,8 +1140,8 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   SwitchCase(node) {
-    const { consequent, test } = node;
-    const { spaces } = this;
+    const {consequent, test} = node;
+    const {spaces} = this;
     const c = this.mapToSource(consequent).join('\n');
     if (test) {
       const t = this.toSource(test);
@@ -1167,7 +1167,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   SequenceExpression(node) {
-    const { expressions } = node;
+    const {expressions} = node;
     return this.mapToSource(expressions).join(', ');
   }
   /**
@@ -1184,16 +1184,60 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   SpreadElement(node) {
-    const { argument } = node;
+    const {argument} = node;
     const a = this.toSource(argument);
     return `...${a}`;
+  }
+  /**
+   * @param {import("@babel/types").ObjectMethod} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  ObjectMethod(node) {
+    // @todo PR in Babel why method/id is a key in node... (seems like a bug/oversight)
+    // method === true just indicates kind === 'method'
+    const {method, key, computed, kind, id, generator, async, params, body} = node;
+    if (id !== null) {
+      console.warn("ObjectMethod> id !== null is unhandled", node);
+      debugger;
+    }
+    // if (method) {
+    //   console.warn("ObjectMethod> node was a method", node);
+    //   debugger;
+    // }
+    let out = this.spaces;
+    if (generator) {
+      out += '*';
+    }
+    if (id) {
+      console.warn('TypeStringifier#ClassMethod> unhandled id', node);
+    }
+    if (async) {
+      out += 'async ';
+    }
+    if (kind === 'get') {
+      out += 'get ';
+    } else if (kind === 'set') {
+      out += 'set ';
+    } else if (kind === 'method') {
+      // Nothing yet.
+    } else {
+      console.warn("unhandled kind", kind, "for", node);
+    }
+    let methodName = this.toSource(key);
+    if (computed) {
+      methodName = `[${methodName}]`;
+    }
+    out += methodName;
+    out += `(${this.mapToSource(params).join(', ')})`;
+    out += this.toSource(body);
+    return out;
   }
   /**
    * @param {import("@babel/types").ObjectPattern} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ObjectPattern(node) {
-    const { properties } = node;
+    const {properties} = node;
     return '{\n' + this.mapToSource(properties).join(',\n') + '\n' + this.spaces.slice(2) + '}';
   }
   /**
@@ -1207,7 +1251,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   OptionalMemberExpression(node) {
-    const { object, computed, property, optional } = node;
+    const {object, computed, property, optional} = node;
     const a = this.toSource(object);
     const b = this.toSource(property);
     // Basically four cases: computed=true/false optional=true/false, 00, 01, 10, 11
@@ -1243,8 +1287,8 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   DoWhileStatement(node) {
-    const { body, test, trailingComments } = node;
-    const { spaces } = this;
+    const {body, test, trailingComments} = node;
+    const {spaces} = this;
     let out = spaces;
     out += "do ";
     out += this.toSourceCurly(body);
@@ -1256,7 +1300,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   TryStatement(node) {
-    const { block, handler, finalizer } = node;
+    const {block, handler, finalizer} = node;
     let out = this.spaces;
     const b = this.toSource(block);
     out += `try ${b}`;
@@ -1273,7 +1317,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   CatchClause(node) {
-    const { param, body } = node;
+    const {param, body} = node;
     const p = this.toSource(param);
     const b = this.toSource(body);
     return `catch (${p}) ${b}`;
@@ -1283,7 +1327,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   RestElement(node) {
-    const { argument } = node;
+    const {argument} = node;
     return `...${this.toSource(argument)}`;
   }
   /**
@@ -1298,7 +1342,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   CommentBlock(node) {
-    const { value } = node;
+    const {value} = node;
     return `${this.spaces.slice(2)}/*${value}*/`;
   }
   /**
@@ -1306,7 +1350,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   CommentLine(node) {
-    const { value } = node;
+    const {value} = node;
     return `${this.spaces.slice(2)}//${value}`;
   }
   /**
@@ -1314,7 +1358,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   ImportDeclaration(node) {
-    const { specifiers, source } = node;
+    const {specifiers, source} = node;
     // ImportNamespaceSpecifier: import * as a   from "b";
     // ImportDefaultSpecifier  : import      a   from "b";
     // ImportSpecifier         : import {    a } from "b";
@@ -1333,7 +1377,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   ImportSpecifier(node) {
-    const { imported, local } = node;
+    const {imported, local} = node;
     const a = this.toSource(imported);
     const b = this.toSource(local);
     if (a !== b) {
@@ -1346,7 +1390,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   ImportDefaultSpecifier(node) {
-    const { local } = node;
+    const {local} = node;
     return this.toSource(local);
   }
   /**
@@ -1376,7 +1420,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   StringLiteral(node) {
-    const { extra } = node;
+    const {extra} = node;
     // Never experienced this so far, but types are types...
     if (!extra) {
       debugger;
@@ -1400,7 +1444,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   AssignmentPattern(node) {
-    const { left, right } = node;
+    const {left, right} = node;
     return `${this.toSource(left)} = ${this.toSource(right)}`;
   }
   /**
@@ -1415,7 +1459,7 @@ class TypeStringifier {
    * @returns {string} Stringification of the node.
    */
   YieldExpression(node) {
-    const { delegate, argument } = node;
+    const {delegate, argument} = node;
     if (delegate) {
       console.warn('YieldExpression> unhandled delegate case', {delegate, argument, node});
       debugger;
