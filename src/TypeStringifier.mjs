@@ -704,14 +704,24 @@ class TypeStringifier {
    */
   ObjectProperty(node) {
     const { computed, key, method, shorthand, value } = node;
-    const spaces = this.spaces;
-    const left   = this.toSource(key);
-    const right  = this.toSource(value);
-    if (left === right) {
-      // drop this currently as it fails for 0: 0
-      //return `${spaces}${left}`;
+    if (method || shorthand) {
+      console.warn("ObjectProperty> unhandled properties:", {method, shorthand});
     }
-    return `${spaces}${left}: ${right}`;
+    const spaces = this.spaces;
+    let left   = this.toSource(key);
+    const right  = this.toSource(value);
+    let out = spaces;
+    const isString = isNaN(Number(left));
+    if (computed) {
+      left = `[${left}]`;
+    }
+    // Prevent case for numbers like: {0: 0}
+    if (left === right && isString) {
+      out += left;
+    } else {
+      out += `${left}: ${right}`;
+    }
+    return out;
   }
   /**
    * @param {import("@babel/types").BooleanLiteral} node - The Babel AST node.
