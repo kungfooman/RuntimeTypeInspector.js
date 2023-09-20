@@ -235,9 +235,9 @@ class TypeStringifier {
           'Expected Identifier or ObjectPattern'
         );
         return left.name === name;
-      } else if (type == 'Identifier') {
+      } else if (type === 'Identifier') {
         return node.name === name;
-      } else if (type == 'ArrayPattern') {
+      } else if (type === 'ArrayPattern' || type === 'RestElement') {
         return false;
       } else {
         console.log("Unknown type to test params for", type, node);
@@ -489,10 +489,8 @@ class TypeStringifier {
     if (async) {
       out += 'async ';
     }
-    if (generator) {
-      out += ' * ';
-    }
-    out += 'function ' + this.toSource(id) + this.FunctionDeclarationParams(params);
+    const asterix = generator ? '*' : '';
+    out += 'function' + asterix + ' ' + this.toSource(id) + this.FunctionDeclarationParams(params);
     out += this.toSource(body);
     return out;
   }
@@ -1460,12 +1458,12 @@ class TypeStringifier {
    */
   YieldExpression(node) {
     const {delegate, argument} = node;
+    let keyword = 'yield';
     if (delegate) {
-      console.warn('YieldExpression> unhandled delegate case', {delegate, argument, node});
-      debugger;
+      keyword += '*';
     }
     const a = this.toSource(argument);
-    return `yield ${a}`;
+    return `${keyword} ${a}`;
   }
 }
 export {TypeStringifier};

@@ -85,7 +85,7 @@ function activateREPL() {
   const code = Object.entries(ti).map(([key, val]) => data2code(key, val)).join('\n');
   const leftContent = aceEditorLeft.getValue().replaceAll('`', '\\`');
   const leftContentAsCode = `const jsdoc = \`${leftContent}\`;`;
-  const out = [leftContentAsCode, getCodeForAction(), code].join('\n');
+  const out = [leftContentAsCode, code, getCodeForAction()].join('\n');
   setLeft(out);
   // @ts-ignore
   selectAction.value = "eval";
