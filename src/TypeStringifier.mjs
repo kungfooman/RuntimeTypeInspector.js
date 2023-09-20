@@ -1409,5 +1409,18 @@ class TypeStringifier {
   NullLiteral(node) {
     return 'null';
   }
+  /**
+   * @param {import("@babel/types").YieldExpression} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  YieldExpression(node) {
+    const { delegate, argument } = node;
+    if (delegate) {
+      console.warn('YieldExpression> unhandled delegate case', {delegate, argument, node});
+      debugger;
+    }
+    const a = this.toSource(argument);
+    return `yield ${a}`;
+  }
 }
 export {TypeStringifier};
