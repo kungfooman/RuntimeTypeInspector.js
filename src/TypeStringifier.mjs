@@ -453,14 +453,15 @@ class TypeStringifier {
     const static_ = node.static; // JS keyword is problematic in object destructuring
     const a = this.toSource(key);
     const b = this.toSource(value);
-    if (computed) {
-      console.warn("ClassProperty> unhandled 'computed'");
-    }
     let out = this.spaces;
     if (static_) {
       out += 'static ';
     }
-    out += a;
+    if (computed) {
+      out += `[${a}]`;
+    } else {
+      out += a;
+    }
     if (b) {
       out += ` = ${b}`;
     }
