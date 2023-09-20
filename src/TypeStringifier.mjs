@@ -926,11 +926,11 @@ class TypeStringifier {
     if (generator) {
       console.warn('TypeStringifier#ClassMethod> unhandled generator', node);
     }
-    if (async) {
-      out += 'async ';
-    }
     if (static_) {
       out += 'static ';
+    }
+    if (async) {
+      out += 'async ';
     }
     if (kind === 'get') {
       out += 'get ';
