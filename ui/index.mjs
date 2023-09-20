@@ -83,9 +83,9 @@ function data2code(name, data) {
 }
 function activateREPL() {
   const code = Object.entries(ti).map(([key, val]) => data2code(key, val)).join('\n');
-  const leftContent = aceEditorLeft.getValue();
+  const leftContent = aceEditorLeft.getValue().replaceAll('`', '\\`');
   const leftContentAsCode = `const jsdoc = \`${leftContent}\`;`;
-  const out = [code, leftContentAsCode, getCodeForAction()].join('\n');
+  const out = [leftContentAsCode, getCodeForAction(), code].join('\n');
   setLeft(out);
   // @ts-ignore
   selectAction.value = "eval";
