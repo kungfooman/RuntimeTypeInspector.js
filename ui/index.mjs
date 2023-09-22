@@ -1,9 +1,11 @@
-import { parseJSDoc } from '../src/parseJSDoc.mjs';
-import { parseSync } from '@babel/core';
-import { addTypeChecks } from '../src/addTypeChecks.mjs';
-import * as ti from '../src/index.mjs';
+import {parseSync             } from '@babel/core';
+import {parseJSDoc            } from '../src/parseJSDoc.mjs';
+import {addTypeChecks         } from '../src/addTypeChecks.mjs';
+import {Stringifier           } from '../src/Stringifier.mjs';
+import {ast2jsonForComparison } from '../src/ast2jsonForComparison.mjs';
+import * as ti  from '../src/index.mjs';
 import * as rti from '../src-rti/index.mjs';
-const currentAction = location.hash.slice(1).split('=')[1] || 'jsdoc';
+const currentAction = location.hash.slice(1).split('=')[1] || 'typechecking';
 const selectAction = document.getElementById("action");
 if (!(selectAction instanceof HTMLSelectElement)) {
   throw 'This module requires a <select id="action" ...';
@@ -137,8 +139,7 @@ async function actionAST() {
     }
     return val; // keep
   }, 2);
-  aceEditorRight.setValue(out);
-  aceEditorRight.clearSelection(); // setValue() selects everything, so unselect it now
+  setRight(out);
 }
 async function actionJSDoc() {
   const content = aceEditorLeft.getValue();
@@ -150,13 +151,43 @@ async function actionJSDoc() {
   } else {
     out = '// parseJSDoc output:\n' + JSON.stringify(ret, null, 2);
   }
-  aceEditorRight.setValue(out);
+  setRight(out);
 }
 async function actionTypeChecking() {
   const content = aceEditorLeft.getValue();
   const out = addTypeChecks(content);
-  aceEditorRight.setValue(out);
-  aceEditorRight.clearSelection(); // setValue() selects everything, so unselect it now
+  setRight(out);
+}
+/**
+ * @todo use Monaco Diff Editor
+ * @param {string} left
+ * @param {string} right
+ */
+function compareAST(left, right) {
+  const l = parseSync(left);
+  const r = parseSync(right);
+  const ljson = ast2jsonForComparison(l);
+  const rjson = ast2jsonForComparison(r);
+  const test = ljson == rjson;
+  const _ = test ? ' ' : ' NOT ';
+  console.log(`AST is ${_} equal`);
+  // todo add conversion buttons
+  //console.log('ljson', ljson);
+  //console.log('rjson', rjson);
+  setLeft(ljson);
+  setRight(rjson);
+}
+async function actionCode2Ast2Code() {
+  const content = getLeft();
+  const stringifier = new Stringifier();
+  const ast = parseSync(content);
+  if (!ast) {
+    setRight("// parseSync failed");
+    return;
+  }
+  const out = stringifier.toSource(ast);
+  setRight(out);
+  compareAST(content, out);
 }
 async function runAction() {
   const action = getAction();
@@ -169,6 +200,9 @@ async function runAction() {
       break;
     case 'typechecking':
       await actionTypeChecking();
+      break;
+    case 'code2ast2code':
+      await actionCode2Ast2Code();
       break;
     case 'eval':
       eval(aceEditorLeft.getValue());
@@ -196,7 +230,10 @@ async function insertTypes() {
   }
   aceEditorRight.clearSelection(); // setValue() selects everything, so unselect it now
 }
-/** @returns {'typechecking'|'ast'|'jsdoc'} */
+/**
+ * @typedef {'typechecking'|'code2ast2code'|'ast'|'jsdoc'|'eval'} Action
+ */
+/** @returns {Action} */
 const getAction = () => selectAction.value;
 /**
  * @param {string} id - The ID.
@@ -294,4 +331,5 @@ export {
   setRight,
   getLeft,
   getRight,
+  compareAST,
 };
