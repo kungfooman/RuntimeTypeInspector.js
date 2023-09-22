@@ -463,23 +463,20 @@ class Stringifier {
    */
   ObjectProperty(node) {
     const {computed, key, method, shorthand, value} = node;
-    if (method || shorthand) {
-      console.warn("ObjectProperty> unhandled properties:", {method, shorthand});
+    if (method) {
+      console.warn("ObjectProperty> unhandled method property:", {method, shorthand});
     }
     const spaces = this.spaces;
     let left   = this.toSource(key);
     const right  = this.toSource(value);
     let out = spaces;
-    const isString = isNaN(Number(left));
     if (computed) {
       left = `[${left}]`;
     }
-    // Prevent case for numbers like: {0: 0}
-    if (left === right && isString) {
-      out += left;
-    } else {
-      out += `${left}: ${right}`;
+    if (!shorthand) {
+      out += left + ': ';
     }
+    out += right;
     return out;
   }
   /**
