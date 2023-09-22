@@ -163,7 +163,7 @@ async function actionTypeChecking() {
  * @param {string} left
  * @param {string} right
  */
-function compareAST(left, right) {
+function compareAST(left = getLeft(), right = getRight()) {
   const l = parseSync(left);
   const r = parseSync(right);
   const ljson = ast2jsonForComparison(l);
@@ -187,7 +187,7 @@ async function actionCode2Ast2Code() {
   }
   const out = stringifier.toSource(ast);
   setRight(out);
-  compareAST(content, out);
+  // compareAST(content, out);
 }
 async function runAction() {
   const action = getAction();
