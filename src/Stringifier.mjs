@@ -437,18 +437,28 @@ class Stringifier {
     return this.toSource(callee) + "(" + this.mapToSource(args).join(', ') + ")";
   }
   /**
+   * We replicate the exact AST for validation:
+   * x = 1;
+   * y = {x,}
+   * z = {y};
    * @param {import("@babel/types").ObjectExpression} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ObjectExpression(node) {
-    const {properties} = node;
-    if (properties.length === 0) {
-      return '{}';
+    const {properties, extra} = node;
+    let out = '{';
+    if (properties.length) {
+      const props = this.mapToSource(properties).join(',\n');
+      out += '\n';
+      out += props;
+      if (extra?.trailingComma) {
+        out += ',';
+      }
+      out += '\n';
+      out += this.spaces.slice(2);
     }
-    return '{\n' +
-      this.mapToSource(properties).join(',\n') +
-      '\n' +
-      this.spaces.slice(2) + '}';
+    out += '}';
+    return out;
   }
   /**
    * @param {import("@babel/types").ObjectProperty} node - The Babel AST node.
