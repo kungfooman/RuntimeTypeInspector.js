@@ -506,11 +506,8 @@ class Stringifier {
    */
   BinaryExpression(node) {
     const {left, operator, right} = node;
-    let left_ = this.toSource(left);
-    let right_ = this.toSource(right);
-    if (operator === '/') {
-      return `validateDivision(${left_}, ${right_})`;
-    }
+    const left_ = this.toSource(left);
+    const right_ = this.toSource(right);
     return `${left_} ${operator} ${right_}`;
   }
   /**

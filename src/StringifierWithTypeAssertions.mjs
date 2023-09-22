@@ -284,8 +284,8 @@ class StringifierWithTypeAssertions extends Stringifier {
    */
   BinaryExpression(node) {
     const {left, operator, right} = node;
-    let left_ = this.toSource(left);
-    let right_ = this.toSource(right);
+    const left_ = this.toSource(left);
+    const right_ = this.toSource(right);
     if (operator === '/') {
       return `validateDivision(${left_}, ${right_})`;
     }
