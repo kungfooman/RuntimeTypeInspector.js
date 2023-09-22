@@ -17,6 +17,33 @@ class StringifierWithTypeAssertions extends Stringifier {
     'ClassMethod#get'        : {checked: 0, unchecked: 0},
   };
   /**
+   * We expand type-asserted ArrowFunctionExpressions in order to add type assertions.
+   * @override
+   * @param {import("@babel/types").ArrowFunctionExpression} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  ArrowFunctionExpression(node) {
+    const {async, body, generator, params/*, extra*/} = node;
+    let out = '';
+    if (async) {
+      out += 'async ';
+    }
+    if (generator) {
+      out += ' * ';
+    }
+    out += this.FunctionDeclarationParams(params);
+    out += ' =>';
+    if (body.type === 'BlockStatement') {
+      out += this.toSource(body);
+    } else {
+      out += ' {\n';
+      out += this.generateTypeChecks(node);
+      out += this.spaces + 'return ' + this.toSource(body) + ';\n';
+      out += '}';
+    }
+    return out;
+  }
+  /**
    * @param {Node} node
    * @param {string} type
    * @returns {Node}

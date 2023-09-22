@@ -260,15 +260,8 @@ class Stringifier {
       out += ' * ';
     }
     out += this.FunctionDeclarationParams(params);
-    out += ' =>';
-    if (body.type === 'BlockStatement') {
-      out += this.toSource(body);
-    } else {
-      out += ' {\n';
-      out += this.generateTypeChecks(node);
-      out += this.spaces + 'return ' + this.toSource(body) + ';\n';
-      out += '}';
-    }
+    out += ' => ';
+    out += this.toSource(body);
     return out;
   }
   /**
