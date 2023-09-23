@@ -1,30 +1,6 @@
 import {expandTypeDepFree} from "./expandTypeDepFree.mjs";
 import {simplifyType} from "./simplifyType.mjs";
 /**
- * @param {string} str - The type.
- * @returns {string} The type with stripped default value.
- */
-function stripDefaultValue(str) {
-  return str.split("=")[0];
-}
-/**
- * @param {string} str - The type.
- * @returns {boolean} Whether the type is optional or not.
- */
-function isOptional(str) {
-  return str[0] === '[' && str[str.length - 1] === ']';
-}
-/**
- * @param {string} str - The type.
- * @returns {string}
- */
-function stripOptional(str) {
-  if (isOptional(str)) {
-    str = str.slice(1, -1);
-  }
-  return str;
-}
-/**
  * @param {string} src 
  * @returns {{} | undefined}
  */
@@ -36,10 +12,21 @@ function parseJSDoc(src, expandType = expandTypeDepFree) {
   const params = Object.create(null);
   matches.forEach(_ => {
     const type = expandType(_[1].trim());
-    let name = _[2].split(' ')[0].trim(); // If people don't use a dash, we need to strip the rest (which is the description).
-    const optional = isOptional(name);
+    let name = _[2].trim();
+    let optional = false;
+    // Examples:
+    //   name: [kwargs={}] The configuration parameters.
+    //   name: [d = 1.0] Sample spacing
+    if (name[0] === '[') {
+      const closer = name.indexOf(']');
+      // Afterwards name will be: d = 1.0
+      name = name.substring(1, closer);
+      // mark it for the type:
+      optional = true;
+    }
+    // Strip the rest (either leftover of optional value or description)
+    name = name.split(' ')[0].split('=')[0].trim();
     const simplifiedType = simplifyType(type, optional);
-    name = stripDefaultValue(stripOptional(name)).trim();
     const parts = name.split(".");
     if (parts.length == 3) { // Something like: @param {number[]} settings.render.skyboxRotation - Rotation of skybox.
       let parts0 = parts[0]; // settings
@@ -58,6 +45,7 @@ function parseJSDoc(src, expandType = expandTypeDepFree) {
       if (toptype?.type == "union") {
         const typeObject = toptype.members.find(_ => _?.type == 'object');
         typeObject.properties[parts1] = simplifiedType;
+        //typeObject.properties = simplifiedType; // todo add test case
       } else if (toptype?.type == "array") {
         toptype.elementType.properties[parts1] = simplifiedType;
       } else if (toptype?.type == "object") {
@@ -77,4 +65,4 @@ function parseJSDoc(src, expandType = expandTypeDepFree) {
   }
   return params;
 }
-export {stripDefaultValue, isOptional, stripOptional, parseJSDoc};
+export {parseJSDoc};
