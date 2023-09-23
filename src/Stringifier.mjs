@@ -968,12 +968,24 @@ class Stringifier {
     return out;
   }
   /**
+   * E.g. function testComma({x,y,z,}) {}
    * @param {import("@babel/types").ObjectPattern} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   ObjectPattern(node) {
-    const {properties} = node;
-    return '{\n' + this.mapToSource(properties).join(',\n') + '\n' + this.spaces.slice(2) + '}';
+    const {properties, extra} = node;
+    let out = '{';
+    if (properties.length) {
+      out += '\n';
+      out += this.mapToSource(properties).join(',\n');
+      if (!!extra?.trailingComma) {
+        out += ',';
+      }
+      out += '\n';
+      out += this.spaces.slice(2);
+    }
+    out += '}';
+    return out;
   }
   /**
    * > x?.y
