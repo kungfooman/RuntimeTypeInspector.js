@@ -438,8 +438,15 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   CallExpression(node) {
-    const {callee, arguments: args} = node;
-    return this.toSource(callee) + "(" + this.mapToSource(args).join(', ') + ")";
+    const {callee, arguments: args, extra} = node;
+    let out = this.toSource(callee);
+    out += "(";
+    out += this.mapToSource(args).join(', ');
+    if (!!extra?.trailingComma) {
+      out += ',';
+    }
+    out += ")";
+    return out;
   }
   /**
    * We replicate the exact AST for validation:
