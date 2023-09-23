@@ -243,28 +243,30 @@ class StringifierWithTypeAssertions extends Stringifier {
         }
         const paramIndex = Object.keys(jsdoc).findIndex(_ => _ === name);
         const param = testNode.params[paramIndex];
-        const isObjectPattern = param.type === 'ObjectPattern';
-        const isArrayPattern = param.type === 'ArrayPattern';
-        const isSupportedPattern = isObjectPattern || isArrayPattern;
-        // There are four kinds of patterns:
-        //   ObjectPattern:
-        //     function test({x = 123}) {return x;} test({x: 456});
-        //   ArrayPattern:
-        //     function test([x = 123]) {return x;}; test([456]);
-        //   AssignmentPattern made up of ObjectPattern:
-        //     function test({x = 123} = {}) {return x;} test();
-        //   AssignmentPattern made up of ArrayPattern:
-        //     function test([x = 123] = []) {return x;} test();
-        if (isSupportedPattern) {
-          // The name doesn't matter any longer, because any pattern inherently
-          // drops the identifier from the AST. But we can access it
-          // via arguments[paramIndex] anyway.
-          name = `arguments[${paramIndex}]`;
-        } else if (param.type === 'AssignmentPattern') {
-          const loc = this.getName(node);
-          console.warn(`generateTypeChecks> ${loc}> todo implement` +
-                       `AssignmentPattern for parameter ${name}`);
-          continue;
+        if (param) {
+          const isObjectPattern = param.type === 'ObjectPattern';
+          const isArrayPattern = param.type === 'ArrayPattern';
+          const isSupportedPattern = isObjectPattern || isArrayPattern;
+          // There are four kinds of patterns:
+          //   ObjectPattern:
+          //     function test({x = 123}) {return x;} test({x: 456});
+          //   ArrayPattern:
+          //     function test([x = 123]) {return x;}; test([456]);
+          //   AssignmentPattern made up of ObjectPattern:
+          //     function test({x = 123} = {}) {return x;} test();
+          //   AssignmentPattern made up of ArrayPattern:
+          //     function test([x = 123] = []) {return x;} test();
+          if (isSupportedPattern) {
+            // The name doesn't matter any longer, because any pattern inherently
+            // drops the identifier from the AST. But we can access it
+            // via arguments[paramIndex] anyway.
+            name = `arguments[${paramIndex}]`;
+          } else if (param.type === 'AssignmentPattern') {
+            const loc = this.getName(node);
+            console.warn(`generateTypeChecks> ${loc}> todo implement` +
+                        `AssignmentPattern for parameter ${name}`);
+            continue;
+          }
         } else {
           const loc = this.getName(node);
           console.warn(`generateTypeChecks> ${loc}> Missing param: ${name}`);
