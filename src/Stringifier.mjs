@@ -2,6 +2,7 @@
  * @typedef {import("@babel/types").Node} Node
  */
 class Stringifier {
+  forceCurly = false;
   /** @type {Node[]} */
   parents = [];
   /**
@@ -61,12 +62,15 @@ class Stringifier {
     return `rtiUnhandled("${node.type}");\n`;
   }
   /**
-   * Always force { and }
+   * Only add { and } when requested (e.g. for StringifierWithTypeAssertions).
    * showAST("if (true) 2;") vs showAST("if (true) {2}")
    * @param {Node} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   toSourceCurly(node) {
+    if (!this.forceCurly) {
+      return this.toSource(node);
+    }
     const {type} = node;
     const needCurly = type != 'BlockStatement' && type != 'EmptyStatement';
     const spaces = this.spaces;
@@ -109,7 +113,8 @@ class Stringifier {
    * @returns {string}
    */
   generateTypeChecks(node) {
-    return '/* Stub of Stringifier#generateTypeChecks(); */';
+    const {spaces} = this;
+    return `${spaces}/* Stub of Stringifier#generateTypeChecks({type=${node.type}}); */\n`;
   }
   /**
    * Start from File->Program->... while ignoring BlockStatements aswell

@@ -6,6 +6,10 @@ import {Stringifier} from './Stringifier.mjs';
 /** @typedef {import("@babel/types").Node} Node */
 /** @typedef {import('./stat.mjs').Stat} Stat */
 class StringifierWithTypeAssertions extends Stringifier {
+  constructor() {
+    super();
+    this.forceCurly = true;
+  }
   /** @type {Record<string, Stat>} */
   stats = {
     'FunctionDeclaration'    : {checked: 0, unchecked: 0},
