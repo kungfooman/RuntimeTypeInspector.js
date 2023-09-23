@@ -50,7 +50,7 @@ class StringifierWithTypeAssertions extends Stringifier {
   /**
    * @param {Node} node
    * @param {string} type
-   * @returns {Node}
+   * @returns {Node|undefined}
    */
   findParentOfType(node, type) {
     const currentIndex = this.parents.findLastIndex(_ => _ == node);
@@ -60,6 +60,27 @@ class StringifierWithTypeAssertions extends Stringifier {
       }
       return _.type === type;
     });
+  }
+  /**
+   * @param {Node} node - Start searching above this node.
+   * @param {string} type - Type we are searching for.
+   * @param {Function} predicate - Stop searching when this returns true.
+   * @returns {Node|undefined}
+   */
+  findParentOfTypeWithPredicate(node, type, predicate) {
+    const {parents} = this;
+    let i = parents.findLastIndex(_ => _ == node);
+    i--; // not interested in our start node
+    while (i >= 0) {
+      const parent = parents[i];
+      if (predicate(parent)) {
+        return;
+      }
+      if (parent.type === type) {
+        return parent;
+      }
+      i--;
+    }
   }
   /**
    * @param {Node} node - The Babel AST node.
@@ -90,7 +111,14 @@ class StringifierWithTypeAssertions extends Stringifier {
       if (node.type === 'ArrowFunctionExpression') {
         let tmp = this.findParentOfType(node, 'VariableDeclaration');
         if (!tmp?.leadingComments) {
-          tmp = this.findParentOfType(node, 'ExportNamedDeclaration')
+          function isFunc(node) {
+            // console.log("isFunc", node.type);
+            return (
+              node.type === 'ArrowFunctionExpression' ||
+              node.type === 'FunctionDeclaration'
+            );
+          }
+          tmp = this.findParentOfTypeWithPredicate(node, 'ExportNamedDeclaration', isFunc);
         }
         leadingComments = tmp?.leadingComments;
       }
@@ -157,7 +185,7 @@ class StringifierWithTypeAssertions extends Stringifier {
     return params.some(node => {
       const {type} = node;
       if (type === "AssignmentPattern") {
-        const left = {node};
+        const {left} = node;
         console.assert(
           left.type === 'Identifier' ||
           left.type === 'ObjectPattern' ||
@@ -191,6 +219,7 @@ class StringifierWithTypeAssertions extends Stringifier {
       return '';
     }
     const jsdoc = this.getJSDoc(node);
+    // return '// ' + JSON.stringify(jsdoc) + '\n';
     const stat = this.getStatsForNode(node);
     if (!jsdoc) {
       stat.unchecked++;
