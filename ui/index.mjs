@@ -1,7 +1,7 @@
 import {parseSync             } from '@babel/core';
 import {parseJSDoc            } from '../src/parseJSDoc.mjs';
 import {addTypeChecks         } from '../src/addTypeChecks.mjs';
-import {Stringifier           } from '../src/Stringifier.mjs';
+import {code2ast2code         } from '../src/code2ast2code.mjs';
 import {ast2jsonForComparison } from '../src/ast2jsonForComparison.mjs';
 import * as ti  from '../src/index.mjs';
 import * as rti from '../src-rti/index.mjs';
@@ -67,6 +67,8 @@ function getCodeForAction() {
       return "const ret = addTypeChecks(jsdoc);\nsetRight(ret);";
     case 'jsdoc':
       return "const ret = parseJSDoc(jsdoc);\nsetRight(JSON.stringify(ret, null, 2));";
+    case 'code2ast2code':
+      return "const ret = code2ast2code(jsdoc);\nsetRight(ret);";
   }
   return '// This action has no special code';
 }
@@ -179,13 +181,11 @@ function compareAST(left = getLeft(), right = getRight()) {
 }
 async function actionCode2Ast2Code() {
   const content = getLeft();
-  const stringifier = new Stringifier();
-  const ast = parseSync(content);
-  if (!ast) {
-    setRight("// parseSync failed");
+  const out = code2ast2code(content);
+  if (!out) {
+    setRight("// code2ast2code failed");
     return;
   }
-  const out = stringifier.toSource(ast);
   setRight(out);
   // compareAST(content, out);
 }

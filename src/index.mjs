@@ -1,6 +1,7 @@
 export * from './addTypeChecks.mjs';
 export * from './ast2json.mjs';
 export * from './ast2jsonForComparison.mjs';
+export * from './code2ast2code.mjs';
 export * from './expandType.mjs';
 export * from './expandTypeDepFree.mjs';
 export * from './parseJSDoc.mjs';
