@@ -18,7 +18,7 @@ function expandType(type) {
 }
 /**
  * @typedef TypeScriptType
- * @property {*} typeArguments
+ * @property {object[]|undefined} typeArguments
  * @property {*} typeName
  * @property {number} kind
  */
@@ -60,23 +60,21 @@ const {
  * @returns 
  */
 function toSourceTS(node) {
-  const { typeArguments, typeName } = node;
+  const {typeArguments, typeName} = node;
   const kind_ = ts.SyntaxKind[node.kind];
   // console.log({ typeArguments, typeName, kind_, node });
   switch (node.kind) {
     case TypeReference:
-      if (typeName.text === 'Object' && typeArguments.length === 2) {
+      if (typeName.text === 'Object' && typeArguments?.length === 2) {
         return {
           type: 'record',
           key: toSourceTS(typeArguments[0]),
           val: toSourceTS(typeArguments[1]),
         };
-      } else if (typeName.text === 'Array' && typeArguments.length === 1) {
-        return {
-          type: 'array',
-          elementType: toSourceTS(typeArguments[0])
-        };
-      } else if (typeName.text === 'Class' && typeArguments.length === 1) {
+      } else if (typeName.text === 'Array' && typeArguments?.length === 1) {
+        const elementType = toSourceTS(typeArguments[0]);
+        return {type: 'array', elementType};
+      } else if (typeName.text === 'Class' && typeArguments?.length === 1) {
         return {
           type: 'class',
           elementType: toSourceTS(typeArguments[0])

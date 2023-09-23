@@ -1,14 +1,19 @@
 import {parseJSDoc} from './parseJSDoc.mjs';
-import {expandType} from './expandType.mjs';
 import {parseJSDocSetter} from './parseJSDocSetter.mjs';
 import {statReset} from './stat.mjs';
 import {Stringifier} from './Stringifier.mjs';
-/** @typedef {import("@babel/types").Node} Node */
+/** @typedef {import('@babel/types').Node} Node */
 /** @typedef {import('./stat.mjs').Stat} Stat */
 class StringifierWithTypeAssertions extends Stringifier {
-  constructor() {
+  /**
+   * @param {Function} expandType 
+   */
+  constructor(expandType) {
     super();
     this.forceCurly = true;
+    // @todo collect every type + manually validate as test set
+    // + implement expandType using Babel Flow type parser aswell
+    this.expandType = expandType;
   }
   /** @type {Record<string, Stat>} */
   stats = {
@@ -135,11 +140,10 @@ class StringifierWithTypeAssertions extends Stringifier {
             console.warn("getJSDoc> setters require exactly one argument");
           }
           return {
-            // todo: make class potentially dep free using e.g. this.expandType
-            [paramName]: parseJSDocSetter(lastComment.value, expandType)
+            [paramName]: parseJSDocSetter(lastComment.value, this.expandType)
           }
         }
-        return parseJSDoc(lastComment.value);
+        return parseJSDoc(lastComment.value, this.expandType);
       }
     }
   }

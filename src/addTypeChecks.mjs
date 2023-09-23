@@ -1,5 +1,6 @@
 import {parseSync} from '@babel/core';
 import {StringifierWithTypeAssertions} from './StringifierWithTypeAssertions.mjs';
+import {expandType} from './expandType.mjs';
 /**
  * Simple facade which does all the processing.
  * @param {string} src - The input source with JSDoc comments.
@@ -7,7 +8,7 @@ import {StringifierWithTypeAssertions} from './StringifierWithTypeAssertions.mjs
  */
 function addTypeChecks(src) {
   try {
-    const stringifierWithTypeAssertions = new StringifierWithTypeAssertions();
+    const stringifierWithTypeAssertions = new StringifierWithTypeAssertions(expandType);
     const ast = parseSync(src);
     const out = stringifierWithTypeAssertions.toSource(ast);
     return out;
