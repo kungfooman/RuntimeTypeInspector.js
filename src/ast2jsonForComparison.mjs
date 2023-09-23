@@ -16,7 +16,7 @@ const drop = [
  */
 function ast2jsonForComparison(ast) {
   return JSON.stringify(ast, function(name, val) {
-    if (name === 'trailingComma') {
+    if (name === 'trailingComma' || name === 'parenStart') {
       return 'offset removed for better comparison';
     }
     if (drop.includes(name)) {
