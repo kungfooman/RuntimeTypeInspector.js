@@ -527,8 +527,9 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   ArrayExpression(node) {
-    const {elements} = node;
-    return '[' + this.mapToSource(elements).join(', ') + ']';
+    const {elements, extra} = node;
+    const e = !!extra?.trailingComma ? ',' : '';
+    return '[' + this.mapToSource(elements).join(', ') + e + ']';
   }
   /**
    * @param {import("@babel/types").VariableDeclaration} node - The Babel AST node.
