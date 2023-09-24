@@ -1,16 +1,28 @@
-import {parseJSDoc} from './parseJSDoc.mjs';
-import {parseJSDocSetter} from './parseJSDocSetter.mjs';
-import {statReset} from './stat.mjs';
-import {Stringifier} from './Stringifier.mjs';
+import {expandTypeDepFree} from './expandTypeDepFree.mjs';
+import {parseJSDoc       } from './parseJSDoc.mjs';
+import {parseJSDocSetter } from './parseJSDocSetter.mjs';
+import {statReset        } from './stat.mjs';
+import {Stringifier      } from './Stringifier.mjs';
 /** @typedef {import('@babel/types').Node} Node */
 /** @typedef {import('./stat.mjs').Stat} Stat */
+/**
+ * @typedef {object} Options
+ * @property {boolean} [forceCurly]
+ * @property {boolean} [validateDivision]
+ * @property {Function} [expandType]
+ */
 class StringifierWithTypeAssertions extends Stringifier {
   /**
-   * @param {Function} expandType 
+   * @param {Options} [options]
    */
-  constructor(expandType) {
+  constructor({
+    forceCurly = true,
+    validateDivision = true,
+    expandType = expandTypeDepFree,
+  } = {}) {
     super();
-    this.forceCurly = true;
+    this.forceCurly = forceCurly;
+    this.validateDivision = validateDivision;
     // @todo collect every type + manually validate as test set
     // + implement expandType using Babel Flow type parser aswell
     this.expandType = expandType;
@@ -349,6 +361,9 @@ class StringifierWithTypeAssertions extends Stringifier {
    * @returns {string} Stringification of the node.
    */
   BinaryExpression(node) {
+    if (!this.validateDivision) {
+      return super.BinaryExpression(node);
+    }
     const {left, operator, right} = node;
     const left_ = this.toSource(left);
     const right_ = this.toSource(right);
