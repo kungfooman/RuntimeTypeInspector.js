@@ -418,7 +418,9 @@ class StringifierWithTypeAssertions extends Stringifier {
           break;
         }
         i++;
-        const name = line.substring(i).trim();
+        let name = line.substring(i).trim();
+        // Drop description
+        name = name.split(' ')[0];
         this.typedefs[name] = this.expandType(def);
       }
     }
