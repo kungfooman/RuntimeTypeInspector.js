@@ -429,16 +429,19 @@ class StringifierWithTypeAssertions extends Stringifier {
    * @returns {string} Stringification of the node.
    */
   File(node) {
-   const {errors, program, comments} = node;
-   for (const comment of comments) {
-     this.handleBlockCommentOfFile(comment);
-   }
-   //console.log("this.typedefs", this.typedefs);
-   let out = '';
-   out += `registerTypedefs(${JSON.stringify(this.typedefs)});`;
-   const code = this.toSource(program) + '\n';
-   out += code;
-   return out;
+    const {errors, program, comments} = node;
+    for (const comment of comments) {
+      this.handleBlockCommentOfFile(comment);
+    }
+    //console.log("this.typedefs", this.typedefs);
+    let out = '';
+    for (const name in this.typedefs) {
+      const json = JSON.stringify(this.typedefs, null, 2);
+      out += `registerTypedef('${name}', ${json});\n`;
+    }
+    const code = this.toSource(program) + '\n';
+    out += code;
+    return out;
  }
 }
 export {StringifierWithTypeAssertions};

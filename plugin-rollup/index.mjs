@@ -2,7 +2,7 @@ import { createFilter } from '@rollup/pluginutils';
 import { addTypeChecks } from '../src/addTypeChecks.mjs';
 import { expandType } from '../src/expandType.mjs';
 // todo getHeader() and only import what's required
-const header = "import { assertType, youCanAddABreakpointHere, validateDivision, registerTypedefs } from 'runtime-type-inspector';\n";
+const header = "import { assertType, youCanAddABreakpointHere, validateDivision, registerTypedef } from 'runtime-type-inspector';\n";
 /**
  * @param {boolean} enable 
  * @returns {import('rollup').Plugin}
