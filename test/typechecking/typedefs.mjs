@@ -32,3 +32,8 @@ function addAttentionsToBeam(beam, output) {
    */
   function inner(abc) {}
 }
+
+/**
+ * @typedef {Object} PretrainedOptions Options for loading a pretrained model.     
+ * @property {boolean?} [options.quantized=true] Whether to load the 8-bit quantized version of the model (only applicable when loading model files).
+ */

@@ -436,12 +436,13 @@ class StringifierWithTypeAssertions extends Stringifier {
     //console.log("this.typedefs", this.typedefs);
     let out = '';
     for (const name in this.typedefs) {
-      const json = JSON.stringify(this.typedefs, null, 2);
+      const typedef = this.typedefs[name];
+      const json = JSON.stringify(typedef, null, 2);
       out += `registerTypedef('${name}', ${json});\n`;
     }
     const code = this.toSource(program) + '\n';
     out += code;
     return out;
- }
+  }
 }
 export {StringifierWithTypeAssertions};
