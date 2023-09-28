@@ -142,6 +142,32 @@ function validateType(value, expect, loc, name, critical = true) {
       )
     );
   }
+  // todo: work out tests
+  if (type === 'map') {
+    const { key, val } = expect;
+    if (key !== 'string') {
+      typecheckWarn(`${loc}> validateType> map> unhandled key '${key}'`);
+      return false;
+    }
+    if (val !== 'any') {
+      typecheckWarn(`${loc}> validateType> map> expected any, not '${value}'`);
+      return false;
+    }
+    let ret = true;
+    for (const [k, v] of value) {
+      const good = assertType(
+        v,
+        val,
+        loc,
+        `${name}.get('${key}')`,
+        critical
+      );
+      if (!good) {
+        ret = false;
+      }
+    }
+    return ret;
+  }
   // Test: ???
   if (type === 'array') {
     if (value && value instanceof Array) {

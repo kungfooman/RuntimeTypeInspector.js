@@ -71,6 +71,12 @@ function toSourceTS(node) {
           key: toSourceTS(typeArguments[0]),
           val: toSourceTS(typeArguments[1]),
         };
+      } else if (typeName.text === 'Map' && typeArguments?.length === 2) {
+        return {
+          type: 'map',
+          key: toSourceTS(typeArguments[0]),
+          val: toSourceTS(typeArguments[1]),
+        };
       } else if (typeName.text === 'Array' && typeArguments?.length === 1) {
         const elementType = toSourceTS(typeArguments[0]);
         return {type: 'array', elementType};
