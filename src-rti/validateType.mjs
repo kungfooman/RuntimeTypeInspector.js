@@ -2,6 +2,7 @@ import {assertType      } from "./assertType.mjs";
 import {typecheckOptions} from "./typecheckOptions.mjs";
 import {typecheckWarn   } from "./typecheckWarn.mjs";
 import {validateArray   } from "./validateArray.mjs";
+import { validateMap } from "./validateMap.mjs";
 import {validateNumber  } from "./validateNumber.mjs";
 import {validateObject  } from "./validateObject.mjs";
 import {validateRecord  } from "./validateRecord.mjs";
@@ -93,37 +94,15 @@ function validateType(value, expect, loc, name, critical = true) {
       return props16.every(prop => validateNumber(value.data, prop));
     }
   }
+  // todo: either switch or object lookup for custom hooks
   if (type === "object") {
     return validateObject(value, properties, loc, name, critical);
   }
   if (type === 'record') {
     return validateRecord(value, expect, loc, name, critical);
   }
-  // todo: work out tests
   if (type === 'map') {
-    const { key, val } = expect;
-    if (key !== 'string') {
-      typecheckWarn(`${loc}> validateType> map> unhandled key '${key}'`);
-      return false;
-    }
-    if (val !== 'any') {
-      typecheckWarn(`${loc}> validateType> map> expected any, not '${value}'`);
-      return false;
-    }
-    let ret = true;
-    for (const [k, v] of value) {
-      const good = assertType(
-        v,
-        val,
-        loc,
-        `${name}.get('${key}')`,
-        critical
-      );
-      if (!good) {
-        ret = false;
-      }
-    }
-    return ret;
+    return validateMap(value, expect, loc, name, critical);
   }
   if (type === 'array') {
     return validateArray(value, expect, loc, name, critical);

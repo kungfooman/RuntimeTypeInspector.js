@@ -9,7 +9,7 @@ import {typecheckWarn} from "./typecheckWarn.mjs";
  * @returns {boolean}
  */
 function validateRecord(value, expect, loc, name, critical) {
-  const { key, val } = expect;
+  const {key, val} = expect;
   if (key !== 'string') {
     typecheckWarn(`${loc}> validateType> record> unhandled key '${key}'`);
     return false;
