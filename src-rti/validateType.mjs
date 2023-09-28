@@ -240,7 +240,7 @@ function validateType(value, expect, loc, name, critical = true) {
     const typeSlice = type.slice(1, -1);
     return value === typeSlice;
   }
-  if (type === 'Function' || type.includes('Callback')) {
+  if (type === 'Function' || type === 'function' || type.includes('Callback')) {
     return typeof value === "function";
   }
   if (type === 'ObjectConstructor') {
