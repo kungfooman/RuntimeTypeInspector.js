@@ -96,24 +96,7 @@ function validateType(value, expect, loc, name, critical = true) {
     return validateObject(value, properties, loc, name, critical);
   }
   if (type === 'record') {
-    const { key, val } = expect;
-    if (key !== 'string') {
-      typecheckWarn(`${loc}> validateType> record> unhandled key '${key}'`);
-      return false;
-    }
-    if (typeof value !== 'object') {
-      typecheckWarn(`${loc}> validateType> record> expected object, not '${value}'`);
-      return false;
-    }
-    return Object.keys(value).every(
-      key => assertType(
-        value[key],
-        val,
-        loc,
-        `${name}['${key}']`,
-        critical
-      )
-    );
+    return validateRecord(value, expect, loc, name, critical);
   }
   // todo: work out tests
   if (type === 'map') {
