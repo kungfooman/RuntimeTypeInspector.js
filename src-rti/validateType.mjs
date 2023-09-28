@@ -3,6 +3,7 @@ import {typecheckEvery} from "./typecheckEvery.mjs";
 import {typecheckOptions} from "./typecheckOptions.mjs";
 import {typecheckWarn} from "./typecheckWarn.mjs";
 import {validateNumber} from "./validateNumber.mjs";
+import { validateObject } from "./validateObject.mjs";
 // For quickly checking props of Vec2/Vec3/Vec4/Quat/Mat3/Mat4 without GC
 const propsXY   = ['x', 'y'];
 const propsXYZ  = ['x', 'y', 'z'];
@@ -92,35 +93,7 @@ function validateType(value, expect, loc, name, critical = true) {
     }
   }
   if (type === "object") {
-    if (!(value instanceof Object)) {
-      return false;
-    }
-    if (properties && Object.keys(properties).length) {
-      if (loc !== 'sortPriority' && loc !== 'getResource' && loc !== 'cmpPriority') {
-        Object.keys(value).forEach((key) => {
-          if (key === 'profilerHint') {
-            return;
-          }
-          if (!properties[key]) {
-            if (typecheckOptions.logSuperfluousProperty) {
-              typecheckWarn(`${loc}> superfluous property> ${name}.${key}`, { expect, value });
-            }
-          }
-        });
-      }
-      return Object.keys(properties).every((key) => {
-        const innerValue = value[key];
-        const innerType = properties[key];
-        return assertType(
-          innerValue,
-          innerType,
-          loc,
-          `${name}.${key}`,
-          critical
-        );
-      });
-    }
-    return value instanceof Object;
+    return validateObject(value, properties, loc, name, critical);
   }
   if (type === 'record') {
     const { key, val } = expect;
