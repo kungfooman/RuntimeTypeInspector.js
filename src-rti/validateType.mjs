@@ -1,11 +1,13 @@
 import {assertType      } from "./assertType.mjs";
+import {typedefs        } from "./registerTypedef.mjs";
 import {typecheckOptions} from "./typecheckOptions.mjs";
 import {typecheckWarn   } from "./typecheckWarn.mjs";
 import {validateArray   } from "./validateArray.mjs";
-import { validateMap } from "./validateMap.mjs";
+import {validateMap     } from "./validateMap.mjs";
 import {validateNumber  } from "./validateNumber.mjs";
 import {validateObject  } from "./validateObject.mjs";
 import {validateRecord  } from "./validateRecord.mjs";
+import {validateTypedef } from "./validateTypedef.mjs";
 // For quickly checking props of Vec2/Vec3/Vec4/Quat/Mat3/Mat4 without GC
 const propsXY   = ['x', 'y'];
 const propsXYZ  = ['x', 'y', 'z'];
@@ -43,6 +45,7 @@ function validateType(value, expect, loc, name, critical = true) {
     console.error('validateType> missing type');
     return false;
   }
+  // todo: keep everything const, should be trimmed anyway already (add unit tests)
   type = type.trim();
   if (optional) {
     if (value === undefined) {
@@ -106,6 +109,9 @@ function validateType(value, expect, loc, name, critical = true) {
   }
   if (type === 'array') {
     return validateArray(value, expect, loc, name, critical);
+  }
+  if (typedefs[type]) {
+    return validateTypedef(value, expect, loc, name, critical);
   }
   if (type === 'union') {
     return expect.members.some(member => assertType(
