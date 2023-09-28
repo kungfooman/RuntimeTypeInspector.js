@@ -65,7 +65,7 @@ function toSourceTS(node) {
   // console.log({ typeArguments, typeName, kind_, node });
   switch (node.kind) {
     case TypeReference:
-      if (typeName.text === 'Object' && typeArguments?.length === 2) {
+      if ((typeName.text === 'Object' || typeName.text === 'Record') && typeArguments?.length === 2) {
         return {
           type: 'record',
           key: toSourceTS(typeArguments[0]),
