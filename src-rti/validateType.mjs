@@ -1,9 +1,10 @@
-import {assertType} from "./assertType.mjs";
-import {typecheckEvery} from "./typecheckEvery.mjs";
+import {assertType      } from "./assertType.mjs";
 import {typecheckOptions} from "./typecheckOptions.mjs";
-import {typecheckWarn} from "./typecheckWarn.mjs";
-import {validateNumber} from "./validateNumber.mjs";
-import { validateObject } from "./validateObject.mjs";
+import {typecheckWarn   } from "./typecheckWarn.mjs";
+import {validateArray   } from "./validateArray.mjs";
+import {validateNumber  } from "./validateNumber.mjs";
+import {validateObject  } from "./validateObject.mjs";
+import {validateRecord  } from "./validateRecord.mjs";
 // For quickly checking props of Vec2/Vec3/Vec4/Quat/Mat3/Mat4 without GC
 const propsXY   = ['x', 'y'];
 const propsXYZ  = ['x', 'y', 'z'];
@@ -124,23 +125,9 @@ function validateType(value, expect, loc, name, critical = true) {
     }
     return ret;
   }
-  // Test: ???
   if (type === 'array') {
-    if (value && value instanceof Array) {
-      const { elementType } = expect;
-      // some that not validate -> type error
-      return typecheckEvery(value, (_, i) => assertType(
-        _,
-        elementType,
-        loc,
-        `${name}[${i}]`,
-        critical
-      ));
-    }
-    // if it's not even an array -> type error
-    return false;
+    return validateArray(value, expect, loc, name, critical);
   }
-  // Test unions: ???
   if (type === 'union') {
     return expect.members.some(member => assertType(
       value,
