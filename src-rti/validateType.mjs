@@ -1,4 +1,3 @@
-import {assertType      } from "./assertType.mjs";
 import {typedefs        } from "./registerTypedef.mjs";
 import {typecheckOptions} from "./typecheckOptions.mjs";
 import {typecheckWarn   } from "./typecheckWarn.mjs";
@@ -7,7 +6,9 @@ import {validateMap     } from "./validateMap.mjs";
 import {validateNumber  } from "./validateNumber.mjs";
 import {validateObject  } from "./validateObject.mjs";
 import {validateRecord  } from "./validateRecord.mjs";
+import {validateTuple   } from "./validateTuple.mjs";
 import {validateTypedef } from "./validateTypedef.mjs";
+import {validateUnion   } from "./validateUnion.mjs";
 // For quickly checking props of Vec2/Vec3/Vec4/Quat/Mat3/Mat4 without GC
 const propsXY   = ['x', 'y'];
 const propsXYZ  = ['x', 'y', 'z'];
@@ -114,43 +115,25 @@ function validateType(value, expect, loc, name, critical = true) {
     return validateTypedef(value, expect, loc, name, critical);
   }
   if (type === 'union') {
-    return expect.members.some(member => assertType(
-      value,
-      member,
-      loc,
-      name + ` union type: ${member?.type || member}`,
-      false
-    ));
+    return validateUnion(value, expect, loc, name, critical);
   }
   // Trigger: pc.app.scene.setSkybox([1, 2, 3]);
   if (type === 'tuple') {
-    if (!value) {
-      return false;
-    }
-    if (!(value instanceof Array)) {
-      return false;
-    }
-    const { elements } = expect;
-    return elements.every((element, i) => {
-      return assertType(
-        value[i],
-        element,
-        loc,
-        `${name}[${i}]`,
-        critical
-      );
-    });
+    return validateTuple(value, expect, loc, name, critical);
   }
   if (type === '*' || type === 'any') {
     return true;
   }
+  /** @todo allow strict/non-strict null/undefined with checkbox in <div> */
   if (type === 'null') {
     return value === null;
   }
+  /** @todo add unit-tests/asserts tests to make sure this never happens */
   if (value === null) {
     // type !== null already, so this can only be false
     return false;
   }
+  /** @todo use validateNumber() */
   if (type === 'number') {
     if (Number.isNaN(value)) {
       return false;
@@ -168,6 +151,7 @@ function validateType(value, expect, loc, name, critical = true) {
     const typeSlice = type.slice(1, -1);
     return value === typeSlice;
   }
+  /** @todo Callback is PC specific, parse JSDoc callback types like typedefs */
   if (type === 'Function' || type === 'function' || type.includes('Callback')) {
     return typeof value === "function";
   }
