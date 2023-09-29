@@ -148,6 +148,17 @@ async function actionAST_TS() {
   const out = JSON.stringify(ast, null, 2);
   setRight(out);
 }
+async function actionExpandType() {
+  const str = getLeft();
+  const ts = ti.expandType(str);
+  const depFree = ti.expandTypeDepFree(str);
+  let out = '';
+  out += '// expandTypeTS:\n';
+  out += JSON.stringify(ts, null, 2) + '\n';
+  out += '// expandTypeDepFree:\n';
+  out += JSON.stringify(depFree, null, 2) + '\n';
+  setRight(out);
+}
 async function actionJSDoc() {
   const ret = parseJSDoc(getLeft());
   /** @type {string} */
@@ -213,6 +224,9 @@ async function runAction() {
     case 'eval':
       eval(aceEditorLeft.getValue());
       break;
+    case 'expand-type':
+      await actionExpandType();
+      break;
     default:
       setRight(`Action ${action} not implemented`);
   }
@@ -237,7 +251,7 @@ async function insertTypes() {
   aceEditorRight.clearSelection(); // setValue() selects everything, so unselect it now
 }
 /**
- * @typedef {'typechecking'|'code2ast2code'|'ast'|'ast-ts'|'jsdoc'|'eval'} Action
+ * @typedef {'typechecking'|'code2ast2code'|'ast'|'ast-ts'|'jsdoc'|'eval'|'expand-type'} Action
  */
 /** @returns {Action} */
 const getAction = () => selectAction.value;
