@@ -31,30 +31,6 @@ function parseType(str) {
   let ast = ts.createSourceFile('repl.ts', str, ts.ScriptTarget.Latest, true /*setParentNodes*/);
   return ast.statements[0].type;
 }
-const {
-  AnyKeyword,
-  ArrayType,
-  BooleanKeyword,
-  Identifier,
-  IntersectionType,
-  JSDocAllType,
-  LastTypeNode,
-  LiteralType,
-  NullKeyword,
-  NumberKeyword,
-  NumericLiteral,
-  ObjectKeyword,
-  ParenthesizedType,
-  PropertySignature,
-  StringKeyword,
-  StringLiteral,
-  ThisType,
-  TupleType,
-  TypeLiteral,
-  TypeReference,
-  UndefinedKeyword,
-  UnionType,
-} = ts.SyntaxKind;
 /**
  * @param {TypeScriptType} node 
  * @returns 
@@ -62,6 +38,12 @@ const {
 function toSourceTS(node) {
   const {typeArguments, typeName} = node;
   const kind_ = ts.SyntaxKind[node.kind];
+  const {
+    AnyKeyword, ArrayType, BooleanKeyword, Identifier, IntersectionType, JSDocAllType, LastTypeNode,
+    LiteralType, NullKeyword, NumberKeyword, NumericLiteral, ObjectKeyword, ParenthesizedType,
+    PropertySignature, StringKeyword, StringLiteral, ThisType, TupleType, TypeLiteral, TypeReference,
+    UndefinedKeyword, UnionType,
+  } = ts.SyntaxKind;
   // console.log({ typeArguments, typeName, kind_, node });
   switch (node.kind) {
     case TypeReference:
@@ -170,4 +152,4 @@ function toSourceTS(node) {
       debugger;
   }
 }
-export {expandType};
+export {expandType, parseType, toSourceTS};
