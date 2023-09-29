@@ -133,8 +133,7 @@ function getRight() {
   return aceEditorRight.getValue();
 }
 async function actionAST() {
-  const content = aceEditorLeft.getValue();
-  const ast = parseSync(content);
+  const ast = parseSync(getLeft());
   const out = JSON.stringify(ast, function(name, val) {
     if (name == "loc" || name == "start" || name == "end") {
       return undefined; // remove
@@ -143,9 +142,14 @@ async function actionAST() {
   }, 2);
   setRight(out);
 }
+async function actionAST_TS() {
+  const str = getLeft();
+  const ast = ts.createSourceFile('repl.ts', str, ts.ScriptTarget.Latest, false /*setParentNodes*/);
+  const out = JSON.stringify(ast, null, 2);
+  setRight(out);
+}
 async function actionJSDoc() {
-  const content = aceEditorLeft.getValue();
-  const ret = parseJSDoc(content);
+  const ret = parseJSDoc(getLeft());
   /** @type {string} */
   let out;
   if (ret === undefined) {
@@ -156,8 +160,7 @@ async function actionJSDoc() {
   setRight(out);
 }
 async function actionTypeChecking() {
-  const content = aceEditorLeft.getValue();
-  const out = addTypeChecks(content);
+  const out = addTypeChecks(getLeft());
   setRight(out);
 }
 /**
@@ -195,6 +198,9 @@ async function runAction() {
     case 'ast':
       await actionAST();
       break;
+    case 'ast-ts':
+      await actionAST_TS();
+      break;
     case 'jsdoc':
       await actionJSDoc();
       break;
@@ -231,7 +237,7 @@ async function insertTypes() {
   aceEditorRight.clearSelection(); // setValue() selects everything, so unselect it now
 }
 /**
- * @typedef {'typechecking'|'code2ast2code'|'ast'|'jsdoc'|'eval'} Action
+ * @typedef {'typechecking'|'code2ast2code'|'ast'|'ast-ts'|'jsdoc'|'eval'} Action
  */
 /** @returns {Action} */
 const getAction = () => selectAction.value;
