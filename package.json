@@ -4,6 +4,8 @@
   "description": "Validating JSDoc types at runtime for high-quality types - Trust is good, control is better.",
   "main": "src/index.mjs",
   "scripts": {
+    "build": "rollup -c",
+    "build:atBabelCore": "rollup -c --environment target:atBabelCore",
     "lint": "eslint --ext .js,.mjs,.cjs src test"
   },
   "repository": {
@@ -17,10 +19,26 @@
   },
   "homepage": "https://github.com/kungfooman/RuntimeTypeInspector.js#readme",
   "devDependencies": {
-    "eslint": "^8.44.0"
+    "@babel/preset-env": "^7.22.20",
+    "@rollup/plugin-babel": "^6.0.3",
+    "@rollup/plugin-commonjs": "^25.0.4",
+    "@rollup/plugin-json": "^6.0.0",
+    "@rollup/plugin-node-resolve": "^15.2.1",
+    "@rollup/plugin-strip": "^3.0.2",
+    "@rollup/plugin-terser": "^0.4.3",
+    "@rollup/pluginutils": "^5.0.4",
+    "eslint": "^8.44.0",
+    "eslint-plugin-import": "^2.28.1",
+    "eslint-plugin-jsdoc": "^46.6.0",
+    "rollup": "^3.29.0",
+    "rollup-plugin-dts": "^6.0.1",
+    "rollup-plugin-jscc": "^2.0.0",
+    "rollup-plugin-visualizer": "^5.9.2",
+    "to-fast-properties": "^4.0.0",
+    "ace-builds": "^1.28.0"
   },
   "dependencies": {
-    "@babel/core": "^7.22.6",
+    "@babel/core": "^7.2.0",
     "typescript": "^5.1.6"
   }
 }
