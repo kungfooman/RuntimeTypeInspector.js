@@ -69,6 +69,8 @@ function getCodeForAction() {
       return "const ret = parseJSDoc(jsdoc);\nsetRight(JSON.stringify(ret, null, 2));";
     case 'code2ast2code':
       return "const ret = code2ast2code(jsdoc);\nsetRight(ret);";
+    case 'expand-type':
+      return 'setRight(expandTypeAll(jsdoc));';
   }
   return '// This action has no special code';
 }
@@ -148,18 +150,23 @@ async function actionAST_TS() {
   const out = JSON.stringify(ast, null, 2);
   setRight(out);
 }
-async function actionExpandType() {
-  const str = getLeft();
-  const ts = ti.expandType(str);
-  const depFree = ti.expandTypeDepFree(str);
+/**
+ * @param {string} type - The type like `...string`.
+ */
+function expandTypeAll(type) {
+  const ts = ti.expandType(type);
+  const depFree = ti.expandTypeDepFree(type);
   let out = '';
   out += '// expandTypeTS:\n';
   out += JSON.stringify(ts, null, 2) + '\n';
   out += '// expandTypeDepFree:\n';
   out += JSON.stringify(depFree, null, 2) + '\n';
-  setRight(out);
+  return out;
 }
-async function actionJSDoc() {
+function actionExpandType() {
+  setRight(expandTypeAll(getLeft()));
+}
+function actionJSDoc() {
   const ret = parseJSDoc(getLeft());
   /** @type {string} */
   let out;
@@ -170,9 +177,8 @@ async function actionJSDoc() {
   }
   setRight(out);
 }
-async function actionTypeChecking() {
-  const out = addTypeChecks(getLeft());
-  setRight(out);
+function actionTypeChecking() {
+  setRight(addTypeChecks(getLeft()));
 }
 /**
  * @todo use Monaco Diff Editor
