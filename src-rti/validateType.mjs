@@ -6,6 +6,7 @@ import {validateMap     } from "./validateMap.mjs";
 import {validateNumber  } from "./validateNumber.mjs";
 import {validateObject  } from "./validateObject.mjs";
 import {validateRecord  } from "./validateRecord.mjs";
+import {validateSet     } from "./validateSet.mjs";
 import {validateTuple   } from "./validateTuple.mjs";
 import {validateTypedef } from "./validateTypedef.mjs";
 import {validateUnion   } from "./validateUnion.mjs";
@@ -116,6 +117,9 @@ function validateType(value, expect, loc, name, critical = true) {
   }
   if (type === 'union') {
     return validateUnion(value, expect, loc, name, critical);
+  }
+  if (type === 'set') {
+    return validateSet(value, expect, loc, name, critical);
   }
   // Trigger: pc.app.scene.setSkybox([1, 2, 3]);
   if (type === 'tuple') {

@@ -103,7 +103,7 @@ function data2code(name, data) {
 }
 function activateREPL() {
   const code = Object.entries(ti).map(([key, val]) => data2code(key, val)).join('\n');
-  const codeLocal = expandTypeAll.toString();
+  const codeLocal = [getPreferredExpandType, expandTypeAll].join('\n');
   const leftContent = aceEditorLeft.getValue().replaceAll('`', '\\`');
   const leftContentAsCode = `const jsdoc = \`${leftContent}\`;`;
   const out = [leftContentAsCode, code, codeLocal, getCodeForAction()].join('\n');
@@ -375,4 +375,5 @@ export {
   getRight,
   compareAST,
   getPreferredExpandType,
+  expandTypeAll,
 };

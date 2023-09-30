@@ -82,6 +82,9 @@ function toSourceTS(node) {
       } else if (typeName.text === 'Array' && typeArguments?.length === 1) {
         const elementType = toSourceTS(typeArguments[0]);
         return {type: 'array', elementType};
+      } else if (typeName.text === 'Set' && typeArguments?.length === 1) {
+        const elementType = toSourceTS(typeArguments[0]);
+        return {type: 'set', elementType};
       } else if (typeName.text === 'Class' && typeArguments?.length === 1) {
         return {
           type: 'class',
