@@ -27,8 +27,14 @@ function expandType(type) {
  * @returns {TypeScriptType}
  */
 function parseType(str) {
+  // TS doesn't like ... notation in this context
+  if (str.startsWith('...')) {
+    str = str.slice(3); // remove dots
+    str += '[]'; // turn into array
+  }
+  // type tmp = (...string) => 123; to have a function context
   str = `type tmp = ${str};`;
-  let ast = ts.createSourceFile('repl.ts', str, ts.ScriptTarget.Latest, true /*setParentNodes*/);
+  const ast = ts.createSourceFile('repl.ts', str, ts.ScriptTarget.Latest, true /*setParentNodes*/);
   return ast.statements[0].type;
 }
 /**
@@ -39,13 +45,27 @@ function toSourceTS(node) {
   const {typeArguments, typeName} = node;
   const kind_ = ts.SyntaxKind[node.kind];
   const {
-    AnyKeyword, ArrayType, BooleanKeyword, Identifier, IntersectionType, JSDocAllType, LastTypeNode,
-    LiteralType, NullKeyword, NumberKeyword, NumericLiteral, ObjectKeyword, ParenthesizedType,
-    PropertySignature, StringKeyword, StringLiteral, ThisType, TupleType, TypeLiteral, TypeReference,
-    UndefinedKeyword, UnionType,
+    AnyKeyword, ArrayType, BooleanKeyword, FunctionType, Identifier, IntersectionType,
+    JSDocAllType, LastTypeNode, LiteralType, NullKeyword, NumberKeyword, NumericLiteral,
+    ObjectKeyword, Parameter, ParenthesizedType, PropertySignature, StringKeyword,
+    StringLiteral, ThisType, TupleType, TypeLiteral, TypeReference, UndefinedKeyword,
+    UnionType,
   } = ts.SyntaxKind;
   // console.log({ typeArguments, typeName, kind_, node });
   switch (node.kind) {
+    case FunctionType:
+      const parameters = node.parameters.map(toSourceTS);
+      return {type: 'function', parameters};
+    // todo work out more: const jsdoc = `(...a: ...number) => 123
+    // TS even thinks it's two parameters... just go for array/[]
+    case Parameter:
+      const type = node.type ? toSourceTS(node.type) : 'any';
+      const name = toSourceTS(node.name);
+      const ret = {type, name};
+      if (node.dotDotDotToken) {
+        return {type: 'array', elementType: ret};
+      }
+      return ret;
     case TypeReference:
       if ((typeName.text === 'Object' || typeName.text === 'Record') && typeArguments?.length === 2) {
         return {

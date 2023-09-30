@@ -17,3 +17,5 @@ function pathJoin(...parts) {
     })
     return parts.join('/');
 }
+const ret = pathJoin('/etc', 'passwd');
+console.log('ret', ret);
