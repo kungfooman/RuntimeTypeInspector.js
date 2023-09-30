@@ -12,6 +12,11 @@ const selectAction = document.getElementById("action");
 if (!(selectAction instanceof HTMLSelectElement)) {
   throw 'This module requires a <select id="action" ...';
 }
+const selectPreferredExpandType = document.getElementById('preferred-expand-type');
+if (!(selectPreferredExpandType instanceof HTMLSelectElement)) {
+  throw 'This module requires a <select id="action" ...';
+}
+// selectPreferredExpandType.value;
 selectAction.value = currentAction;
 const buttonREPL = document.getElementById('repl');
 if (!(buttonREPL instanceof HTMLButtonElement)) {
@@ -63,10 +68,17 @@ inputRight.onchange = (event) => {
     });
   }
 }
+function getPreferredExpandType() {
+  const {value} = selectPreferredExpandType;
+  if (value == 'expandTypeTS') {
+    return expandType;
+  }
+  return expandTypeDepFree;
+}
 function getCodeForAction() {
   switch (getAction()) {
     case 'typechecking':
-      return "const ret = addTypeChecks(jsdoc);\nsetRight(ret);";
+      return "const ret = addTypeChecks(jsdoc, {expandType: getPreferredExpandType()});\nsetRight(ret);";
     case 'jsdoc':
       return "const ret = parseJSDoc(jsdoc);\nsetRight(JSON.stringify(ret, null, 2));";
     case 'code2ast2code':
@@ -181,7 +193,7 @@ function actionJSDoc() {
   setRight(out);
 }
 function actionTypeChecking() {
-  setRight(addTypeChecks(getLeft()));
+  setRight(addTypeChecks(getLeft(), {expandType: getPreferredExpandType()}));
 }
 /**
  * @todo use Monaco Diff Editor
@@ -351,6 +363,7 @@ function runRightEditor() {
 }
 export {
   selectAction,
+  selectPreferredExpandType,
   buttonREPL,
   aceDivLeft,
   aceDivRight,
@@ -361,4 +374,5 @@ export {
   getLeft,
   getRight,
   compareAST,
+  getPreferredExpandType,
 };
