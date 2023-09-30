@@ -18,7 +18,8 @@ function parseJSDoc(src, expandType = expandTypeDepFree) {
     //   name: [kwargs={}] The configuration parameters.
     //   name: [d = 1.0] Sample spacing
     if (name[0] === '[') {
-      const closer = name.indexOf(']');
+      // Possible improvement: counting opening/closing brackets for perfect match
+      const closer = name.lastIndexOf(']');
       // Afterwards name will be: d = 1.0
       name = name.substring(1, closer);
       // mark it for the type:
