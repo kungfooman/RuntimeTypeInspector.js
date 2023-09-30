@@ -1,3 +1,5 @@
+import {assertType   } from "./assertType.mjs";
+import {typecheckWarn} from "./typecheckWarn.mjs";
 /**
  * @param {*} value 
  * @param {*} expect 
@@ -7,7 +9,18 @@
  * @return {boolean}
  */
 function validateSet(value, expect, loc, name, critical) {
-  console.warn("validateSet> not implemented yet", {value, expect, loc, name, critical});
-  return true;
+  if (!(value instanceof Set)) {
+    return false;
+  }
+  let errors = 0;
+  const {elementType} = expect;
+  value.forEach((x, i) => {
+    const test = assertType(x, elementType, loc, name, critical);
+    if (!test) {
+      typecheckWarn(`validateSet> invalid set member at ${i}, expected ${elementType}, got ${typeof x}`);
+      errors++;
+    }
+  });
+  return errors === 0;
 }
 export {validateSet};
