@@ -1,4 +1,5 @@
-import {typecheckOptions} from "./typecheckOptions.mjs";
+import {typecheckOptions    } from "./typecheckOptions.mjs";
+import {typecheckWarnedTable} from "./typecheckTable.mjs";
 /**
  * @param {HTMLDivElement} div - The <div>.
  */
@@ -41,7 +42,9 @@ function createDiv() {
   buttonHide.onclick = () => {
     div.style.display = 'none';
   };
-  div.append(spanErrors, span, input, buttonHide);
+  div.append(spanErrors, span, input, buttonHide, typecheckWarnedTable);
+  div.style.maxHeight = '200px';
+  div.style.overflow = 'scroll';
   // add when page is loaded
   document.addEventListener("DOMContentLoaded", () => document.body.append(div));
   setInterval(() => {

@@ -1,6 +1,7 @@
-import {typecheckOptions} from "./typecheckOptions.mjs";
-import {typecheckWarn} from "./typecheckWarn.mjs";
-import {validateType} from "./validateType.mjs";
+import {typecheckOptions    } from "./typecheckOptions.mjs";
+import {typecheckWarnedTable} from "./typecheckTable.mjs";
+import {typecheckWarn       } from "./typecheckWarn.mjs";
+import {validateType        } from "./validateType.mjs";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -24,6 +25,18 @@ export function assertType(value, expect, loc, name, critical = true) {
     expectStr = '';
     const msg = `${loc}> type of '${name}' is invalid${expectStr}`;
     typecheckWarn(msg, { expect, value });
+    const warnObj = typecheckOptions.warned[msg];
+    if (!warnObj.tr) {
+      const tr = document.createElement('tr');
+      const count = document.createElement('td');
+      const desc = document.createElement('td');
+      desc.innerText = msg;
+      tr.append(count, desc);
+      typecheckWarnedTable.append(tr);
+      warnObj.tr = tr;
+    }
+    const {tr} = warnObj;
+    tr.children[0].textContent = warnObj.hits;
   }
   return ret;
 }

@@ -20,7 +20,7 @@ const typecheckOptions = {
    */
   mode: 'spam',
   /**
-   * @type {Record<string, { hits: number }>}
+   * @type {Record<string, {hits: number, tr: HTMLTableRowElement}>}
    */
   warned: {},
   logSuperfluousProperty: false,
