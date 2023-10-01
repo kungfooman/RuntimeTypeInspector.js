@@ -29,13 +29,21 @@ function createDiv() {
   span.innerText = " Spam type reports:";
   const input = document.createElement("input");
   input.type = "checkbox";
-  input.onchange = () => {
+  const spamTypeReports = localStorage.getItem('rti-spam-type-reports');
+  input.checked = true;
+  if (spamTypeReports !== null) {
+    input.checked = spamTypeReports === 'spam' ? true : false;
+  }
+  const onchange = () => {
+    localStorage.setItem('rti-spam-type-reports', input.checked ? 'spam' : 'once');
     if (input.checked) {
       typecheckOptions.mode = "spam";
     } else {
       typecheckOptions.mode = "once";
     }
-  }
+  };
+  input.onchange = onchange;
+  onchange(); // update mode from localStorage
   input.checked = true;
   const buttonHide = document.createElement("button");
   buttonHide.textContent = 'Hide';

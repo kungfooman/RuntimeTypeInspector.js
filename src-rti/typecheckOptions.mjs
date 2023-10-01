@@ -56,7 +56,6 @@ const typecheckOptions = {
     // @todo validate textures having width != 0 and height != 0
     // @todo validate integers
   },
-  div: createDiv(),
   count: 0,
 };
 export {typecheckReport, clearObject, typecheckReset, typecheckOptions};
