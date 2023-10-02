@@ -28,15 +28,25 @@ export function assertType(value, expect, loc, name, critical = true) {
     const warnObj = typecheckOptions.warned[msg];
     if (!warnObj.tr) {
       const tr = document.createElement('tr');
+      const dbg = document.createElement('td');
+      const dbgInput = document.createElement("input");
+      dbgInput.type = "checkbox";
+      dbgInput.onchange = () => {
+        warnObj.dbg = dbgInput.checked;
+      }
       const count = document.createElement('td');
       const desc = document.createElement('td');
       desc.innerText = msg;
-      tr.append(count, desc);
+      tr.append(dbg, count, desc);
+      dbg.append(dbgInput);
       typecheckWarnedTable.append(tr);
       warnObj.tr = tr;
     }
+    if (warnObj.dbg) {
+      debugger;
+    }
     const {tr} = warnObj;
-    tr.children[0].textContent = warnObj.hits;
+    tr.children[1].textContent = warnObj.hits;
   }
   return ret;
 }

@@ -1,4 +1,3 @@
-import {createDiv} from "./createDiv.mjs";
 function typecheckReport() {
   console.table(typecheckOptions.warned);
 }
@@ -20,7 +19,7 @@ const typecheckOptions = {
    */
   mode: 'spam',
   /**
-   * @type {Record<string, {hits: number, tr: HTMLTableRowElement}>}
+   * @type {Record<string, {hits: number, tr: HTMLTableRowElement, dbg: boolean}>}
    */
   warned: {},
   logSuperfluousProperty: false,
