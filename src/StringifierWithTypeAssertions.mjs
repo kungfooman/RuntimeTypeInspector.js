@@ -212,10 +212,12 @@ class StringifierWithTypeAssertions extends Stringifier {
         return left.name === name;
       } else if (type === 'Identifier') {
         return node.name === name;
-      } else if (type === 'ArrayPattern' || type === 'RestElement') {
+      } else if (type === 'ArrayPattern' || type === 'ObjectPattern' || type === 'RestElement') {
         return false;
       } else {
-        console.log("Unknown type to test params for", type, node);
+        const _ = new Stringifier();
+        const code = _.toSource(node);
+        console.log("Unknown type to test params for", type, code);
       }
       return false;
     })
