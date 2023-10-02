@@ -42,10 +42,12 @@ export function assertType(value, expect, loc, name, critical = true) {
       typecheckWarnedTable.append(tr);
       warnObj.tr = tr;
     }
-    if (warnObj.dbg) {
+    const {tr, dbg} = warnObj;
+    if (dbg) {
       debugger;
+      warnObj.dbg = false; // trigger only once to quickly get app running again
+      tr.children[0].children[0].checked = false; // update ui state
     }
-    const {tr} = warnObj;
     tr.children[1].textContent = warnObj.hits;
   }
   return ret;
