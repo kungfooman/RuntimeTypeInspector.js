@@ -374,6 +374,19 @@ class Stringifier {
     return out;
   }
   /**
+   * @param {import("@babel/types").LabeledStatement} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  LabeledStatement(node) {
+    const {body, label} = node;
+    const {spaces} = this;
+    let out = '';
+    out += spaces + this.toSource(label);
+    out += ': \n';
+    out += spaces + this.toSource(body);
+    return out;
+  }
+  /**
    * @example
    * ts = require("typescript");
    * ts.createSourceFile("repl.ts", "a = 1", ts.ScriptTarget.Latest);
@@ -677,10 +690,12 @@ class Stringifier {
    */
   ContinueStatement(node) {
     const {label} = node;
+    let out = this.spaces + 'continue';
     if (label) {
-      console.warn('ContinueStatement> unhandled label', label);
+      out += ' ' + this.toSource(label);
     }
-    return this.spaces + 'continue;';
+    out += ';';
+    return out;
   }
   /**
    * @param {import("@babel/types").ClassBody} node - The Babel AST node.
@@ -834,10 +849,12 @@ class Stringifier {
    */
   BreakStatement(node) {
     const {label} = node;
+    let out = this.spaces + 'break';
     if (label) {
-      console.warn("Stringifier#BreakStatement> unhandled label", label, "for", node);
+      out += ' ' + this.toSource(label);
     }
-    return this.spaces + 'break;';
+    out += ';';
+    return out;
   }
   /**
    * @param {import("@babel/types").ForOfStatement} node - The Babel AST node.
