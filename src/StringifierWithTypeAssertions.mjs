@@ -281,7 +281,6 @@ class StringifierWithTypeAssertions extends Stringifier {
           } else if (param.type === 'AssignmentPattern') {
             const loc = this.getName(node);
             if (param.left.type === 'ArrayPattern' && type.type === 'array') {
-              //const t = JSON.stringify(type.elementType, null, 2).replaceAll('\n', '\n' + spaces);
               // Add a type assertion for each element of the ArrayPattern
               for (const element of param.left.elements) {
                 if (element.type !== 'Identifier') {
@@ -290,6 +289,24 @@ class StringifierWithTypeAssertions extends Stringifier {
                 }
                 const t = JSON.stringify(type.elementType, null, 2).replaceAll('\n', '\n' + spaces);
                 out += `${spaces}if (!assertType(${element.name}, ${t}, '${loc}', '${name}')) {\n`;
+                out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
+              }
+              continue;
+            } else if (param.left.type === 'ObjectPattern' && type.type === 'object') {
+              // Add a type assertion for each property of the ObjectPattern
+              for (const property of param.left.properties) {
+                if (property.key.type !== 'Identifier') {
+                  console.warn('ObjectPattern> Only Identifier case handled right now');
+                  continue;
+                }
+                const keyName = property.key.name;
+                const subType = type.properties[keyName];
+                if (!subType) {
+                  console.warn("missing subtype information in JSDoc");
+                  continue;
+                }
+                const t = JSON.stringify(subType, null, 2).replaceAll('\n', '\n' + spaces);
+                out += `${spaces}if (!assertType(${keyName}, ${t}, '${loc}', '${name}')) {\n`;
                 out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
               }
               continue;
