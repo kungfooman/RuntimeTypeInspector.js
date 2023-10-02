@@ -27,7 +27,14 @@ function expandTypeDepFree(type) {
   while (!type.includes('|') && type[0] == '(' && type[type.length - 1] == ')') {
     type = type.slice(1, -1).trim();
   }
-  // First priority: Array<...>
+  // (1) Rest parameters like ...string
+  if (type[0] === '.' && type[1] === '.' && type[2] === '.') {
+    return {
+      type: 'array',
+      elementType: type.slice(3)
+    }
+  }
+  // (2) Array<...>
   if (type.startsWith("Array<") && type.endsWith('>')) {
     const typeSlice = type.slice(6, -1);
     return {
@@ -35,9 +42,7 @@ function expandTypeDepFree(type) {
       elementType: expandTypeDepFree(typeSlice)
     }
   }
-  // Second priority:
-  //  - Object<...>
-  //  - Record<...>
+  // (3) Object<...> or Record<...>
   if (
     (
       type.startsWith("Object<") ||
@@ -56,7 +61,7 @@ function expandTypeDepFree(type) {
       val: expandTypeDepFree(val),
     }
   }
-  // Third priority: { ... }
+  // (4) {...}
   if (type[0] == '{' && type[type.length - 1] == '}') {
     const propertiesArray = type.slice(1, -1).split(','); // ['entity: Entity', ' app: AppBase']
     const properties = {};
@@ -70,7 +75,7 @@ function expandTypeDepFree(type) {
     });
     return {type: 'object', properties};
   }
-  // Fourth priority: expand unions
+  // (5) expand unions
   const members = type.split("|");
   if (members.length >= 2) {
     members.forEach((_, i) => members[i]=_.trim());
@@ -79,7 +84,7 @@ function expandTypeDepFree(type) {
       members: members.map(expandTypeDepFree),
     }
   }
-  // Fifth priority: expand [] Arrays
+  // (6) expand [] Arrays
   // Test arrays: new pc.Mat3().set([1, 2, 3, "asd"])
   if (type.endsWith("[]")) {
     const typeSlice = type.slice(0, -2);
@@ -88,7 +93,7 @@ function expandTypeDepFree(type) {
       elementType: expandTypeDepFree(typeSlice)
     }
   }
-  // Sixth priority: expand tuples
+  // (7) expand tuples
   if (type[0] == '[' && type[type.length - 1] == ']') {
     const elements = type.slice(1, -1).split(','); // ['null', ' Texture', ' Texture', ' Texture', ' Texture', ' Texture', ' Texture']
     return {
