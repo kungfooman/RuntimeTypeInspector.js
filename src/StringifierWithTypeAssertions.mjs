@@ -205,6 +205,7 @@ class StringifierWithTypeAssertions extends Stringifier {
         console.assert(
           left.type === 'Identifier' ||
           left.type === 'ObjectPattern' ||
+          left.type === 'ArrayPattern' ||
           left.type === 'AssignmentPattern',
           'Expected Identifier or ObjectPattern'
         );
@@ -279,7 +280,21 @@ class StringifierWithTypeAssertions extends Stringifier {
             name = `arguments[${paramIndex}]`;
           } else if (param.type === 'AssignmentPattern') {
             const loc = this.getName(node);
-            console.warn(`generateTypeChecks> ${loc}> todo implement` +
+            if (param.left.type === 'ArrayPattern' && type.type === 'array') {
+              //const t = JSON.stringify(type.elementType, null, 2).replaceAll('\n', '\n' + spaces);
+              // Add a type assertion for each element of the ArrayPattern
+              for (const element of param.left.elements) {
+                if (element.type !== 'Identifier') {
+                  console.warn('Only Identifier case handled right now');
+                  continue;
+                }
+                const t = JSON.stringify(type.elementType, null, 2).replaceAll('\n', '\n' + spaces);
+                out += `${spaces}if (!assertType(${element.name}, ${t}, '${loc}', '${name}')) {\n`;
+                out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
+              }
+              continue;
+            }
+            console.warn(`generateTypeChecks> ${loc}> todo implement`,
                         `AssignmentPattern for parameter ${name}`);
             continue;
           }
