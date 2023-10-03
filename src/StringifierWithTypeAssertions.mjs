@@ -65,6 +65,18 @@ class StringifierWithTypeAssertions extends Stringifier {
     return out;
   }
   /**
+   * @override
+   * @param {import("@babel/types").ClassDeclaration} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  ClassDeclaration(node) {
+    const {id} = node;
+    const id_ = this.toSource(id);
+    let out = super.ClassDeclaration(node);
+    out += `${this.spaces}registerClass(${id_});`;
+    return out;
+  }
+  /**
    * @param {Node} node
    * @param {string} type
    * @returns {Node|undefined}

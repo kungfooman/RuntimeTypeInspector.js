@@ -1,6 +1,7 @@
 export * from './assertType.mjs';
 export * from './createDiv.mjs';
 export * from './makeJSDoc.mjs';
+export * from './registerClass.mjs';
 export * from './registerTypedef.mjs';
 export * from './typecheckDiv.mjs';
 export * from './typecheckEvery.mjs';

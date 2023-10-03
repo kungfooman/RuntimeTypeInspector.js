@@ -656,7 +656,7 @@ class Stringifier {
     out += ' {\n';
     out += this.toSource(body);
     out += spaces;
-    out += '\n}';
+    out += '\n}\n';
     return out;
   }
   /**

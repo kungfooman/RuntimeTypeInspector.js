@@ -11,7 +11,7 @@ function getHeader(validateDivision) {
   if (validateDivision) {
     header += ", validateDivision";
   }
-  header += ", registerTypedef } from 'runtime-type-inspector';\n";
+  header += ", registerTypedef, registerClass } from 'runtime-type-inspector/src-rti/index.mjs';\n";
   return header;
 }
 /**
