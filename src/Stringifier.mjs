@@ -304,7 +304,8 @@ class Stringifier {
     const {id, superClass, body} = node;
     let out = 'class ';
     if (id !== null) {
-      console.warn('ClassExpression> unhandled id', {id});
+      // Babel: strange API, either null or undefined... pick a type, maybe oversight/bug
+      out += this.toSource(id) + ' ';
     }
     if (superClass !== null) {
       const s = this.toSource(superClass);
