@@ -1,4 +1,13 @@
 const typecheckWarnedTable = document.createElement('table');
+const tr = document.createElement('tr');
+const th_0 = document.createElement('th');
+const th_1 = document.createElement('th');
+const th_2 = document.createElement('th');
+th_0.innerText = 'dbg;';
+th_1.innerText = 'Hits';
+th_2.innerText = 'Message';
+tr.append(th_0, th_1, th_2);
+typecheckWarnedTable.append(tr);
 //typecheckWarnedTable.style.maxHeight = '200px';
 //typecheckWarnedTable.style.overflow = 'scroll';
 //typecheckWarnedTable.style.textWrap = 'nowrap';
