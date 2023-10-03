@@ -36,6 +36,7 @@ function runtimeTypeInspector(enable) {
         validateDivision,
         ignoreLocations: ['Tensor#constructor'], // todo
         expandType,
+        filename: id,
       });
       return {
         code,

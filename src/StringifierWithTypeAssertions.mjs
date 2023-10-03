@@ -10,6 +10,7 @@ import {Stringifier      } from './Stringifier.mjs';
  * @property {boolean} [forceCurly]
  * @property {boolean} [validateDivision]
  * @property {Function} [expandType]
+ * @property {string} [filename]
  */
 class StringifierWithTypeAssertions extends Stringifier {
   /**
@@ -19,6 +20,7 @@ class StringifierWithTypeAssertions extends Stringifier {
     forceCurly = true,
     validateDivision = true,
     expandType = expandTypeDepFree,
+    filename
   } = {}) {
     super();
     this.forceCurly = forceCurly;
@@ -26,6 +28,7 @@ class StringifierWithTypeAssertions extends Stringifier {
     // @todo collect every type + manually validate as test set
     // + implement expandType using Babel Flow type parser aswell
     this.expandType = expandType;
+    this.filename = filename;
   }
   /** @type {Record<string, Stat>} */
   stats = {
@@ -112,6 +115,16 @@ class StringifierWithTypeAssertions extends Stringifier {
     }
   }
   /**
+   * 
+   * @param {...any} args 
+   */
+  warn(...args) {
+    if (this.filename) {
+      console.warn("[WARN]", this.filename);
+    }
+    console.warn(...args);
+  }
+  /**
    * @param {Node} node - The Babel AST node.
    * @returns {undefined | {}}
    */
@@ -122,7 +135,7 @@ class StringifierWithTypeAssertions extends Stringifier {
     // Receive the leadingComments from the ExpressionStatement, not the FunctionExpression itself.
     if (node.type === 'FunctionExpression') {
       if (node.leadingComments) {
-        console.warn("Case of FunctionExpression containing its own leadingComments is not handled");
+        this.warn("Case of FunctionExpression containing its own leadingComments is not handled");
         return;
       }
       node = this.findParentOfType(node, 'ExpressionStatement');
@@ -191,7 +204,7 @@ class StringifierWithTypeAssertions extends Stringifier {
     }
     const stat = stats[parentType];
     if (!stat) {
-      console.warn("getStatsForNode> dummy, but unhandled... fix for node type", node);
+      this.warn("getStatsForNode> dummy, but unhandled... fix for node type", node);
       return {checked: 0, unchecked: 0};
     }
     return stat;
@@ -207,7 +220,7 @@ class StringifierWithTypeAssertions extends Stringifier {
     }
     const {params} = node;
     if (!params) {
-      console.warn("nodeHasParamName> Expected params for", {node, name});
+      this.warn("nodeHasParamName> Expected params for", {node, name});
       return false;
     }
     return params.some(node => {
@@ -298,7 +311,7 @@ class StringifierWithTypeAssertions extends Stringifier {
               // Add a type assertion for each element of the ArrayPattern
               for (const element of param.left.elements) {
                 if (element.type !== 'Identifier') {
-                  console.warn('Only Identifier case handled right now');
+                  this.warn('Only Identifier case handled right now');
                   continue;
                 }
                 const t = JSON.stringify(type.elementType, null, 2).replaceAll('\n', '\n' + spaces);
@@ -310,13 +323,13 @@ class StringifierWithTypeAssertions extends Stringifier {
               // Add a type assertion for each property of the ObjectPattern
               for (const property of param.left.properties) {
                 if (property.key.type !== 'Identifier') {
-                  console.warn('ObjectPattern> Only Identifier case handled right now');
+                  this.warn('ObjectPattern> Only Identifier case handled right now');
                   continue;
                 }
                 const keyName = property.key.name;
                 const subType = type.properties[keyName];
                 if (!subType) {
-                  console.warn("missing subtype information in JSDoc");
+                  this.warn("missing subtype information in JSDoc");
                   continue;
                 }
                 const t = JSON.stringify(subType, null, 2).replaceAll('\n', '\n' + spaces);
@@ -325,13 +338,13 @@ class StringifierWithTypeAssertions extends Stringifier {
               }
               continue;
             }
-            console.warn(`generateTypeChecks> ${loc}> todo implement`,
-                        `AssignmentPattern for parameter ${name}`);
+            this.warn(`generateTypeChecks> ${loc}> todo implement`,
+                      `AssignmentPattern for parameter ${name}`);
             continue;
           }
         } else {
           const loc = this.getName(node);
-          console.warn(`generateTypeChecks> ${loc}> Missing param: ${name}`);
+          this.warn(`generateTypeChecks> ${loc}> Missing param: ${name}`);
           continue;
         }
       }
@@ -339,7 +352,7 @@ class StringifierWithTypeAssertions extends Stringifier {
       if (type === 'this') {
         const classDecl = this.findParentOfType(node, 'ClassDeclaration');
         if (!classDecl?.id) {
-          console.warn('generateTypeChecks> !classDecl?.id');
+          this.warn('generateTypeChecks> !classDecl?.id');
         }
         t = '"' + this.toSource(classDecl.id) + '"';
       }
@@ -397,7 +410,7 @@ class StringifierWithTypeAssertions extends Stringifier {
           return "getName> missing parent for " + node.type;
         }
       default:
-        console.warn("getName> unhandled type", type, "for", node);
+        this.warn("getName> unhandled type", type, "for", node);
         return '/*MISSING*/';
     }
   }
@@ -460,7 +473,7 @@ class StringifierWithTypeAssertions extends Stringifier {
           break;
         }
         if (line[i] !== '}') {
-          console.warn("expected }");
+          this.warn("expected }");
           break;
         }
         i++;
