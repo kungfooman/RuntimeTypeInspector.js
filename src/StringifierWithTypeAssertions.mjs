@@ -172,9 +172,9 @@ class StringifierWithTypeAssertions extends Stringifier {
           return;
         }
         if (node.type === 'ClassMethod' && node.kind === 'set') {
-          const paramName = this.toSource(node.params[0]);
+          const paramName = this.getNameOfParam(node.params[0]);
           if (node.params.length !== 1) {
-            console.warn("getJSDoc> setters require exactly one argument");
+            this.warn("getJSDoc> setters require exactly one argument");
           }
           return {
             [paramName]: parseJSDocSetter(lastComment.value, this.expandType)
@@ -183,6 +183,22 @@ class StringifierWithTypeAssertions extends Stringifier {
         return parseJSDoc(lastComment.value, this.expandType);
       }
     }
+  }
+  /**
+   * @param {Node} param - The Babel AST node.
+   * @returns {string}
+   */
+  getNameOfParam(param) {
+    if (param.type === 'Identifier') {
+      return param.name;
+    } else if (param.type === 'AssignmentPattern') {
+      if (param.left.type === 'Identifier') {
+        return param.left.name;
+      }
+    }
+    debugger;
+    this.warn("unable to extra name from param in specified way - may contain too much information");
+    return this.toSource(param);
   }
   statsReset() {
     Object.values(this.stats).forEach(statReset);
