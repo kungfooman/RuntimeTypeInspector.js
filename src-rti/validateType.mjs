@@ -113,7 +113,8 @@ function validateType(value, expect, loc, name, critical = true) {
   if (type === 'array') {
     return validateArray(value, expect, loc, name, critical);
   }
-  if (typedefs[type]) {
+  // If a typedef is also a class, it's just a shorthand-typedef-class
+  if (typedefs[type] && !classes[type]) {
     return validateTypedef(value, expect, loc, name, critical);
   }
   if (type === 'union') {
