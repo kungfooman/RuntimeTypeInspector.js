@@ -1,3 +1,4 @@
+import {classes         } from "./registerClass.mjs";
 import {typedefs        } from "./registerTypedef.mjs";
 import {typecheckOptions} from "./typecheckOptions.mjs";
 import {typecheckWarn   } from "./typecheckWarn.mjs";
@@ -194,17 +195,8 @@ function validateType(value, expect, loc, name, critical = true) {
     }
   }
   // inheritance check, allow Application for AppBase, allow Entity for GraphNode etc.
-  if (typeof pc !== "undefined") {
-    const pcVal = pc[type];
-    if (pcVal !== undefined) {
-      if (typeof pcVal === 'function') {
-        return value instanceof pcVal;
-      } else if (typeof pcVal === 'number' || typeof pcVal === 'string') {
-        return value === pcVal;
-      }
-      typecheckWarn('unhandled pc member', { value, type, expect, pcVal });
-      return false;
-    }
+  if (classes[type]) {
+    return value instanceof classes[type];
   }
   typecheckWarn("unchecked", { value, type, loc, name });
   return false;

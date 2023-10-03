@@ -1,9 +1,9 @@
 /**
- * @type {Record<string, object>}
+ * @type {Record<string, Function>}
  */
 const classes = {};
 /**
- * @param {object} theClass - The class.
+ * @param {Function} theClass - The class.
  */
 function registerClass(theClass) {
   classes[theClass.name] = theClass;
