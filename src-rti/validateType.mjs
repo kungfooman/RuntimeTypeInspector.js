@@ -84,19 +84,21 @@ function validateType(value, expect, loc, name, critical = true) {
     const checkProp = (prop) => {
       return validateNumber(value, prop);
     };
-    if (value instanceof pc.Vec2) {
+    // In a bundle pc can be defined while pc is not filled with all classes yet,
+    // therefore we need to check if class is added already.
+    if (pc.Vec2 && value instanceof pc.Vec2) {
       return propsXY.every(checkProp);
     }
-    if (value instanceof pc.Vec3) {
+    if (pc.Vec3 && value instanceof pc.Vec3) {
       return propsXYZ.every(checkProp);
     }
-    if (value instanceof pc.Vec4 || value instanceof pc.Quat) {
+    if ((pc.Vec4 && value instanceof pc.Vec4) || (pc.Quat && value instanceof pc.Quat)) {
       return propsXYZW.every(checkProp);
     }
-    if (value instanceof pc.Mat3) {
+    if (pc.Mat3 && value instanceof pc.Mat3) {
       return props9.every(prop => validateNumber(value.data, prop));
     }
-    if (value instanceof pc.Mat4) {
+    if (pc.Mat4 && value instanceof pc.Mat4) {
       return props16.every(prop => validateNumber(value.data, prop));
     }
   }
@@ -199,6 +201,13 @@ function validateType(value, expect, loc, name, critical = true) {
   if (classes[type]) {
     return value instanceof classes[type];
   }
+        //} /*else if (typeof theClass === 'number' || typeof theClass === 'string') {
+        // todo register these too individually?
+      //  return value === theClass;
+      //}*/
+    //  typecheckWarn('unhandled pc member', { value, type, expect, theClass });
+    //  return false;
+    //}
   typecheckWarn("unchecked", { value, type, loc, name });
   return false;
 }
