@@ -12,6 +12,8 @@ function getHeader(validateDivision) {
     header += ", validateDivision";
   }
   header += ", registerTypedef, registerClass } from 'runtime-type-inspector/src-rti/index.mjs';\n";
+  // Prevent tree-shaking in UMD build so we can always "add a breakpoint here".
+  header += "export * from 'runtime-type-inspector/src-rti/index.mjs';\n";
   return header;
 }
 /**
