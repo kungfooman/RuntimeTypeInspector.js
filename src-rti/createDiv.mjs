@@ -53,8 +53,14 @@ function createDiv() {
   div.append(spanErrors, span, input, buttonHide, typecheckWarnedTable);
   div.style.maxHeight = '200px';
   div.style.overflow = 'scroll';
-  // add when page is loaded
-  document.addEventListener("DOMContentLoaded", () => document.body.append(div));
+  const finalFunc = () => document.body.append(div);
+  // Add our <div> to <body> when possible
+  if (document.readyState === "complete") {
+    finalFunc();
+  } else {
+    // add when page is loaded
+    document.addEventListener("DOMContentLoaded", finalFunc);
+  }
   setInterval(() => {
     spanErrors.innerText = `Type validation errors: ${typecheckOptions.count}`;
   }, 100);
