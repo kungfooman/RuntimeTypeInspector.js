@@ -27,14 +27,14 @@ function runtimeTypeInspector(enable) {
     name: 'runtime-type-inspector',
     transform(code, id) {
       if (!enable || !filter(id)) {
-        return undefined;
+        return;
       }
-      code = getHeader() + code;
-      const validateDivision = false;
+      const validateDivision = true;
+      code = getHeader(validateDivision) + code;
       // todo expose options to rollup plugin
       code = addTypeChecks(code, {
         validateDivision,
-        ignoreLocations: ['Tensor#constructor'], // todo
+        // ignoreLocations: ['Tensor#constructor'], // todo
         expandType,
         filename: id,
       });
