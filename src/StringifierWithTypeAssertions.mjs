@@ -1,6 +1,7 @@
 import {expandTypeDepFree} from './expandTypeDepFree.mjs';
 import {parseJSDoc       } from './parseJSDoc.mjs';
 import {parseJSDocSetter } from './parseJSDocSetter.mjs';
+import {parseJSDocTypedef} from './parseJSDocTypedef.mjs';
 import {statReset        } from './stat.mjs';
 import {Stringifier      } from './Stringifier.mjs';
 /** @typedef {import('@babel/types').Node} Node */
@@ -450,65 +451,17 @@ class StringifierWithTypeAssertions extends Stringifier {
   /** @type {Record<string, object>} */
   typedefs = {};
   /**
-   * @param {string} comment - The comment.
-   */
-  handleBlockCommentOfFile(comment) {
-    const {type, value} = comment;
-    if (type !== 'CommentBlock') {
-      return;
-    }
-    const lines = value.split('\n');
-    for (let line of lines) {
-      line = line.trim();
-      if (line[0] === '*') {
-        line = line.slice(1).trim();
-      }
-      if (line.startsWith('@typedef')) {
-        const firstCurly = line.indexOf('{');
-        let k = firstCurly + 1;
-        let count = 0;
-        for (; k<line.length; k++) {
-          const c = line[k];
-          if (c === '{') {
-            count++;
-          } else if (c === '}') {
-            count--;
-          }
-          if (count === -1) {
-            break;
-          }
-        }
-        const def = line.substring(firstCurly + 1, k);
-        let i = k;
-        while (i < line.length) {
-          const c = line[i];
-          if (c === ' ') {
-            i++;
-            continue;
-          }
-          break;
-        }
-        if (line[i] !== '}') {
-          this.warn("expected }");
-          break;
-        }
-        i++;
-        let name = line.substring(i).trim();
-        // Drop description
-        name = name.split(' ')[0];
-        this.typedefs[name] = this.expandType(def);
-      }
-    }
-  }
-  /**
    * @override
    * @param {import("@babel/types").File} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   File(node) {
     const {errors, program, comments} = node;
-    for (const comment of comments) {
-      this.handleBlockCommentOfFile(comment);
+    if (comments) {
+      for (const comment of comments) {
+        const warn = this.warn.bind(this);
+        parseJSDocTypedef(this.typedefs, warn, comment, this.expandType);
+      }
     }
     //console.log("this.typedefs", this.typedefs);
     let out = '';
