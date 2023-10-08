@@ -3,13 +3,17 @@ import ts from 'typescript';
  * @todo implement TypeQuery, e.g. for expandType('typeof Number');
  * @example
  * const { expandType } = await import("./src/expandType.mjs");
+ * expandType('[string, Array|AnyTypedArray, number[]]|[ONNXTensor]');
  * expandType('(123)                    '); // Outputs: '123'
- * expandType('Array<number>            '); // Outputs: { type: 'array', elementType: 'number' }
- * expandType('Array<(123) >            '); // Outputs: { type: 'array', elementType: '123' }
  * expandType('  ( ( 123 ) )            '); // Outputs: '123'
- * expandType('  (string ) |(number )   '); // Outputs: { type: 'union', members: [ 'string', 'number' ] }
- * expandType(' "apples" | ( "bananas") '); // Outputs: { type: 'union', members: [ '"apples"', '"bananas"' ] }
- * expandType('Array<"abc" | 123>       '); // Outputs: { type: 'array', elementType: { type: 'union', members: [ '"abc"', '123' ] } }
+ * expandType('Array<number>            '); // Outputs: {type: 'array', elementType: 'number'}
+ * expandType('Array<(123) >            '); // Outputs: {type: 'array', elementType: '123'}
+ * expandType('Array<"abc" | 123>       '); // Outputs: {type: 'array', elementType: { type: 'union', members: [ '"abc"', '123' ]}}
+ * expandType('  (string ) |(number )   '); // Outputs: {type: 'union', members: [ 'string', 'number']}
+ * expandType(' "apples" | ( "bananas") '); // Outputs: {type: 'union', members: [ '"apples"', '"bananas"']}
+ * expandType('123?                     '); // Outputs: {"type":"union","members":["123","null"]}
+ * expandType('123|null                 '); // Outputs: {"type":"union","members":["123","null"]}
+ * expandType('Map<string, any>');
  * @param {string} type
  */
 function expandType(type) {
@@ -49,13 +53,16 @@ function toSourceTS(node) {
     JSDocAllType, LastTypeNode, LiteralType, NullKeyword, NumberKeyword, NumericLiteral,
     ObjectKeyword, Parameter, ParenthesizedType, PropertySignature, StringKeyword,
     StringLiteral, ThisType, TupleType, TypeLiteral, TypeReference, UndefinedKeyword,
-    UnionType,
+    UnionType, JSDocNullableType,
   } = ts.SyntaxKind;
   // console.log({ typeArguments, typeName, kind_, node });
   switch (node.kind) {
     case FunctionType:
       const parameters = node.parameters.map(toSourceTS);
       return {type: 'function', parameters};
+    case JSDocNullableType:
+      const t = toSourceTS(node.type);
+      return {type: 'union', members: [t, 'null']};
     // todo work out more: const jsdoc = `(...a: ...number) => 123
     // TS even thinks it's two parameters... just go for array/[]
     case Parameter:
