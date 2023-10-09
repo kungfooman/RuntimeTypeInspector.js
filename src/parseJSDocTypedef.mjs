@@ -1,3 +1,5 @@
+import {extractNameAndOptionality} from './extractNameAndOptionality.mjs';
+import {simplifyType             } from './simplifyType.mjs';
 /**
  * @param {string} line 
  * @returns {{content: string, nextIndex: number}}
@@ -25,7 +27,6 @@ function extractCurlyContent(line) {
  * @param {Console["warn"]} warn 
  * @param {import("@babel/types").CommentBlock | import("@babel/types").CommentLine} comment - From import("@babel/types").File["comments"]
  * @param {Function} expandType
- * @returns 
  */
 function parseJSDocTypedef(typedefs, warn, comment, expandType) {
   const {type, value} = comment;
@@ -44,19 +45,21 @@ function parseJSDocTypedef(typedefs, warn, comment, expandType) {
       let name = line.substring(nextIndex).trim();
       // Drop description
       name = name.split(' ')[0];
-      lastTypedef = expandTypeDepFree(def);
+      lastTypedef = expandType(def);
       typedefs[name] = lastTypedef;
     } else if (line.startsWith('@property')) {
       const {content, nextIndex} = extractCurlyContent(line);
       const rest = line.substring(nextIndex);
       const propType = expandType(content);
+      const [name, optional] = extractNameAndOptionality(rest);
+      // console.log({name, optional, propType});
+      const finalType = simplifyType(propType, optional);
       if (lastTypedef?.type === 'object') {
-        lastTypedef.properties["todoName"] = propType;
+        lastTypedef.properties[name] = finalType;
       } else {
         warn("not an extensible type", lastTypedef);
       }
     }
-  }    
-  return {};
+  }
 }
 export {extractCurlyContent, parseJSDocTypedef};
