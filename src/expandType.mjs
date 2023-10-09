@@ -80,6 +80,8 @@ function toSourceTS(node) {
           key: toSourceTS(typeArguments[0]),
           val: toSourceTS(typeArguments[1]),
         };
+      } else if (typeName.text === 'Object' && (!typeArguments || typeArguments?.length === 0)) {
+        return {type: 'object', properties: {}};
       } else if (typeName.text === 'Map' && typeArguments?.length === 2) {
         return {
           type: 'map',
