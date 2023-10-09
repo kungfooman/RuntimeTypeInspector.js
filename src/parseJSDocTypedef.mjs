@@ -48,6 +48,10 @@ function parseJSDocTypedef(typedefs, warn, comment, expandType) {
       lastTypedef = expandType(def);
       typedefs[name] = lastTypedef;
     } else if (line.startsWith('@property')) {
+      // class @property
+      if (!lastTypedef) {
+        continue;
+      }
       const {content, nextIndex} = extractCurlyContent(line);
       const rest = line.substring(nextIndex);
       const propType = expandType(content);
