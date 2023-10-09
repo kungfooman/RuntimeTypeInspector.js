@@ -1,3 +1,5 @@
+import {typedefs    } from "./registerTypedef.mjs";
+import {validateType} from "./validateType.mjs";
 /**
  * @param {*} value 
  * @param {*} expect 
@@ -7,7 +9,10 @@
  * @return {boolean}
  */
 function validateTypedef(value, expect, loc, name, critical) {
-  console.warn("validateTypedef> not implemented yet", {value, expect, loc, name, critical});
-  return true;
+  if (expect.optional && value === undefined) {
+    return true;
+  }
+  const typedef = typedefs[expect.type];
+  return validateType(value, typedef, loc, name, critical);
 }
 export {validateTypedef};
