@@ -4,6 +4,7 @@
         "target": "ES2022",
         "strict": true,
         "moduleResolution": "nodenext",
-        "noImplicitOverride": true
+        "noImplicitOverride": true,
+        "module": "es2022"
     }
 }
