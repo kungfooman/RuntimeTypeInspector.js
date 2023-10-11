@@ -1090,9 +1090,13 @@ class Stringifier {
    */
   CatchClause(node) {
     const {param, body} = node;
-    const p = this.toSource(param);
     const b = this.toSource(body);
-    return `catch (${p}) ${b}`;
+    if (param) {
+      const p = this.toSource(param);
+      return ` catch (${p}) ${b}`;
+    }
+    // Example: try { 1n / 0 } catch {}
+    return ` catch ${b}`;
   }
   /**
    * @param {import("@babel/types").RestElement} node - The Babel AST node.
