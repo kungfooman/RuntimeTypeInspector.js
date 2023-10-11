@@ -244,10 +244,8 @@ class Stringifier {
     if (async) {
       out += 'async ';
     }
-    if (generator) {
-      out += ' * ';
-    }
-    out += 'function ' + this.toSource(id) + this.FunctionDeclarationParams(params);
+    const star = generator ? '*' : '';
+    out += 'function' + star + ' ' + this.toSource(id) + this.FunctionDeclarationParams(params);
     out += this.toSource(body);
     return out;
   }
