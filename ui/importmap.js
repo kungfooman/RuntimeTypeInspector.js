@@ -2,10 +2,10 @@ function importFile(content) {
   return "data:text/javascript;base64," + btoa(content);
 }
 const imports = {
-  "@babel/core": "./babel-core.mjs",
+  //"@babel/core": "./babel-core.mjs",
   "@babel/parser": "./babel-parser.mjs",
-  "@babel/helper-plugin-utils": "./babel-helper-plugin-utils.mjs",
-  "@babel/plugin-syntax-typescript": "./babel-plugin-syntax-typescript.mjs",
+  //"@babel/helper-plugin-utils": "./babel-helper-plugin-utils.mjs",
+  //"@babel/plugin-syntax-typescript": "./babel-plugin-syntax-typescript.mjs",
   "fs": importFile("export default {};"),
   "typescript": importFile("export default ts;"), // UMD import
   /*

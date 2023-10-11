@@ -1,4 +1,4 @@
-import {parseSync} from "@babel/core";
+import {parse      } from "@babel/parser";
 import {Stringifier} from "./Stringifier.mjs";
 /**
  * A roundtrip between code -> AST -> code to validate Stringifier.
@@ -6,7 +6,7 @@ import {Stringifier} from "./Stringifier.mjs";
  */
 function code2ast2code(code) {
   const stringifier = new Stringifier();
-  const ast = parseSync(code);
+  const ast = parse(code, {sourceType: 'module'});
   if (!ast) {
     return;
   }

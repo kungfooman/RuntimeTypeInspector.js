@@ -1,4 +1,4 @@
-import {parseSync            } from '@babel/core';
+import {parse                } from '@babel/parser';
 import {parseJSDoc           } from '../src/parseJSDoc.mjs';
 import {addTypeChecks        } from '../src/addTypeChecks.mjs';
 import {expandType           } from '../src/expandType.mjs';
@@ -113,7 +113,7 @@ function activateREPL() {
 }
 buttonREPL.onclick = activateREPL;
 Object.assign(window, {
-  parseSync,
+  parse,
   ti, ...ti,
   rti, ...rti,
 });
@@ -150,7 +150,7 @@ function getRight() {
   return aceEditorRight.getValue();
 }
 async function actionAST() {
-  const ast = parseSync(getLeft());
+  const ast = parse(getLeft(), {sourceType: 'module'});
   const out = JSON.stringify(ast, function(name, val) {
     if (name == "loc" || name == "start" || name == "end") {
       return undefined; // remove
@@ -201,8 +201,8 @@ function actionTypeChecking() {
  * @param {string} right
  */
 function compareAST(left = getLeft(), right = getRight()) {
-  const l = parseSync(left);
-  const r = parseSync(right);
+  const l = parse(left , {sourceType: 'module'});
+  const r = parse(right, {sourceType: 'module'});
   const ljson = ast2jsonForComparison(l);
   const rjson = ast2jsonForComparison(r);
   const test = ljson == rjson;

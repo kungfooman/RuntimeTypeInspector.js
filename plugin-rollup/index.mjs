@@ -1,5 +1,5 @@
 import {createFilter         } from '@rollup/pluginutils';
-import {parseSync            } from '@babel/core';
+import {parse                } from '@babel/parser';
 import {addTypeChecks        } from '../src/addTypeChecks.mjs';
 import {expandType           } from '../src/expandType.mjs';
 import {ast2jsonForComparison} from '../src/ast2jsonForComparison.mjs';
@@ -24,8 +24,8 @@ function getHeader(validateDivision) {
  * @param {string} right
  */
 function compareAST(left, right) {
-  const l = parseSync(left);
-  const r = parseSync(right);
+  const l = parse(left , {sourceType: 'module'});
+  const r = parse(right, {sourceType: 'module'});
   const ljson = ast2jsonForComparison(l);
   const rjson = ast2jsonForComparison(r);
   const test = ljson == rjson;
