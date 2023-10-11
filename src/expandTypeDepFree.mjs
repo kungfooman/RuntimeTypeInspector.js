@@ -1,4 +1,14 @@
 /**
+ * @todo expandTypeDepFree doesn't support "complicated" types.
+ * For actual builds, we use expandType() anyway (which is based on TypeScript).
+ * But since TypeScript is a huge dependency, I'm looking into BabelFlow/BabelTypescript parser.
+ * Comparing AST's like this usually helps to find bugs or potential issues,
+ * while we can benchmark for best performance too.
+ * @example
+ * const tooComplex = 'Array<string|{chunks?: undefined|Array<{language: string|null, timestamp: Array<number|null>, text: string}>}>';
+ * console.log(expandTypeDepFree(tooComplex));
+ */
+/**
  * @typedef {object} ExpandTypeReturnValue
  * @property {'array' | 'union' | 'record' | 'tuple' | 'object'} type
  * @property {object | string} [elementType]
