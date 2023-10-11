@@ -23,13 +23,14 @@ class Stringifier {
     }
     this.parents.push(node);
     let out = '';
+    let comments = '';
     if (node && node.leadingComments) {
-      out += this.mapToSource(node.leadingComments).join('\n') + '\n';
+      comments += this.mapToSource(node.leadingComments).join('\n') + '\n';
     }
     if (node?.extra?.parenthesized) {
-      out += `(${this.toSource_(node)})`;
+      out += `(${comments}${this.toSource_(node)})`;
     } else {
-      out += this.toSource_(node);
+      out += comments + this.toSource_(node);
     }
     // leadingComments and trailingComments lead to duplicates, not always tho
     //if (node && node.trailingComments) {
