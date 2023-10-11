@@ -1227,6 +1227,16 @@ class Stringifier {
     return 'null';
   }
   /**
+   * @param {import("@babel/types").TaggedTemplateExpression} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  TaggedTemplateExpression(node) {
+    const {tag, quasi} = node;
+    const t = this.toSource(tag);
+    const q = this.toSource(quasi);
+    return t + q;
+  }
+  /**
    * @param {import("@babel/types").YieldExpression} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
