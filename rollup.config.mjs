@@ -10,8 +10,8 @@ import terser from '@rollup/plugin-terser';
 import dts from 'rollup-plugin-dts';
 import { visualizer } from 'rollup-plugin-visualizer';
 import json from '@rollup/plugin-json';
-//import { addTypeChecks } from "./src/typeInserter.mjs";
-//const { addTypeChecks } = await import("runtime-type-inspector/src/typeInserter.mjs");
+//import { addTypeChecks } from "./src-transpiler/typeInserter.mjs";
+//const { addTypeChecks } = await import("runtime-type-inspector/src-transpiler/typeInserter.mjs");
 import commonjs from '@rollup/plugin-commonjs';
 import { runtimeTypeInspector } from './plugin-rollup/index.mjs';
 /** @typedef {import('rollup').RollupOptions} RollupOptions */
@@ -132,7 +132,7 @@ function buildTarget(buildType, moduleFormat) {
     es5: es5Options(buildType),
     es6: moduleOptions(buildType)
   };
-  const rootFile = 'src/index.mjs';
+  const rootFile = 'src-transpiler/index.mjs';
   console.log("buildType", buildType);
   return {
     input: rootFile,

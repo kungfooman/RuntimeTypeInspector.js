@@ -2,7 +2,7 @@ import ts from 'typescript';
 /**
  * @todo implement TypeQuery, e.g. for expandType('typeof Number');
  * @example
- * const { expandType } = await import("./src/expandType.mjs");
+ * const { expandType } = await import("./src-transpiler/expandType.mjs");
  * expandType('[string, Array|AnyTypedArray, number[]]|[ONNXTensor]');
  * expandType('(123)                    '); // Outputs: '123'
  * expandType('  ( ( 123 ) )            '); // Outputs: '123'

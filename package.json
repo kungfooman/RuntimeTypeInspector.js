@@ -2,7 +2,7 @@
   "name": "runtime-type-inspector",
   "version": "1.0.0",
   "description": "Validating JSDoc types at runtime for high-quality types - Trust is good, control is better.",
-  "main": "src/index.mjs",
+  "main": "src-transpiler/index.mjs",
   "scripts": {
     "build": "rollup -c",
     "build:atBabelCore": "rollup -c --environment target:atBabelCore",

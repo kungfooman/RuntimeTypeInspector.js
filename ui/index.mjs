@@ -1,12 +1,12 @@
 import {parse                } from '@babel/parser';
-import {parseJSDoc           } from '../src/parseJSDoc.mjs';
-import {addTypeChecks        } from '../src/addTypeChecks.mjs';
-import {expandType           } from '../src/expandType.mjs';
-import {expandTypeDepFree    } from '../src/expandTypeDepFree.mjs';
-import {code2ast2code        } from '../src/code2ast2code.mjs';
-import {ast2jsonForComparison} from '../src/ast2jsonForComparison.mjs';
-import * as ti  from '../src/index.mjs';
-import * as rti from '../src-rti/index.mjs';
+import {parseJSDoc           } from '../src-transpiler/parseJSDoc.mjs';
+import {addTypeChecks        } from '../src-transpiler/addTypeChecks.mjs';
+import {expandType           } from '../src-transpiler/expandType.mjs';
+import {expandTypeDepFree    } from '../src-transpiler/expandTypeDepFree.mjs';
+import {code2ast2code        } from '../src-transpiler/code2ast2code.mjs';
+import {ast2jsonForComparison} from '../src-transpiler/ast2jsonForComparison.mjs';
+import * as ti  from '../src-transpiler/index.mjs';
+import * as rti from '../src-runtime/index.mjs';
 const currentAction = location.hash.slice(1).split('=')[1] || 'typechecking';
 const selectAction = document.getElementById("action");
 if (!(selectAction instanceof HTMLSelectElement)) {
