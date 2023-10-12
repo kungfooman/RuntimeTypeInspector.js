@@ -25,7 +25,7 @@ class Stringifier {
     let out = '';
     let comments = '';
     if (node && node.leadingComments) {
-      comments += this.mapToSource(node.leadingComments).join('\n') + '\n';
+      comments += this.mapToSource(node.leadingComments).join('');
     }
     if (node?.extra?.parenthesized) {
       out += `(${comments}${this.toSource_(node)})`;
@@ -1118,7 +1118,12 @@ class Stringifier {
    */
   CommentBlock(node) {
     const {value} = node;
-    return `${this.spaces.slice(2)}/*${value}*/`;
+    const par = this.parents[this.parents.length - 3];
+    const out = `${this.spaces.slice(2)}/*${value}*/`
+    if (par?.type === 'BlockStatement') {
+      return out + '\n';
+    }
+    return ' ' + out + ' ';
   }
   /**
    * @param {import("@babel/types").CommentLine} node - The Babel AST node.
@@ -1126,7 +1131,7 @@ class Stringifier {
    */
   CommentLine(node) {
     const {value} = node;
-    return `${this.spaces.slice(2)}//${value}`;
+    return `${this.spaces.slice(2)}//${value}\n`;
   }
   /**
    * @param {import("@babel/types").ImportDeclaration} node - The Babel AST node.
