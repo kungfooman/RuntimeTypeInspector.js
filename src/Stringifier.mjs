@@ -1193,7 +1193,14 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   Program(node) {
-    return this.mapToSource(node.body).join('\n');
+    const {sourceType, interpreter, body, directives} = node;
+    let out = '';
+    // @todo I would like to keep comments above and below,
+    // but below one is currently dropped (does't matter for AST)
+    // See: test/typechecking/directive.mjs
+    out += this.mapToSource(directives);
+    out += this.mapToSource(body).join('\n');
+    return out;
   }
   /**
    * @param {import("@babel/types").StringLiteral} node - The Babel AST node.
