@@ -1119,8 +1119,8 @@ class Stringifier {
   CommentBlock(node) {
     const {value} = node;
     const par = this.parents[this.parents.length - 3];
-    const out = `${this.spaces.slice(2)}/*${value}*/`
-    if (par?.type === 'BlockStatement') {
+    const out = `${this.spaces.slice(2)}/*${value}*/`;
+    if (par?.type === 'BlockStatement' || par?.type === 'Program') {
       return out + '\n';
     }
     return ' ' + out + ' ';
