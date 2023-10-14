@@ -1,8 +1,5 @@
 # `RuntimeTypeInspector.js` - your personal type-checking assistant 🕵️🐞🐛
 
-# Status: under construction,
-# preparing for first release 🚧🏗️🧰🚧
-
 `RuntimeTypeInspector.js` alongside `JSDoc` is a powerful tool which works in tandem with `Babel.js` and `TypeScript` to generate type-asserting JavaScript files. Assertion code is injected into debug builds to perform runtime type checking of each function and method at runtime - a step which is required beyond pure static typing to help emerge the Incident Management Lifecycle.
 
 The Incident Management Lifecycle is:
@@ -35,10 +32,16 @@ https://www.youtube.com/watch?v=xOp3YWU6M1g
 
 [![volumetric video bug fixing](https://img.youtube.com/vi/xOp3YWU6M1g/0.jpg)](https://www.youtube.com/watch?v=xOp3YWU6M1g)
 
-# Installation (project not published yet)
+# Installation
 
 ```
 npm install runtime-type-inspector
 ```
 
-Live demo: https://jsdoc.killtube.org/
+Live demo: https://runtimetypeinspector.org/
+
+Thank you for reading and testing! You can also open DevTools and run:
+
+```js
+console.log(rtiTranspiler)
+```
