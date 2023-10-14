@@ -1134,6 +1134,13 @@ class Stringifier {
     return `${this.spaces.slice(2)}//${value}\n`;
   }
   /**
+   * @param {import("@babel/types").Import} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  Import(node) {
+    return 'import';
+  }
+  /**
    * @param {import("@babel/types").ImportDeclaration} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
