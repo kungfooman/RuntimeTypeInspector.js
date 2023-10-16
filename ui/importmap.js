@@ -1,8 +1,12 @@
 function importFile(content) {
   return "data:text/javascript;base64," + btoa(content);
 }
+let rti = "../";
+if (location.host === 'runtimetypeinspector.org') {
+	rti = '/node_modules/runtime-type-inspector/';
+}
 const imports = {
-  "runtime-type-inspector/": "../",
+  "runtime-type-inspector/": rti,
   //"@babel/core": "./babel-core.mjs",
   "@babel/parser": "./babel-parser.mjs",
   //"@babel/helper-plugin-utils": "./babel-helper-plugin-utils.mjs",
