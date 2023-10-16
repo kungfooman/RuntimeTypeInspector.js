@@ -347,7 +347,23 @@ function setupAce(id, txt, execShiftEnter, execAltEnter) {
 }
 const aceEditorLeft = setupAce(
   'aceDivLeft',
-  '// Shift-Enter: convert content of left editor,\n//              write result to right editor\n// Tip: open Devtools to see warnings',
+  `// Shift-Enter: convert content of left editor,
+//              write result to right editor
+// Tip: open F12/DevTools to see errors and warnings
+// Press Shift-Enter in right editor to eval result.
+/**
+ * @param {number} a
+ * @param {number} b
+ */
+function add(a, b) {
+  return a + b;
+}
+/** @type {number[]} */
+const arr = [10_20];
+const [a, b] = arr;
+const ret = add(a, b);
+console.log("ret", ret);
+`,
   //editor => insertTypes(),
   editor => runAction(),
   editor => actionAST()
