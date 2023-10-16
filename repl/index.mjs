@@ -165,6 +165,12 @@ async function actionAST_TS() {
   const out = JSON.stringify(ast, null, 2);
   setRight(out);
 }
+async function actionAST_BabelTS() {
+  const str = getLeft();
+  const ast = parse(str, {plugins: ['typescript'], sourceType: "module"});
+  const out = JSON.stringify(ast, null, 2);
+  setRight(out);
+}
 /**
  * @param {string} type - The type like `...string`.
  */
@@ -232,6 +238,9 @@ async function runAction() {
       break;
     case 'ast-ts':
       await actionAST_TS();
+      break;
+    case 'ast-babel-ts':
+      await actionAST_BabelTS();
       break;
     case 'jsdoc':
       await actionJSDoc();
