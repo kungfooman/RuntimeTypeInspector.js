@@ -2,6 +2,7 @@ function importFile(content) {
   return "data:text/javascript;base64," + btoa(content);
 }
 const imports = {
+  "runtime-type-inspector/": "../",
   //"@babel/core": "./babel-core.mjs",
   "@babel/parser": "./babel-parser.mjs",
   //"@babel/helper-plugin-utils": "./babel-helper-plugin-utils.mjs",

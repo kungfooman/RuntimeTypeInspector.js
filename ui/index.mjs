@@ -1,12 +1,12 @@
 import {parse                } from '@babel/parser';
-import {parseJSDoc           } from '../src-transpiler/parseJSDoc.mjs';
-import {addTypeChecks        } from '../src-transpiler/addTypeChecks.mjs';
-import {expandType           } from '../src-transpiler/expandType.mjs';
-import {expandTypeDepFree    } from '../src-transpiler/expandTypeDepFree.mjs';
-import {code2ast2code        } from '../src-transpiler/code2ast2code.mjs';
-import {ast2jsonForComparison} from '../src-transpiler/ast2jsonForComparison.mjs';
-import * as ti  from '../src-transpiler/index.mjs';
-import * as rti from '../src-runtime/index.mjs';
+import {parseJSDoc           } from 'runtime-type-inspector/src-transpiler/parseJSDoc.mjs';
+import {addTypeChecks        } from 'runtime-type-inspector/src-transpiler/addTypeChecks.mjs';
+import {expandType           } from 'runtime-type-inspector/src-transpiler/expandType.mjs';
+import {expandTypeDepFree    } from 'runtime-type-inspector/src-transpiler/expandTypeDepFree.mjs';
+import {code2ast2code        } from 'runtime-type-inspector/src-transpiler/code2ast2code.mjs';
+import {ast2jsonForComparison} from 'runtime-type-inspector/src-transpiler/ast2jsonForComparison.mjs';
+import * as ti  from 'runtime-type-inspector/src-transpiler/index.mjs';
+import * as rti from 'runtime-type-inspector/src-runtime/index.mjs';
 const currentAction = location.hash.slice(1).split('=')[1] || 'typechecking';
 const selectAction = document.getElementById("action");
 if (!(selectAction instanceof HTMLSelectElement)) {
