@@ -392,4 +392,5 @@ export {
   compareAST,
   getPreferredExpandType,
   expandTypeAll,
+  runAction,
 };
