@@ -63,7 +63,7 @@ class Stringifier {
     return `rtiUnhandled("${node.type}");\n`;
   }
   /**
-   * Only add { and } when requested (e.g. for StringifierWithTypeAssertions).
+   * Only add { and } when requested (e.g. for Asserter).
    * showAST("if (true) 2;") vs showAST("if (true) {2}")
    * @param {Node} node - The Babel AST node.
    * @returns {string} Stringification of the node.

@@ -13,7 +13,7 @@ import {Stringifier      } from './Stringifier.mjs';
  * @property {Function} [expandType]
  * @property {string} [filename]
  */
-class StringifierWithTypeAssertions extends Stringifier {
+class Asserter extends Stringifier {
   /**
    * @param {Options} [options]
    */
@@ -481,4 +481,4 @@ class StringifierWithTypeAssertions extends Stringifier {
     return out;
   }
 }
-export {StringifierWithTypeAssertions};
+export {Asserter};
