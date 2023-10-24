@@ -141,7 +141,13 @@ class StringifierWithTypeAssertions extends Stringifier {
       }
       node = this.findParentOfType(node, 'ExpressionStatement');
       if (!node) {
-        return;
+        /**
+         * @todo Need more refactoring, see missing type-assertions in test/typechecking/good-old-es5.mjs
+         */
+        node = this.parents.findLast(_ => _.type == 'VariableDeclaration');
+        if (!node) {
+          return;
+        }
       }
     }
     let {leadingComments} = node;
