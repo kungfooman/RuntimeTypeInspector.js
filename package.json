@@ -17,6 +17,7 @@
   "bugs": {
     "url": "https://github.com/kungfooman/RuntimeTypeInspector.js/issues"
   },
+  "type": "module",
   "homepage": "https://github.com/kungfooman/RuntimeTypeInspector.js#readme",
   "devDependencies": {
     "@babel/preset-env": "^7.22.20",
