@@ -1,9 +1,9 @@
 import {parse                        } from '@babel/parser';
-import {StringifierWithTypeAssertions} from './StringifierWithTypeAssertions.mjs';
+import {StringifierWithTypeAssertions} from './Asserter.mjs';
 /**
  * Simple facade which does all the processing.
  * @param {string} src - The input source with JSDoc comments.
- * @param {import('./StringifierWithTypeAssertions.mjs').Options} [options]
+ * @param {import('./Asserter.mjs').Options} [options]
  * @returns {string} The output source with runtime type testing.
  */
 function addTypeChecks(src, options) {

@@ -10,4 +10,4 @@ export * from './parseJSDocSetter.mjs';
 export * from './parseJSDocTypedef.mjs';
 export * from './simplifyType.mjs';
 export * from './Stringifier.mjs';
-export * from './StringifierWithTypeAssertions.mjs';
+export * from './Asserter.mjs';

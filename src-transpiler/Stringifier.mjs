@@ -109,7 +109,7 @@ class Stringifier {
     return arr.map(_ => this.toSource(_));
   }
   /**
-   * This method is implemented in StringifierWithTypeAssertions.mjs
+   * This method is implemented in Asserter.mjs
    * @param {Node} node - The Babel AST node.
    * @returns {string}
    */
