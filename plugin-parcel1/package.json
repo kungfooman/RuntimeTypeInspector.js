@@ -1,0 +1,16 @@
+{
+  "name": "runtime-type-inspector-plugin-parcel1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.cjs",
+  "type": "commonjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Hermann Rolfes (kungfooman)",
+  "license": "MIT",
+  "dependencies": {
+    "parcel-bundler": "^1.12.5",
+    "runtime-type-inspector": "^2.0.2"
+  }
+}
