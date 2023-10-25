@@ -118,13 +118,18 @@ function buildTarget(buildType, moduleFormat) {
     es5: '.js',
     es6: '.mjs'
   };
+  /** @type {Record<string, 'umd'|'es'>} */
+  const outputFormat = {
+    es5: 'umd',
+    es6: 'es'
+  };
   /** @type {OutputOptions} */
   const outputOptions = {
     plugins: outputPlugins[buildType || outputPlugins.release],
-    format: 'es',
+    format: outputFormat[moduleFormat],
     indent: '\t',
     sourcemap: false,
-    name: 'pc',
+    name: 'rtiTranspiler',
     preserveModules: false,
     file: `${outputFile[buildType]}${outputExtension[moduleFormat]}`
   };
@@ -133,7 +138,6 @@ function buildTarget(buildType, moduleFormat) {
     es6: moduleOptions(buildType)
   };
   const rootFile = 'src-transpiler/index.mjs';
-  console.log("buildType", buildType);
   return {
     input: rootFile,
     output: outputOptions,
@@ -172,7 +176,6 @@ export default (args) => {
   } else {
     ['release', 'debug', 'profiler', 'min', 'rti'].forEach((t) => {
       ['es5', 'es6'].forEach((m) => {
-        console.log("envTarget", envTarget);
         if (envTarget === null || envTarget === t || envTarget === m || envTarget === `${t}_${m}`) {
           targets.push(buildTarget(t, m));
         }
