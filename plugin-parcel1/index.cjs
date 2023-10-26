@@ -1,6 +1,5 @@
-const { addTypeChecks } = require("runtime-type-inspector/build/rti-transpiler.js");
-const JSAsset = require("parcel-bundler/src/assets/JSAsset.js");
-console.log("JSAsset", JSAsset);
+const { addTypeChecks } = require('runtime-type-inspector');
+const JSAsset = require('parcel-bundler/src/assets/JSAsset.js');
 class JSAssetPlayCanvas extends JSAsset {
   /**
    * @override
