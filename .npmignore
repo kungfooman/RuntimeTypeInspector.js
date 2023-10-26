@@ -1,2 +1,8 @@
+plugin-parcel1
+plugin-parcel2
+plugin-rollup
+plugin-webpack
 test
-build
+src-transpiler
+src-runtime
+repl

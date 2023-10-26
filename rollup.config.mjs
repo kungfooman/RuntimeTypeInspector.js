@@ -115,7 +115,7 @@ function buildTarget(buildType, moduleFormat) {
     rti:      `build/${name}.rti`,
   };
   const outputExtension = {
-    es5: '.js',
+    es5: '.cjs',
     es6: '.mjs'
   };
   /** @type {Record<string, 'umd'|'es'>} */
@@ -158,7 +158,7 @@ const target_types = {
   input: 'types/index.d.ts',
   output: [{
     file: 'build/runtime-type-inspector.d.ts',
-    footer: 'export as namespace pc;',
+    footer: 'export as namespace rtiTranspiler;',
     format: 'es'
   }],
   plugins: [
@@ -169,12 +169,16 @@ export default (args) => {
   /** @type {RollupOptions[]} */
   let targets = [];
   const envTarget = process.env.target ? process.env.target.toLowerCase() : null;
+  if ((envTarget === null) && fs.existsSync('build')) {
+    // no targets specified, clean build directory
+    fs.rmSync('build', { recursive: true });
+  }
   if (envTarget === 'types') {
     targets.push(target_types);
   } else if (envTarget === 'extras') {
     targets = targets.concat(target_extras);
   } else {
-    ['release', 'debug', 'profiler', 'min', 'rti'].forEach((t) => {
+    ['release', /*'debug', 'profiler', 'min', 'rti'*/].forEach((t) => {
       ['es5', 'es6'].forEach((m) => {
         if (envTarget === null || envTarget === t || envTarget === m || envTarget === `${t}_${m}`) {
           targets.push(buildTarget(t, m));
