@@ -5,6 +5,8 @@ import {parseJSDocTypedef} from './parseJSDocTypedef.mjs';
 import {statReset        } from './stat.mjs';
 import {Stringifier      } from './Stringifier.mjs';
 /** @typedef {import('@babel/types').Node} Node */
+/** @typedef {import("@babel/types").ClassMethod} ClassMethod */
+/** @typedef {import("@babel/types").ClassPrivateMethod} ClassPrivateMethod */
 /** @typedef {import('./stat.mjs').Stat} Stat */
 /**
  * @typedef {object} Options
@@ -33,13 +35,16 @@ class Asserter extends Stringifier {
   }
   /** @type {Record<string, Stat>} */
   stats = {
-    'FunctionDeclaration'    : {checked: 0, unchecked: 0},
-    'FunctionExpression'     : {checked: 0, unchecked: 0},
-    'ArrowFunctionExpression': {checked: 0, unchecked: 0},
-    'ClassMethod#constructor': {checked: 0, unchecked: 0},
-    'ClassMethod#method'     : {checked: 0, unchecked: 0},
-    'ClassMethod#set'        : {checked: 0, unchecked: 0},
-    'ClassMethod#get'        : {checked: 0, unchecked: 0},
+    'FunctionDeclaration'      : {checked: 0, unchecked: 0},
+    'FunctionExpression'       : {checked: 0, unchecked: 0},
+    'ArrowFunctionExpression'  : {checked: 0, unchecked: 0},
+    'ClassMethod#constructor'  : {checked: 0, unchecked: 0},
+    'ClassMethod#method'       : {checked: 0, unchecked: 0},
+    'ClassMethod#set'          : {checked: 0, unchecked: 0},
+    'ClassMethod#get'          : {checked: 0, unchecked: 0},
+    'ClassPrivateMethod#method': {checked: 0, unchecked: 0},
+    'ClassPrivateMethod#set'   : {checked: 0, unchecked: 0},
+    'ClassPrivateMethod#get'   : {checked: 0, unchecked: 0},
   };
   /**
    * We expand type-asserted ArrowFunctionExpressions in order to add type assertions.
@@ -219,11 +224,18 @@ class Asserter extends Stringifier {
    */
   getStatsForNode(node) {
     const {parentType, stats} = this;
-    if (parentType == 'ClassMethod') {
-      const kind = this.parent.kind;
+    if (parentType === 'ClassMethod') {
+      const parent = /** @type {ClassMethod} */(
+        this.parent
+      );
+      const {kind} = parent;
       return stats[`ClassMethod#${kind}`];
-    } else if (node.type === 'ArrowFunctionExpression') {
-      return stats.ArrowFunctionExpression;
+    } else if (parentType === 'ClassPrivateMethod') {
+      const parent = /** @type {ClassPrivateMethod} */(
+        this.parent
+      );
+      const {kind} = parent;
+      return stats[`ClassPrivateMethod#${kind}`];
     }
     const stat = stats[parentType];
     if (!stat) {
@@ -281,6 +293,7 @@ class Asserter extends Stringifier {
       node.type === 'BlockStatement' &&
       parentType != 'FunctionDeclaration' &&
       parentType != 'ClassMethod' &&
+      parentType != 'ClassPrivateMethod' &&
       parentType != 'FunctionExpression'
     ) {
       return '';
@@ -409,8 +422,9 @@ class Asserter extends Stringifier {
       case 'FunctionDeclaration':
         return toSource(id);
       case "ClassMethod":
+      case "ClassPrivateMethod":
         const classDecl = this.parents.findLast(_ => _.type == 'ClassDeclaration');
-        let out = ''
+        let out = '';
         if (classDecl) {
           out += toSource(classDecl.id) + '#';
         }
