@@ -743,6 +743,47 @@ class Stringifier {
     return out;
   }
   /**
+   * @param {import("@babel/types").PrivateName} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  PrivateName(node) {
+    const {id} = node;
+    return `#${this.toSource(id)}`;
+  }
+  /**
+   * @param {import("@babel/types").ClassPrivateMethod} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  ClassPrivateMethod(node) {
+    const {static: static_, key, kind, id, generator, async, params, body} = node;
+    let out = this.spaces;
+    if (generator) {
+      out += '*';
+    }
+    if (id) {
+      console.warn('Stringifier#ClassPrivateMethod> unhandled id', node);
+    }
+    if (static_) {
+      out += 'static ';
+    }
+    if (async) {
+      out += 'async ';
+    }
+    if (kind === 'get') {
+      out += 'get ';
+    } else if (kind === 'set') {
+      out += 'set ';
+    } else if (kind === 'method') {
+      // Nothing yet.
+    } else {
+      console.warn("unhandled kind", kind, "for", node);
+    }
+    out += this.toSource(key);
+    out += `(${this.mapToSource(params).join(', ')})`;
+    out += this.toSource(body);
+    return out;
+  }
+  /**
    * @param {import("@babel/types").ExportAllDeclaration} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
