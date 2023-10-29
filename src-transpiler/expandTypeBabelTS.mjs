@@ -172,6 +172,9 @@ function toSourceBabelTS(node) {
     // expandTypeBabelTS('undefined')
     case 'TSUndefinedKeyword':
       return 'undefined';
+    // parseTypeBabelTS('void');
+    case 'TSVoidKeyword':
+      return 'void';
     // expandTypeBabelTS('this')
     case 'TSThisType':
       return 'this';
