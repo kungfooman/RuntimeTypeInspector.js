@@ -2,6 +2,7 @@ import {parse                } from '@babel/parser';
 import {parseJSDoc           } from 'runtime-type-inspector/src-transpiler/parseJSDoc.mjs';
 import {addTypeChecks        } from 'runtime-type-inspector/src-transpiler/addTypeChecks.mjs';
 import {expandType           } from 'runtime-type-inspector/src-transpiler/expandType.mjs';
+import {expandTypeBabelTS    } from 'runtime-type-inspector/src-transpiler/expandTypeBabelTS.mjs';
 import {expandTypeDepFree    } from 'runtime-type-inspector/src-transpiler/expandTypeDepFree.mjs';
 import {code2ast2code        } from 'runtime-type-inspector/src-transpiler/code2ast2code.mjs';
 import {ast2jsonForComparison} from 'runtime-type-inspector/src-transpiler/ast2jsonForComparison.mjs';
@@ -175,13 +176,28 @@ async function actionAST_BabelTS() {
  * @param {string} type - The type like `...string`.
  */
 function expandTypeAll(type) {
-  const ts = expandType(type);
-  const depFree = expandTypeDepFree(type);
   let out = '';
   out += '// expandTypeTS:\n';
-  out += JSON.stringify(ts, null, 2) + '\n';
+  try {
+    const ts = expandType(type);
+    out += JSON.stringify(ts, null, 2) + '\n';
+  } catch (e) {
+    out += e;
+  }
+  out += '// expandTypeBabelTS:\n';
+  try {
+    const babelts = expandTypeBabelTS(type);
+    out += JSON.stringify(babelts, null, 2) + '\n';
+  } catch (e) {
+    out += e;
+  }
   out += '// expandTypeDepFree:\n';
-  out += JSON.stringify(depFree, null, 2) + '\n';
+  try {
+    const depFree = expandTypeDepFree(type);
+    out += JSON.stringify(depFree, null, 2) + '\n';
+  } catch (e) {
+    out += e;
+  }
   return out;
 }
 function actionExpandType() {
