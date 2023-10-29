@@ -102,8 +102,26 @@ function data2code(name, data) {
   }
   return `// data2code> unhandled type: name=${name}, type of data: ${typeof data}`;
 }
+/**
+ * Since Asserter extends Stringifier, it needs to appear afterwards.
+ * @param {string} a 
+ * @param {string} b 
+ * @returns {-1|0|1}
+ */
+function compareBaseClasses(a, b) {
+  if (a.startsWith("class Asserter") && b.startsWith("class Stringifier")) {
+    return 1;
+  }
+  if (b.startsWith("class Asserter") && a.startsWith("class Stringifier")) {
+    return -1;
+  }
+  return 0;
+}
 function activateREPL() {
-  const code = Object.entries(ti).map(([key, val]) => data2code(key, val)).join('\n');
+  const code = Object.entries(ti)
+    .map(([key, val]) => data2code(key, val))
+    .sort(compareBaseClasses)
+    .join('\n');
   const codeLocal = [getPreferredExpandType, expandTypeAll].join('\n');
   const leftContent = aceEditorLeft.getValue().replaceAll('`', '\\`');
   const leftContentAsCode = `const jsdoc = \`${leftContent}\`;`;
@@ -418,4 +436,5 @@ export {
   getPreferredExpandType,
   expandTypeAll,
   runAction,
+  data2code,
 };
