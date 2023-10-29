@@ -53,7 +53,7 @@ function toSourceTS(node) {
     JSDocAllType, LastTypeNode, LiteralType, NullKeyword, NumberKeyword, NumericLiteral,
     ObjectKeyword, Parameter, ParenthesizedType, PropertySignature, StringKeyword,
     StringLiteral, ThisType, TupleType, TypeLiteral, TypeReference, UndefinedKeyword,
-    UnionType, JSDocNullableType,
+    UnionType, JSDocNullableType, TrueKeyword, FalseKeyword
   } = ts.SyntaxKind;
   // console.log({ typeArguments, typeName, kind_, node });
   switch (node.kind) {
@@ -153,12 +153,15 @@ function toSourceTS(node) {
       return toSourceTS(node.literal);
     case AnyKeyword:
     case BooleanKeyword:
+    // ts.SyntaxKind[parseType("*").kind] === 'JSDocAllType'
     case JSDocAllType:
     case NullKeyword:
     case NumericLiteral:
     case StringLiteral:
     case ThisType:
     case UndefinedKeyword:
+    case TrueKeyword:
+    case FalseKeyword:
       return node.getText();
     case ObjectKeyword:
       return {

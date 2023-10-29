@@ -159,7 +159,8 @@ function toSourceBabelTS(node) {
     // expandTypeBabelTS('true | false');
     case 'BooleanLiteral':
       return node.value.toString();
-    // ???
+    // ts.SyntaxKind[parseType("*").kind] === 'JSDocAllType'
+    // But Babel-TS doesn't parse it atm
     //case 'JSDocAllType':
     // expandTypeBabelTS('null')
     case 'TSNullKeyword':
