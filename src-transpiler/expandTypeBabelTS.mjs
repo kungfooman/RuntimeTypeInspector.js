@@ -154,12 +154,15 @@ function toSourceBabelTS(node) {
     case 'TSAnyKeyword':
       return 'any';
     // expandTypeBabelTS("boolean")
-    case 'BooleanKeyword':
+    case 'TSBooleanKeyword':
       return 'boolean';
+    // expandTypeBabelTS('true | false');
+    case 'BooleanLiteral':
+      return node.value.toString();
     // ???
     //case 'JSDocAllType':
     // expandTypeBabelTS('null')
-    case 'NullKeyword':
+    case 'TSNullKeyword':
       return 'null';
     // expandTypeBabelTS('123')
     case 'NumericLiteral':
