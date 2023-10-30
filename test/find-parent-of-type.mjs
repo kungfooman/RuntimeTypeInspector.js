@@ -5,9 +5,9 @@
  * @returns {Tensor} The stacked tensor.
  */
 export function stack(tensors, dim = 0) {
-    // This requires: this.findParentOfTypeWithPredicate(node, 'ExportNamedDeclaration', isFunc);
-    // Otherwise it picks up the JSDoc from stack()
-    return cat(tensors.map(t => t.unsqueeze(dim)), dim);
+  // This requires: this.findParentOfTypeWithPredicate(node, 'ExportNamedDeclaration', isFunc);
+  // Otherwise it picks up the JSDoc from stack()
+  return cat(tensors.map(t => t.unsqueeze(dim)), dim);
 }
 /**
  * @param {{priority: number}} a - First object with priority property.

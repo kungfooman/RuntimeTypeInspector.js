@@ -101,22 +101,28 @@ class Asserter extends Stringifier {
     });
   }
   /**
-   * @param {Node} node - Start searching above this node.
-   * @param {string} type - Type we are searching for.
-   * @param {Function} predicate - Stop searching when this returns true.
+   * @param {Node} node 
    * @returns {Node|undefined}
    */
-  findParentOfTypeWithPredicate(node, type, predicate) {
+  getLeadingCommentsNodeForArrowFunctionExpression(node) {
     const {parents} = this;
     let i = parents.findLastIndex(_ => _ == node);
-    i--; // not interested in our start node
+    let parent = parents[i];
+    if (parent.leadingComments) {
+      return parent;
+    }
+    // Skip now, if we find another function first,
+    // there is no JSDoc for our function anymore.
+    // Not interested in our start node if it didn't
+    // contain leadingComments.
+    i--;
     while (i >= 0) {
-      const parent = parents[i];
-      if (predicate(parent)) {
-        return;
-      }
-      if (parent.type === type) {
+      parent = parents[i];
+      if (parent.leadingComments) {
         return parent;
+      }
+      if (nodeIsFunction(parent)) {
+        break;
       }
       i--;
     }
@@ -164,17 +170,7 @@ class Asserter extends Stringifier {
         leadingComments = exportNamedDeclaration?.leadingComments;
       }
       if (node.type === 'ArrowFunctionExpression') {
-        let tmp = this.findParentOfType(node, 'VariableDeclaration');
-        if (!tmp?.leadingComments) {
-          function isFunc(node) {
-            // console.log("isFunc", node.type);
-            return (
-              node.type === 'ArrowFunctionExpression' ||
-              node.type === 'FunctionDeclaration'
-            );
-          }
-          tmp = this.findParentOfTypeWithPredicate(node, 'ExportNamedDeclaration', isFunc);
-        }
+        const tmp = this.getLeadingCommentsNodeForArrowFunctionExpression(node);
         leadingComments = tmp?.leadingComments;
       }
     }
@@ -224,21 +220,22 @@ class Asserter extends Stringifier {
    * @returns {Stat}
    */
   getStatsForNode(node) {
-    const {parentType, stats} = this;
-    if (parentType === 'ClassMethod') {
+    const {stats} = this;
+    const type = nodeIsFunction(node) ? node.type : this.parentType;
+    if (type === 'ClassMethod') {
       const parent = /** @type {ClassMethod} */(
         this.parent
       );
       const {kind} = parent;
       return stats[`ClassMethod#${kind}`];
-    } else if (parentType === 'ClassPrivateMethod') {
+    } else if (type === 'ClassPrivateMethod') {
       const parent = /** @type {ClassPrivateMethod} */(
         this.parent
       );
       const {kind} = parent;
       return stats[`ClassPrivateMethod#${kind}`];
     }
-    const stat = stats[parentType];
+    const stat = stats[type];
     if (!stat) {
       this.warn("getStatsForNode> dummy, but unhandled... fix for node type", node);
       return {checked: 0, unchecked: 0};
