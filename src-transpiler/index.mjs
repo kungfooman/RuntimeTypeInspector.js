@@ -7,6 +7,7 @@ export * from './expandType.mjs';
 export * from './expandTypeBabelTS.mjs';
 export * from './expandTypeDepFree.mjs';
 export * from './extractNameAndOptionality.mjs';
+export * from './nodeIsFunction.mjs';
 export * from './parseJSDoc.mjs';
 export * from './parseJSDocSetter.mjs';
 export * from './parseJSDocTypedef.mjs';

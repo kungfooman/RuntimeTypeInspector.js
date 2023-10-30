@@ -1,13 +1,14 @@
 import {expandTypeDepFree} from './expandTypeDepFree.mjs';
+import {nodeIsFunction   } from './nodeIsFunction.mjs';
 import {parseJSDoc       } from './parseJSDoc.mjs';
 import {parseJSDocSetter } from './parseJSDocSetter.mjs';
 import {parseJSDocTypedef} from './parseJSDocTypedef.mjs';
 import {statReset        } from './stat.mjs';
 import {Stringifier      } from './Stringifier.mjs';
-/** @typedef {import('@babel/types').Node} Node */
-/** @typedef {import("@babel/types").ClassMethod} ClassMethod */
+/** @typedef {import('@babel/types').Node              } Node               */
+/** @typedef {import("@babel/types").ClassMethod       } ClassMethod        */
 /** @typedef {import("@babel/types").ClassPrivateMethod} ClassPrivateMethod */
-/** @typedef {import('./stat.mjs').Stat} Stat */
+/** @typedef {import('./stat.mjs').Stat                } Stat               */
 /**
  * @typedef {object} Options
  * @property {boolean} [forceCurly]
@@ -288,14 +289,8 @@ class Asserter extends Stringifier {
    * @returns {string}
    */
   generateTypeChecks(node) {
-    const {parentType} = this;
-    if (
-      node.type === 'BlockStatement' &&
-      parentType != 'FunctionDeclaration' &&
-      parentType != 'ClassMethod' &&
-      parentType != 'ClassPrivateMethod' &&
-      parentType != 'FunctionExpression'
-    ) {
+    const {parent} = this;
+    if (node.type === 'BlockStatement' && !nodeIsFunction(parent)) {
       return '';
     }
     const jsdoc = this.getJSDoc(node);
