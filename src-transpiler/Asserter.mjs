@@ -128,7 +128,6 @@ class Asserter extends Stringifier {
     }
   }
   /**
-   * 
    * @param {...any} args 
    */
   warn(...args) {
@@ -298,10 +297,7 @@ class Asserter extends Stringifier {
       return '';
     }
     stat.checked++;
-    let spaces = this.spaces;
-    if (node.type !== 'ArrowFunctionExpression') {
-      spaces += '  ';
-    }
+    const {spaces} = this;
     let out = '';
     //out += `${spaces}/*${spaces}  node.type=${node.type}\n${spaces}
     //  ${JSON.stringify(jsdoc)}\n${parent}\n${spaces}*/\n`;

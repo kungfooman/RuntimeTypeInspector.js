@@ -139,36 +139,48 @@ class Stringifier {
     if (parents[1]?.type == 'Program') {
       n--;
     }
+    //console.log("parents", parents.map(_ => _.type));
     n -= parents.filter(
       _ => false
-        || _.type === 'BlockStatement'
-        //|| _.type === 'VariableDeclaration'
+        //|| _.type === 'BlockStatement'
+        || _.type === 'FunctionDeclaration'
+        || _.type === 'CommentBlock'
+        || _.type === 'VariableDeclaration'
         || _.type === 'VariableDeclarator'
-        || _.type === 'ObjectProperty'
+        //|| _.type === 'ObjectProperty'
         || _.type === 'ExportNamedDeclaration'
         || _.type === 'NewExpression'
         || _.type === 'AssignmentExpression'
         //|| _.type === 'MemberExpression'
         //|| _.type === 'ThisExpression'
         || _.type === 'ArrayExpression'
+        || _.type === 'ObjectExpression'
+        || _.type === 'CallExpression'
+        || _.type === 'ExpressionStatement'
         //|| (_.type === 'ExpressionStatement' && _.expression.type === 'NewExpression')
         //|| (_.type === 'ExpressionStatement' && _.expression.type === 'CallExpression')
         || _.type === 'ClassBody' // ClassDeclaration is enough to increase indentation
         //|| _.type === 'LabeledStatement'
         //|| _.type === 'ExpressionStatement'
     ).length;
-    n -= 1; // Do not count last frame we are in right now.
-    if (
-      parents.some(_ => _.type === 'CallExpression') &&
-      parents.some(_ => _.type === 'ObjectExpression')
-    ) {
-      n--;
-    }
+    //n -= 1; // Do not count last frame we are in right now.
+    //if (
+    //  parents.some(_ => _.type === 'CallExpression') &&
+    //  parents.some(_ => _.type === 'ObjectExpression')
+    //) {
+    //  n--;
+    //}
     if (n < 0) {
       //console.warn("getSpaces> n < 0");
       n = 0;
     }
     return '  '.repeat(n);
+  }
+  debugSpaces() {
+    const {spaces, parents} = this;
+    const n = spaces.length;
+    const path = parents.map(_ => _.type).join('/');
+    return `${spaces}// got ${n} spaces for ${path}\n`;
   }
   /**
    * > await something();
@@ -480,7 +492,7 @@ class Stringifier {
         out += ',';
       }
       out += '\n';
-      out += this.spaces.slice(2);
+      out += this.spaces;
     }
     out += '}';
     return out;
@@ -1158,10 +1170,29 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   CommentBlock(node) {
-    const {value} = node;
-    const par = this.parents[this.parents.length - 3];
-    const out = `${this.spaces.slice(2)}/*${value}*/`;
-    if (par?.type === 'BlockStatement' || par?.type === 'Program') {
+    let {value} = node;
+    const {spaces, parents} = this;
+    const par = parents[parents.length - 3];
+    let out = `${spaces}/*`;
+    if (value.includes('\n')) {
+      // A bit tricky to handle multiline comments,
+      // we have to remove the given indentation level.
+      value = value.replace(/^\s*\*/gm, '*')
+        .trim()
+        .split('\n')
+        // Skip spaces in first line for /**
+        .map((line, i) => (i ? spaces + ' ' : '') + line)
+        .join('\n');
+      out += `${value}\n${spaces} */`;
+    } else {
+      out += `${value}*/`;
+    }
+    if (
+      par &&
+      par.type === 'BlockStatement' ||
+      par.type === 'ObjectExpression' ||
+      par.type === 'Program'
+    ) {
       return out + '\n';
     }
     return ' ' + out + ' ';
