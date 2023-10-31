@@ -413,8 +413,8 @@ class Asserter extends Stringifier {
     switch (type) {
       case 'FunctionDeclaration':
         return toSource(id);
-      case "ClassMethod":
-      case "ClassPrivateMethod":
+      case 'ClassMethod':
+      case 'ClassPrivateMethod':
         const classDecl = this.parents.findLast(_ => _.type == 'ClassDeclaration');
         let out = '';
         if (classDecl) {
@@ -428,7 +428,7 @@ class Asserter extends Stringifier {
         }
         const expressionStatement = this.findParentOfType(node, 'ExpressionStatement');
         if (!expressionStatement) {
-          return "unnamed function expression";
+          return 'unnamed function expression';
         }
         return toSource(expressionStatement.expression.left);
       case 'ArrowFunctionExpression':
@@ -436,10 +436,12 @@ class Asserter extends Stringifier {
         if (parent) {
           return toSource(parent.id);
         } else {
-          return "getName> missing parent for " + node.type;
+          return 'getName> missing parent for ' + node.type;
         }
+      case 'ObjectMethod':
+        return toSource(key);
       default:
-        this.warn("getName> unhandled type", type, "for", node);
+        this.warn('getName> unhandled type', type, 'for', node);
         return '/*MISSING*/';
     }
   }
