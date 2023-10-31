@@ -7,6 +7,7 @@ import {expandTypeDepFree    } from 'runtime-type-inspector/src-transpiler/expan
 import {code2ast2code        } from 'runtime-type-inspector/src-transpiler/code2ast2code.mjs';
 import {ast2jsonForComparison} from 'runtime-type-inspector/src-transpiler/ast2jsonForComparison.mjs';
 import * as ti  from 'runtime-type-inspector/src-transpiler/index.mjs';
+//import * as rti from '@runtime-type-inspector/runtime';
 import * as rti from 'runtime-type-inspector/src-runtime/index.mjs';
 const currentAction = location.hash.slice(1).split('=')[1] || 'typechecking';
 const selectAction = document.getElementById("action");
@@ -181,7 +182,12 @@ async function actionAST() {
 async function actionAST_TS() {
   const str = getLeft();
   const ast = ts.createSourceFile('repl.ts', str, ts.ScriptTarget.Latest, false /*setParentNodes*/);
-  const out = JSON.stringify(ast, null, 2);
+  const out = JSON.stringify(ast, function(name, val) {
+    if (name === "parent") {
+      return undefined; // remove
+    }
+    return val; // keep
+  }, 2);
   setRight(out);
 }
 async function actionAST_BabelTS() {
@@ -200,21 +206,21 @@ function expandTypeAll(type) {
     const ts = expandType(type);
     out += JSON.stringify(ts, null, 2) + '\n';
   } catch (e) {
-    out += e;
+    out += e + '\n';
   }
   out += '// expandTypeBabelTS:\n';
   try {
     const babelts = expandTypeBabelTS(type);
     out += JSON.stringify(babelts, null, 2) + '\n';
   } catch (e) {
-    out += e;
+    out += e + '\n';
   }
   out += '// expandTypeDepFree:\n';
   try {
     const depFree = expandTypeDepFree(type);
     out += JSON.stringify(depFree, null, 2) + '\n';
   } catch (e) {
-    out += e;
+    out += e + '\n';
   }
   return out;
 }
