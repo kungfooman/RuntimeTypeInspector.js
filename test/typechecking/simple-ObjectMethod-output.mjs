@@ -1,6 +1,6 @@
 const body = new ReadableStream({
   /**
-   * @param {Controller} controller
+   * @param {Controller} controller 
    */
   start(controller) {
     if (!assertType(controller, "Controller", 'start', 'controller')) {

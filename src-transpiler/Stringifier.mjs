@@ -194,6 +194,120 @@ class Stringifier {
     return `await ${this.toSource(argument)}`;
   }
   /**
+   * @param {import("@babel/types").ClassBody} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  ClassBody(node) {
+    const {body} = node;
+    return this.mapToSource(body).join('\n');
+  }
+  /**
+   * @param {import("@babel/types").ClassMethod} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  ClassMethod(node) {
+    const {static: static_, key, computed, kind, id, generator, async, params, body} = node;
+    let out = this.spaces;
+    if (generator) {
+      out += '*';
+    }
+    if (id) {
+      console.warn('Stringifier#ClassMethod> unhandled id', node);
+    }
+    if (static_) {
+      out += 'static ';
+    }
+    if (async) {
+      out += 'async ';
+    }
+    if (kind === 'get') {
+      out += 'get ';
+    } else if (kind === 'set') {
+      out += 'set ';
+    } else if (kind === 'constructor' || kind === 'method') {
+      // Nothing yet.
+    } else {
+      console.warn("unhandled kind", kind, "for", node);
+    }
+    let methodName = this.toSource(key);
+    if (computed) {
+      methodName = `[${methodName}]`;
+    }
+    out += methodName;
+    out += `(${this.mapToSource(params).join(', ')})`;
+    out += this.toSource(body);
+    return out;
+  }
+  /**
+   * @param {import("@babel/types").ClassExpression} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  ClassExpression(node) {
+    const {id, superClass, body} = node;
+    let out = 'class ';
+    if (id !== null) {
+      // Babel: strange API, either null or undefined... pick a type, maybe oversight/bug
+      out += this.toSource(id) + ' ';
+    }
+    if (superClass !== null) {
+      const s = this.toSource(superClass);
+      out += `extends ${s} `;
+    }
+    const c = this.toSource(body);
+    out += `{\n${c}\n}`;
+    return out;
+  }
+  /**
+   * @param {import("@babel/types").ClassDeclaration} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  ClassDeclaration(node) {
+    const {id, superClass, body, trailingComments, leadingComments} = node;
+    const spaces = this.spaces;
+    let out = spaces + 'class ' + this.toSource(id);
+    if (superClass) {
+      out += ` extends ${this.toSource(superClass)}`
+    }
+    out += ' {\n';
+    out += this.toSource(body);
+    out += spaces;
+    out += '\n}\n';
+    return out;
+  }
+  /**
+   * @param {import("@babel/types").ClassPrivateMethod} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  ClassPrivateMethod(node) {
+    const {static: static_, key, kind, id, generator, async, params, body} = node;
+    let out = this.spaces;
+    if (generator) {
+      out += '*';
+    }
+    if (id) {
+      console.warn('Stringifier#ClassPrivateMethod> unhandled id', node);
+    }
+    if (static_) {
+      out += 'static ';
+    }
+    if (async) {
+      out += 'async ';
+    }
+    if (kind === 'get') {
+      out += 'get ';
+    } else if (kind === 'set') {
+      out += 'set ';
+    } else if (kind === 'method') {
+      // Nothing yet.
+    } else {
+      console.warn("unhandled kind", kind, "for", node);
+    }
+    out += this.toSource(key);
+    out += `(${this.mapToSource(params).join(', ')})`;
+    out += this.toSource(body);
+    return out;
+  }
+  /**
    * > asd;
    * > asd = 1;
    * > static asd;
@@ -218,6 +332,19 @@ class Stringifier {
     }
     if (b) {
       out += ` = ${b}`;
+    }
+    out += ';';
+    return out;
+  }
+  /**
+   * @param {import("@babel/types").ContinueStatement} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  ContinueStatement(node) {
+    const {label} = node;
+    let out = this.spaces + 'continue';
+    if (label) {
+      out += ' ' + this.toSource(label);
     }
     out += ';';
     return out;
@@ -306,25 +433,6 @@ class Stringifier {
     out += this.mapToSource(body).join('\n') + '\n';
     out += spaces.slice(2);
     out += '}';
-    return out;
-  }
-  /**
-   * @param {import("@babel/types").ClassExpression} node - The Babel AST node.
-   * @returns {string} Stringification of the node.
-   */
-  ClassExpression(node) {
-    const {id, superClass, body} = node;
-    let out = 'class ';
-    if (id !== null) {
-      // Babel: strange API, either null or undefined... pick a type, maybe oversight/bug
-      out += this.toSource(id) + ' ';
-    }
-    if (superClass !== null) {
-      const s = this.toSource(superClass);
-      out += `extends ${s} `;
-    }
-    const c = this.toSource(body);
-    out += `{\n${c}\n}`;
     return out;
   }
   /**
@@ -655,23 +763,6 @@ class Stringifier {
     return `new ${c}(${args})`;
   }
   /**
-   * @param {import("@babel/types").ClassDeclaration} node - The Babel AST node.
-   * @returns {string} Stringification of the node.
-   */
-  ClassDeclaration(node) {
-    const {id, superClass, body, trailingComments, leadingComments} = node;
-    const spaces = this.spaces;
-    let out = spaces + 'class ' + this.toSource(id);
-    if (superClass) {
-      out += ` extends ${this.toSource(superClass)}`
-    }
-    out += ' {\n';
-    out += this.toSource(body);
-    out += spaces;
-    out += '\n}\n';
-    return out;
-  }
-  /**
    * @example
    * console.log(ast2json(parseSync("`${1} b ${2+3}c`").program.body[0]));
    * @param {import("@babel/types").TemplateLiteral} node - The Babel AST node.
@@ -698,103 +789,12 @@ class Stringifier {
     return value.raw;
   }
   /**
-   * @param {import("@babel/types").ContinueStatement} node - The Babel AST node.
-   * @returns {string} Stringification of the node.
-   */
-  ContinueStatement(node) {
-    const {label} = node;
-    let out = this.spaces + 'continue';
-    if (label) {
-      out += ' ' + this.toSource(label);
-    }
-    out += ';';
-    return out;
-  }
-  /**
-   * @param {import("@babel/types").ClassBody} node - The Babel AST node.
-   * @returns {string} Stringification of the node.
-   */
-  ClassBody(node) {
-    const {body} = node;
-    return this.mapToSource(body).join('\n');
-  }
-  /**
-   * @param {import("@babel/types").ClassMethod} node - The Babel AST node.
-   * @returns {string} Stringification of the node.
-   */
-  ClassMethod(node) {
-    const {static: static_, key, computed, kind, id, generator, async, params, body} = node;
-    let out = this.spaces;
-    if (generator) {
-      out += '*';
-    }
-    if (id) {
-      console.warn('Stringifier#ClassMethod> unhandled id', node);
-    }
-    if (static_) {
-      out += 'static ';
-    }
-    if (async) {
-      out += 'async ';
-    }
-    if (kind === 'get') {
-      out += 'get ';
-    } else if (kind === 'set') {
-      out += 'set ';
-    } else if (kind === 'constructor' || kind === 'method') {
-      // Nothing yet.
-    } else {
-      console.warn("unhandled kind", kind, "for", node);
-    }
-    let methodName = this.toSource(key);
-    if (computed) {
-      methodName = `[${methodName}]`;
-    }
-    out += methodName;
-    out += `(${this.mapToSource(params).join(', ')})`;
-    out += this.toSource(body);
-    return out;
-  }
-  /**
    * @param {import("@babel/types").PrivateName} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   PrivateName(node) {
     const {id} = node;
     return `#${this.toSource(id)}`;
-  }
-  /**
-   * @param {import("@babel/types").ClassPrivateMethod} node - The Babel AST node.
-   * @returns {string} Stringification of the node.
-   */
-  ClassPrivateMethod(node) {
-    const {static: static_, key, kind, id, generator, async, params, body} = node;
-    let out = this.spaces;
-    if (generator) {
-      out += '*';
-    }
-    if (id) {
-      console.warn('Stringifier#ClassPrivateMethod> unhandled id', node);
-    }
-    if (static_) {
-      out += 'static ';
-    }
-    if (async) {
-      out += 'async ';
-    }
-    if (kind === 'get') {
-      out += 'get ';
-    } else if (kind === 'set') {
-      out += 'set ';
-    } else if (kind === 'method') {
-      // Nothing yet.
-    } else {
-      console.warn("unhandled kind", kind, "for", node);
-    }
-    out += this.toSource(key);
-    out += `(${this.mapToSource(params).join(', ')})`;
-    out += this.toSource(body);
-    return out;
   }
   /**
    * @param {import("@babel/types").ExportAllDeclaration} node - The Babel AST node.
