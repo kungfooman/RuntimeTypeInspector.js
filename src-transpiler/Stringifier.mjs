@@ -1,3 +1,4 @@
+import {trimEndSpaces} from './trimEndSpaces.mjs';
 /**
  * @typedef {import("@babel/types").Node} Node
  */
@@ -303,7 +304,7 @@ class Stringifier {
     }
     out += this.generateTypeChecks(node);
     out += this.mapToSource(body).join('\n') + '\n';
-    out += spaces;
+    out += spaces.slice(2);
     out += '}';
     return out;
   }
@@ -1177,9 +1178,9 @@ class Stringifier {
     if (value.includes('\n')) {
       // A bit tricky to handle multiline comments,
       // we have to remove the given indentation level.
-      value = value.replace(/^\s*\*/gm, '*')
-        .trim()
+      value = trimEndSpaces(value.replace(/^\s*\*/gm, '*'))
         .split('\n')
+        .filter(_ => _.length) // skip empty lines
         // Skip spaces in first line for /**
         .map((line, i) => (i ? spaces + ' ' : '') + line)
         .join('\n');
