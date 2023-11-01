@@ -145,6 +145,7 @@ class Stringifier {
       _ => false
         //|| _.type === 'BlockStatement'
         || _.type === 'FunctionDeclaration'
+        || _.type === 'ClassDeclaration'
         || _.type === 'CommentBlock'
         || _.type === 'VariableDeclaration'
         || _.type === 'VariableDeclarator'
