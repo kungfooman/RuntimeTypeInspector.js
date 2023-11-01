@@ -159,6 +159,8 @@ class Stringifier {
         || _.type === 'ObjectExpression'
         || _.type === 'CallExpression'
         || _.type === 'ExpressionStatement'
+        || _.type === 'ObjectPattern'
+        || _.type === 'IfStatement'
         //|| (_.type === 'ExpressionStatement' && _.expression.type === 'NewExpression')
         //|| (_.type === 'ExpressionStatement' && _.expression.type === 'CallExpression')
         || _.type === 'ClassBody' // ClassDeclaration is enough to increase indentation

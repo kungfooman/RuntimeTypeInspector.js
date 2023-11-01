@@ -10,6 +10,44 @@ function fetchSomething(url, {
   json = true,
   headers = null
 }) {
-  console.log('fetchSomething>', { url, maxRetries, json, headers });
+  if (!assertType(url, "string", 'fetchSomething', 'url')) {
+    youCanAddABreakpointHere();
+  }
+  if (!assertType(arguments[1], {
+    "type": "object",
+    "optional": false,
+    "properties": {
+      "maxRetries": {
+        "type": "number",
+        "optional": true
+      },
+      "json": {
+        "type": "boolean",
+        "optional": true
+      },
+      "headers": {
+        "type": "union",
+        "members": [
+          {
+            "type": "object",
+            "properties": {}
+          },
+          "null"
+        ],
+        "optional": true
+      }
+    }
+  }, 'fetchSomething', 'arguments[1]')) {
+    youCanAddABreakpointHere();
+  }
+  console.log('fetchSomething>', {
+    url,
+    maxRetries,
+    json,
+    headers,
+  });
 }
-fetchSomething("test.gltf", { maxRetries: 2 });
+const ret = fetchSomething("test.gltf", {
+  maxRetries: 2
+});
+console.log('ret', ret);
