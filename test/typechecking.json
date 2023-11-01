@@ -1,0 +1,22 @@
+[
+  {
+    "input": "./test/typechecking/computed-ClassMethod-input.mjs",
+    "output": "./test/typechecking/computed-ClassMethod-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/simple-ObjectMethod-computed-input.mjs",
+    "output": "./test/typechecking/simple-ObjectMethod-computed-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/simple-ObjectMethod-getter-input.mjs",
+    "output": "./test/typechecking/simple-ObjectMethod-getter-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/simple-ObjectMethod-input.mjs",
+    "output": "./test/typechecking/simple-ObjectMethod-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/simple-ObjectPattern-input.mjs",
+    "output": "./test/typechecking/simple-ObjectPattern-output.mjs"
+  }
+]
