@@ -36,16 +36,17 @@ class Asserter extends Stringifier {
   }
   /** @type {Record<string, Stat>} */
   stats = {
-    'FunctionDeclaration'      : {checked: 0, unchecked: 0},
-    'FunctionExpression'       : {checked: 0, unchecked: 0},
     'ArrowFunctionExpression'  : {checked: 0, unchecked: 0},
     'ClassMethod#constructor'  : {checked: 0, unchecked: 0},
+    'ClassMethod#get'          : {checked: 0, unchecked: 0},
     'ClassMethod#method'       : {checked: 0, unchecked: 0},
     'ClassMethod#set'          : {checked: 0, unchecked: 0},
-    'ClassMethod#get'          : {checked: 0, unchecked: 0},
+    'ClassPrivateMethod#get'   : {checked: 0, unchecked: 0},
     'ClassPrivateMethod#method': {checked: 0, unchecked: 0},
     'ClassPrivateMethod#set'   : {checked: 0, unchecked: 0},
-    'ClassPrivateMethod#get'   : {checked: 0, unchecked: 0},
+    'FunctionDeclaration'      : {checked: 0, unchecked: 0},
+    'FunctionExpression'       : {checked: 0, unchecked: 0},
+    'ObjectMethod'             : {checked: 0, unchecked: 0},
   };
   /**
    * We expand type-asserted ArrowFunctionExpressions in order to add type assertions.
