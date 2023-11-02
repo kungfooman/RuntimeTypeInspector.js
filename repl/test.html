@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>RTI Test</title>
+    <!-- Include Ace editor first -->
+    <!--
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ace.js"></script>
+    -->
+    <script src="../node_modules/ace-builds/src/ace.js"></script>
+    <!-- Include Ace-diff JS and CSS (using unpkg.com CDN in this case) -->
+    <script src="https://unpkg.com/ace-diff@^2"></script>
+    <link href="./ace-diff@2.3.0.css" rel="stylesheet">
+    <!-- Bootstrap for additional styling of the demo -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.1/css/bootstrap.min.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>RTI Test</h1>
+      <div class="row">
+        <div class="col-sm-4">
+          <div id="buttons"></div>
+          <p>A red test requires more work, while a green test passes.</p>
+          <hr>
+          <h2>Troubleshooting</h2>
+          <p>If you run into a problem please open an issue on GitHub.</p>
+        </div>
+        <div class="col-sm-8" id="here">
+          <div class="custom"></div>
+        </div>
+      </div>
+    </div>
+    <script src="test.js"></script>
+  </body>
+</html>
