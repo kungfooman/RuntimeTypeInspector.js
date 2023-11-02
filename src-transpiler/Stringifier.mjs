@@ -11,6 +11,7 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   toSource(node) {
+    const {leadingComments, trailingComments} = node;
     // handle this case only temporarily
     if (node === null) {
       // Contexts like: 
@@ -25,13 +26,18 @@ class Stringifier {
     this.parents.push(node);
     let out = '';
     let comments = '';
-    if (node && node.leadingComments) {
-      comments += this.mapToSource(node.leadingComments).join('');
+    if (leadingComments) {
+      comments += this.mapToSource(leadingComments).join('');
     }
     if (node?.extra?.parenthesized) {
       out += `(${comments}${this.toSource_(node)})`;
     } else {
       out += comments + this.toSource_(node);
+    }
+    if (trailingComments) {
+      for (const trailingComment of trailingComments) {
+        out += ' ' + this.toSource(trailingComment).trim();
+      }
     }
     // leadingComments and trailingComments lead to duplicates, not always tho
     //if (node && node.trailingComments) {
@@ -118,67 +124,12 @@ class Stringifier {
     const {spaces} = this;
     return `${spaces}/* Stub of Stringifier#generateTypeChecks({type=${node.type}}); */\n`;
   }
+  numSpaces = 0;
   /**
-   * Start from File->Program->... while ignoring BlockStatements aswell
    * @returns {string} A string of two spaces per indentation.
    */
   get spaces() {
-    const {parents} = this;
-    // This needs a bit refactoring to fix spaces in all cases
-    if (false) {
-      let n = parents.filter(_ => _.type === 'IfStatement' || _.type === 'BlockStatementasd').length;
-      //n--;
-      if (n < 0) {
-        n = 0;
-      }
-      return '  '.repeat(n);
-    }
-    let n = parents.length;
-    if (parents[0]?.type == 'File') {
-      n--;
-    }
-    if (parents[1]?.type == 'Program') {
-      n--;
-    }
-    //console.log("parents", parents.map(_ => _.type));
-    n -= parents.filter(
-      _ => false
-        //|| _.type === 'BlockStatement'
-        || _.type === 'FunctionDeclaration'
-        || _.type === 'ClassDeclaration'
-        || _.type === 'CommentBlock'
-        || _.type === 'VariableDeclaration'
-        || _.type === 'VariableDeclarator'
-        //|| _.type === 'ObjectProperty'
-        || _.type === 'ExportNamedDeclaration'
-        || _.type === 'NewExpression'
-        || _.type === 'AssignmentExpression'
-        //|| _.type === 'MemberExpression'
-        //|| _.type === 'ThisExpression'
-        || _.type === 'ArrayExpression'
-        || _.type === 'ObjectExpression'
-        || _.type === 'CallExpression'
-        || _.type === 'ExpressionStatement'
-        || _.type === 'ObjectPattern'
-        || _.type === 'IfStatement'
-        //|| (_.type === 'ExpressionStatement' && _.expression.type === 'NewExpression')
-        //|| (_.type === 'ExpressionStatement' && _.expression.type === 'CallExpression')
-        || _.type === 'ClassBody' // ClassDeclaration is enough to increase indentation
-        //|| _.type === 'LabeledStatement'
-        //|| _.type === 'ExpressionStatement'
-    ).length;
-    //n -= 1; // Do not count last frame we are in right now.
-    //if (
-    //  parents.some(_ => _.type === 'CallExpression') &&
-    //  parents.some(_ => _.type === 'ObjectExpression')
-    //) {
-    //  n--;
-    //}
-    if (n < 0) {
-      //console.warn("getSpaces> n < 0");
-      n = 0;
-    }
-    return '  '.repeat(n);
+    return '  '.repeat(this.numSpaces);
   }
   debugSpaces() {
     const {spaces, parents} = this;
@@ -272,7 +223,9 @@ class Stringifier {
       out += ` extends ${this.toSource(superClass)}`
     }
     out += ' {\n';
+    this.numSpaces++;
     out += this.toSource(body);
+    this.numSpaces--;
     out += spaces;
     out += '\n}\n';
     return out;
@@ -432,9 +385,11 @@ class Stringifier {
     if (directives && directives.length) {
       out += this.mapToSource(directives).join('\n') + '\n';
     }
+    this.numSpaces++;
     out += this.generateTypeChecks(node);
     out += this.mapToSource(body).join('\n') + '\n';
-    out += spaces.slice(2);
+    this.numSpaces--;
+    out += spaces;
     out += '}';
     return out;
   }
@@ -597,7 +552,9 @@ class Stringifier {
     const {properties, extra} = node;
     let out = '{';
     if (properties.length) {
+      this.numSpaces++;
       const props = this.mapToSource(properties).join(',\n');
+      this.numSpaces--;
       out += '\n';
       out += props;
       if (extra?.trailingComma) {
@@ -1058,7 +1015,9 @@ class Stringifier {
     let out = '{';
     if (properties.length) {
       out += '\n';
+      this.numSpaces++;
       out += this.mapToSource(properties).join(',\n');
+      this.numSpaces--;
       if (!!extra?.trailingComma) {
         out += ',';
       }

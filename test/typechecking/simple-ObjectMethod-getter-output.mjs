@@ -4,5 +4,4 @@ const vec2 = {
   },
   y: 2
 };
-// TODO: trailing line comments are not identical yet
-console.log('vec2', vec2.x, vec2.y);
+console.log('vec2', vec2.x, vec2.y); // 1 2
