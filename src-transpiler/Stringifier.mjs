@@ -380,16 +380,23 @@ class Stringifier {
     const {body, directives} = node;
     const spaces = this.spaces;
     let out = '';
-    out += ' {\n';
+    out += ' {';
+    this.numSpaces++;
     // Handle Directive/DirectiveLiteral like 'use strict';
     if (directives && directives.length) {
+      out += '\n';
       out += this.mapToSource(directives).join('\n') + '\n';
     }
-    this.numSpaces++;
     out += this.generateTypeChecks(node);
-    out += this.mapToSource(body).join('\n') + '\n';
+    if (body.length) {
+      if (out.length === 2) { // 2 is ' {'
+        out += '\n';
+      }
+      // out += '/*'+out.length+'*/';
+      out += this.mapToSource(body).join('\n') + '\n';
+      out += spaces;
+    }
     this.numSpaces--;
-    out += spaces;
     out += '}';
     return out;
   }

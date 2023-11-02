@@ -4,6 +4,10 @@
     "output": "./test/typechecking/computed-ClassMethod-output.mjs"
   },
   {
+    "input": "./test/typechecking/functions-input.mjs",
+    "output": "./test/typechecking/functions-output.mjs"
+  },
+  {
     "input": "./test/typechecking/simple-ObjectMethod-computed-input.mjs",
     "output": "./test/typechecking/simple-ObjectMethod-computed-output.mjs"
   },

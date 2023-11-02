@@ -300,6 +300,7 @@ class Asserter extends Stringifier {
     stat.checked++;
     const {spaces} = this;
     let out = '';
+    let first = true;
     //out += `${spaces}/*${spaces}  node.type=${node.type}\n${spaces}
     //  ${JSON.stringify(jsdoc)}\n${parent}\n${spaces}*/\n`;
     for (let name in jsdoc) {
@@ -391,6 +392,10 @@ class Asserter extends Stringifier {
         loc === 'SingleContactResult#constructor'
       ) {
         prevCheck = 'arguments.length !== 0 && ';
+      }
+      if (first) {
+        out += '\n';
+        first = false;
       }
       out += `${spaces}if (${prevCheck}!assertType(${name}, ${t}, '${loc}', '${name}')) {\n`;
       out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
