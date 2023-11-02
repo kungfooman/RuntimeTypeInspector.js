@@ -1,24 +1,47 @@
 import {addTypeChecks} from './src-transpiler/addTypeChecks.mjs';
 import {readFileSync} from 'fs';
+/**
+ * @param {string} a 
+ * @param {string} b 
+ */
+function compareLineByLine(a, b) {
+  const a_ = a.split('\n');
+  const b_ = b.split('\n');
+  const t = [];
+  for (let i=0; i<a_.length; i++) {
+    const lineA = a_[i];
+    const lineB = b_[i];
+    if (lineA !== lineB) {
+      t.push([
+        `Line ${i}`,
+        lineA,
+        lineB,
+      ]);
+    }
+  }
+  //console.table(t);
+  console.log(t);
+}
 const content = readFileSync('./test/typechecking.json', 'utf8');
 const tests = JSON.parse(content);
 let discrepancies = 0;
 for (const {input, output} of tests) {
-    const inputContent = readFileSync(input, 'utf8');
-    const outputContent = readFileSync(output, 'utf8');
-    const newOutputContent = addTypeChecks(inputContent);
-    if (newOutputContent !== outputContent) {
-        discrepancies++;
-        console.error("Discrepancy detected, please check!", {
-            input,
-            inputContent,
-            output,
-            outputContent,
-            newOutputContent
-        });
-    }
-    //console.log(input, output);
+  const inputContent = readFileSync(input, 'utf8');
+  const outputContent = readFileSync(output, 'utf8');
+  const newOutputContent = addTypeChecks(inputContent);
+  if (newOutputContent !== outputContent) {
+    discrepancies++;
+    console.error("Discrepancy detected, please check!", {
+      input,
+      //inputContent,
+      output,
+      //outputContent,
+      //newOutputContent
+    });
+    compareLineByLine(outputContent, newOutputContent);
+  }
+  //console.log(input, output);
 }
 if (discrepancies) {
-    console.error(`Found ${discrepancies} discrepancies in ${tests.length} tests`);
+  console.error(`Found ${discrepancies} discrepancies in ${tests.length} tests`);
 }
