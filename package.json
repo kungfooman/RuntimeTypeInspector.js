@@ -8,6 +8,7 @@
     "build": "rollup -c",
     "build:atBabelCore": "rollup -c --environment target:atBabelCore",
     "gen-tests-typechecking": "node gen_tests.mjs > test/typechecking.json",
+    "test": "node test.mjs",
     "lint": "eslint --ext .js,.mjs,.cjs src test"
   },
   "repository": {
