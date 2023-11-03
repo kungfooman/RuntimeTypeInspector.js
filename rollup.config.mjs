@@ -74,7 +74,7 @@ const moduleOptions = buildType => ({
  * @param {'es5'|'es6'} moduleFormat - The module format.
  * @returns {RollupOptions} One rollup target.
  */
-function buildTarget(buildType, moduleFormat) {
+function buildTarget(name, rootFile, path, buildType, moduleFormat) {
   const banner = {
     debug: ' (DEBUG)',
     release: ' (RELEASE)',
@@ -106,13 +106,12 @@ function buildTarget(buildType, moduleFormat) {
       template: 'sunburst'
     }));
   }
-  const name = 'rti-transpiler';
   const outputFile = {
-    release:  `build/${name}`,
-    debug:    `build/${name}.dbg`,
-    profiler: `build/${name}.prf`,
-    min:      `build/${name}.min`,
-    rti:      `build/${name}.rti`,
+    release:  `${path}`,
+    debug:    `${path}.dbg`,
+    profiler: `${path}.prf`,
+    min:      `${path}.min`,
+    rti:      `${path}.rti`,
   };
   const outputExtension = {
     es5: '.cjs',
@@ -129,7 +128,7 @@ function buildTarget(buildType, moduleFormat) {
     format: outputFormat[moduleFormat],
     indent: '\t',
     sourcemap: false,
-    name: 'rtiTranspiler',
+    name,
     preserveModules: false,
     file: `${outputFile[buildType]}${outputExtension[moduleFormat]}`
   };
@@ -137,7 +136,6 @@ function buildTarget(buildType, moduleFormat) {
     es5: es5Options(buildType),
     es6: moduleOptions(buildType)
   };
-  const rootFile = 'src-transpiler/index.mjs';
   return {
     input: rootFile,
     output: outputOptions,
@@ -181,7 +179,8 @@ export default (args) => {
     ['release', /*'debug', 'profiler', 'min', 'rti'*/].forEach((t) => {
       ['es5', 'es6'].forEach((m) => {
         if (envTarget === null || envTarget === t || envTarget === m || envTarget === `${t}_${m}`) {
-          targets.push(buildTarget(t, m));
+          targets.push(buildTarget('rtiTranspiler', 'src-transpiler/index.mjs', '@runtime-type-inspector/transpiler/index', t, m));
+          targets.push(buildTarget('rtiRuntime'   , 'src-runtime/index.mjs'   , '@runtime-type-inspector/runtime/index'   , t, m));
         }
       });
     });

@@ -45,3 +45,16 @@ Thank you for reading and testing! You can also open DevTools and run:
 ```js
 console.log(rtiTranspiler)
 ```
+
+# Available NPM packages
+
+ 1) https://www.npmjs.com/package/runtime-type-inspector
+ 2) https://www.npmjs.com/package/@runtime-type-inspector/runtime
+ 3) https://www.npmjs.com/package/@runtime-type-inspector/transpiler
+ 4) https://www.npmjs.com/package/@runtime-type-inspector/parcel-transformer
+
+ Initially I published everything in (1), but it makes more sense to ship individual packages, because:
+
+- Parcel 1 only supports CJS, so I needed two `package.json` files
+- Makes nicer imports
+- Probably easier to extend `@runtime-type-inspector/runtime` via `npm link`

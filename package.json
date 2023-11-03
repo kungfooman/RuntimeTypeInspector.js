@@ -1,6 +1,6 @@
 {
   "name": "runtime-type-inspector",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "Validating JSDoc types at runtime for high-quality types - Trust is good, control is better.",
   "main": "build/rti-transpiler.cjs",
   "module": "build/rti-transpiler.mjs",
