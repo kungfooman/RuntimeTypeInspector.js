@@ -1,5 +1,9 @@
 [
   {
+    "input": "./test/typechecking/comments-input.mjs",
+    "output": "./test/typechecking/comments-output.mjs"
+  },
+  {
     "input": "./test/typechecking/computed-ClassMethod-input.mjs",
     "output": "./test/typechecking/computed-ClassMethod-output.mjs"
   },

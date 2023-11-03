@@ -36,7 +36,7 @@ class Stringifier {
     }
     if (trailingComments) {
       for (const trailingComment of trailingComments) {
-        out += ' ' + this.toSource(trailingComment).trim();
+        out += this.toSource(trailingComment);
       }
     }
     // leadingComments and trailingComments lead to duplicates, not always tho
@@ -1140,10 +1140,16 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   CommentBlock(node) {
-    let {value} = node;
+    let {value, loc} = node;
     const {spaces, parents} = this;
     const par = parents[parents.length - 3];
-    let out = `${spaces}/*`;
+    let out = '';
+    if (!loc.start.column) {
+      out += '\n' + this.spaces;
+    } else {
+      // out += ' ';
+    }
+    out += `${spaces}/*`;
     if (value.includes('\n')) {
       // A bit tricky to handle multiline comments,
       // we have to remove the given indentation level.
@@ -1172,8 +1178,15 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   CommentLine(node) {
-    const {value} = node;
-    return `${this.spaces.slice(2)}//${value}\n`;
+    const {value, loc} = node;
+    let out = '';
+    if (!loc.start.column) {
+       out += '\n' + this.spaces;
+    } else {
+      out += ' ';
+    }
+    out += `//${value}\n`;
+    return out;
   }
   /**
    * @param {import("@babel/types").Import} node - The Babel AST node.
