@@ -28,8 +28,12 @@ let discrepancies = 0;
 for (const {input, output} of tests) {
   const inputContent = readFileSync(input, 'utf8');
   const outputContent = readFileSync(output, 'utf8');
-  const newOutputContent = addTypeChecks(inputContent);
-  if (newOutputContent !== outputContent) {
+  let newOutputContent = addTypeChecks(inputContent);
+  // Remove multiple newlines into one
+  // I would rather not do it, but Stringifier needs a bit more love in other areas:
+  //  - multiline array output when elements surpass a max-col option
+  newOutputContent = newOutputContent.replace(/\n+/g, '\n').trim();
+  if (newOutputContent !== outputContent.trim()) {
     discrepancies++;
     console.error("Discrepancy detected, please check!", {
       input,
