@@ -1,0 +1,17 @@
+{
+  "name": "@runtime-type-inspector/plugin-rollup",
+  "version": "1.0.0",
+  "description": "",
+  "module": "index.mjs",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Hermann Rolfes (kungfooman)",
+  "license": "MIT",
+  "dependencies": {
+    "@runtime-type-inspector/runtime": "^2.0.5",
+    "@runtime-type-inspector/transpiler": "^2.0.4",
+    "rollup": "^3.29.4"
+  }
+}

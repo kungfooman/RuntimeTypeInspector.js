@@ -1,9 +1,8 @@
-import {createFilter         } from '@rollup/pluginutils';
-import {parse                } from '@babel/parser';
-import {addTypeChecks        } from '../src-transpiler/addTypeChecks.mjs';
-import {expandType           } from '../src-transpiler/expandType.mjs';
-import {ast2jsonForComparison} from '../src-transpiler/ast2jsonForComparison.mjs';
-import {code2ast2code        } from '../src-transpiler/code2ast2code.mjs';
+import {createFilter} from '@rollup/pluginutils';
+import {parse       } from '@babel/parser';
+import {
+  addTypeChecks, expandType,ast2jsonForComparison, code2ast2code
+} from '@runtime-type-inspector/transpiler';
 /**
  * Alternatively "import * as rti from ..." would also prevent "Unused external imports" warning...
  * or keeping log of every single call during RTI parsing.
@@ -14,9 +13,9 @@ function getHeader(validateDivision) {
   if (validateDivision) {
     header += ", validateDivision";
   }
-  header += ", registerTypedef, registerClass } from 'runtime-type-inspector/src-runtime/index.mjs';\n";
+  header += ", registerTypedef, registerClass } from '@runtime-type-inspector/runtime';\n";
   // Prevent tree-shaking in UMD build so we can always "add a breakpoint here".
-  header += "export * from 'runtime-type-inspector/src-runtime/index.mjs';\n";
+  header += "export * from '@runtime-type-inspector/runtime';\n";
   return header;
 }
 /**
