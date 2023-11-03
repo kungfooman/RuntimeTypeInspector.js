@@ -1,5 +1,9 @@
 [
   {
+    "input": "./test/typechecking/ClassProperty-value-is-null-input.mjs",
+    "output": "./test/typechecking/ClassProperty-value-is-null-output.mjs"
+  },
+  {
     "input": "./test/typechecking/comments-input.mjs",
     "output": "./test/typechecking/comments-output.mjs"
   },

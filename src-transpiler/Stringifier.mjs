@@ -11,7 +11,6 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   toSource(node) {
-    const {leadingComments, trailingComments} = node;
     // handle this case only temporarily
     if (node === null) {
       // Contexts like: 
@@ -20,6 +19,7 @@ class Stringifier {
       //return '/*null*/';
       return '';
     }
+    const {leadingComments, trailingComments} = node;
     if (node.type === 'File') {
       this.parents.length = 0;
     }
