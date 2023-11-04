@@ -1180,7 +1180,7 @@ class Stringifier {
   CommentLine(node) {
     const {value, loc} = node;
     if (this.lastCommentLineIndex === loc.start.index) {
-      console.log("CommentLine> ignore double");
+      // console.log("CommentLine> ignore double");
       return '';
     }
     this.lastCommentLineIndex = loc.start.index;
