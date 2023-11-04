@@ -1,7 +1,15 @@
 [
   {
+    "input": "./test/typechecking/ArrowFunctionExpression-foreach-input.mjs",
+    "output": "./test/typechecking/ArrowFunctionExpression-foreach-output.mjs"
+  },
+  {
     "input": "./test/typechecking/ClassProperty-value-is-null-input.mjs",
     "output": "./test/typechecking/ClassProperty-value-is-null-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/comment-newline-input.mjs",
+    "output": "./test/typechecking/comment-newline-output.mjs"
   },
   {
     "input": "./test/typechecking/comments-input.mjs",
