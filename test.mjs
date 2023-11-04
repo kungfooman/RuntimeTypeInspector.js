@@ -1,4 +1,5 @@
 import {addTypeChecks} from './src-transpiler/addTypeChecks.mjs';
+import {expandType} from './src-transpiler/expandType.mjs';
 import {readFileSync} from 'fs';
 /**
  * @param {string} a 
@@ -28,7 +29,7 @@ let discrepancies = 0;
 for (const {input, output} of tests) {
   const inputContent = readFileSync(input, 'utf8');
   const outputContent = readFileSync(output, 'utf8');
-  let newOutputContent = addTypeChecks(inputContent);
+  let newOutputContent = addTypeChecks(inputContent, {expandType});
   // Remove multiple newlines into one
   // I would rather not do it, but Stringifier needs a bit more love in other areas:
   //  - multiline array output when elements surpass a max-col option
