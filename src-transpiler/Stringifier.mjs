@@ -36,6 +36,9 @@ class Stringifier {
     }
     if (trailingComments) {
       for (const trailingComment of trailingComments) {
+        if (trailingComment.type === 'CommentBlock') {
+          out += ' ';
+        }
         out += this.toSource(trailingComment);
       }
     }
@@ -1142,14 +1145,13 @@ class Stringifier {
   CommentBlock(node) {
     let {value, loc} = node;
     const {spaces, parents} = this;
-    const par = parents[parents.length - 3];
     let out = '';
-    if (!loc.start.column) {
-      out += '\n' + this.spaces;
-    } else {
-      // out += ' ';
+    /** @todo add option for number-of-spaces */
+    const dedicatedLine = spaces.length === loc.start.column;
+    if (dedicatedLine) {
+      out += spaces;
     }
-    out += `${spaces}/*`;
+    out += '/*';
     if (value.includes('\n')) {
       // A bit tricky to handle multiline comments,
       // we have to remove the given indentation level.
@@ -1163,25 +1165,30 @@ class Stringifier {
     } else {
       out += `${value}*/`;
     }
-    if (
-      par &&
-      par.type === 'BlockStatement' ||
-      par.type === 'ObjectExpression' ||
-      par.type === 'Program'
-    ) {
-      return out + '\n';
+    if (dedicatedLine) {
+      out += '\n';
+    } else {
+      out += ' ';
     }
-    return ' ' + out + ' ';
+    return out;
   }
+  lastCommentLineIndex = -1;
   /**
    * @param {import("@babel/types").CommentLine} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   CommentLine(node) {
     const {value, loc} = node;
+    if (this.lastCommentLineIndex === loc.start.index) {
+      console.log("CommentLine> ignore double");
+      return '';
+    }
+    this.lastCommentLineIndex = loc.start.index;
     let out = '';
-    if (!loc.start.column) {
-       out += '\n' + this.spaces;
+    const {spaces} = this;
+    const dedicatedLine = spaces.length === loc.start.column;
+    if (dedicatedLine) {
+      out += '\n' + spaces;
     } else {
       out += ' ';
     }
