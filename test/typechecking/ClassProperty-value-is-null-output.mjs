@@ -6,3 +6,4 @@ class Vec4 {
    */
   x;
 }
+registerClass(Vec4);

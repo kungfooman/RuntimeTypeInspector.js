@@ -4,7 +4,7 @@ class ShaderProcessor {
    * @param {Array<UniformLine>} uniforms - Lines containing uniforms.
    * @returns {object} - The uniform data.
    */
-  static processUniforms(device, uniforms, processingOptions, shader) {
+  static processUniforms(device, uniforms) {
     uniforms.forEach((uniform) => {
       return 111;
     });

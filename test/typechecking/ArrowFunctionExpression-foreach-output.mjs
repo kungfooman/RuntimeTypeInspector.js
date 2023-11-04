@@ -24,3 +24,4 @@ class ShaderProcessor {
     return {};
   }
 }
+registerClass(ShaderProcessor);
