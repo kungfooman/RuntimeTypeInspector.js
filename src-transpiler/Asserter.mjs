@@ -122,6 +122,9 @@ class Asserter extends Stringifier {
       if (parent.leadingComments) {
         return parent;
       }
+      if (parent.type === 'CallExpression') {
+        break;
+      }
       if (nodeIsFunction(parent)) {
         break;
       }
