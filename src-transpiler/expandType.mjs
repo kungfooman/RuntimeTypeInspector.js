@@ -1,5 +1,6 @@
 import ts from 'typescript';
 /**
+ * @todo Better handling of weird case: Array<>
  * @todo implement TypeQuery, e.g. for expandType('typeof Number');
  * @example
  * const { expandType } = await import("./src-transpiler/expandType.mjs");
@@ -53,7 +54,8 @@ function toSourceTS(node) {
     JSDocAllType, LastTypeNode, LiteralType, NullKeyword, NumberKeyword, NumericLiteral,
     ObjectKeyword, Parameter, ParenthesizedType, PropertySignature, StringKeyword,
     StringLiteral, ThisType, TupleType, TypeLiteral, TypeReference, UndefinedKeyword,
-    UnionType, JSDocNullableType, TrueKeyword, FalseKeyword, VoidKeyword
+    UnionType, JSDocNullableType, TrueKeyword, FalseKeyword, VoidKeyword, UnknownKeyword,
+    NeverKeyword,
   } = ts.SyntaxKind;
   // console.log({ typeArguments, typeName, kind_, node });
   switch (node.kind) {
@@ -163,6 +165,8 @@ function toSourceTS(node) {
     case TrueKeyword:
     case FalseKeyword:
     case VoidKeyword:
+    case UnknownKeyword:
+    case NeverKeyword:
       return node.getText();
     case ObjectKeyword:
       return {

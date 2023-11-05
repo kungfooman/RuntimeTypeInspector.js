@@ -1,5 +1,6 @@
 import {parse} from '@babel/parser';
 /**
+ * @todo Better handling of weird case: Array<>
  * @todo implement TypeQuery, e.g. for expandTypeBabelTS('typeof Number');
  * @example
  * const { expandTypeBabelTS } = await import("./src-transpiler/expandTypeBabelTS.mjs");
@@ -37,13 +38,10 @@ function parseTypeBabelTS(str) {
   return ast.program.body[0].typeAnnotation;
 }
 /**
- * @param {TypeScriptType} node 
- * @returns 
+ * @param {import('@babel/types').Node} node 
+ * @returns {string|object|undefined}
  */
 function toSourceBabelTS(node) {
-  const {typeName} = node;
-  const kind_ = ts.SyntaxKind[node.kind];
-  // console.log({typeName, kind_, node});
   switch (node.type) {
     // expandTypeBabelTS("(a: number, b: number) => number")
     /**
@@ -70,6 +68,10 @@ function toSourceBabelTS(node) {
     //  return ret;
     case 'TSTypeReference': {
       const name = toSourceBabelTS(node.typeName);
+      if (!node.typeParameters) {
+        // console.log(`node.typeName.name=${node.typeName.name} name=${name}`, node);
+        return node.typeName.name;
+      }
       console.assert(node.typeParameters.type === 'TSTypeParameterInstantiation');
       const typeArguments = node.typeParameters.params;
       if ((name === 'Object' || name === 'Record') && typeArguments?.length === 2) {
@@ -97,16 +99,9 @@ function toSourceBabelTS(node) {
           type: 'class',
           elementType: toSourceBabelTS(typeArguments[0])
         }
-      } else {
-        if (!typeArguments) {
-          return typeName.name;
-        }
-        console.warn('unhandled TypeReference', kind_, node);
-        return {
-          type: 'unhandled TypeReference'
-        };
       }
-      break;
+      console.warn('unhandled TypeReference', node);
+      return {type: 'unhandled TypeReference'};
     }
     case 'TSStringKeyword':
       return 'string';
@@ -172,6 +167,10 @@ function toSourceBabelTS(node) {
     // expandTypeBabelTS('undefined')
     case 'TSUndefinedKeyword':
       return 'undefined';
+    case 'TSUnknownKeyword':
+      return 'unknown';
+    case 'TSNeverKeyword':
+      return 'never';
     // parseTypeBabelTS('void');
     case 'TSVoidKeyword':
       return 'void';
