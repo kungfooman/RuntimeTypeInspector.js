@@ -56,9 +56,15 @@ function toSourceTS(node) {
     StringLiteral, ThisType, TupleType, TypeLiteral, TypeReference, UndefinedKeyword,
     UnionType, JSDocNullableType, TrueKeyword, FalseKeyword, VoidKeyword, UnknownKeyword,
     NeverKeyword,
+    ConstructorType, // parseType('new (...args: any[]) => any');
   } = ts.SyntaxKind;
   // console.log({ typeArguments, typeName, kind_, node });
   switch (node.kind) {
+    case ConstructorType: {
+      const parameters = node.parameters.map(toSourceTS);
+      const ret = toSourceTS(node.type);
+      return {type: 'new', parameters, ret};
+    }
     case FunctionType:
       const parameters = node.parameters.map(toSourceTS);
       return {type: 'function', parameters};
