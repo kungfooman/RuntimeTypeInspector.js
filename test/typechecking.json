@@ -1,5 +1,9 @@
 [
   {
+    "input": "./test/typechecking/ArrayExpression-keep-layout-input.mjs",
+    "output": "./test/typechecking/ArrayExpression-keep-layout-output.mjs"
+  },
+  {
     "input": "./test/typechecking/ArrowFunctionExpression-foreach-input.mjs",
     "output": "./test/typechecking/ArrowFunctionExpression-foreach-output.mjs"
   },
