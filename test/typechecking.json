@@ -38,5 +38,9 @@
   {
     "input": "./test/typechecking/simple-ObjectPattern-input.mjs",
     "output": "./test/typechecking/simple-ObjectPattern-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/typedef-new-input.mjs",
+    "output": "./test/typechecking/typedef-new-output.mjs"
   }
 ]
