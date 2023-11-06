@@ -638,9 +638,22 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   ArrayExpression(node) {
-    const {elements, extra} = node;
+    const {elements, extra, loc} = node;
     const e = !!extra?.trailingComma ? ',' : '';
-    return '[' + this.mapToSource(elements).join(', ') + e + ']';
+    const sameLine = loc.start.line === loc.end.line;
+    if (sameLine) {
+      return '[' + this.mapToSource(elements).join(', ') + e + ']';
+    }
+    let out = '[\n';
+    this.numSpaces++;
+    const {spaces} = this;
+    out += this.mapToSource(elements)
+      .map(_ => spaces + _)
+      .join(',\n');
+    this.numSpaces--;
+    out += e;
+    out += '\n' + this.spaces + ']';
+    return out;
   }
   /**
    * @param {import("@babel/types").VariableDeclaration} node - The Babel AST node.
