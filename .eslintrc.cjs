@@ -27,7 +27,7 @@ module.exports = {
     ],
     "no-constructor-return": "error",
     "no-control-regex": "error",
-    "no-debugger": "error",
+    "no-debugger": "off",
     "no-dupe-args": "error",
     "no-dupe-class-members": "error",
     "no-dupe-else-if": "error",
@@ -226,11 +226,11 @@ module.exports = {
     "sort-imports": "off",
     "sort-keys": "off",
     "sort-vars": "off",
-    "spaced-comment": [
+    "spaced-comment": /*[
       "error", "always", {
         "exceptions": ["/"]
       }
-    ],
+    ]*/ "off",
     "strict": "error",
     "symbol-description": "error",
     "vars-on-top": "off",
@@ -240,15 +240,15 @@ module.exports = {
     "array-bracket-newline": ["error", "consistent"],
     "array-bracket-spacing": ["error", "never"],
     "array-element-newline": "off",
-    "arrow-parens": [
+    "arrow-parens": /*[
       "error", "as-needed", {
         "requireForBlockBody": true
       }
-    ],
+    ]*/ "off",
     "arrow-spacing": "error",
     "block-spacing": "error",
     "brace-style": "error",
-    "comma-dangle": ["error", "never"],
+    "comma-dangle": "off",
     "comma-spacing": [
       "error", {
         "before": false,
@@ -274,12 +274,7 @@ module.exports = {
       }
     ],
     "jsx-quotes": "off",
-    "key-spacing": [
-      "error", {
-        "beforeColon": false,
-        "afterColon": true
-      }
-    ],
+    "key-spacing": "off",
     "keyword-spacing": [
       "error", {
         "before": true,

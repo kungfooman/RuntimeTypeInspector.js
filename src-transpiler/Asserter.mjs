@@ -11,14 +11,14 @@ import {Stringifier      } from './Stringifier.mjs';
 /** @typedef {import('./stat.mjs').Stat                } Stat               */
 /**
  * @typedef {object} Options
- * @property {boolean} [forceCurly]
- * @property {boolean} [validateDivision]
- * @property {Function} [expandType]
- * @property {string} [filename]
+ * @property {boolean} [forceCurly] - Determines whether curly braces are enforced in Stringifier.
+ * @property {boolean} [validateDivision] - Indicates whether division operations should be validated.
+ * @property {Function} [expandType] - A function that expands shorthand types into full descriptions.
+ * @property {string} [filename] - The name of a file to which the instance pertains.
  */
 class Asserter extends Stringifier {
   /**
-   * @param {Options} [options]
+   * @param {Options} [options] - The options.
    */
   constructor({
     forceCurly = true,

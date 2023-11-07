@@ -13,7 +13,7 @@ class Stringifier {
   toSource(node) {
     // handle this case only temporarily
     if (node === null) {
-      // Contexts like: 
+      // Contexts like:
       // Object.assign(Channel3d.prototype, {
       //   setPosition: function /*null*/(position) {
       //return '/*null*/';
@@ -83,7 +83,7 @@ class Stringifier {
       return this.toSource(node);
     }
     const {type} = node;
-    const needCurly = type != 'BlockStatement' && type != 'EmptyStatement';
+    const needCurly = type !== 'BlockStatement' && type !== 'EmptyStatement';
     const spaces = this.spaces;
     let out = '';
     if (needCurly) {
@@ -107,13 +107,13 @@ class Stringifier {
   }
   get needSpaces() {
     const t = this.parentType;
-    return t != "ForStatement"   &&
-           t != "ForInStatement" &&
-           t != "ForOfStatement";
+    return t !== "ForStatement"   &&
+           t !== "ForInStatement" &&
+           t !== "ForOfStatement";
   }
   /**
-   * @param {Node[]} arr
-   * @returns {string[]}
+   * @param {Node[]} arr - Array of nodes to convert.
+   * @returns {string[]} Array of strings for each node.
    */
   mapToSource(arr) {
     return arr.map(_ => this.toSource(_));
@@ -223,7 +223,7 @@ class Stringifier {
     const spaces = this.spaces;
     let out = spaces + 'class ' + this.toSource(id);
     if (superClass) {
-      out += ` extends ${this.toSource(superClass)}`
+      out += ` extends ${this.toSource(superClass)}`;
     }
     out += ' {\n';
     this.numSpaces++;
@@ -452,9 +452,9 @@ class Stringifier {
     const spaces = this.spaces;
     let out = '';
     //if (this.parentType !== "IfStatement")
-    {
+    //{
       out += spaces;
-    }
+    //}
     out += `if (${this.toSource(test)})`;
     out += this.toSourceCurly(consequent);
     if (alternate) {
@@ -731,9 +731,8 @@ class Stringifier {
     const {operator, prefix, argument} = node;
     if (prefix) {
       return `${operator}${this.toSource(argument)}`;
-    } else {
-      return `${this.toSource(argument)}${operator}`;
     }
+    return `${this.toSource(argument)}${operator}`;
   }
   /**
    * @param {import("@babel/types").NewExpression} node - The Babel AST node.
@@ -754,7 +753,7 @@ class Stringifier {
   TemplateLiteral(node) {
     const {expressions, quasis} = node;
     let out = '`';
-    for (var i=0; i<quasis.length; i++) {
+    for (var i = 0; i < quasis.length; i++) {
       out += this.toSource(quasis[i]);
       if (expressions[i]) {
         out += '${' + this.toSource(expressions[i]) + '}';
@@ -1156,8 +1155,9 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   CommentBlock(node) {
-    let {value, loc} = node;
-    const {spaces, parents} = this;
+    const {loc} = node;
+    let {value} = node;
+    const {spaces} = this;
     let out = '';
     /** @todo add option for number-of-spaces */
     const dedicatedLine = spaces.length === loc.start.column;
@@ -1275,7 +1275,7 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   Program(node) {
-    const {sourceType, interpreter, body, directives} = node;
+    const {/*sourceType, interpreter,*/ body, directives} = node;
     let out = '';
     // @todo I would like to keep comments above and below,
     // but below one is currently dropped (does't matter for AST)

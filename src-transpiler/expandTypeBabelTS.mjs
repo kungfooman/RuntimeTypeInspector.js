@@ -98,7 +98,7 @@ function toSourceBabelTS(node) {
         return {
           type: 'class',
           elementType: toSourceBabelTS(typeArguments[0])
-        }
+        };
       }
       console.warn('unhandled TypeReference', node);
       return {type: 'unhandled TypeReference'};
@@ -111,17 +111,17 @@ function toSourceBabelTS(node) {
       return {
         type: 'intersection',
         members: node.types.map(toSourceBabelTS)
-      }
+      };
     case 'TSTupleType':
       return {
         type: 'tuple',
         elements: node.elementTypes.map(toSourceBabelTS)
-      }
+      };
     case 'TSUnionType':
       return {
         type: 'union',
         members: node.types.map(toSourceBabelTS)
-      }
+      };
     case 'TypeLiteral':
       const properties = {};
       node.members.forEach(member => {
@@ -132,10 +132,10 @@ function toSourceBabelTS(node) {
       return {
         type: 'object',
         properties
-      }
-    //case 'PropertySignature':
-    //  console.warn('toSourceBabelTS> should not happen, handled by TypeLiteral directly');
-    //  return `${toSourceBabelTS(node.name)}: ${toSourceBabelTS(node.type)}`;
+      };
+    // case 'PropertySignature':
+    //   console.warn('toSourceBabelTS> should not happen, handled by TypeLiteral directly');
+    //   return `${toSourceBabelTS(node.name)}: ${toSourceBabelTS(node.type)}`;
     case 'Identifier':
       return node.name;
     case 'TSArrayType':
@@ -181,7 +181,7 @@ function toSourceBabelTS(node) {
       return {
         type: 'object',
         properties: {}
-      }
+      };
     case 'ParenthesizedType':
       // fall-through for parentheses
       return toSourceBabelTS(node.type);
