@@ -23,7 +23,8 @@ import ts from 'typescript';
  * expandType('Map<string, any>');
  * @param {string} type - The type string to be expanded into a structured representation.
  * @todo Share type with expandTypeBabelTS and expandTypeDepFree
- * @returns {string | {type: string, [key: string]: any} | undefined} The structured type representation obtained from parsing and converting the provided type string.
+ * @returns {string | {type: string, [key: string]: any} | undefined} The structured type
+ * representation obtained from parsing and converting the provided type string.
  */
 function expandType(type) {
   const ast = parseType(type);
@@ -135,17 +136,17 @@ function toSourceTS(node) {
       return {
         type: 'intersection',
         members: node.types.map(toSourceTS)
-      }
+      };
     case TupleType:
       return {
         type: 'tuple',
         elements: node.elements.map(toSourceTS)
-      }
+      };
     case UnionType:
       return {
         type: 'union',
         members: node.types.map(toSourceTS)
-      }
+      };
     case TypeLiteral:
       const properties = {};
       node.members.forEach(member => {
@@ -156,7 +157,7 @@ function toSourceTS(node) {
       return {
         type: 'object',
         properties
-      }
+      };
     case PropertySignature:
       console.warn('toSourceTS> should not happen, handled by TypeLiteral directly');
       return `${toSourceTS(node.name)}: ${toSourceTS(node.type)}`;

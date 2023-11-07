@@ -38,8 +38,16 @@ function parseTypeBabelTS(str) {
   return ast.program.body[0].typeAnnotation;
 }
 /**
- * @param {import('@babel/types').Node} node 
- * @returns {string|object|undefined}
+ * Converts a Babel AST node to its source string representation or structured type object.
+ *
+ * This function handles a variety of node types provided by Babel and converts them into a string
+ * or an intermediate object representing the type, depending on the complexity of the type described by the node.
+ *
+ * @param {import('@babel/types').Node} node - The Babel AST node to convert.
+ * @returns {string|object|undefined} - A string, object representing a structured type, or `undefined` for unhandled types.
+ *                                     Depending on the node, it may return a simple type string (e.g., `"string"` for `TSStringKeyword`),
+ *                                     a structured type object (e.g., a record type for `TSTypeReference` with type arguments),
+ *                                     or `undefined` if the encountered type is not handled. Unhandled types trigger a warning and enter a debugger statement.
  */
 function toSourceBabelTS(node) {
   switch (node.type) {

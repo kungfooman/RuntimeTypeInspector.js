@@ -119,13 +119,17 @@ class Stringifier {
     return arr.map(_ => this.toSource(_));
   }
   /**
-   * This method is implemented in Asserter.mjs
-   * @param {Node} node - The Babel AST node.
-   * @returns {string}
+   * Generates a string representing type checks for a given Babel AST node.
+   *
+   * Note: This method serves as a stub and should be overridden in subclasses.
+   * The actual implementation is expected to be provided in Asserter.mjs, where
+   * it would create runtime type assertions based on the AST node provided.
+   *
+   * @param {Node} node - The Babel AST node for which to generate type checks.
+   * @returns {string} A placeholder string, as this stub implementation does nothing; expected to be overridden.
    */
   generateTypeChecks(node) {
-    const {spaces} = this;
-    return `${spaces}/* Stub of Stringifier#generateTypeChecks({type=${node.type}}); */\n`;
+    return '';
   }
   numSpaces = 0;
   /**
@@ -309,8 +313,13 @@ class Stringifier {
     return out;
   }
   /**
-   * @param {Node[]} params
-   * @returns {string} Stringification of the params.
+   * Converts an array of Babel AST nodes representing function parameters into a comma-separated string.
+   *
+   * Each parameter node is converted to its source representation and combined into a single
+   * string suitable for inserting into a function declaration's parentheses.
+   *
+   * @param {Node[]} params - An array of Babel AST nodes representing the function parameters to be stringified.
+   * @returns {string} A string representing the serialized parameters, enclosed in parentheses.
    */
   FunctionDeclarationParams(params) {
     return '(' + this.mapToSource(params).join(', ') + ')';
@@ -453,7 +462,7 @@ class Stringifier {
     let out = '';
     //if (this.parentType !== "IfStatement")
     //{
-      out += spaces;
+    out += spaces;
     //}
     out += `if (${this.toSource(test)})`;
     out += this.toSourceCurly(consequent);

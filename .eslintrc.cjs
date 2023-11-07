@@ -37,7 +37,7 @@ module.exports = {
     "no-empty-character-class": "error",
     "no-empty-pattern": "error",
     "no-ex-assign": "error",
-    "no-fallthrough": "error",
+    "no-fallthrough": /*"error"*/ "off",
     "no-func-assign": "error",
     "no-import-assign": "error",
     "no-inner-declarations": "error",
@@ -65,11 +65,11 @@ module.exports = {
     "no-unsafe-negation": "error",
     "no-unsafe-optional-chaining": "error",
     "no-unused-private-class-members": "error",
-    "no-unused-vars": [
+    "no-unused-vars": /*[
       "error", {
         "args": "none"
       }
-    ],
+    ]*/"off",
     "no-use-before-define": [
       "error", {
         "functions": false
@@ -176,7 +176,7 @@ module.exports = {
     "no-restricted-imports": "error",
     "no-restricted-properties": "off",
     "no-restricted-syntax": "error",
-    "no-return-assign": "error",
+    "no-return-assign": /*"error"*/ "off",
     "no-script-url": "error",
     "no-sequences": "error",
     "no-shadow": "off",
