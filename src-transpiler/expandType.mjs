@@ -1,5 +1,11 @@
 import ts from 'typescript';
 /**
+ * Transforms a type string into a structured type representation.
+ *
+ * This function parses a given type string and converts it into a TypeScript
+ * Abstract Syntax Tree (AST), then uses that AST to return a structured type
+ * representation that can be further utilized or interpreted.
+ *
  * @todo Better handling of weird case: Array<>
  * @todo implement TypeQuery, e.g. for expandType('typeof Number');
  * @example
@@ -15,7 +21,9 @@ import ts from 'typescript';
  * expandType('123?                     '); // Outputs: {"type":"union","members":["123","null"]}
  * expandType('123|null                 '); // Outputs: {"type":"union","members":["123","null"]}
  * expandType('Map<string, any>');
- * @param {string} type
+ * @param {string} type - The type string to be expanded into a structured representation.
+ * @todo Share type with expandTypeBabelTS and expandTypeDepFree
+ * @returns {string | {type: string, [key: string]: any} | undefined} The structured type representation obtained from parsing and converting the provided type string.
  */
 function expandType(type) {
   const ast = parseType(type);
@@ -43,8 +51,14 @@ function parseType(str) {
   return ast.statements[0].type;
 }
 /**
- * @param {TypeScriptType} node 
- * @returns 
+ * Converts a TypeScript AST node to a source string representation or to an intermediate object describing the type.
+ *
+ * This function handles various TypeScript AST node types and converts them into a string
+ * or an object representing the type.
+ *
+ * @param {TypeScriptType} node - The TypeScript AST node to convert.
+ * @returns {string | {type: string, [key: string]: any} | undefined} The source string or an object with type information based on the node,
+ * or `undefined` if the node kind is not handled.
  */
 function toSourceTS(node) {
   const {typeArguments, typeName} = node;
@@ -106,17 +120,13 @@ function toSourceTS(node) {
         return {
           type: 'class',
           elementType: toSourceTS(typeArguments[0])
-        }
-      } else {
-        if (!typeArguments) {
-          return typeName.getText();
-        }
-        console.warn('unhandled TypeReference', kind_, node);
-        return {
-          type: 'unhandled TypeReference'
         };
       }
-      break;
+      if (!typeArguments) {
+        return typeName.getText();
+      }
+      console.warn('unhandled TypeReference', kind_, node);
+      return {type: 'unhandled TypeReference'};
     case StringKeyword:
       return node.getText();
     case NumberKeyword:

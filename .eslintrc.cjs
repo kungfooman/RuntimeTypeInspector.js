@@ -119,7 +119,7 @@ module.exports = {
     "no-array-constructor": "error",
     "no-bitwise": "off",
     "no-caller": "error",
-    "no-case-declarations": "error",
+    "no-case-declarations": /*"error"*/ "off",
     "no-confusing-arrow": "error",
     "no-console": "off",
     "no-continue": "off",
@@ -292,7 +292,7 @@ module.exports = {
     "newline-per-chained-call": "off",
     "no-extra-parens": ["error", "functions"],
     "no-mixed-spaces-and-tabs": "error",
-    "no-multi-spaces": [
+    "no-multi-spaces": /*[
       "error", {
         "ignoreEOLComments": true,
         "exceptions": {
@@ -306,7 +306,7 @@ module.exports = {
           "ImportDeclaration": true,
         }
       }
-    ],
+    ]*/"off",
     "no-multiple-empty-lines": [
       "error", {
         "max": 2,

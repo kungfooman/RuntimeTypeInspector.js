@@ -88,12 +88,14 @@ class Asserter extends Stringifier {
     return out;
   }
   /**
-   * @param {Node} node
-   * @param {string} type
-   * @returns {Node|undefined}
+   * Finds the closest ancestor of the given node that matches the specified type.
+   *
+   * @param {Node} node - The starting node to search from.
+   * @param {string} type - The type of the node to search for.
+   * @returns {Node|undefined} The first ancestor node of the specified type, or undefined if none is found.
    */
   findParentOfType(node, type) {
-    const currentIndex = this.parents.findLastIndex(_ => _ == node);
+    const currentIndex = this.parents.findLastIndex(_ => _ === node);
     return this.parents.findLast((_, i) => {
       if (i > currentIndex) {
         return false;
@@ -102,12 +104,17 @@ class Asserter extends Stringifier {
     });
   }
   /**
-   * @param {Node} node 
-   * @returns {Node|undefined}
+   * Retrieves the node associated with the leading comments for an arrow function expression.
+   *
+   * This method travels up the syntax tree from the given node to find a parent node with leading comments.
+   * This search is bounded by function boundaries or a 'CallExpression' node, as per the logic defined within the loop.
+   * @param {Node} node - The node representing the arrow function expression for which to find the leading comments node.
+   * @returns {Node|undefined} The node that contains the leading comments, or `undefined`
+   * if none is found before reaching a different function or 'CallExpression'.
    */
   getLeadingCommentsNodeForArrowFunctionExpression(node) {
     const {parents} = this;
-    let i = parents.findLastIndex(_ => _ == node);
+    let i = parents.findLastIndex(_ => _ === node);
     let parent = parents[i];
     if (parent.leadingComments) {
       return parent;
@@ -132,7 +139,8 @@ class Asserter extends Stringifier {
     }
   }
   /**
-   * @param {...any} args 
+   * Emits a warning message to the console, optionally prefixed with the instance's filename.
+   * @param {...any} args - A list of arguments to be passed to the console.warn function.
    */
   warn(...args) {
     if (this.filename) {
@@ -142,7 +150,7 @@ class Asserter extends Stringifier {
   }
   /**
    * @param {Node} node - The Babel AST node.
-   * @returns {undefined | {}}
+   * @returns {undefined | {}} The return value of `parseJSDoc`.
    */
   getJSDoc(node) {
     if (node.type === 'BlockStatement') {
@@ -159,7 +167,7 @@ class Asserter extends Stringifier {
         /**
          * @todo Need more refactoring, see missing type-assertions in test/typechecking/good-old-es5.mjs
          */
-        node = this.parents.findLast(_ => _.type == 'VariableDeclaration');
+        node = this.parents.findLast(_ => _.type === 'VariableDeclaration');
         if (!node) {
           return;
         }
@@ -179,7 +187,7 @@ class Asserter extends Stringifier {
     }
     if (leadingComments && leadingComments.length) {
       const lastComment = leadingComments[leadingComments.length - 1];
-      if (lastComment.type == "CommentBlock") {
+      if (lastComment.type === "CommentBlock") {
         if (lastComment.value.includes('@event')) {
           return;
         }
@@ -190,15 +198,20 @@ class Asserter extends Stringifier {
           }
           return {
             [paramName]: parseJSDocSetter(lastComment.value, this.expandType)
-          }
+          };
         }
         return parseJSDoc(lastComment.value, this.expandType);
       }
     }
   }
   /**
-   * @param {Node} param - The Babel AST node.
-   * @returns {string}
+   * Retrieves the name of a parameter from a Babel AST node.
+   *
+   * This function expects a node representing a function parameter and attempts to extract
+   * the parameter's name directly or from an AssignmentPattern.
+   *
+   * @param {Node} param - The AST node representing the function parameter from which to extract the name.
+   * @returns {string} The name of the parameter as a string, or the parameter's source code if the extraction fails.
    */
   getNameOfParam(param) {
     if (param.type === 'Identifier') {
@@ -219,8 +232,12 @@ class Asserter extends Stringifier {
     console.table(this.stats);
   }
   /**
-   * @param {Node} node - The Babel AST node.
-   * @returns {Stat}
+   * Retrieves statistical information for a given Babel AST node of this instance.
+   *
+   * @param {Node} node - The Babel AST node for which the statistical data is retrieved.
+   * @returns {Stat} An object containing the statistical data for the specified node. If the
+   * node type is unhandled, defaults to returning a dummy object with 'checked' and 'unchecked'
+   * properties both set to 0.
    */
   getStatsForNode(node) {
     const {stats} = this;
@@ -246,9 +263,15 @@ class Asserter extends Stringifier {
     return stat;
   }
   /**
-   * @param {Node} node - The Babel AST node.
-   * @param {string} name
-   * @returns {boolean}
+   * Checks if a provided Babel AST node has a parameter with the given name.
+   *
+   * This function will look at the node's parameters if available and determine whether
+   * one of them matches the provided name. Supports various parameter types such as Identifiers
+   * and AssignmentPatterns.
+   *
+   * @param {Node} node - The Babel AST node to inspect. If it's a BlockStatement, the parent node is used instead.
+   * @param {string} name - The name of the parameter to look for within the node's parameters.
+   * @returns {boolean} True if the node has a parameter with the given name; false otherwise.
    */
   nodeHasParamName(node, name) {
     if (node.type === 'BlockStatement') {
@@ -275,18 +298,24 @@ class Asserter extends Stringifier {
         return node.name === name;
       } else if (type === 'ArrayPattern' || type === 'ObjectPattern' || type === 'RestElement') {
         return false;
-      } else {
-        const _ = new Stringifier();
-        const code = _.toSource(node);
-        console.log("Unknown type to test params for", type, code);
       }
+      const _ = new Stringifier();
+      const code = _.toSource(node);
+      console.log("Unknown type to test params for", type, code);
       return false;
-    })
+    });
   }
   /**
+   * Generates a string containing type checks for a given Babel AST node based on associated JSDoc information.
+   *
+   * This function analyzes the node and its JSDoc annotations to construct runtime type
+   * check expressions. It handles various parameter patterns and outputs code that performs
+   * actual type assertions. If a node does not correspond to any known or supported pattern,
+   * it returns an empty string.
+   *
    * @override
-   * @param {Node} node - The Babel AST node.
-   * @returns {string}
+   * @param {Node} node - The Babel AST node for which to generate type checks.
+   * @returns {string} A string of code with type check assertions, based on the JSDoc comments associated with the given node.
    */
   generateTypeChecks(node) {
     const {parent} = this;
@@ -420,7 +449,7 @@ class Asserter extends Stringifier {
         return toSource(id);
       case 'ClassMethod':
       case 'ClassPrivateMethod':
-        const classDecl = this.parents.findLast(_ => _.type == 'ClassDeclaration');
+        const classDecl = this.parents.findLast(_ => _.type === 'ClassDeclaration');
         let out = '';
         if (classDecl) {
           out += toSource(classDecl.id) + '#';
@@ -440,9 +469,8 @@ class Asserter extends Stringifier {
         const parent = this.findParentOfType(node, 'VariableDeclarator');
         if (parent) {
           return toSource(parent.id);
-        } else {
-          return 'getName> missing parent for ' + node.type;
         }
+        return 'getName> missing parent for ' + node.type;
       case 'ObjectMethod':
         return toSource(key);
       default:
@@ -475,7 +503,8 @@ class Asserter extends Stringifier {
    * @returns {string} Stringification of the node.
    */
   File(node) {
-    const {errors, program, comments} = node;
+    // @todo figure out why errors is in Babel node and not in @babel/types...
+    const {/*errors,*/ program, comments} = node;
     if (comments) {
       for (const comment of comments) {
         const warn = this.warn.bind(this);

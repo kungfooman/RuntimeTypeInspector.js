@@ -1,8 +1,11 @@
 import {expandTypeDepFree} from "./expandTypeDepFree.mjs";
 import {simplifyType} from "./simplifyType.mjs";
 /**
- * @param {string} src 
- * @returns {{} | undefined}
+ * Parses JSDoc comments to extract parameter type information.
+ *
+ * @param {string} src - The JSDoc comment string to parse.
+ * @param {Function} [expandType] - An optional function to process the types found in the JSDoc.
+ * @returns {Record<string, any> | undefined} An object mapping parameter names to their parsed types, or undefined if no parameters are found.
  */
 function parseJSDoc(src, expandType = expandTypeDepFree) {
   // Parse something like: @param {Object} [kwargs={}] Optional arguments.
