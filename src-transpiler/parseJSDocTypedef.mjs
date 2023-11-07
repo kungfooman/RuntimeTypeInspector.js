@@ -1,14 +1,18 @@
 import {extractNameAndOptionality} from './extractNameAndOptionality.mjs';
 import {simplifyType             } from './simplifyType.mjs';
 /**
- * @param {string} line 
- * @returns {{content: string, nextIndex: number}}
+ * Extracts the content of a string that is delimited by curly braces.
+ * @example
+ * extractCurlyContent('{ {inner} }'); // Returns: {content: ' {inner} ', nextIndex: 11}
+ * @param {string} line - The string to extract from.
+ * @returns {{content: string, nextIndex: number}} An object containing the extracted content,
+ * and the index of the character immediately following the closing curly brace.
  */
 function extractCurlyContent(line) {
   const firstCurly = line.indexOf('{');
   let k = firstCurly + 1;
   let count = 0;
-  for (; k<line.length; k++) {
+  for (; k < line.length; k++) {
     const c = line[k];
     if (c === '{') {
       count++;
@@ -23,10 +27,15 @@ function extractCurlyContent(line) {
   return {content, nextIndex: k + 1};
 }
 /**
- * @param {Record<string, object>} typedefs 
- * @param {Console["warn"]} warn 
- * @param {import("@babel/types").CommentBlock | import("@babel/types").CommentLine} comment - From import("@babel/types").File["comments"]
- * @param {Function} expandType
+ * Parses JSDoc comments to extract and expand typedefs and their associated properties.
+ *
+ * It iterates through the lines of a `CommentBlock` from the Babel AST, looking for `@typedef` and `@property`
+ * annotations. When it finds a typedef, it stores it in the `typedefs` record. When it finds a property,
+ * it adds it to the last found typedef if it is an object type.
+ * @param {Record<string, object>} typedefs - An object to store typedefs, mapping type names to their expanded definitions.
+ * @param {Console["warn"]} warn - A warn function used for emitting warnings about non-extensible types.
+ * @param {import("@babel/types").Comment} comment - A comment extracted from Babel's AST, expected to be a CommentBlock containing type definitions.
+ * @param {Function} expandType - A function that takes a type expression as a string and returns a structured representation of the type.
  */
 function parseJSDocTypedef(typedefs, warn, comment, expandType) {
   const {type, value} = comment;
@@ -34,7 +43,7 @@ function parseJSDocTypedef(typedefs, warn, comment, expandType) {
     return;
   }
   const lines = value.split('\n');
-  let lastTypedef = undefined;
+  let lastTypedef;
   for (let line of lines) {
     line = line.trim();
     if (line[0] === '*') {

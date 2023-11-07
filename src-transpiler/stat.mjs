@@ -1,7 +1,7 @@
 /**
  * @typedef Stat
- * @property {number} checked
- * @property {number} unchecked
+ * @property {number} checked - How often assertions were added to this kind of node.
+ * @property {number} unchecked - How often no assertions were added to this kind of node.
  */
 /**
  * @param {Stat} stat - the Stat.

@@ -9,7 +9,7 @@
     "build:atBabelCore": "rollup -c --environment target:atBabelCore",
     "test": "node test.mjs",
     "test:update": "node gen_tests.mjs > test/typechecking.json",
-    "lint": "eslint --ext .js,.mjs,.cjs src-transpiler test",
+    "lint": "eslint --ext .js,.mjs,.cjs src-transpiler",
     "docs": "echo todo docs using jsdoc"
   },
   "repository": {

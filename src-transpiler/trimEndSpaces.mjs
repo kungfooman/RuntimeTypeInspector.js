@@ -1,8 +1,8 @@
 /**
  * @example
  * trimEndSpaces('test   \n   '); // Returns: 'test   \n'
- * @param {string} str 
- * @returns {string}
+ * @param {string} str - The input string.
+ * @returns {string} Output string without spaces at the end.
  */
 function trimEndSpaces(str) {
   let i = str.length - 1;

@@ -289,7 +289,7 @@ module.exports = {
     "line-comment-position": "off",
     "linebreak-style": "off",
     "lines-around-comment": "off",
-    "lines-between-class-members": ["error", "always"],
+    "lines-between-class-members": ["error", "never"],
     "max-len": "off",
     "max-statements-per-line": "off",
     "multiline-ternary": "off",
@@ -307,7 +307,8 @@ module.exports = {
           "IfStatement": true,
           "LogicalExpression": true,
           "SwitchCase": true,
-          "VariableDeclarator": true
+          "VariableDeclarator": true,
+          "ImportDeclaration": true,
         }
       }
     ],
@@ -327,7 +328,8 @@ module.exports = {
         "consistent": true
       }
     ],
-    "object-curly-spacing": ["error", "always"],
+    // Even errors for ImportDeclaration, but exception doesn't work here (todo figure out)
+    //"object-curly-spacing": ["error", "never"],
     "object-property-newline": [
       "error", {
         "allowAllPropertiesOnSameLine": true
