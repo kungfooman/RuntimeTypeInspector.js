@@ -75,6 +75,73 @@ class Stringifier {
     // console.log("Got parent", parent.type);
     return parent?.type === 'ArrayExpression';
   }
+  lastCommentBlockIndex = -1;
+  /**
+   * @param {import("@babel/types").CommentBlock} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  CommentBlock(node) {
+    const {loc} = node;
+    let {value} = node;
+    if (this.lastCommentBlockIndex === loc.start.index) {
+      // console.log("CommentBlock> ignore double");
+      return '';
+    }
+    this.lastCommentBlockIndex = loc.start.index;
+    const {spaces} = this;
+    let out = '';
+    /** @todo add option for number-of-spaces */
+    const dedicatedLine = spaces.length === loc.start.column;
+    if (dedicatedLine) {
+      out += spaces;
+    }
+    out += '/*';
+    if (value.includes('\n')) {
+      // A bit tricky to handle multiline comments,
+      // we have to remove the given indentation level.
+      value = trimEndSpaces(value.replace(/^\s*\*/gm, '*'))
+        .split('\n')
+        .filter(_ => _.length) // skip empty lines
+        // Skip spaces in first line for /**
+        .map((line, i) => (i ? spaces + ' ' : '') + line)
+        .join('\n');
+      out += `${value}\n${spaces} */`;
+    } else {
+      out += `${value}*/`;
+    }
+    if (dedicatedLine) {
+      out += '\n';
+    } else {
+      out += ' ';
+    }
+    return out;
+  }
+  lastCommentLineIndex = -1;
+  /**
+   * @param {import("@babel/types").CommentLine} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  CommentLine(node) {
+    const {value, loc} = node;
+    if (this.lastCommentLineIndex === loc.start.index) {
+      // console.log("CommentLine> ignore double");
+      return '';
+    }
+    this.lastCommentLineIndex = loc.start.index;
+    let out = '';
+    const {spaces} = this;
+    const dedicatedLine = spaces.length === loc.start.column;
+    if (dedicatedLine) {
+      if (!this.parentProvidesSpaces(2)) {
+        out += '\n';
+        out += spaces;
+      }
+    } else {
+      out += ' ';
+    }
+    out += `//${value}\n`;
+    return out;
+  }
   leadingCommentsToSource(leadingComments) {
     let out = leadingComments
       .map(_ => this.commentToSource(_, 'leading'))
@@ -1205,67 +1272,6 @@ class Stringifier {
    */
   DebuggerStatement(node) {
     return `${this.spaces}debugger;`;
-  }
-  /**
-   * @param {import("@babel/types").CommentBlock} node - The Babel AST node.
-   * @returns {string} Stringification of the node.
-   */
-  CommentBlock(node) {
-    const {loc} = node;
-    let {value} = node;
-    const {spaces} = this;
-    let out = '';
-    /** @todo add option for number-of-spaces */
-    const dedicatedLine = spaces.length === loc.start.column;
-    if (dedicatedLine) {
-      out += spaces;
-    }
-    out += '/*';
-    if (value.includes('\n')) {
-      // A bit tricky to handle multiline comments,
-      // we have to remove the given indentation level.
-      value = trimEndSpaces(value.replace(/^\s*\*/gm, '*'))
-        .split('\n')
-        .filter(_ => _.length) // skip empty lines
-        // Skip spaces in first line for /**
-        .map((line, i) => (i ? spaces + ' ' : '') + line)
-        .join('\n');
-      out += `${value}\n${spaces} */`;
-    } else {
-      out += `${value}*/`;
-    }
-    if (dedicatedLine) {
-      out += '\n';
-    } else {
-      out += ' ';
-    }
-    return out;
-  }
-  lastCommentLineIndex = -1;
-  /**
-   * @param {import("@babel/types").CommentLine} node - The Babel AST node.
-   * @returns {string} Stringification of the node.
-   */
-  CommentLine(node) {
-    const {value, loc} = node;
-    if (this.lastCommentLineIndex === loc.start.index) {
-      // console.log("CommentLine> ignore double");
-      return '';
-    }
-    this.lastCommentLineIndex = loc.start.index;
-    let out = '';
-    const {spaces} = this;
-    const dedicatedLine = spaces.length === loc.start.column;
-    if (dedicatedLine) {
-      out += '\n';
-      if (this.parentProvidesSpaces(2)) {
-        out += spaces;
-      }
-    } else {
-      out += ' ';
-    }
-    out += `//${value}\n`;
-    return out;
   }
   /**
    * @param {import("@babel/types").Import} node - The Babel AST node.
