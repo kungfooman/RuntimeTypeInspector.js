@@ -16,7 +16,8 @@ import {parse} from '@babel/parser';
  * expandTypeBabelTS('123|null                 '); // Outputs: {"type":"union","members":["123","null"]}
  * expandTypeBabelTS('Map<string, any>');
  * expandTypeBabelTS("(a: number, b: number) => number")
- * @param {string} type
+ * @param {string} type - The input type.
+ * @returns {string|object|undefined} - See `toSourceBabelTS`.
  */
 function expandTypeBabelTS(type) {
   const ast = parseTypeBabelTS(type);
@@ -24,7 +25,7 @@ function expandTypeBabelTS(type) {
 }
 /**
  * @param {string} str - The type string.
- * @returns {import('@babel/types').Node}
+ * @returns {import('@babel/types').Node} - The node containing all the information about the input type string.
  */
 function parseTypeBabelTS(str) {
   // TS doesn't like ... notation in this context
@@ -45,9 +46,9 @@ function parseTypeBabelTS(str) {
  *
  * @param {import('@babel/types').Node} node - The Babel AST node to convert.
  * @returns {string|object|undefined} - A string, object representing a structured type, or `undefined` for unhandled types.
- *                                     Depending on the node, it may return a simple type string (e.g., `"string"` for `TSStringKeyword`),
- *                                     a structured type object (e.g., a record type for `TSTypeReference` with type arguments),
- *                                     or `undefined` if the encountered type is not handled. Unhandled types trigger a warning and enter a debugger statement.
+ * Depending on the node, it may return a simple type string (e.g., `"string"` for `TSStringKeyword`),
+ * a structured type object (e.g., a record type for `TSTypeReference` with type arguments),
+ * or `undefined` if the encountered type is not handled. Unhandled types trigger a warning and enter a debugger statement.
  */
 function toSourceBabelTS(node) {
   switch (node.type) {

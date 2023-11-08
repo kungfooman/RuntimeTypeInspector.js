@@ -10,10 +10,10 @@
  */
 /**
  * @typedef {object} ExpandTypeReturnValue
- * @property {'array' | 'union' | 'record' | 'tuple' | 'object'} type
- * @property {object | string} [elementType]
- * @property {object | string} [key]
- * @property {object | string} [val]
+ * @property {'array' | 'union' | 'record' | 'tuple' | 'object'} type - The type.
+ * @property {object | string} [elementType] - For Array.
+ * @property {object | string} [key] - For Record<key, val>
+ * @property {object | string} [val] - For Record<key, val>
  * @property {(object | string)[]} [members] - For unions.
  * @property {object | string} [properties] - For objects.
  * @property {(object | string)[]} [elements] - For tuples.
@@ -28,7 +28,7 @@
  * expandTypeDepFree('  ( ( 123 ) )           '); // Outputs: '123'
  * expandTypeDepFree('  (string ) |(number )  '); // Outputs: { type: 'union', members: ['string', 'number'] }
  * expandTypeDepFree(' ((  Object  ) )        '); // Outputs: { type: 'object', properties: {} }
- * @param {string} type
+ * @param {string} type - The input type to expand.
  * @returns {string | ExpandTypeReturnValue} Object containing parsed information from type string.
  */
 function expandTypeDepFree(type) {

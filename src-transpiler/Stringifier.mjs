@@ -769,7 +769,7 @@ class Stringifier {
       }
     }
     out += '`';
-    return out ;
+    return out;
   }
   /**
    * @param {import("@babel/types").TemplateElement} node - The Babel AST node.

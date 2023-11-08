@@ -19,7 +19,6 @@ function simplifyType(type, optional) {
     }
     type = {type, optional};
   } else {
-    // eslint-disable-next-line
     debugger;
     console.warn("simplifyType> neither object nor string for type", type);
   }

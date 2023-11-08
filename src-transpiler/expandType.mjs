@@ -31,14 +31,16 @@ function expandType(type) {
   return toSourceTS(ast);
 }
 /**
+ * @todo I want to use for example: import('typescript').Node
+ * But the TS types make no sense to me so far ... need to investigate more.
  * @typedef TypeScriptType
- * @property {object[]|undefined} typeArguments
- * @property {*} typeName
- * @property {number} kind
+ * @property {object[]|undefined} typeArguments - The type arguments.
+ * @property {import('typescript').Node} typeName - The type name.
+ * @property {number} kind - The kind for `ts.SyntaxKind[kind]`.
  */
 /**
  * @param {string} str - The type string.
- * @returns {TypeScriptType}
+ * @returns {TypeScriptType} - The node containing all the information about the input type string.
  */
 function parseType(str) {
   // TS doesn't like ... notation in this context
@@ -189,7 +191,7 @@ function toSourceTS(node) {
       return {
         type: 'object',
         properties: {}
-      }
+      };
     case ParenthesizedType:
       // fall-through for parentheses
       return toSourceTS(node.type);
