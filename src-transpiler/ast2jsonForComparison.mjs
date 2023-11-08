@@ -15,7 +15,7 @@ const drop = [
  * @returns {string} String representation in JSON format for debugging/inspecting the AST.
  */
 function ast2jsonForComparison(ast) {
-  return JSON.stringify(ast, function(name, val) {
+  return JSON.stringify(ast, function (name, val) {
     if (name === 'trailingComma' || name === 'parenStart') {
       return 'offset removed for better comparison';
     }

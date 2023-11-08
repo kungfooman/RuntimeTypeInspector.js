@@ -1,5 +1,11 @@
 import ts from 'typescript';
 /**
+ * Transforms a type string into a structured type representation.
+ *
+ * This function parses a given type string and converts it into a TypeScript
+ * Abstract Syntax Tree (AST), then uses that AST to return a structured type
+ * representation that can be further utilized or interpreted.
+ *
  * @todo Better handling of weird case: Array<>
  * @todo implement TypeQuery, e.g. for expandType('typeof Number');
  * @example
@@ -15,21 +21,26 @@ import ts from 'typescript';
  * expandType('123?                     '); // Outputs: {"type":"union","members":["123","null"]}
  * expandType('123|null                 '); // Outputs: {"type":"union","members":["123","null"]}
  * expandType('Map<string, any>');
- * @param {string} type
+ * @param {string} type - The type string to be expanded into a structured representation.
+ * @todo Share type with expandTypeBabelTS and expandTypeDepFree
+ * @returns {string | {type: string, [key: string]: any} | undefined} The structured type
+ * representation obtained from parsing and converting the provided type string.
  */
 function expandType(type) {
   const ast = parseType(type);
   return toSourceTS(ast);
 }
 /**
+ * @todo I want to use for example: import('typescript').Node
+ * But the TS types make no sense to me so far ... need to investigate more.
  * @typedef TypeScriptType
- * @property {object[]|undefined} typeArguments
- * @property {*} typeName
- * @property {number} kind
+ * @property {object[]|undefined} typeArguments - The type arguments.
+ * @property {import('typescript').Node} typeName - The type name.
+ * @property {number} kind - The kind for `ts.SyntaxKind[kind]`.
  */
 /**
  * @param {string} str - The type string.
- * @returns {TypeScriptType}
+ * @returns {TypeScriptType} - The node containing all the information about the input type string.
  */
 function parseType(str) {
   // TS doesn't like ... notation in this context
@@ -43,8 +54,14 @@ function parseType(str) {
   return ast.statements[0].type;
 }
 /**
- * @param {TypeScriptType} node 
- * @returns 
+ * Converts a TypeScript AST node to a source string representation or to an intermediate object describing the type.
+ *
+ * This function handles various TypeScript AST node types and converts them into a string
+ * or an object representing the type.
+ *
+ * @param {TypeScriptType} node - The TypeScript AST node to convert.
+ * @returns {string | {type: string, [key: string]: any} | undefined} The source string or an object with type information based on the node,
+ * or `undefined` if the node kind is not handled.
  */
 function toSourceTS(node) {
   const {typeArguments, typeName} = node;
@@ -106,17 +123,13 @@ function toSourceTS(node) {
         return {
           type: 'class',
           elementType: toSourceTS(typeArguments[0])
-        }
-      } else {
-        if (!typeArguments) {
-          return typeName.getText();
-        }
-        console.warn('unhandled TypeReference', kind_, node);
-        return {
-          type: 'unhandled TypeReference'
         };
       }
-      break;
+      if (!typeArguments) {
+        return typeName.getText();
+      }
+      console.warn('unhandled TypeReference', kind_, node);
+      return {type: 'unhandled TypeReference'};
     case StringKeyword:
       return node.getText();
     case NumberKeyword:
@@ -125,17 +138,17 @@ function toSourceTS(node) {
       return {
         type: 'intersection',
         members: node.types.map(toSourceTS)
-      }
+      };
     case TupleType:
       return {
         type: 'tuple',
         elements: node.elements.map(toSourceTS)
-      }
+      };
     case UnionType:
       return {
         type: 'union',
         members: node.types.map(toSourceTS)
-      }
+      };
     case TypeLiteral:
       const properties = {};
       node.members.forEach(member => {
@@ -146,7 +159,7 @@ function toSourceTS(node) {
       return {
         type: 'object',
         properties
-      }
+      };
     case PropertySignature:
       console.warn('toSourceTS> should not happen, handled by TypeLiteral directly');
       return `${toSourceTS(node.name)}: ${toSourceTS(node.type)}`;
@@ -178,7 +191,7 @@ function toSourceTS(node) {
       return {
         type: 'object',
         properties: {}
-      }
+      };
     case ParenthesizedType:
       // fall-through for parentheses
       return toSourceTS(node.type);

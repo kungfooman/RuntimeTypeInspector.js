@@ -3,6 +3,7 @@ import {Stringifier} from "./Stringifier.mjs";
 /**
  * A roundtrip between code -> AST -> code to validate Stringifier.
  * @param {string} code - The code.
+ * @returns {string | undefined} The new and once parsed and stringified code.
  */
 function code2ast2code(code) {
   const stringifier = new Stringifier();

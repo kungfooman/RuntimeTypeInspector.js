@@ -1,6 +1,13 @@
 /**
- * @param {string} rest 
- * @returns {[string, boolean]}
+ * Extracts the parameter name and its optionality from a JSDoc parameter string.
+ *
+ * This function takes a rest parameter string from a JSDoc comment, trims it, and determines the parameter's
+ * name and whether it is optional. The optionality is inferred based on the presence of square brackets around
+ * the parameter name.
+ *
+ * @param {string} rest - The rest part of a JSDoc parameter string to parse.
+ * @returns {[string, boolean]} A tuple where the first element is the name of the parameter,
+ * and the second element is a boolean indicating if the parameter is optional.
  */
 function extractNameAndOptionality(rest) {
   rest = rest.trim();

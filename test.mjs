@@ -50,3 +50,4 @@ for (const {input, output} of tests) {
 if (discrepancies) {
   console.error(`Found ${discrepancies} discrepancies in ${tests.length} tests`);
 }
+process.exit(discrepancies); // 0 means success

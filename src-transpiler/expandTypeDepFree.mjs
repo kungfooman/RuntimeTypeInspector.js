@@ -10,10 +10,10 @@
  */
 /**
  * @typedef {object} ExpandTypeReturnValue
- * @property {'array' | 'union' | 'record' | 'tuple' | 'object'} type
- * @property {object | string} [elementType]
- * @property {object | string} [key]
- * @property {object | string} [val]
+ * @property {'array' | 'union' | 'record' | 'tuple' | 'object'} type - The type.
+ * @property {object | string} [elementType] - For Array.
+ * @property {object | string} [key] - For Record<key, val>
+ * @property {object | string} [val] - For Record<key, val>
  * @property {(object | string)[]} [members] - For unions.
  * @property {object | string} [properties] - For objects.
  * @property {(object | string)[]} [elements] - For tuples.
@@ -28,13 +28,13 @@
  * expandTypeDepFree('  ( ( 123 ) )           '); // Outputs: '123'
  * expandTypeDepFree('  (string ) |(number )  '); // Outputs: { type: 'union', members: ['string', 'number'] }
  * expandTypeDepFree(' ((  Object  ) )        '); // Outputs: { type: 'object', properties: {} }
- * @param {string} type
+ * @param {string} type - The input type to expand.
  * @returns {string | ExpandTypeReturnValue} Object containing parsed information from type string.
  */
 function expandTypeDepFree(type) {
   type = type.trim();
   // '(123)' -> '123'
-  while (!type.includes('|') && type[0] == '(' && type[type.length - 1] == ')') {
+  while (!type.includes('|') && type[0] === '(' && type[type.length - 1] === ')') {
     type = type.slice(1, -1).trim();
   }
   // (1) Rest parameters like ...string
@@ -42,7 +42,7 @@ function expandTypeDepFree(type) {
     return {
       type: 'array',
       elementType: type.slice(3)
-    }
+    };
   }
   // (2) Array<...>
   if (type.startsWith("Array<") && type.endsWith('>')) {
@@ -50,7 +50,7 @@ function expandTypeDepFree(type) {
     return {
       type: "array",
       elementType: expandTypeDepFree(typeSlice)
-    }
+    };
   }
   // (3) Object<...> or Record<...>
   if (
@@ -69,14 +69,14 @@ function expandTypeDepFree(type) {
       type: "record",
       key: expandTypeDepFree(key),
       val: expandTypeDepFree(val),
-    }
+    };
   }
   // (4) {...}
-  if (type[0] == '{' && type[type.length - 1] == '}') {
+  if (type[0] === '{' && type[type.length - 1] === '}') {
     const propertiesArray = type.slice(1, -1).split(','); // ['entity: Entity', ' app: AppBase']
     const properties = {};
     propertiesArray.forEach(_ => {
-      const [propName, propType] = _.split(":").map(_=>_.trim());
+      const [propName, propType] = _.split(":").map(_ => _.trim());
       if (!propName || !propType) {
         console.warn('expandTypeDepFree> unexpected type format, fix');
         return false;
@@ -88,11 +88,11 @@ function expandTypeDepFree(type) {
   // (5) expand unions
   const members = type.split("|");
   if (members.length >= 2) {
-    members.forEach((_, i) => members[i]=_.trim());
+    members.forEach((_, i) => members[i] = _.trim());
     return {
       type: 'union',
       members: members.map(expandTypeDepFree),
-    }
+    };
   }
   // (6) expand [] Arrays
   // Test arrays: new pc.Mat3().set([1, 2, 3, "asd"])
@@ -101,21 +101,21 @@ function expandTypeDepFree(type) {
     return {
       type: 'array',
       elementType: expandTypeDepFree(typeSlice)
-    }
+    };
   }
   // (7) expand tuples
-  if (type[0] == '[' && type[type.length - 1] == ']') {
+  if (type[0] === '[' && type[type.length - 1] === ']') {
     const elements = type.slice(1, -1).split(','); // ['null', ' Texture', ' Texture', ' Texture', ' Texture', ' Texture', ' Texture']
     return {
       type: 'tuple',
       elements: elements.map(expandTypeDepFree)
-    }
+    };
   }
   if (type === 'object' || type === 'Object') {
     return {
       type: 'object',
       properties: {},
-    }
+    };
   }
   return type;
 }

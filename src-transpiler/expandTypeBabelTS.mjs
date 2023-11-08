@@ -16,7 +16,8 @@ import {parse} from '@babel/parser';
  * expandTypeBabelTS('123|null                 '); // Outputs: {"type":"union","members":["123","null"]}
  * expandTypeBabelTS('Map<string, any>');
  * expandTypeBabelTS("(a: number, b: number) => number")
- * @param {string} type
+ * @param {string} type - The input type.
+ * @returns {string|object|undefined} - See `toSourceBabelTS`.
  */
 function expandTypeBabelTS(type) {
   const ast = parseTypeBabelTS(type);
@@ -24,7 +25,7 @@ function expandTypeBabelTS(type) {
 }
 /**
  * @param {string} str - The type string.
- * @returns {import('@babel/types').Node}
+ * @returns {import('@babel/types').Node} - The node containing all the information about the input type string.
  */
 function parseTypeBabelTS(str) {
   // TS doesn't like ... notation in this context
@@ -38,8 +39,16 @@ function parseTypeBabelTS(str) {
   return ast.program.body[0].typeAnnotation;
 }
 /**
- * @param {import('@babel/types').Node} node 
- * @returns {string|object|undefined}
+ * Converts a Babel AST node to its source string representation or structured type object.
+ *
+ * This function handles a variety of node types provided by Babel and converts them into a string
+ * or an intermediate object representing the type, depending on the complexity of the type described by the node.
+ *
+ * @param {import('@babel/types').Node} node - The Babel AST node to convert.
+ * @returns {string|object|undefined} - A string, object representing a structured type, or `undefined` for unhandled types.
+ * Depending on the node, it may return a simple type string (e.g., `"string"` for `TSStringKeyword`),
+ * a structured type object (e.g., a record type for `TSTypeReference` with type arguments),
+ * or `undefined` if the encountered type is not handled. Unhandled types trigger a warning and enter a debugger statement.
  */
 function toSourceBabelTS(node) {
   switch (node.type) {
@@ -98,7 +107,7 @@ function toSourceBabelTS(node) {
         return {
           type: 'class',
           elementType: toSourceBabelTS(typeArguments[0])
-        }
+        };
       }
       console.warn('unhandled TypeReference', node);
       return {type: 'unhandled TypeReference'};
@@ -111,17 +120,17 @@ function toSourceBabelTS(node) {
       return {
         type: 'intersection',
         members: node.types.map(toSourceBabelTS)
-      }
+      };
     case 'TSTupleType':
       return {
         type: 'tuple',
         elements: node.elementTypes.map(toSourceBabelTS)
-      }
+      };
     case 'TSUnionType':
       return {
         type: 'union',
         members: node.types.map(toSourceBabelTS)
-      }
+      };
     case 'TypeLiteral':
       const properties = {};
       node.members.forEach(member => {
@@ -132,10 +141,10 @@ function toSourceBabelTS(node) {
       return {
         type: 'object',
         properties
-      }
-    //case 'PropertySignature':
-    //  console.warn('toSourceBabelTS> should not happen, handled by TypeLiteral directly');
-    //  return `${toSourceBabelTS(node.name)}: ${toSourceBabelTS(node.type)}`;
+      };
+    // case 'PropertySignature':
+    //   console.warn('toSourceBabelTS> should not happen, handled by TypeLiteral directly');
+    //   return `${toSourceBabelTS(node.name)}: ${toSourceBabelTS(node.type)}`;
     case 'Identifier':
       return node.name;
     case 'TSArrayType':
@@ -181,7 +190,7 @@ function toSourceBabelTS(node) {
       return {
         type: 'object',
         properties: {}
-      }
+      };
     case 'ParenthesizedType':
       // fall-through for parentheses
       return toSourceBabelTS(node.type);

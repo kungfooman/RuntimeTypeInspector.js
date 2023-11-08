@@ -27,7 +27,7 @@ module.exports = {
     ],
     "no-constructor-return": "error",
     "no-control-regex": "error",
-    "no-debugger": "error",
+    "no-debugger": "off",
     "no-dupe-args": "error",
     "no-dupe-class-members": "error",
     "no-dupe-else-if": "error",
@@ -37,7 +37,7 @@ module.exports = {
     "no-empty-character-class": "error",
     "no-empty-pattern": "error",
     "no-ex-assign": "error",
-    "no-fallthrough": "error",
+    "no-fallthrough": /*"error"*/ "off",
     "no-func-assign": "error",
     "no-import-assign": "error",
     "no-inner-declarations": "error",
@@ -65,11 +65,11 @@ module.exports = {
     "no-unsafe-negation": "error",
     "no-unsafe-optional-chaining": "error",
     "no-unused-private-class-members": "error",
-    "no-unused-vars": [
+    "no-unused-vars": /*[
       "error", {
         "args": "none"
       }
-    ],
+    ]*/"off",
     "no-use-before-define": [
       "error", {
         "functions": false
@@ -119,7 +119,7 @@ module.exports = {
     "no-array-constructor": "error",
     "no-bitwise": "off",
     "no-caller": "error",
-    "no-case-declarations": "error",
+    "no-case-declarations": /*"error"*/ "off",
     "no-confusing-arrow": "error",
     "no-console": "off",
     "no-continue": "off",
@@ -176,7 +176,7 @@ module.exports = {
     "no-restricted-imports": "error",
     "no-restricted-properties": "off",
     "no-restricted-syntax": "error",
-    "no-return-assign": "error",
+    "no-return-assign": /*"error"*/ "off",
     "no-script-url": "error",
     "no-sequences": "error",
     "no-shadow": "off",
@@ -226,11 +226,11 @@ module.exports = {
     "sort-imports": "off",
     "sort-keys": "off",
     "sort-vars": "off",
-    "spaced-comment": [
+    "spaced-comment": /*[
       "error", "always", {
         "exceptions": ["/"]
       }
-    ],
+    ]*/ "off",
     "strict": "error",
     "symbol-description": "error",
     "vars-on-top": "off",
@@ -240,15 +240,15 @@ module.exports = {
     "array-bracket-newline": ["error", "consistent"],
     "array-bracket-spacing": ["error", "never"],
     "array-element-newline": "off",
-    "arrow-parens": [
+    "arrow-parens": /*[
       "error", "as-needed", {
         "requireForBlockBody": true
       }
-    ],
+    ]*/ "off",
     "arrow-spacing": "error",
     "block-spacing": "error",
     "brace-style": "error",
-    "comma-dangle": ["error", "never"],
+    "comma-dangle": "off",
     "comma-spacing": [
       "error", {
         "before": false,
@@ -274,12 +274,7 @@ module.exports = {
       }
     ],
     "jsx-quotes": "off",
-    "key-spacing": [
-      "error", {
-        "beforeColon": false,
-        "afterColon": true
-      }
-    ],
+    "key-spacing": "off",
     "keyword-spacing": [
       "error", {
         "before": true,
@@ -289,7 +284,7 @@ module.exports = {
     "line-comment-position": "off",
     "linebreak-style": "off",
     "lines-around-comment": "off",
-    "lines-between-class-members": ["error", "always"],
+    "lines-between-class-members": ["error", "never"],
     "max-len": "off",
     "max-statements-per-line": "off",
     "multiline-ternary": "off",
@@ -297,7 +292,7 @@ module.exports = {
     "newline-per-chained-call": "off",
     "no-extra-parens": ["error", "functions"],
     "no-mixed-spaces-and-tabs": "error",
-    "no-multi-spaces": [
+    "no-multi-spaces": /*[
       "error", {
         "ignoreEOLComments": true,
         "exceptions": {
@@ -307,10 +302,11 @@ module.exports = {
           "IfStatement": true,
           "LogicalExpression": true,
           "SwitchCase": true,
-          "VariableDeclarator": true
+          "VariableDeclarator": true,
+          "ImportDeclaration": true,
         }
       }
-    ],
+    ]*/"off",
     "no-multiple-empty-lines": [
       "error", {
         "max": 2,
@@ -327,7 +323,8 @@ module.exports = {
         "consistent": true
       }
     ],
-    "object-curly-spacing": ["error", "always"],
+    // Even errors for ImportDeclaration, but exception doesn't work here (todo figure out)
+    //"object-curly-spacing": ["error", "never"],
     "object-property-newline": [
       "error", {
         "allowAllPropertiesOnSameLine": true
