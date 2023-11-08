@@ -27,7 +27,8 @@ class Stringifier {
     let out = '';
     let comments = '';
     if (leadingComments) {
-      comments += this.mapToSource(leadingComments).join('');
+      // comments += this.mapToSource(leadingComments).join('');
+      comments = this.leadingCommentsToSource(leadingComments);
     }
     if (node?.extra?.parenthesized) {
       out += `(${comments}${this.toSource_(node)})`;
@@ -35,12 +36,7 @@ class Stringifier {
       out += comments + this.toSource_(node);
     }
     if (trailingComments) {
-      for (const trailingComment of trailingComments) {
-        if (trailingComment.type === 'CommentBlock') {
-          out += ' ';
-        }
-        out += this.toSource(trailingComment);
-      }
+      out += this.trailingCommentsToSource(trailingComments);
     }
     // leadingComments and trailingComments lead to duplicates, not always tho
     //if (node && node.trailingComments) {
@@ -71,6 +67,57 @@ class Stringifier {
     const fn = `${type}(node) {\n  const {${props}} = node;\n  return ;\n}`;
     console.warn('TODO ADD METHOD:', fn);
     return `rtiUnhandled("${node.type}");\n`;
+  }
+  parentProvidesSpaces(reverseIndex) {
+    // May look like: .../ArrayExpression/StringLiteral/CommentLine
+    const {parents} = this;
+    const parent = parents[parents.length - reverseIndex];
+    // console.log("Got parent", parent.type);
+    return parent?.type === 'ArrayExpression';
+  }
+  leadingCommentsToSource(leadingComments) {
+    let out = leadingComments
+      .map(_ => this.commentToSource(_, 'leading'))
+      .join('');
+    // The comments "took" the spaces, which e.g. ArrayExpression added,
+    // so we have to add them back now for parents that provide spaces.
+    if (this.parentProvidesSpaces(2)) {
+      out += this.spaces;
+    }
+    return out;
+  }
+  trailingCommentsToSource(trailingComments) {
+    let out = '';
+    for (const trailingComment of trailingComments) {
+      if (trailingComment.type === 'CommentBlock') {
+        const {loc} = trailingComment;
+        const dedicatedLine = this.spaces.length === loc.start.column;
+        // out += ` /*dedicatedLine=${dedicatedLine}*/ `;
+        if (dedicatedLine) {
+          out += '\n';
+        } else {
+          out += ' ';
+        }
+      }
+      out += this.commentToSource(trailingComment, 'trailing');
+    }
+    return out;
+  }
+  /**
+   * @param {*} comment - The comment "node" (not a real Babel Node node though, hence this special treatment)
+   * @param {'leading'|'trailing'} pos - The position, either 'leading' or 'trailing'.
+   * @returns {string} The comment "node" as a string.
+   */
+  commentToSource(comment, pos) {
+    if (comment.type === 'CommentBlock') {
+      //if (pos === 'leading') {}
+      return this.CommentBlock(comment);
+    } else if (comment.type === 'CommentLine') {
+      return this.CommentLine(comment);
+    }
+    console.warn("Unknown comment type", comment);
+    debugger;
+    return '';
   }
   /**
    * Only add { and } when requested (e.g. for Asserter).
@@ -1210,7 +1257,10 @@ class Stringifier {
     const {spaces} = this;
     const dedicatedLine = spaces.length === loc.start.column;
     if (dedicatedLine) {
-      out += '\n' + spaces;
+      out += '\n';
+      if (this.parentProvidesSpaces(2)) {
+        out += spaces;
+      }
     } else {
       out += ' ';
     }
