@@ -13,7 +13,7 @@ import json from '@rollup/plugin-json';
 //import { addTypeChecks } from "./src-transpiler/typeInserter.mjs";
 //const { addTypeChecks } = await import("runtime-type-inspector/src-transpiler/typeInserter.mjs");
 import commonjs from '@rollup/plugin-commonjs';
-import { runtimeTypeInspector } from './plugin-rollup/index.mjs';
+//import { runtimeTypeInspector } from './plugin-rollup/index.mjs';
 /** @typedef {import('rollup').RollupOptions} RollupOptions */
 /** @typedef {import('rollup').Plugin} Plugin */
 /** @typedef {import('rollup').OutputOptions} OutputOptions */
