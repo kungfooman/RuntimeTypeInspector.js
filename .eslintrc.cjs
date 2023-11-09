@@ -249,12 +249,12 @@ module.exports = {
     "block-spacing": "error",
     "brace-style": "error",
     "comma-dangle": "off",
-    "comma-spacing": [
+    "comma-spacing": /*[
       "error", {
         "before": false,
         "after": true
       }
-    ],
+    ]*/"off",
     "comma-style": ["error", "last"],
     "computed-property-spacing": ["error", "never"],
     "dot-location": ["error", "property"],
