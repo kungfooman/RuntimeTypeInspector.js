@@ -1,7 +1,6 @@
 import {createFilter} from '@rollup/pluginutils';
-import {parse       } from '@babel/parser';
 import {
-  addTypeChecks, expandType,ast2jsonForComparison, code2ast2code
+  addTypeChecks, expandType, compareAST, code2ast2code
 } from '@runtime-type-inspector/transpiler';
 /**
  * Alternatively "import * as rti from ..." would also prevent "Unused external imports" warning...
@@ -17,20 +16,6 @@ function getHeader(validateDivision) {
   // Prevent tree-shaking in UMD build so we can always "add a breakpoint here".
   header += "export * from '@runtime-type-inspector/runtime';\n";
   return header;
-}
-/**
- * @param {string} left
- * @param {string} right
- */
-function compareAST(left, right) {
-  const l = parse(left , {sourceType: 'module'});
-  const r = parse(right, {sourceType: 'module'});
-  const ljson = ast2jsonForComparison(l);
-  const rjson = ast2jsonForComparison(r);
-  const test = ljson == rjson;
-  if (!test) {
-    console.warn(`AST is NOT equal`);
-  }
 }
 /**
  * @param {object} [options] - Optional options.
@@ -56,7 +41,10 @@ function runtimeTypeInspector({enable = true, selftest = false, ignoredFiles} = 
         return;
       }
       if (selftest) {
-        compareAST(code, code2ast2code(code));
+        const test = compareAST(code, code2ast2code(code));
+        if (!test) {
+          console.warn(`AST is NOT equal`);
+        }
       }
       const validateDivision = true;
       code = getHeader(validateDivision) + code;
