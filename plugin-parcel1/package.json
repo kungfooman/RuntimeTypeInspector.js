@@ -1,5 +1,5 @@
 {
-  "name": "runtime-type-inspector-plugin-parcel1",
+  "name": "@runtime-type-inspector/plugin-parcel1",
   "version": "1.0.0",
   "description": "",
   "main": "index.cjs",
