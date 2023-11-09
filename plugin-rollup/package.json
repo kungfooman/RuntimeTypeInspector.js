@@ -1,6 +1,6 @@
 {
   "name": "@runtime-type-inspector/plugin-rollup",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "module": "index.mjs",
   "type": "module",
@@ -11,7 +11,7 @@
   "license": "MIT",
   "dependencies": {
     "@runtime-type-inspector/runtime": "^2.0.5",
-    "@runtime-type-inspector/transpiler": "^2.0.4",
+    "@runtime-type-inspector/transpiler": "^2.0.10",
     "rollup": "^3.29.4"
   }
 }
