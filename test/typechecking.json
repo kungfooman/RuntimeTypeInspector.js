@@ -4,6 +4,10 @@
     "output": "./test/typechecking/ArrayExpression-keep-layout-output.mjs"
   },
   {
+    "input": "./test/typechecking/ArrayFunctionExpression-nested-input.mjs",
+    "output": "./test/typechecking/ArrayFunctionExpression-nested-output.mjs"
+  },
+  {
     "input": "./test/typechecking/ArrowFunctionExpression-foreach-input.mjs",
     "output": "./test/typechecking/ArrowFunctionExpression-foreach-output.mjs"
   },

@@ -126,14 +126,14 @@ class Asserter extends Stringifier {
     i--;
     while (i >= 0) {
       parent = parents[i];
-      if (parent.leadingComments) {
-        return parent;
-      }
       if (parent.type === 'CallExpression') {
         break;
       }
       if (nodeIsFunction(parent)) {
         break;
+      }
+      if (parent.leadingComments) {
+        return parent;
       }
       i--;
     }
