@@ -44,7 +44,6 @@ function createDiv() {
   };
   input.onchange = onchange;
   onchange(); // update mode from localStorage
-  input.checked = true;
   const buttonHide = document.createElement("button");
   buttonHide.textContent = 'Hide';
   buttonHide.onclick = () => {
