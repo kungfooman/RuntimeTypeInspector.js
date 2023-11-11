@@ -7,6 +7,8 @@
   "scripts": {
     "build": "rollup -c",
     "build:atBabelCore": "rollup -c --environment target:atBabelCore",
+    "build:dts": "tsc src-transpiler/index.mjs --outDir types/transpiler --allowJs --declaration --emitDeclarationOnly --target esnext",
+    "build:types": "npm run build:dts && rollup -c --environment target:types",
     "test": "node test.mjs",
     "test:update": "node gen_tests.mjs > test/typechecking.json",
     "lint": "eslint --ext .js,.mjs,.cjs src-transpiler",
