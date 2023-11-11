@@ -153,10 +153,10 @@ function buildTarget(name, rootFile, path, buildType, moduleFormat) {
 }
 /** @type {RollupOptions} */
 const target_types = {
-  input: 'types/index.d.ts',
+  input: 'types/transpiler/index.d.mts',
   output: [{
-    file: 'build/runtime-type-inspector.d.ts',
-    footer: 'export as namespace rtiTranspiler;',
+    file: '@runtime-type-inspector/transpiler/types.d.ts',
+    //footer: 'export as namespace rtiTranspiler;',
     format: 'es'
   }],
   plugins: [
