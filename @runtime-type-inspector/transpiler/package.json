@@ -23,6 +23,7 @@
   },
   "files": [
     "index.cjs",
-    "index.mjs"
+    "index.mjs",
+    "types.d.ts"
   ]
 }
