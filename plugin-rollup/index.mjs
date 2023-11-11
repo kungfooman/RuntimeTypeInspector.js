@@ -24,7 +24,7 @@ function getHeader(validateDivision) {
  * self-test Stringifier class to ensure its functionanlity.
  * @param {string[]} [options.ignoredFiles] - Ignore certain files which operate in a different
  * context, for example framework/parsers/draco-worker.js operates as WebWorker (without RTI).
- * @returns {import('rollup').Plugin}
+ * @returns {import('rollup').Plugin} The rollup plugin.
  */
 function runtimeTypeInspector({enable = true, selftest = false, ignoredFiles} = {}) {
   const filter = createFilter([
