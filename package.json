@@ -9,10 +9,10 @@
     "build:atBabelCore": "rollup -c --environment target:atBabelCore",
     "build:dts": "tsc src-transpiler/index.mjs --outDir types/transpiler --allowJs --declaration --emitDeclarationOnly --target esnext",
     "build:types": "npm run build:dts && rollup -c --environment target:types",
+    "docs": "jsdoc -c jsdoc.json",
     "test": "node test.mjs",
     "test:update": "node gen_tests.mjs > test/typechecking.json",
-    "lint": "eslint --ext .js,.mjs,.cjs src-transpiler",
-    "docs": "echo todo docs using jsdoc"
+    "lint": "eslint --ext .js,.mjs,.cjs src-transpiler"
   },
   "repository": {
     "type": "git",
@@ -26,7 +26,11 @@
   "type": "module",
   "homepage": "https://github.com/kungfooman/RuntimeTypeInspector.js#readme",
   "devDependencies": {
+    "@babel/helper-plugin-utils": "^7.22.5",
+    "@babel/parser": "^7.23.0",
+    "@babel/plugin-syntax-typescript": "^7.22.5",
     "@babel/preset-env": "^7.22.20",
+    "@playcanvas/jsdoc-template": "^1.1.2",
     "@rollup/plugin-babel": "^6.0.3",
     "@rollup/plugin-commonjs": "^25.0.4",
     "@rollup/plugin-json": "^6.0.0",
@@ -38,17 +42,17 @@
     "eslint": "^8.44.0",
     "eslint-plugin-import": "^2.28.1",
     "eslint-plugin-jsdoc": "^46.6.0",
+    "jsdoc": "^4.0.2",
+    "jsdoc-tsimport-plugin": "^1.0.5",
     "rollup": "^3.29.0",
     "rollup-plugin-dts": "^6.0.1",
     "rollup-plugin-jscc": "^2.0.0",
     "rollup-plugin-visualizer": "^5.9.2",
-    "to-fast-properties": "^4.0.0",
-    "@babel/helper-plugin-utils": "^7.22.5",
-    "@babel/parser": "^7.23.0",
-    "@babel/plugin-syntax-typescript": "^7.22.5"
+    "to-fast-properties": "^4.0.0"
   },
   "dependencies": {
     "@babel/core": "^7.2.0",
+    "catharsis": "github:xenova/catharsis",
     "typescript": "^5.1.6"
   }
 }
