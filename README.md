@@ -52,6 +52,7 @@ console.log(rtiTranspiler)
  2) https://www.npmjs.com/package/@runtime-type-inspector/runtime
  3) https://www.npmjs.com/package/@runtime-type-inspector/transpiler
  4) https://www.npmjs.com/package/@runtime-type-inspector/parcel-transformer
+ 5) https://www.npmjs.com/package/@runtime-type-inspector/plugin-rollup
 
  Initially I published everything in (1), but it makes more sense to ship individual packages, because:
 
