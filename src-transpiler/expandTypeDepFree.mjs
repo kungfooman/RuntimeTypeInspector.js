@@ -10,7 +10,7 @@
  */
 /**
  * @typedef {object} ExpandTypeReturnValue
- * @property {'array' | 'union' | 'record' | 'tuple' | 'object'} type - The type.
+ * @property {'array' | 'union' | 'record' | 'tuple' | 'object' | 'promise'} type - The type.
  * @property {object | string} [elementType] - For Array.
  * @property {object | string} [key] - For Record<key, val>
  * @property {object | string} [val] - For Record<key, val>
@@ -39,18 +39,21 @@ function expandTypeDepFree(type) {
   }
   // (1) Rest parameters like ...string
   if (type[0] === '.' && type[1] === '.' && type[2] === '.') {
-    return {
-      type: 'array',
-      elementType: type.slice(3)
-    };
+    const elementType = type.slice(3);
+    return {type: 'array', elementType};
   }
-  // (2) Array<...>
+  // (2)
+  // Array<...>
   if (type.startsWith("Array<") && type.endsWith('>')) {
     const typeSlice = type.slice(6, -1);
-    return {
-      type: "array",
-      elementType: expandTypeDepFree(typeSlice)
-    };
+    const elementType = expandTypeDepFree(typeSlice);
+    return {type: "array", elementType};
+  }
+  // Promise<...>
+  if (type.startsWith("Promise<") && type.endsWith('>')) {
+    const typeSlice = type.slice(8, -1);
+    const elementType = expandTypeDepFree(typeSlice);
+    return {type: "promise", elementType};
   }
   // (3) Object<...> or Record<...>
   if (
