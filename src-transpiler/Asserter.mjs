@@ -385,6 +385,14 @@ class Asserter extends Stringifier {
                   continue;
                 }
                 const keyName = property.key.name;
+                if (type.type !== 'object' || !type.properties) {
+                  this.warn(
+                    "missing subtype information in JSDoc> in type",
+                    JSON.stringify(type, null, 2),
+                    "for ObjectPattern:", this.toSource(property).trim()
+                  );
+                  continue;
+                }
                 const subType = type.properties[keyName];
                 if (!subType) {
                   this.warn("missing subtype information in JSDoc");
