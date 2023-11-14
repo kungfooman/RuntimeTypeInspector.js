@@ -48,6 +48,14 @@
     "output": "./test/typechecking/simple-ObjectPattern-output.mjs"
   },
   {
+    "input": "./test/typechecking/typedef-BigIntKeyword-input.mjs",
+    "output": "./test/typechecking/typedef-BigIntKeyword-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/typedef-BigIntLiteral-input.mjs",
+    "output": "./test/typechecking/typedef-BigIntLiteral-output.mjs"
+  },
+  {
     "input": "./test/typechecking/typedef-new-input.mjs",
     "output": "./test/typechecking/typedef-new-output.mjs"
   },

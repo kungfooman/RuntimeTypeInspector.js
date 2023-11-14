@@ -1,0 +1,1 @@
+/** @typedef {bigint|null} BigIntOrNull */
