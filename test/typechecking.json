@@ -50,5 +50,9 @@
   {
     "input": "./test/typechecking/typedef-new-input.mjs",
     "output": "./test/typechecking/typedef-new-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/typedef-promise-input.mjs",
+    "output": "./test/typechecking/typedef-promise-output.mjs"
   }
 ]
