@@ -3,11 +3,11 @@ registerTypedef('BigIntOneOrTwo', {
   "members": [
     {
       "type": "bigint",
-      "value": "1"
+      "literal": "1"
     },
     {
       "type": "bigint",
-      "value": "2"
+      "literal": "2"
     }
   ]
 });
