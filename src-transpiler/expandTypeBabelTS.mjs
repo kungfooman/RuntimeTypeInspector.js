@@ -92,22 +92,21 @@ function toSourceBabelTS(node) {
       } else if (name === 'Object' && (!typeArguments || typeArguments?.length === 0)) {
         return {type: 'object', properties: {}};
       } else if (name === 'Map' && typeArguments?.length === 2) {
-        return {
-          type: 'map',
-          key: toSourceBabelTS(typeArguments[0]),
-          val: toSourceBabelTS(typeArguments[1]),
-        };
+        const key = toSourceBabelTS(typeArguments[0]);
+        const val = toSourceBabelTS(typeArguments[1]);
+        return {type: 'map', key, val};
       } else if (name === 'Array' && typeArguments?.length === 1) {
         const elementType = toSourceBabelTS(typeArguments[0]);
         return {type: 'array', elementType};
+      } else if (name === 'Promise' && typeArguments?.length === 1) {
+        const elementType = toSourceBabelTS(typeArguments[0]);
+        return {type: 'promise', elementType};
       } else if (name === 'Set' && typeArguments?.length === 1) {
         const elementType = toSourceBabelTS(typeArguments[0]);
         return {type: 'set', elementType};
       } else if (name === 'Class' && typeArguments?.length === 1) {
-        return {
-          type: 'class',
-          elementType: toSourceBabelTS(typeArguments[0])
-        };
+        const elementType = toSourceBabelTS(typeArguments[0]);
+        return {type: 'class', elementType};
       }
       console.warn('unhandled TypeReference', node);
       return {type: 'unhandled TypeReference'};

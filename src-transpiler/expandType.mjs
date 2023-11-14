@@ -108,22 +108,21 @@ function toSourceTS(node) {
       } else if (typeName.text === 'Object' && (!typeArguments || typeArguments?.length === 0)) {
         return {type: 'object', properties: {}};
       } else if (typeName.text === 'Map' && typeArguments?.length === 2) {
-        return {
-          type: 'map',
-          key: toSourceTS(typeArguments[0]),
-          val: toSourceTS(typeArguments[1]),
-        };
+        const key = toSourceTS(typeArguments[0]);
+        const val = toSourceTS(typeArguments[1]);
+        return {type: 'map', key, val};
       } else if (typeName.text === 'Array' && typeArguments?.length === 1) {
         const elementType = toSourceTS(typeArguments[0]);
         return {type: 'array', elementType};
+      } else if (typeName.text === 'Promise' && typeArguments?.length === 1) {
+        const elementType = toSourceTS(typeArguments[0]);
+        return {type: 'promise', elementType};
       } else if (typeName.text === 'Set' && typeArguments?.length === 1) {
         const elementType = toSourceTS(typeArguments[0]);
         return {type: 'set', elementType};
       } else if (typeName.text === 'Class' && typeArguments?.length === 1) {
-        return {
-          type: 'class',
-          elementType: toSourceTS(typeArguments[0])
-        };
+        const elementType = toSourceTS(typeArguments[0]);
+        return {type: 'class', elementType};
       }
       if (!typeArguments) {
         return typeName.getText();
