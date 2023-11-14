@@ -52,6 +52,11 @@ function parseTypeBabelTS(str) {
  */
 function toSourceBabelTS(node) {
   switch (node.type) {
+    case 'TSBigIntKeyword':
+      return {type: 'bigint'};
+    case 'BigIntLiteral':
+      const literal = node.value;
+      return {type: 'bigint', literal};
     // expandTypeBabelTS("(a: number, b: number) => number")
     /**
      * @todo the parameters are given as identifiers with "typeAnnotation"
