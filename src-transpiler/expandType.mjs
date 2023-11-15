@@ -72,7 +72,7 @@ function toSourceTS(node) {
     ObjectKeyword, Parameter, ParenthesizedType, PropertySignature, StringKeyword,
     StringLiteral, ThisType, TupleType, TypeLiteral, TypeReference, UndefinedKeyword,
     UnionType, JSDocNullableType, TrueKeyword, FalseKeyword, VoidKeyword, UnknownKeyword,
-    NeverKeyword, BigIntKeyword, BigIntLiteral,
+    NeverKeyword, BigIntKeyword, BigIntLiteral, ConditionalType,
     ConstructorType, // parseType('new (...args: any[]) => any');
   } = ts.SyntaxKind;
   // console.log({ typeArguments, typeName, kind_, node });
@@ -82,6 +82,15 @@ function toSourceTS(node) {
     case BigIntLiteral:
       const literal = node.text.slice(0, -1); // Remove the "n"
       return {type: 'bigint', literal};
+    case ConditionalType:
+      // Keys on node:
+      // ['pos', 'end', 'flags', 'modifierFlagsCache', 'transformFlags', 'parent', 'kind', 'checkType',
+      // 'extendsType', 'trueType', 'falseType', 'locals', 'nextContainer']
+      const checkType = toSourceTS(node.checkType);
+      const extendsType = toSourceTS(node.extendsType);
+      const trueType = toSourceTS(node.trueType);
+      const falseType = toSourceTS(node.falseType);
+      return {type: 'condition', checkType, extendsType, trueType, falseType};
     case ConstructorType: {
       const parameters = node.parameters.map(toSourceTS);
       const ret = toSourceTS(node.type);
