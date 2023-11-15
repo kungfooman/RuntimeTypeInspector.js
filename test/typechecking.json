@@ -56,6 +56,10 @@
     "output": "./test/typechecking/typedef-BigIntLiteral-output.mjs"
   },
   {
+    "input": "./test/typechecking/typedef-ConditionalType-input.mjs",
+    "output": "./test/typechecking/typedef-ConditionalType-output.mjs"
+  },
+  {
     "input": "./test/typechecking/typedef-new-input.mjs",
     "output": "./test/typechecking/typedef-new-output.mjs"
   },
