@@ -72,7 +72,7 @@ function toSourceTS(node) {
     ObjectKeyword, Parameter, ParenthesizedType, PropertySignature, StringKeyword,
     StringLiteral, ThisType, TupleType, TypeLiteral, TypeReference, UndefinedKeyword,
     UnionType, JSDocNullableType, TrueKeyword, FalseKeyword, VoidKeyword, UnknownKeyword,
-    NeverKeyword, BigIntKeyword, BigIntLiteral,
+    NeverKeyword, BigIntKeyword, BigIntLiteral, ConditionalType, IndexedAccessType, RestType,
     ConstructorType, // parseType('new (...args: any[]) => any');
   } = ts.SyntaxKind;
   // console.log({ typeArguments, typeName, kind_, node });
@@ -82,6 +82,15 @@ function toSourceTS(node) {
     case BigIntLiteral:
       const literal = node.text.slice(0, -1); // Remove the "n"
       return {type: 'bigint', literal};
+    case ConditionalType:
+      // Keys on node:
+      // ['pos', 'end', 'flags', 'modifierFlagsCache', 'transformFlags', 'parent', 'kind', 'checkType',
+      // 'extendsType', 'trueType', 'falseType', 'locals', 'nextContainer']
+      const checkType = toSourceTS(node.checkType);
+      const extendsType = toSourceTS(node.extendsType);
+      const trueType = toSourceTS(node.trueType);
+      const falseType = toSourceTS(node.falseType);
+      return {type: 'condition', checkType, extendsType, trueType, falseType};
     case ConstructorType: {
       const parameters = node.parameters.map(toSourceTS);
       const ret = toSourceTS(node.type);
@@ -90,6 +99,13 @@ function toSourceTS(node) {
     case FunctionType:
       const parameters = node.parameters.map(toSourceTS);
       return {type: 'function', parameters};
+    case IndexedAccessType:
+      const index = toSourceTS(node.indexType);
+      const object = toSourceTS(node.objectType);
+      return {type: 'indexedAccess', index, object};
+    case RestType:
+      const annotation = toSourceTS(node.type);
+      return {type: 'rest', annotation};
     case JSDocNullableType:
       const t = toSourceTS(node.type);
       return {type: 'union', members: [t, 'null']};
@@ -103,7 +119,7 @@ function toSourceTS(node) {
         return {type: 'array', elementType: ret};
       }
       return ret;
-    case TypeReference:
+    case TypeReference: {
       if ((typeName.text === 'Object' || typeName.text === 'Record') && typeArguments?.length === 2) {
         return {
           type: 'record',
@@ -132,8 +148,10 @@ function toSourceTS(node) {
       if (!typeArguments) {
         return typeName.getText();
       }
-      console.warn('unhandled TypeReference', kind_, node);
-      return {type: 'unhandled TypeReference'};
+      const name = typeName.text;
+      const args = typeArguments.map(toSourceTS);
+      return {type: 'reference', name, args};
+    }
     case StringKeyword:
       return node.getText();
     case NumberKeyword:
