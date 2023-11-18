@@ -424,7 +424,15 @@ const aceEditorRight = setupAce(
   editor => console.log("right alt")
 );
 function runRightEditor() {
-  eval(aceEditorRight.getValue());
+  const src = getRight();
+  if (src.includes('import') || src.includes('export')) {
+    const script = document.createElement("script");
+    script.type = "module";
+    script.textContent = src;
+    document.head.append(script);
+    return;
+  }
+  eval(src);
 }
 export {
   selectAction,
