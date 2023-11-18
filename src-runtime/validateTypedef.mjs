@@ -13,6 +13,10 @@ function validateTypedef(value, expect, loc, name, critical) {
     return true;
   }
   const typedef = typedefs[expect.type];
+  // Prevent circular validation
+  if (typeof typedef === 'string') {
+    return false;
+  }
   return validateType(value, typedef, loc, name, critical);
 }
 export {validateTypedef};
