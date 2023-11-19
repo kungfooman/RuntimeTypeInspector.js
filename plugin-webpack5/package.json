@@ -1,5 +1,5 @@
 {
-  "name": "plugin-webpack5",
+  "name": "@runtime-type-inspector/plugin-webpack5",
   "version": "1.0.0",
   "description": "",
   "main": "index.cjs",
