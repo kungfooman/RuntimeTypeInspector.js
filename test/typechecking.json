@@ -16,6 +16,14 @@
     "output": "./test/typechecking/ClassProperty-value-is-null-output.mjs"
   },
   {
+    "input": "./test/typechecking/ParenthesizedExpression-multiline-input.mjs",
+    "output": "./test/typechecking/ParenthesizedExpression-multiline-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/ParenthesizedExpression-singleline-input.mjs",
+    "output": "./test/typechecking/ParenthesizedExpression-singleline-output.mjs"
+  },
+  {
     "input": "./test/typechecking/comment-newline-input.mjs",
     "output": "./test/typechecking/comment-newline-output.mjs"
   },

@@ -894,6 +894,23 @@ class Stringifier {
     return value.raw;
   }
   /**
+   * @param {import("@babel/types").ParenthesizedExpression} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  ParenthesizedExpression(node) {
+    const {expression, loc} = node;
+    const sameLine = loc.start.line === loc.end.line;
+    if (sameLine) {
+      return '(' + this.toSource(expression) + ')';
+    }
+    this.numSpaces++;
+    let out = '(\n' + this.spaces;
+    out += this.toSource(expression);
+    this.numSpaces--;
+    out += '\n' + this.spaces + ')';
+    return out;
+  }
+  /**
    * @param {import("@babel/types").PrivateName} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
