@@ -104,6 +104,23 @@ class Asserter extends Stringifier {
     });
   }
   /**
+   * Alternatively "import * as rti from ..." would also prevent "Unused external imports" warning...
+   * or keeping log of every single call during RTI parsing.
+   * @todo
+   * Once we went over every node, we can see if we really require registerTypef, registerClass etc.
+   * @returns {string} The import declaration header for importing RTI.
+   */
+  getHeader() {
+    let header = "import { assertType, youCanAddABreakpointHere";
+    if (this.validateDivision) {
+      header += ", validateDivision";
+    }
+    header += ", registerTypedef, registerClass } from '@runtime-type-inspector/runtime';\n";
+    // Prevent tree-shaking in UMD build so we can always "add a breakpoint here".
+    header += "export * from '@runtime-type-inspector/runtime';\n";
+    return header;
+  }
+  /**
    * Retrieves the node associated with the leading comments for an arrow function expression.
    *
    * This method travels up the syntax tree from the given node to find a parent node with leading comments.

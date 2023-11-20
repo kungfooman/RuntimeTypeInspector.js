@@ -23,7 +23,7 @@ function addTypeChecks(src, options) {
       sourceType: 'module',
       createParenthesizedExpressions: true,
     });
-    const out = asserter.toSource(ast);
+    const out = asserter.getHeader() + asserter.toSource(ast);
     return out;
   } catch (e) {
     console.error(e);
