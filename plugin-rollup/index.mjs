@@ -3,30 +3,19 @@ import {
   addTypeChecks, expandType, compareAST, code2ast2code
 } from '@runtime-type-inspector/transpiler';
 /**
- * Alternatively "import * as rti from ..." would also prevent "Unused external imports" warning...
- * or keeping log of every single call during RTI parsing.
- * @param {boolean} validateDivision
- */
-function getHeader(validateDivision) {
-  let header = "import { assertType, youCanAddABreakpointHere";
-  if (validateDivision) {
-    header += ", validateDivision";
-  }
-  header += ", registerTypedef, registerClass } from '@runtime-type-inspector/runtime';\n";
-  // Prevent tree-shaking in UMD build so we can always "add a breakpoint here".
-  header += "export * from '@runtime-type-inspector/runtime';\n";
-  return header;
-}
-/**
- * @param {object} [options] - Optional options.
- * @param {boolean} [options.enable] - Enable or disable entire plugin. Defaults to true.
- * @param {boolean} [options.selftest] - Every once in a while Babel changes the AST, so we
+ * @typedef Options
+ * @property {boolean} [enable] - Enable or disable entire plugin. Defaults to true.
+ * @property {boolean} [selftest] - Every once in a while Babel changes the AST, so we
  * self-test Stringifier class to ensure its functionanlity.
- * @param {string[]} [options.ignoredFiles] - Ignore certain files which operate in a different
+ * @property {string[]} [ignoredFiles] - Ignore certain files which operate in a different
  * context, for example framework/parsers/draco-worker.js operates as WebWorker (without RTI).
+ * @property {boolean} [validateDivision] - Whether divisions are validated. Defaults to true.
+ */
+/**
+ * @param {Options} [options] - Optional options.
  * @returns {import('rollup').Plugin} The rollup plugin.
  */
-function runtimeTypeInspector({enable = true, selftest = false, ignoredFiles} = {}) {
+function runtimeTypeInspector({enable = true, selftest = false, ignoredFiles, validateDivision = true} = {}) {
   const filter = createFilter([
     '**/*.js'
   ], []);
@@ -46,8 +35,6 @@ function runtimeTypeInspector({enable = true, selftest = false, ignoredFiles} = 
           console.warn(`AST is NOT equal`);
         }
       }
-      const validateDivision = true;
-      code = getHeader(validateDivision) + code;
       // todo expose options to rollup plugin
       code = addTypeChecks(code, {
         validateDivision,

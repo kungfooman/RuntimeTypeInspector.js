@@ -12,7 +12,7 @@
   "license": "MIT",
   "dependencies": {
     "@runtime-type-inspector/runtime": "^2.0.6",
-    "@runtime-type-inspector/transpiler": "^2.0.15",
+    "@runtime-type-inspector/transpiler": "^2.1.0",
     "rollup": "^3.29.4"
   }
 }

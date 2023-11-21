@@ -10,7 +10,7 @@
   "author": "Hermann Rolfes (kungfooman)",
   "license": "MIT",
   "dependencies": {
-    "@runtime-type-inspector/transpiler": "^2.0.15",
+    "@runtime-type-inspector/transpiler": "^2.1.0",
     "loader-utils": "^2.0.4",
     "webpack": "^5.89.0"
   }
