@@ -15,6 +15,7 @@ import {Stringifier      } from './Stringifier.mjs';
  * @property {boolean} [validateDivision] - Indicates whether division operations should be validated.
  * @property {Function} [expandType] - A function that expands shorthand types into full descriptions.
  * @property {string} [filename] - The name of a file to which the instance pertains.
+ * @property {boolean} [addHeader] - Whether to add import declarations headers. Defaults to true.
  */
 class Asserter extends Stringifier {
   /**
@@ -24,7 +25,8 @@ class Asserter extends Stringifier {
     forceCurly = true,
     validateDivision = true,
     expandType = expandTypeDepFree,
-    filename
+    filename,
+    addHeader = true,
   } = {}) {
     super();
     this.forceCurly = forceCurly;
@@ -33,6 +35,7 @@ class Asserter extends Stringifier {
     // + implement expandType using Babel Flow type parser aswell
     this.expandType = expandType;
     this.filename = filename;
+    this.addHeader = addHeader;
   }
   /** @type {Record<string, Stat>} */
   stats = {
@@ -111,6 +114,9 @@ class Asserter extends Stringifier {
    * @returns {string} The import declaration header for importing RTI.
    */
   getHeader() {
+    if (!this.addHeader) {
+      return '';
+    }
     let header = "import { assertType, youCanAddABreakpointHere";
     if (this.validateDivision) {
       header += ", validateDivision";
