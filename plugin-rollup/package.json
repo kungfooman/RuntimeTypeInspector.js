@@ -1,13 +1,10 @@
 {
   "name": "@runtime-type-inspector/plugin-rollup",
-  "version": "1.0.7",
-  "description": "",
+  "version": "1.1.0",
+  "description": "Rollup plugin for https://runtimetypeinspector.org/",
   "main": "index.mjs",
   "type": "module",
   "types": "types.d.ts",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "author": "Hermann Rolfes (kungfooman)",
   "license": "MIT",
   "dependencies": {
