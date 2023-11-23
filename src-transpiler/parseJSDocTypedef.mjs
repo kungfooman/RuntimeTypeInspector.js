@@ -55,7 +55,10 @@ function parseJSDocTypedef(typedefs, warn, comment, expandType) {
       // Drop description
       name = name.split(' ')[0];
       lastTypedef = expandType(def);
-      typedefs[name] = lastTypedef;
+      // Ignore @typedef's that only refer to themselves in another file (see typedef-overwrite test)
+      if (lastTypedef !== name) {
+        typedefs[name] = lastTypedef;
+      }
     } else if (line.startsWith('@property')) {
       // class @property
       if (!lastTypedef) {
