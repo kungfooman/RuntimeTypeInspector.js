@@ -394,7 +394,7 @@ module.exports = {
     "import/no-named-as-default-member": "warn",
 
     // Style guide
-    "import/extensions": ["error", "always", { "ts": "never", "tsx": "never" }],
+    "import/extensions": ["error", "always", {"ts": "never", "tsx": "never"}],
     "import/no-duplicates": "warn",
 
     // JSDoc rules

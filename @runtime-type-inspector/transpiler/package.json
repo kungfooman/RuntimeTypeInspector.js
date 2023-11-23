@@ -1,6 +1,6 @@
 {
   "name": "@runtime-type-inspector/transpiler",
-  "version": "2.1.1",
+  "version": "2.1.3",
   "description": "Validating JSDoc types at runtime for high-quality types - Trust is good, control is better.",
   "main": "index.cjs",
   "module": "index.mjs",
@@ -18,7 +18,7 @@
   "homepage": "https://github.com/kungfooman/RuntimeTypeInspector.js#readme",
   "dependencies": {
     "@babel/core": "^7.2.0",
-    "@runtime-type-inspector/runtime": "^2.0.8",
+    "@runtime-type-inspector/runtime": "^2.0.9",
     "typescript": "^5.1.6"
   },
   "files": [
