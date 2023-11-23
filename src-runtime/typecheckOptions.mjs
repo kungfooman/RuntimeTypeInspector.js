@@ -1,15 +1,3 @@
-function typecheckReport() {
-  console.table(typecheckOptions.warned);
-}
-/**
- * @param {Object<string, any>} obj - The object to clear.
- */
-function clearObject(obj) {
-  Object.keys(obj).forEach(_ => delete obj[_]);
-}
-function typecheckReset() {
-  clearObject(typecheckOptions.warned);
-}
 const typecheckOptions = {
   /**
    * @type {'spam'|'once'|'never'} - In spam-mode every message is printed. In once-mode a cache is
@@ -57,4 +45,16 @@ const typecheckOptions = {
   },
   count: 0,
 };
+function typecheckReport() {
+  console.table(typecheckOptions.warned);
+}
+/**
+ * @param {Object<string, any>} obj - The object to clear.
+ */
+function clearObject(obj) {
+  Object.keys(obj).forEach(_ => delete obj[_]);
+}
+function typecheckReset() {
+  clearObject(typecheckOptions.warned);
+}
 export {typecheckReport, clearObject, typecheckReset, typecheckOptions};

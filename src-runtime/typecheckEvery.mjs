@@ -3,7 +3,7 @@
  * @example
  * const a = [];
  * a.length = 10;
- * typecheckEvery(a, (e, i) => { console.log(e); return true; }
+ * typecheckEvery(a, (e, i) => {console.log(e); return true;}
  * @param {*[]} arr - The array to test.
  * @param {Function} fn - The callback function to test each element with.
  * @returns {boolean} True if every callback call is true aswell.

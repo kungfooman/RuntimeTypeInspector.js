@@ -9,13 +9,13 @@ import ts from 'typescript';
  * @todo Better handling of weird case: Array<>
  * @todo implement TypeQuery, e.g. for expandType('typeof Number');
  * @example
- * const { expandType } = await import("./src-transpiler/expandType.mjs");
+ * const {expandType} = await import("./src-transpiler/expandType.mjs");
  * expandType('[string, Array|AnyTypedArray, number[]]|[ONNXTensor]');
  * expandType('(123)                    '); // Outputs: '123'
  * expandType('  ( ( 123 ) )            '); // Outputs: '123'
  * expandType('Array<number>            '); // Outputs: {type: 'array', elementType: 'number'}
  * expandType('Array<(123) >            '); // Outputs: {type: 'array', elementType: '123'}
- * expandType('Array<"abc" | 123>       '); // Outputs: {type: 'array', elementType: { type: 'union', members: [ '"abc"', '123' ]}}
+ * expandType('Array<"abc" | 123>       '); // Outputs: {type: 'array', elementType: {type: 'union', members: ['"abc"', '123']}}
  * expandType('  (string ) |(number )   '); // Outputs: {type: 'union', members: [ 'string', 'number']}
  * expandType(' "apples" | ( "bananas") '); // Outputs: {type: 'union', members: [ '"apples"', '"bananas"']}
  * expandType('123?                     '); // Outputs: {"type":"union","members":["123","null"]}
@@ -75,7 +75,7 @@ function toSourceTS(node) {
     NeverKeyword, BigIntKeyword, BigIntLiteral, ConditionalType, IndexedAccessType, RestType,
     ConstructorType, // parseType('new (...args: any[]) => any');
   } = ts.SyntaxKind;
-  // console.log({ typeArguments, typeName, kind_, node });
+  // console.log({typeArguments, typeName, kind_, node});
   switch (node.kind) {
     case BigIntKeyword:
       return {type: 'bigint'};

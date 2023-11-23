@@ -1,16 +1,16 @@
 import {assertType    } from "./assertType.mjs";
 import {typecheckEvery} from "./typecheckEvery.mjs";
 /**
- * @param {*} value 
- * @param {*} expect 
- * @param {*} loc 
- * @param {*} name 
- * @param {*} critical 
- * @returns {boolean}
+ * @param {*} value - The actual value that we need to validate.
+ * @param {*} expect - The supposed type information of said value.
+ * @param {string} loc - String like `BoundingBox#compute`
+ * @param {string} name - Name of the argument
+ * @param {boolean} critical - Only `false` for unions.
+ * @returns {boolean} - Boolean indicating if a type is correct.
  */
 function validateArray(value, expect, loc, name, critical) {
   if (value && value instanceof Array) {
-    const { elementType } = expect;
+    const {elementType} = expect;
     // some that not validate -> type error
     return typecheckEvery(value, (_, i) => assertType(
       _,

@@ -4,8 +4,8 @@ import {typecheckOptions} from "./typecheckOptions.mjs";
  * @param {...any} extra - Extra strings or objects etc.
  */
 function typecheckWarn(msg, ...extra) {
-  const { mode, warned } = typecheckOptions;
-  warned[msg] = warned[msg] || { hits: 0 };
+  const {mode, warned} = typecheckOptions;
+  warned[msg] = warned[msg] || {hits: 0};
   warned[msg].hits++;
   switch (mode) {
     case 'spam':

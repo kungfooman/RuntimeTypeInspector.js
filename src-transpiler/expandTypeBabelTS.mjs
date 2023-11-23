@@ -3,13 +3,13 @@ import {parse} from '@babel/parser';
  * @todo Better handling of weird case: Array<>
  * @todo implement TypeQuery, e.g. for expandTypeBabelTS('typeof Number');
  * @example
- * const { expandTypeBabelTS } = await import("./src-transpiler/expandTypeBabelTS.mjs");
+ * const {expandTypeBabelTS} = await import("./src-transpiler/expandTypeBabelTS.mjs");
  * expandTypeBabelTS('[string, Array|AnyTypedArray, number[]]|[ONNXTensor]');
  * expandTypeBabelTS('(123)                    '); // Outputs: '123'
  * expandTypeBabelTS('  ( ( 123 ) )            '); // Outputs: '123'
  * expandTypeBabelTS('Array<number>            '); // Outputs: {type: 'array', elementType: 'number'}
  * expandTypeBabelTS('Array<(123) >            '); // Outputs: {type: 'array', elementType: '123'}
- * expandTypeBabelTS('Array<"abc" | 123>       '); // Outputs: {type: 'array', elementType: { type: 'union', members: [ '"abc"', '123' ]}}
+ * expandTypeBabelTS('Array<"abc" | 123>       '); // Outputs: {type: 'array', elementType: {type: 'union', members: ['"abc"', '123']}}
  * expandTypeBabelTS('  (string ) |(number )   '); // Outputs: {type: 'union', members: [ 'string', 'number']}
  * expandTypeBabelTS(' "apples" | ( "bananas") '); // Outputs: {type: 'union', members: [ '"apples"', '"bananas"']}
  * expandTypeBabelTS('123?                     '); // Outputs: {"type":"union","members":["123","null"]}

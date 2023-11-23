@@ -33,7 +33,7 @@ if (!(inputRight instanceof HTMLInputElement)) {
   throw 'This module requires a <input id="right" ...';
 }
 inputLeft.onchange = (event) => {
-  const { checked } = event.target;
+  const {checked} = event.target;
   if (checked) {
     // Unhide right editor and resize right one to half size again
     aceDivLeft.style.display = "";
@@ -52,7 +52,7 @@ inputLeft.onchange = (event) => {
   }
 }
 inputRight.onchange = (event) => {
-  const { checked } = event.target;
+  const {checked} = event.target;
   if (checked) {
     // Unhide left editor and resize right one to half size again
     aceDivRight.style.display = "";

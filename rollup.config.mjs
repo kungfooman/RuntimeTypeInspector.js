@@ -1,19 +1,19 @@
-import { execSync } from 'child_process';
+import {execSync} from 'child_process';
 import fs from 'fs';
 import path from 'path';
 // 1st party Rollup plugins
-import { createFilter } from '@rollup/pluginutils';
-import { babel } from '@rollup/plugin-babel';
-import { nodeResolve } from '@rollup/plugin-node-resolve';
+import {createFilter} from '@rollup/pluginutils';
+import {babel       } from '@rollup/plugin-babel';
+import {nodeResolve } from '@rollup/plugin-node-resolve';
 import terser from '@rollup/plugin-terser';
 // 3rd party Rollup plugins
 import dts from 'rollup-plugin-dts';
-import { visualizer } from 'rollup-plugin-visualizer';
+import {visualizer} from 'rollup-plugin-visualizer';
 import json from '@rollup/plugin-json';
-//import { addTypeChecks } from "./src-transpiler/typeInserter.mjs";
-//const { addTypeChecks } = await import("runtime-type-inspector/src-transpiler/typeInserter.mjs");
+//import {addTypeChecks} from "./src-transpiler/typeInserter.mjs";
+//const {addTypeChecks} = await import("runtime-type-inspector/src-transpiler/typeInserter.mjs");
 import commonjs from '@rollup/plugin-commonjs';
-//import { runtimeTypeInspector } from './plugin-rollup/index.mjs';
+//import {runtimeTypeInspector} from './plugin-rollup/index.mjs';
 /** @typedef {import('rollup').RollupOptions} RollupOptions */
 /** @typedef {import('rollup').Plugin} Plugin */
 /** @typedef {import('rollup').OutputOptions} OutputOptions */
@@ -169,7 +169,7 @@ export default (args) => {
   const envTarget = process.env.target ? process.env.target.toLowerCase() : null;
   if ((envTarget === null) && fs.existsSync('build')) {
     // no targets specified, clean build directory
-    fs.rmSync('build', { recursive: true });
+    fs.rmSync('build', {recursive: true});
   }
   if (envTarget === 'types') {
     targets.push(target_types);

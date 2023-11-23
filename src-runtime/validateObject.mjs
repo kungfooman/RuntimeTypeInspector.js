@@ -2,12 +2,12 @@ import {assertType      } from "./assertType.mjs";
 import {typecheckOptions} from "./typecheckOptions.mjs";
 import {typecheckWarn   } from "./typecheckWarn.mjs";
 /**
- * @param {*} value 
- * @param {*} properties 
- * @param {*} loc 
- * @param {*} name 
- * @param {*} critical 
- * @returns {boolean}
+ * @param {*} value - The actual value that we need to validate.
+ * @param {*} properties - The properties.
+ * @param {string} loc - String like `BoundingBox#compute`
+ * @param {string} name - Name of the argument
+ * @param {boolean} critical - Only `false` for unions.
+ * @returns {boolean} - Boolean indicating if a type is correct.
  */
 function validateObject(value, properties, loc, name, critical) {
   if (!(value instanceof Object)) {
@@ -21,7 +21,7 @@ function validateObject(value, properties, loc, name, critical) {
         }
         if (!properties[key]) {
           if (typecheckOptions.logSuperfluousProperty) {
-            typecheckWarn(`${loc}> superfluous property> ${name}.${key}`, { properties, value });
+            typecheckWarn(`${loc}> superfluous property> ${name}.${key}`, {properties, value});
           }
         }
       });

@@ -1,4 +1,4 @@
-const { addTypeChecks } = require('runtime-type-inspector');
+const {addTypeChecks} = require('runtime-type-inspector');
 const JSAsset = require('parcel-bundler/src/assets/JSAsset.js');
 class JSAssetPlayCanvas extends JSAsset {
   /**

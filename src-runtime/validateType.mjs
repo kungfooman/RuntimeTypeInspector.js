@@ -42,8 +42,8 @@ function validateType(value, expect, loc, name, critical = true) {
       optional: false
     };
   }
-  let { type } = expect;
-  const { optional, properties } = expect;
+  let {type} = expect;
+  const {optional, properties} = expect;
   if (!type) {
     console.error('validateType> missing type');
     return false;
@@ -77,6 +77,7 @@ function validateType(value, expect, loc, name, critical = true) {
     }
   }
   if (window.pc) {
+    const {pc} = window;
     /**
      * @param {string|number} prop - Something like 'x', 'y', 'z', 'w', 0, 1, 2, 3, 4 etc.
      * @returns {boolean} Wether prop is a valid number.
@@ -205,10 +206,10 @@ function validateType(value, expect, loc, name, critical = true) {
         // todo register these too individually?
       //  return value === theClass;
       //}*/
-    //  typecheckWarn('unhandled pc member', { value, type, expect, theClass });
+    //  typecheckWarn('unhandled pc member', {value, type, expect, theClass});
     //  return false;
     //}
-  typecheckWarn("unchecked", { value, type, loc, name });
+  typecheckWarn("unchecked", {value, type, loc, name});
   return false;
 }
 export {validateType};

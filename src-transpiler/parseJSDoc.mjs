@@ -32,14 +32,16 @@ function parseJSDoc(src, expandType = expandTypeDepFree) {
     name = name.split(' ')[0].split('=')[0].trim();
     const simplifiedType = simplifyType(type, optional);
     const parts = name.split(".");
-    if (parts.length === 3) { // Something like: @param {number[]} settings.render.skyboxRotation - Rotation of skybox.
+    if (parts.length === 3) {
+      // Something like: @param {number[]} settings.render.skyboxRotation - Rotation of skybox.
       const parts0 = parts[0]; // settings
       const parts1 = parts[1]; // render
       const parts2 = parts[2]; // skyboxRotation
       const toptype = params[parts0];
       toptype.properties[parts1].properties = toptype.properties[parts1].properties || {};
       toptype.properties[parts1].properties[parts2] = simplifiedType;
-    } else if (parts.length === 2) { // Something like: @param {number} description[].components
+    } else if (parts.length === 2) {
+      // Something like: @param {number} description[].components
       let   parts0 = parts[0]; // description[]
       const parts1 = parts[1]; // components
       if (parts0.endsWith('[]')) {

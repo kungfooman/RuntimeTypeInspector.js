@@ -24,7 +24,7 @@ export function assertType(value, expect, loc, name, critical = true) {
     }
     expectStr = '';
     const msg = `${loc}> type of '${name}' is invalid${expectStr}`;
-    typecheckWarn(msg, { expect, value });
+    typecheckWarn(msg, {expect, value});
     const warnObj = typecheckOptions.warned[msg];
     if (!warnObj.tr) {
       const tr = document.createElement('tr');
@@ -33,7 +33,7 @@ export function assertType(value, expect, loc, name, critical = true) {
       dbgInput.type = "checkbox";
       dbgInput.onchange = () => {
         warnObj.dbg = dbgInput.checked;
-      }
+      };
       const count = document.createElement('td');
       const desc = document.createElement('td');
       desc.innerText = msg;

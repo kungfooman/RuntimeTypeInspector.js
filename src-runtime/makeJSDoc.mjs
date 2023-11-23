@@ -1,6 +1,4 @@
-/**
- * @type {Record<string, string>}
- */
+/** @type {Record<string, string>} */
 const jsdocCache = {};
 /**
  * @todo
@@ -24,11 +22,11 @@ function makeJSDoc(loc, names, values) {
     } else if (value instanceof Object) {
       type = value.constructor.name;
     }
-    if (type !== 'string' && pc[type]) {
+    if (type !== 'string' && window.pc[type]) {
       type = 'pc.' + type;
     }
     //debugger;
-    jsdoc += `     * @param {${type}} ${name} - todo/jsdoc\n`
+    jsdoc += `     * @param {${type}} ${name} - todo/jsdoc\n`;
   }
   jsdoc += '     */';
   if (!jsdocCache[loc]) {
