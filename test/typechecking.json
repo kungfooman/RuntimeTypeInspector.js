@@ -72,6 +72,10 @@
     "output": "./test/typechecking/typedef-new-output.mjs"
   },
   {
+    "input": "./test/typechecking/typedef-overwrite-input.mjs",
+    "output": "./test/typechecking/typedef-overwrite-output.mjs"
+  },
+  {
     "input": "./test/typechecking/typedef-promise-input.mjs",
     "output": "./test/typechecking/typedef-promise-output.mjs"
   }
