@@ -6,7 +6,7 @@ import {typecheckWarn} from "./typecheckWarn.mjs";
  * @param {string} loc - String like `BoundingBox#compute`
  * @param {string} name - Name of the argument
  * @param {boolean} critical - Only `false` for unions.
- * @returns {boolean} - Boolean indicating if a type is correct.
+ * @returns {boolean} Boolean indicating if a type is correct.
  */
 function validateSet(value, expect, loc, name, critical) {
   if (!(value instanceof Set)) {

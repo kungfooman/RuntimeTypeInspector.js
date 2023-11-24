@@ -5,7 +5,7 @@ import {assertType} from "./assertType.mjs";
  * @param {string} loc - String like `BoundingBox#compute`
  * @param {string} name - Name of the argument
  * @param {boolean} critical - Only `false` for unions.
- * @returns {boolean} - Boolean indicating if a type is correct.
+ * @returns {boolean} Boolean indicating if a type is correct.
  */
 function validateUnion(value, expect, loc, name, critical) {
   return expect.members.some(member => assertType(
