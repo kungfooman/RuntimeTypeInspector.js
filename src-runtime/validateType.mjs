@@ -76,7 +76,7 @@ function validateType(value, expect, loc, name, critical = true) {
       return false;
     }
   }
-  if (window.pc) {
+  if (typeof window !== 'undefined' && window.pc) {
     const {pc} = window;
     /**
      * @param {string|number} prop - Something like 'x', 'y', 'z', 'w', 0, 1, 2, 3, 4 etc.
