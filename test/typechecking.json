@@ -12,6 +12,10 @@
     "output": "./test/typechecking/ArrowFunctionExpression-foreach-output.mjs"
   },
   {
+    "input": "./test/typechecking/ClassPrivateProperty-input.mjs",
+    "output": "./test/typechecking/ClassPrivateProperty-output.mjs"
+  },
+  {
     "input": "./test/typechecking/ClassProperty-value-is-null-input.mjs",
     "output": "./test/typechecking/ClassProperty-value-is-null-output.mjs"
   },
