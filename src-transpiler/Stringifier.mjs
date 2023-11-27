@@ -414,6 +414,23 @@ class Stringifier {
     return out;
   }
   /**
+   * @param {import("@babel/types").ClassPrivateProperty} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  ClassPrivateProperty(node) {
+    const {static: static_, key, value} = node;
+    let out = this.spaces;
+    if (static_) {
+      out += 'static ';
+    }
+    out += this.toSource(key);
+    if (value) {
+      out += ' = ' + this.toSource(value);
+    }
+    out += ';';
+    return out;
+  }
+  /**
    * @param {import("@babel/types").ContinueStatement} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
