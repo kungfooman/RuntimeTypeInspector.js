@@ -76,6 +76,9 @@ function validateType(value, expect, loc, name, critical = true) {
       return false;
     }
   }
+  for (const customValidation of customValidations) {
+    customValidation(value, expect, loc, name, critical);
+  }
   if (typeof window !== 'undefined' && window.pc) {
     const {pc} = window;
     /**

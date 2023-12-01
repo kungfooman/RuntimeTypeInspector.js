@@ -1,5 +1,6 @@
 export * from './assertType.mjs';
 export * from './createDiv.mjs';
+export * from './customValidations.mjs';
 export * from './makeJSDoc.mjs';
 export * from './registerClass.mjs';
 export * from './registerTypedef.mjs';
