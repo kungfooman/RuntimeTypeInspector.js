@@ -11,38 +11,6 @@ const typecheckOptions = {
    */
   warned: {},
   logSuperfluousProperty: false,
-  /**
-   * @todo integrate PC/Transformers Examples browser + custom config for each project
-   */
-  customTypes: {
-    AnimSetter(value) {
-      //console.log("@todo Is AnimSetter?", value);
-      return true;
-    },
-    AnimBinder(value) {
-      //console.log("@todo Is AnimBinder?", value);
-      return true;
-    },
-    AnimCurvePath(value) {
-      //console.log("@todo Is AnimCurvePath?", value);
-      return true;
-    },
-    ComponentData(value) {
-      //console.log("@todo Is ComponentData?", value);
-      return true;
-    },
-    Renderer(value) {
-      // E.g. instance of `ForwardRenderer`
-      //debugger;
-      return value?.constructor?.name?.endsWith("Renderer");
-    },
-    IArguments(value) {
-      //console.log("@todo Is IArguments?", value);
-      return true;
-    },
-    // @todo validate textures having width != 0 and height != 0
-    // @todo validate integers
-  },
   count: 0,
 };
 function typecheckReport() {
