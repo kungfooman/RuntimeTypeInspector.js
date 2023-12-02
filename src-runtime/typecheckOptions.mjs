@@ -11,10 +11,6 @@ const typecheckOptions = {
    */
   warned: {},
   logSuperfluousProperty: false,
-  /**
-   * @type {Record<string, (value: any) => boolean>}
-   */
-  customTypes: {},
   count: 0,
 };
 function typecheckReport() {
