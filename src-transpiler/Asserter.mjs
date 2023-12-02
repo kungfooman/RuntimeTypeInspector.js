@@ -223,6 +223,9 @@ class Asserter extends Stringifier {
             [paramName]: parseJSDocSetter(lastComment.value, this.expandType)
           };
         }
+        if (lastComment.value.includes('@ignoreRTI')) {
+          return;
+        }
         return parseJSDoc(lastComment.value, this.expandType);
       }
     }
