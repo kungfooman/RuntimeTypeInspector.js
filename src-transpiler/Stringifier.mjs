@@ -943,6 +943,14 @@ class Stringifier {
     return `export * from ${node.source.extra.raw};`;
   }
   /**
+   * @param {import("@babel/types").ExportNamespaceSpecifier} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  ExportNamespaceSpecifier(node) {
+    const {exported} = node;
+    return '* as ' + this.toSource(exported);
+  }
+  /**
    * @param {import("@babel/types").ExportNamedDeclaration} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
@@ -951,18 +959,26 @@ class Stringifier {
     let out = this.spaces;
     if (specifiers.length) {
       if (!source) {
-        //debugger;
+        console.warn("ExportNamedDeclaration> no source given");
       }
-      out += 'export {\n';
-      // todo: fix spacing system
-      out += this.mapToSource(specifiers).map(_ => `  ${this.spaces}${_}`).join(',\n');
-      out += '\n';
-      out += this.spaces;
-      out += '}';
-      if (source) {
-        out += " from " + this.toSource(source);
+      if (specifiers.length === 1 && specifiers[0].type === 'ExportNamespaceSpecifier') {
+        out += 'export ';
+        out += this.toSource(specifiers[0]);
+        out += ' from ';
+        out += this.toSource(source);
+        out += ";";
+      } else {
+        out += 'export {\n';
+        // todo: fix spacing system
+        out += this.mapToSource(specifiers).map(_ => `  ${this.spaces}${_}`).join(',\n');
+        out += '\n';
+        out += this.spaces;
+        out += '}';
+        if (source) {
+          out += " from " + this.toSource(source);
+        }
+        out += ";\n";
       }
-      out += ";\n";
     } else if (declaration) {
       out += 'export ' + this.toSource(declaration);
     } else {
