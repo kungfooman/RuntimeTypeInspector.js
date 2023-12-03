@@ -20,6 +20,10 @@
     "output": "./test/typechecking/ClassProperty-value-is-null-output.mjs"
   },
   {
+    "input": "./test/typechecking/ExportNamespaceSpecifier-input.mjs",
+    "output": "./test/typechecking/ExportNamespaceSpecifier-output.mjs"
+  },
+  {
     "input": "./test/typechecking/ParenthesizedExpression-multiline-input.mjs",
     "output": "./test/typechecking/ParenthesizedExpression-multiline-output.mjs"
   },
@@ -38,6 +42,10 @@
   {
     "input": "./test/typechecking/computed-ClassMethod-input.mjs",
     "output": "./test/typechecking/computed-ClassMethod-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/export-input.mjs",
+    "output": "./test/typechecking/export-output.mjs"
   },
   {
     "input": "./test/typechecking/functions-input.mjs",
