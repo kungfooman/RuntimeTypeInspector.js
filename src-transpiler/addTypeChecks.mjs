@@ -19,8 +19,11 @@ import {Asserter} from './Asserter.mjs';
 function addTypeChecks(src, options) {
   try {
     const asserter = new Asserter(options);
-    const ast = parse(src, {sourceType: 'module'});
-    const out = asserter.toSource(ast);
+    const ast = parse(src, {
+      sourceType: 'module',
+      createParenthesizedExpressions: true,
+    });
+    const out = asserter.getHeader() + asserter.toSource(ast);
     return out;
   } catch (e) {
     console.error(e);

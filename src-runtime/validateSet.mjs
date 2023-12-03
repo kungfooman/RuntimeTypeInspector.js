@@ -1,12 +1,12 @@
 import {assertType   } from "./assertType.mjs";
 import {typecheckWarn} from "./typecheckWarn.mjs";
 /**
- * @param {*} value 
- * @param {*} expect 
- * @param {*} loc 
- * @param {*} name 
- * @param {*} critical 
- * @return {boolean}
+ * @param {*} value - The actual value that we need to validate.
+ * @param {*} expect - The supposed type information of said value.
+ * @param {string} loc - String like `BoundingBox#compute`
+ * @param {string} name - Name of the argument
+ * @param {boolean} critical - Only `false` for unions.
+ * @returns {boolean} Boolean indicating if a type is correct.
  */
 function validateSet(value, expect, loc, name, critical) {
   if (!(value instanceof Set)) {

@@ -1,15 +1,15 @@
 import {addTypeChecks} from './src-transpiler/addTypeChecks.mjs';
-import {expandType} from './src-transpiler/expandType.mjs';
-import {readFileSync} from 'fs';
+import {expandType   } from './src-transpiler/expandType.mjs';
+import {readFileSync } from 'fs';
 /**
- * @param {string} a 
- * @param {string} b 
+ * @param {string} a - Left source code.
+ * @param {string} b - Right source code.
  */
 function compareLineByLine(a, b) {
   const a_ = a.split('\n');
   const b_ = b.split('\n');
   const t = [];
-  for (let i=0; i<a_.length; i++) {
+  for (let i = 0; i < a_.length; i++) {
     const lineA = a_[i];
     const lineB = b_[i];
     if (lineA !== lineB) {
@@ -29,7 +29,7 @@ let discrepancies = 0;
 for (const {input, output} of tests) {
   const inputContent = readFileSync(input, 'utf8');
   const outputContent = readFileSync(output, 'utf8');
-  let newOutputContent = addTypeChecks(inputContent, {expandType});
+  let newOutputContent = addTypeChecks(inputContent, {expandType, addHeader: false});
   // Remove multiple newlines into one
   // I would rather not do it, but Stringifier needs a bit more love in other areas:
   //  - multiline array output when elements surpass a max-col option

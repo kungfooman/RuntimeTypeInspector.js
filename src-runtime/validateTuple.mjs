@@ -1,11 +1,11 @@
 import {assertType} from "./assertType.mjs";
 /**
- * @param {*} value 
- * @param {*} expect 
- * @param {*} loc 
- * @param {*} name 
- * @param {*} critical 
- * @returns {boolean}
+ * @param {*} value - The actual value that we need to validate.
+ * @param {*} expect - The supposed type information of said value.
+ * @param {string} loc - String like `BoundingBox#compute`
+ * @param {string} name - Name of the argument
+ * @param {boolean} critical - Only `false` for unions.
+ * @returns {boolean} Boolean indicating if a type is correct.
  */
 function validateTuple(value, expect, loc, name, critical) {
   if (!value) {
@@ -14,7 +14,7 @@ function validateTuple(value, expect, loc, name, critical) {
   if (!(value instanceof Array)) {
     return false;
   }
-  const { elements } = expect;
+  const {elements} = expect;
   return elements.every((element, i) => {
     return assertType(
       value[i],

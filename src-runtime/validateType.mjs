@@ -1,22 +1,24 @@
-import {classes         } from "./registerClass.mjs";
-import {typedefs        } from "./registerTypedef.mjs";
-import {typecheckOptions} from "./typecheckOptions.mjs";
-import {typecheckWarn   } from "./typecheckWarn.mjs";
-import {validateArray   } from "./validateArray.mjs";
-import {validateMap     } from "./validateMap.mjs";
-import {validateNumber  } from "./validateNumber.mjs";
-import {validateObject  } from "./validateObject.mjs";
-import {validateRecord  } from "./validateRecord.mjs";
-import {validateSet     } from "./validateSet.mjs";
-import {validateTuple   } from "./validateTuple.mjs";
-import {validateTypedef } from "./validateTypedef.mjs";
-import {validateUnion   } from "./validateUnion.mjs";
-// For quickly checking props of Vec2/Vec3/Vec4/Quat/Mat3/Mat4 without GC
-const propsXY   = ['x', 'y'];
-const propsXYZ  = ['x', 'y', 'z'];
-const propsXYZW = ['x', 'y', 'z', 'w'];
-const props9    = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-const props16   = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+import {customTypes      } from "./customTypes.mjs";
+import {customValidations} from "./customValidations.mjs";
+import {classes          } from "./registerClass.mjs";
+import {typedefs         } from "./registerTypedef.mjs";
+import {typecheckWarn    } from "./typecheckWarn.mjs";
+import {validateArray    } from "./validateArray.mjs";
+import {validateMap      } from "./validateMap.mjs";
+import {validateNumber   } from "./validateNumber.mjs";
+import {validateObject   } from "./validateObject.mjs";
+import {validateRecord   } from "./validateRecord.mjs";
+import {validateSet      } from "./validateSet.mjs";
+import {validateTuple    } from "./validateTuple.mjs";
+import {validateTypedef  } from "./validateTypedef.mjs";
+import {validateUnion    } from "./validateUnion.mjs";
+let enabled = true;
+export function disableTypeChecking() {
+  enabled = false;
+}
+export function enableTypeChecking() {
+  enabled = true;
+}
 /**
  * @param {*} value - The actual value which we need to check.
  * @param {object} expect - Can also be a string, but string|object is unsupported in VSCode
@@ -33,17 +35,20 @@ const props16   = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
  * @param {string} loc - String like `BoundingBox#compute`
  * @param {string} name - Name of the argument.
  * @param {boolean} critical - Only false for unions.
- * @returns {boolean} - Returns wether `value` is in the shape of `expect`.
+ * @returns {boolean} Returns wether `value` is in the shape of `expect`.
  */
 function validateType(value, expect, loc, name, critical = true) {
+  if (!enabled) {
+    return true;
+  }
   if (typeof expect === 'string') {
     expect = {
       type: expect,
       optional: false
     };
   }
-  let { type } = expect;
-  const { optional, properties } = expect;
+  let {type} = expect;
+  const {optional, properties} = expect;
   if (!type) {
     console.error('validateType> missing type');
     return false;
@@ -59,7 +64,7 @@ function validateType(value, expect, loc, name, critical = true) {
       return true;
     }
   }
-  const customCheck = typecheckOptions.customTypes[type];
+  const customCheck = customTypes[type];
   if (customCheck) {
     return customCheck(value);
   }
@@ -76,33 +81,13 @@ function validateType(value, expect, loc, name, critical = true) {
       return false;
     }
   }
-  if (window.pc) {
-    /**
-     * @param {string|number} prop - Something like 'x', 'y', 'z', 'w', 0, 1, 2, 3, 4 etc.
-     * @returns {boolean} Wether prop is a valid number.
-     */
-    const checkProp = (prop) => {
-      return validateNumber(value, prop);
-    };
-    // In a bundle pc can be defined while pc is not filled with all classes yet,
-    // therefore we need to check if class is added already.
-    if (pc.Vec2 && value instanceof pc.Vec2) {
-      return propsXY.every(checkProp);
-    }
-    if (pc.Vec3 && value instanceof pc.Vec3) {
-      return propsXYZ.every(checkProp);
-    }
-    if ((pc.Vec4 && value instanceof pc.Vec4) || (pc.Quat && value instanceof pc.Quat)) {
-      return propsXYZW.every(checkProp);
-    }
-    if (pc.Mat3 && value instanceof pc.Mat3) {
-      return props9.every(prop => validateNumber(value.data, prop));
-    }
-    if (pc.Mat4 && value instanceof pc.Mat4) {
-      return props16.every(prop => validateNumber(value.data, prop));
+  for (const customValidation of customValidations) {
+    const ret = customValidation(value, expect, loc, name, critical);
+    if (!ret) {
+      typecheckWarn(`${loc}> customValidation failed`);
+      return false;
     }
   }
-  // todo: either switch or object lookup for custom hooks
   if (type === "object") {
     return validateObject(value, properties, loc, name, critical);
   }
@@ -205,10 +190,10 @@ function validateType(value, expect, loc, name, critical = true) {
         // todo register these too individually?
       //  return value === theClass;
       //}*/
-    //  typecheckWarn('unhandled pc member', { value, type, expect, theClass });
+    //  typecheckWarn('unhandled pc member', {value, type, expect, theClass});
     //  return false;
     //}
-  typecheckWarn("unchecked", { value, type, loc, name });
+  typecheckWarn("unchecked", {value, type, loc, name});
   return false;
 }
 export {validateType};

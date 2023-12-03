@@ -9,10 +9,10 @@
     "build:atBabelCore": "rollup -c --environment target:atBabelCore",
     "build:dts": "tsc src-transpiler/index.mjs --outDir types/transpiler --allowJs --declaration --emitDeclarationOnly --target esnext",
     "build:types": "npm run build:dts && rollup -c --environment target:types",
-    "docs": "jsdoc -c jsdoc.json",
-    "test": "node test.mjs",
+    "test": "npm run test:update && node test.mjs && node test_runtime.mjs",
     "test:update": "node gen_tests.mjs > test/typechecking.json",
-    "lint": "eslint --ext .js,.mjs,.cjs src-transpiler"
+    "lint": "eslint --ext .js,.mjs,.cjs src-transpiler src-runtime",
+    "docs": "jsdoc -c jsdoc.json",
   },
   "repository": {
     "type": "git",
@@ -48,11 +48,11 @@
     "rollup-plugin-dts": "^6.0.1",
     "rollup-plugin-jscc": "^2.0.0",
     "rollup-plugin-visualizer": "^5.9.2",
-    "to-fast-properties": "^4.0.0"
+    "to-fast-properties": "^4.0.0",
+    "catharsis": "github:xenova/catharsis",
   },
   "dependencies": {
     "@babel/core": "^7.2.0",
-    "catharsis": "github:xenova/catharsis",
     "typescript": "^5.1.6"
   }
 }

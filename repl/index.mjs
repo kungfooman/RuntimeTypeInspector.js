@@ -33,7 +33,7 @@ if (!(inputRight instanceof HTMLInputElement)) {
   throw 'This module requires a <input id="right" ...';
 }
 inputLeft.onchange = (event) => {
-  const { checked } = event.target;
+  const {checked} = event.target;
   if (checked) {
     // Unhide right editor and resize right one to half size again
     aceDivLeft.style.display = "";
@@ -52,7 +52,7 @@ inputLeft.onchange = (event) => {
   }
 }
 inputRight.onchange = (event) => {
-  const { checked } = event.target;
+  const {checked} = event.target;
   if (checked) {
     // Unhide left editor and resize right one to half size again
     aceDivRight.style.display = "";
@@ -169,17 +169,17 @@ function getLeft() {
 function getRight() {
   return aceEditorRight.getValue();
 }
-async function actionAST() {
+function actionAST() {
   const ast = parse(getLeft(), {sourceType: 'module'});
-  const out = JSON.stringify(ast, function(name, val) {
-    if (name == "loc" || name == "start" || name == "end") {
+  const out = JSON.stringify(ast, function (name, val) {
+    if (name === "loc" || name === "start" || name === "end") {
       return undefined; // remove
     }
     return val; // keep
   }, 2);
   setRight(out);
 }
-async function actionAST_TS() {
+function actionAST_TS() {
   const str = getLeft();
   const ast = ts.createSourceFile('repl.ts', str, ts.ScriptTarget.Latest, false /*setParentNodes*/);
   const out = JSON.stringify(ast, function(name, val) {
@@ -190,7 +190,7 @@ async function actionAST_TS() {
   }, 2);
   setRight(out);
 }
-async function actionAST_BabelTS() {
+function actionAST_BabelTS() {
   const str = getLeft();
   const ast = parse(str, {plugins: ['typescript'], sourceType: "module"});
   const out = JSON.stringify(ast, null, 2);
@@ -198,6 +198,7 @@ async function actionAST_BabelTS() {
 }
 /**
  * @param {string} type - The type like `...string`.
+ * @returns {string} Structured output of all expandType functions.
  */
 function expandTypeAll(type) {
   let out = '';
@@ -243,15 +244,15 @@ function actionTypeChecking() {
 }
 /**
  * @todo use Monaco Diff Editor
- * @param {string} left
- * @param {string} right
+ * @param {string} left - Left source code.
+ * @param {string} right - Right source code.
  */
 function compareAST(left = getLeft(), right = getRight()) {
   const l = parse(left , {sourceType: 'module'});
   const r = parse(right, {sourceType: 'module'});
   const ljson = ast2jsonForComparison(l);
   const rjson = ast2jsonForComparison(r);
-  const test = ljson == rjson;
+  const test = ljson === rjson;
   const _ = test ? ' ' : ' NOT ';
   console.log(`AST is ${_} equal`);
   // todo add conversion buttons
@@ -260,7 +261,7 @@ function compareAST(left = getLeft(), right = getRight()) {
   setLeft(ljson);
   setRight(rjson);
 }
-async function actionCode2Ast2Code() {
+function actionCode2Ast2Code() {
   const content = getLeft();
   const out = code2ast2code(content);
   if (!out) {
@@ -424,7 +425,15 @@ const aceEditorRight = setupAce(
   editor => console.log("right alt")
 );
 function runRightEditor() {
-  eval(aceEditorRight.getValue());
+  const src = getRight();
+  if (src.includes('import') || src.includes('export')) {
+    const script = document.createElement("script");
+    script.type = "module";
+    script.textContent = src;
+    document.head.append(script);
+    return;
+  }
+  eval(src);
 }
 export {
   selectAction,

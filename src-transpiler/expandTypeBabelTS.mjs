@@ -3,13 +3,13 @@ import {parse} from '@babel/parser';
  * @todo Better handling of weird case: Array<>
  * @todo implement TypeQuery, e.g. for expandTypeBabelTS('typeof Number');
  * @example
- * const { expandTypeBabelTS } = await import("./src-transpiler/expandTypeBabelTS.mjs");
+ * const {expandTypeBabelTS} = await import("./src-transpiler/expandTypeBabelTS.mjs");
  * expandTypeBabelTS('[string, Array|AnyTypedArray, number[]]|[ONNXTensor]');
  * expandTypeBabelTS('(123)                    '); // Outputs: '123'
  * expandTypeBabelTS('  ( ( 123 ) )            '); // Outputs: '123'
  * expandTypeBabelTS('Array<number>            '); // Outputs: {type: 'array', elementType: 'number'}
  * expandTypeBabelTS('Array<(123) >            '); // Outputs: {type: 'array', elementType: '123'}
- * expandTypeBabelTS('Array<"abc" | 123>       '); // Outputs: {type: 'array', elementType: { type: 'union', members: [ '"abc"', '123' ]}}
+ * expandTypeBabelTS('Array<"abc" | 123>       '); // Outputs: {type: 'array', elementType: {type: 'union', members: ['"abc"', '123']}}
  * expandTypeBabelTS('  (string ) |(number )   '); // Outputs: {type: 'union', members: [ 'string', 'number']}
  * expandTypeBabelTS(' "apples" | ( "bananas") '); // Outputs: {type: 'union', members: [ '"apples"', '"bananas"']}
  * expandTypeBabelTS('123?                     '); // Outputs: {"type":"union","members":["123","null"]}
@@ -52,6 +52,11 @@ function parseTypeBabelTS(str) {
  */
 function toSourceBabelTS(node) {
   switch (node.type) {
+    case 'TSBigIntKeyword':
+      return {type: 'bigint'};
+    case 'BigIntLiteral':
+      const literal = node.value;
+      return {type: 'bigint', literal};
     // expandTypeBabelTS("(a: number, b: number) => number")
     /**
      * @todo the parameters are given as identifiers with "typeAnnotation"
@@ -92,22 +97,21 @@ function toSourceBabelTS(node) {
       } else if (name === 'Object' && (!typeArguments || typeArguments?.length === 0)) {
         return {type: 'object', properties: {}};
       } else if (name === 'Map' && typeArguments?.length === 2) {
-        return {
-          type: 'map',
-          key: toSourceBabelTS(typeArguments[0]),
-          val: toSourceBabelTS(typeArguments[1]),
-        };
+        const key = toSourceBabelTS(typeArguments[0]);
+        const val = toSourceBabelTS(typeArguments[1]);
+        return {type: 'map', key, val};
       } else if (name === 'Array' && typeArguments?.length === 1) {
         const elementType = toSourceBabelTS(typeArguments[0]);
         return {type: 'array', elementType};
+      } else if (name === 'Promise' && typeArguments?.length === 1) {
+        const elementType = toSourceBabelTS(typeArguments[0]);
+        return {type: 'promise', elementType};
       } else if (name === 'Set' && typeArguments?.length === 1) {
         const elementType = toSourceBabelTS(typeArguments[0]);
         return {type: 'set', elementType};
       } else if (name === 'Class' && typeArguments?.length === 1) {
-        return {
-          type: 'class',
-          elementType: toSourceBabelTS(typeArguments[0])
-        };
+        const elementType = toSourceBabelTS(typeArguments[0]);
+        return {type: 'class', elementType};
       }
       console.warn('unhandled TypeReference', node);
       return {type: 'unhandled TypeReference'};

@@ -12,8 +12,24 @@
     "output": "./test/typechecking/ArrowFunctionExpression-foreach-output.mjs"
   },
   {
+    "input": "./test/typechecking/ClassPrivateProperty-input.mjs",
+    "output": "./test/typechecking/ClassPrivateProperty-output.mjs"
+  },
+  {
     "input": "./test/typechecking/ClassProperty-value-is-null-input.mjs",
     "output": "./test/typechecking/ClassProperty-value-is-null-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/ExportNamespaceSpecifier-input.mjs",
+    "output": "./test/typechecking/ExportNamespaceSpecifier-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/ParenthesizedExpression-multiline-input.mjs",
+    "output": "./test/typechecking/ParenthesizedExpression-multiline-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/ParenthesizedExpression-singleline-input.mjs",
+    "output": "./test/typechecking/ParenthesizedExpression-singleline-output.mjs"
   },
   {
     "input": "./test/typechecking/comment-newline-input.mjs",
@@ -26,6 +42,10 @@
   {
     "input": "./test/typechecking/computed-ClassMethod-input.mjs",
     "output": "./test/typechecking/computed-ClassMethod-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/export-input.mjs",
+    "output": "./test/typechecking/export-output.mjs"
   },
   {
     "input": "./test/typechecking/functions-input.mjs",
@@ -48,7 +68,27 @@
     "output": "./test/typechecking/simple-ObjectPattern-output.mjs"
   },
   {
+    "input": "./test/typechecking/typedef-BigIntKeyword-input.mjs",
+    "output": "./test/typechecking/typedef-BigIntKeyword-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/typedef-BigIntLiteral-input.mjs",
+    "output": "./test/typechecking/typedef-BigIntLiteral-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/typedef-ConditionalType-input.mjs",
+    "output": "./test/typechecking/typedef-ConditionalType-output.mjs"
+  },
+  {
     "input": "./test/typechecking/typedef-new-input.mjs",
     "output": "./test/typechecking/typedef-new-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/typedef-overwrite-input.mjs",
+    "output": "./test/typechecking/typedef-overwrite-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/typedef-promise-input.mjs",
+    "output": "./test/typechecking/typedef-promise-output.mjs"
   }
 ]

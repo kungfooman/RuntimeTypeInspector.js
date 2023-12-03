@@ -13,9 +13,20 @@ function niceDiv(div) {
   div.style.borderRadius = "4px";
 }
 /**
- * @todo
- * Show number of validations too? Might be too noisy.
- * @returns {HTMLDivElement}
+ * @returns {asserts mode is typeof typecheckOptions.mode} asd
+ * @param {string} mode - The mode to test.
+ */
+function assertMode(mode) {
+  switch (mode) {
+    case 'spam':
+    case 'once':
+    case 'never':
+      return;
+  }
+  throw new TypeError("wrong mode - either spam, once or never.");
+}
+/**
+ * @returns {HTMLDivElement} The <div> at bottom/right position.
  */
 function createDiv() {
   const div = document.createElement("div");
@@ -26,30 +37,34 @@ function createDiv() {
   niceDiv(div);
   const spanErrors = document.createElement("span");
   const span = document.createElement("span");
-  span.innerText = " Spam type reports:";
-  const input = document.createElement("input");
-  input.type = "checkbox";
+  span.innerText = " Type report mode:";
+  const select = document.createElement("select");
+  const option_spam = document.createElement('option');
+  option_spam.text = 'spam';
+  const option_once = document.createElement('option');
+  option_once.text = 'once';
+  const option_never = document.createElement('option');
+  option_never.text = 'never';
+  select.append(option_spam, option_once, option_never);
   const spamTypeReports = localStorage.getItem('rti-spam-type-reports');
-  input.checked = true;
+  select.value = typecheckOptions.mode;
   if (spamTypeReports !== null) {
-    input.checked = spamTypeReports === 'spam' ? true : false;
+    select.value = spamTypeReports;
   }
   const onchange = () => {
-    localStorage.setItem('rti-spam-type-reports', input.checked ? 'spam' : 'once');
-    if (input.checked) {
-      typecheckOptions.mode = "spam";
-    } else {
-      typecheckOptions.mode = "once";
-    }
+    const {value} = select;
+    localStorage.setItem('rti-spam-type-reports', value);
+    assertMode(value);
+    typecheckOptions.mode = value;
   };
-  input.onchange = onchange;
-  onchange(); // update mode from localStorage
+  select.onchange = onchange;
+  onchange(); // set mode in typecheckOptions
   const buttonHide = document.createElement("button");
   buttonHide.textContent = 'Hide';
   buttonHide.onclick = () => {
     div.style.display = 'none';
   };
-  div.append(spanErrors, span, input, buttonHide, typecheckWarnedTable);
+  div.append(spanErrors, span, select, buttonHide, typecheckWarnedTable);
   div.style.maxHeight = '200px';
   div.style.overflow = 'scroll';
   const finalFunc = () => document.body.append(div);

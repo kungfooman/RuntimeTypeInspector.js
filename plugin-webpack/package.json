@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@runtime-type-inspector/transpiler": "^2.1.1"
+  }
+}
