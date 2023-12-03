@@ -955,7 +955,7 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   ExportNamedDeclaration(node) {
-    const {declaration, source, specifiers} = node;
+    const {declaration, source, specifiers, loc} = node;
     let out = this.spaces;
     if (specifiers.length) {
       if (!source) {
@@ -968,12 +968,19 @@ class Stringifier {
         out += this.toSource(source);
         out += ";";
       } else {
-        out += 'export {\n';
-        // todo: fix spacing system
-        out += this.mapToSource(specifiers).map(_ => `  ${this.spaces}${_}`).join(',\n');
-        out += '\n';
-        out += this.spaces;
-        out += '}';
+        const sameLine = loc.start.line === loc.end.line;
+        if (sameLine) {
+          out += 'export {';
+          out += this.mapToSource(specifiers).join(', ');
+          out += '}';
+        } else {
+          out += 'export {\n';
+          // todo: fix spacing system
+          out += this.mapToSource(specifiers).map(_ => `  ${this.spaces}${_}`).join(',\n');
+          out += '\n';
+          out += this.spaces;
+          out += '}';
+        }
         if (source) {
           out += " from " + this.toSource(source);
         }
