@@ -2,6 +2,9 @@ import {trimEndSpaces} from './trimEndSpaces.mjs';
 /**
  * @typedef {import("@babel/types").Node} Node
  */
+/**
+ * Class for converting AST into string.
+ */
 class Stringifier {
   forceCurly = false;
   /** @type {Node[]} */
@@ -247,7 +250,7 @@ class Stringifier {
   }
   numSpaces = 0;
   /**
-   * @returns {string} A string of two spaces per indentation.
+   * @type {string} A string of two spaces per indentation.
    */
   get spaces() {
     return '  '.repeat(this.numSpaces);

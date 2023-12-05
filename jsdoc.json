@@ -1,6 +1,7 @@
 {
   "plugins": [
-    "plugins/markdown"
+    "plugins/markdown",
+    "plugin-jsdoc-ts.cjs"
   ],
   "recurseDepth": 10,
   "source": {

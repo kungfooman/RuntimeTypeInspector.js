@@ -39,6 +39,7 @@
     "@rollup/plugin-terser": "^0.4.3",
     "@rollup/pluginutils": "^5.0.4",
     "ace-builds": "^1.28.0",
+    "catharsis": "github:xenova/catharsis",
     "eslint": "^8.44.0",
     "eslint-plugin-import": "^2.28.1",
     "eslint-plugin-jsdoc": "^46.6.0",
@@ -48,8 +49,7 @@
     "rollup-plugin-dts": "^6.0.1",
     "rollup-plugin-jscc": "^2.0.0",
     "rollup-plugin-visualizer": "^5.9.2",
-    "to-fast-properties": "^4.0.0",
-    "catharsis": "github:xenova/catharsis"
+    "to-fast-properties": "^4.0.0"
   },
   "dependencies": {
     "@babel/core": "^7.2.0",
