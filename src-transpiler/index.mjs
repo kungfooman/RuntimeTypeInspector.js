@@ -1,3 +1,9 @@
+/**
+ * @name pc
+ * @todo rename, but needs more changes to template
+ * @namespace
+ * @description Root namespace for the RTI Transpiler.
+ */
 export * from './addTypeChecks.mjs';
 export * from './Asserter.mjs';
 export * from './ast2json.mjs';
