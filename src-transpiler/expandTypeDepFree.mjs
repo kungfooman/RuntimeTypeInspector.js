@@ -10,13 +10,14 @@
  */
 /**
  * @typedef {object} ExpandTypeReturnValue
- * @property {'array' | 'union' | 'record' | 'tuple' | 'object' | 'promise'} type - The type.
+ * @property {'array' | 'union' | 'record' | 'tuple' | 'object' | 'promise' | 'typeof'} type - The type.
  * @property {object | string} [elementType] - For Array.
  * @property {object | string} [key] - For Record<key, val>
  * @property {object | string} [val] - For Record<key, val>
  * @property {(object | string)[]} [members] - For unions.
  * @property {object | string} [properties] - For objects.
  * @property {(object | string)[]} [elements] - For tuples.
+ * @property {object | string} [argument] - For typeof.
  */
 /**
  * 'DepFree' refers to the fact that this function has no dependencies,
@@ -113,6 +114,11 @@ function expandTypeDepFree(type) {
       type: 'tuple',
       elements: elements.map(expandTypeDepFree)
     };
+  }
+  // (8) expand typeof expressions
+  if (type.startsWith('typeof ')) {
+    const argument = expandTypeDepFree(type.substring(7));
+    return {type: 'typeof', argument};
   }
   if (type === 'object' || type === 'Object') {
     return {

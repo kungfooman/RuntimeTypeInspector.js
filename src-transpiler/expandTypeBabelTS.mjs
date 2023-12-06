@@ -1,7 +1,6 @@
 import {parse} from '@babel/parser';
 /**
  * @todo Better handling of weird case: Array<>
- * @todo implement TypeQuery, e.g. for expandTypeBabelTS('typeof Number');
  * @example
  * const {expandTypeBabelTS} = await import("./src-transpiler/expandTypeBabelTS.mjs");
  * expandTypeBabelTS('[string, Array|AnyTypedArray, number[]]|[ONNXTensor]');
@@ -12,9 +11,9 @@ import {parse} from '@babel/parser';
  * expandTypeBabelTS('Array<"abc" | 123>       '); // Outputs: {type: 'array', elementType: {type: 'union', members: ['"abc"', '123']}}
  * expandTypeBabelTS('  (string ) |(number )   '); // Outputs: {type: 'union', members: [ 'string', 'number']}
  * expandTypeBabelTS(' "apples" | ( "bananas") '); // Outputs: {type: 'union', members: [ '"apples"', '"bananas"']}
- * expandTypeBabelTS('123?                     '); // Outputs: {"type":"union","members":["123","null"]}
- * expandTypeBabelTS('123|null                 '); // Outputs: {"type":"union","members":["123","null"]}
- * expandTypeBabelTS('Map<string, any>');
+ * expandTypeBabelTS('123?                     '); // Outputs: {type: 'union', members: ['123', 'null']}
+ * expandTypeBabelTS('123|null                 '); // Outputs: {type: 'union', members: ['123', 'null']}
+ * expandTypeBabelTS('Map<string, any>         '); // Outputs: {type: 'map', key: 'string', val: 'any'}
  * expandTypeBabelTS("(a: number, b: number) => number")
  * @param {string} type - The input type.
  * @returns {string|object|undefined} - See `toSourceBabelTS`.
@@ -200,6 +199,9 @@ function toSourceBabelTS(node) {
       return toSourceBabelTS(node.type);
     case 'LastTypeNode':
       return toSourceBabelTS(node.qualifier);
+    case 'TSTypeQuery':
+      const argument = toSourceBabelTS(node.exprName);
+      return {type: 'typeof', argument};
     default:
       console.warn('toSourceBabelTS> unhandled type', node.type, node);
       debugger;
