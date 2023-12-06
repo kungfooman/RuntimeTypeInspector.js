@@ -7,7 +7,6 @@ import ts from 'typescript';
  * representation that can be further utilized or interpreted.
  *
  * @todo Better handling of weird case: Array<>
- * @todo implement TypeQuery, e.g. for expandType('typeof Number');
  * @example
  * const {expandType} = await import("./src-transpiler/expandType.mjs");
  * expandType('[string, Array|AnyTypedArray, number[]]|[ONNXTensor]');
@@ -20,7 +19,8 @@ import ts from 'typescript';
  * expandType(' "apples" | ( "bananas") '); // Outputs: {type: 'union', members: [ '"apples"', '"bananas"']}
  * expandType('123?                     '); // Outputs: {"type":"union","members":["123","null"]}
  * expandType('123|null                 '); // Outputs: {"type":"union","members":["123","null"]}
- * expandType('Map<string, any>');
+ * expandType('Map<string, any>         '); // Outputs:
+ * expandType('typeof Number            '); // Outputs:
  * @param {string} type - The type string to be expanded into a structured representation.
  * @todo Share type with expandTypeBabelTS and expandTypeDepFree
  * @returns {string | {type: string, [key: string]: any} | undefined} The structured type
@@ -73,6 +73,7 @@ function toSourceTS(node) {
     StringLiteral, ThisType, TupleType, TypeLiteral, TypeReference, UndefinedKeyword,
     UnionType, JSDocNullableType, TrueKeyword, FalseKeyword, VoidKeyword, UnknownKeyword,
     NeverKeyword, BigIntKeyword, BigIntLiteral, ConditionalType, IndexedAccessType, RestType,
+    TypeQuery,       // parseType('typeof Number')
     ConstructorType, // parseType('new (...args: any[]) => any');
   } = ts.SyntaxKind;
   // console.log({typeArguments, typeName, kind_, node});
@@ -119,6 +120,9 @@ function toSourceTS(node) {
         return {type: 'array', elementType: ret};
       }
       return ret;
+    case TypeQuery:
+      const argument = toSourceTS(node.exprName);
+      return {type: 'typeof', argument};
     case TypeReference: {
       if ((typeName.text === 'Object' || typeName.text === 'Record') && typeArguments?.length === 2) {
         return {
