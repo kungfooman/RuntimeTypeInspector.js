@@ -75,6 +75,9 @@ function parseJSDocTypedef(typedefs, warn, comment, expandType) {
       } else {
         warn("not an extensible type", lastTypedef);
       }
+    } else if (line.startsWith('@callback')) {
+      const name = line.substring(9).trim();
+      typedefs[name] = 'Function';
     }
   }
 }
