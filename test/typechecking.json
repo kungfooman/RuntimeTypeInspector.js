@@ -32,6 +32,10 @@
     "output": "./test/typechecking/ParenthesizedExpression-singleline-output.mjs"
   },
   {
+    "input": "./test/typechecking/callbacks-input.mjs",
+    "output": "./test/typechecking/callbacks-output.mjs"
+  },
+  {
     "input": "./test/typechecking/comment-newline-input.mjs",
     "output": "./test/typechecking/comment-newline-output.mjs"
   },
