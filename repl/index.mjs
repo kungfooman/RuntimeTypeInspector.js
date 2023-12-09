@@ -9,20 +9,29 @@ import {ast2jsonForComparison} from 'runtime-type-inspector/src-transpiler/ast2j
 import * as ti  from 'runtime-type-inspector/src-transpiler/index.mjs';
 //import * as rti from '@runtime-type-inspector/runtime';
 import * as rti from 'runtime-type-inspector/src-runtime/index.mjs';
-const currentAction = location.hash.slice(1).split('=')[1] || 'typechecking';
+const hashvars = new Map(location.hash.slice(1).split('&').map(_ => _.split('=')));
+if (!hashvars.get('action')) {
+  hashvars.set('action', 'typechecking');
+}
+const currentAction = hashvars.get('action');
 const selectAction = document.getElementById("action");
 if (!(selectAction instanceof HTMLSelectElement)) {
-  throw 'This module requires a <select id="action" ...';
+  throw new Error('This module requires a <select id="action" ...');
 }
 const selectPreferredExpandType = document.getElementById('preferred-expand-type');
 if (!(selectPreferredExpandType instanceof HTMLSelectElement)) {
-  throw 'This module requires a <select id="action" ...';
+  throw new Error('This module requires a <select id="action" ...');
+}
+function setHash() {
+  const left = btoa(getLeft());
+  const right = btoa(getRight());
+  location.hash = `action=${selectAction.value}&left=${left}&right=${right}`;
 }
 // selectPreferredExpandType.value;
 selectAction.value = currentAction;
 const buttonREPL = document.getElementById('repl');
 if (!(buttonREPL instanceof HTMLButtonElement)) {
-  throw 'This module requires a <button id="repl" ...';
+  throw new Error('This module requires a <button id="repl" ...');
 }
 const inputLeft = document.getElementById('left');
 if (!(inputLeft instanceof HTMLInputElement)) {
@@ -435,7 +444,15 @@ function runRightEditor() {
   }
   eval(src);
 }
+if (hashvars.get('left')) {
+  setLeft(atob(hashvars.get('left')));
+}
+if (hashvars.get('right')) {
+  setRight(atob(hashvars.get('right')));
+}
 export {
+  setHash,
+  hashvars,
   selectAction,
   selectPreferredExpandType,
   buttonREPL,
