@@ -149,9 +149,9 @@ class Asserter extends Stringifier {
     i--;
     while (i >= 0) {
       parent = parents[i];
-      if (parent.type === 'CallExpression') {
-        break;
-      }
+      //if (parent.type === 'CallExpression') {
+      //  break;
+      //}
       if (nodeIsFunction(parent)) {
         break;
       }
@@ -171,6 +171,50 @@ class Asserter extends Stringifier {
     }
     console.warn(...args);
   }
+  getLeadingCommentsNodeForFunctionExpression(node) {
+
+
+    const {parents} = this;
+    let i = parents.findLastIndex(_ => _ === node);
+    let parent = parents[i];
+    if (parent.leadingComments) {
+      return parent;
+    }
+    // Skip now, if we find another function first,
+    // there is no JSDoc for our function anymore.
+    // Not interested in our start node if it didn't
+    // contain leadingComments.
+    i--;
+    while (i >= 0) {
+      parent = parents[i];
+      //if (parent.type === 'CallExpression') {
+      //  break;
+      //}
+      if (nodeIsFunction(parent)) {
+        break;
+      }
+      if (parent.leadingComments) {
+        return parent;
+      }
+      i--;
+    }
+
+    return;
+
+    if (node.leadingComments) {
+      return node.leadingComments;
+    }
+    node = this.findParentOfType(node, 'ExpressionStatement');
+    if (!node) {
+      /**
+       * @todo Need more refactoring, see missing type-assertions in test/typechecking/good-old-es5.mjs
+       */
+      node = this.parents.findLast(_ => _.type === 'VariableDeclaration');
+      if (!node) {
+        return;
+      }
+    }
+  }
   /**
    * @param {Node} node - The Babel AST node.
    * @returns {undefined | {}} The return value of `parseJSDoc`.
@@ -179,24 +223,12 @@ class Asserter extends Stringifier {
     if (node.type === 'BlockStatement') {
       node = this.parent;
     }
+    let {leadingComments} = node;
     // Receive the leadingComments from the ExpressionStatement, not the FunctionExpression itself.
     if (node.type === 'FunctionExpression') {
-      if (node.leadingComments) {
-        this.warn("Case of FunctionExpression containing its own leadingComments is not handled");
-        return;
-      }
-      node = this.findParentOfType(node, 'ExpressionStatement');
-      if (!node) {
-        /**
-         * @todo Need more refactoring, see missing type-assertions in test/typechecking/good-old-es5.mjs
-         */
-        node = this.parents.findLast(_ => _.type === 'VariableDeclaration');
-        if (!node) {
-          return;
-        }
-      }
+      const tmp = this.getLeadingCommentsNodeForFunctionExpression(node);
+      leadingComments = tmp?.leadingComments;
     }
-    let {leadingComments} = node;
     // Receive the leadingComments from ExportNamedDeclaration, if FunctionDeclaration has none
     if (!leadingComments) {
       if (node.type === 'FunctionDeclaration') {
