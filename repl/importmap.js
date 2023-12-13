@@ -11,6 +11,7 @@ if (location.host === 'runtimetypeinspector.org') {
 }
 const imports = {
   "@runtime-type-inspector/runtime": rti + 'src-runtime/index.mjs',
+  "@runtime-type-inspector/transpiler": rti + 'src-transpiler/index.mjs',
   "runtime-type-inspector/": rti,
   //"@babel/core": "./babel-core.mjs",
   "@babel/parser": "./babel-parser.mjs",
