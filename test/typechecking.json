@@ -24,6 +24,10 @@
     "output": "./test/typechecking/ExportNamespaceSpecifier-output.mjs"
   },
   {
+    "input": "./test/typechecking/JSDoc-FunctionExpression-ExpressionStatement-input.mjs",
+    "output": "./test/typechecking/JSDoc-FunctionExpression-ExpressionStatement-output.mjs"
+  },
+  {
     "input": "./test/typechecking/ParenthesizedExpression-multiline-input.mjs",
     "output": "./test/typechecking/ParenthesizedExpression-multiline-output.mjs"
   },
@@ -54,6 +58,10 @@
   {
     "input": "./test/typechecking/functions-input.mjs",
     "output": "./test/typechecking/functions-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/good-old-es5-input.mjs",
+    "output": "./test/typechecking/good-old-es5-output.mjs"
   },
   {
     "input": "./test/typechecking/simple-ObjectMethod-computed-input.mjs",

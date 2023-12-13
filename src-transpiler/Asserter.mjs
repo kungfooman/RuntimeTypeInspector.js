@@ -94,8 +94,9 @@ class Asserter extends Stringifier {
    * Finds the closest ancestor of the given node that matches the specified type.
    *
    * @param {Node} node - The starting node to search from.
-   * @param {string} type - The type of the node to search for.
-   * @returns {Node|undefined} The first ancestor node of the specified type, or undefined if none is found.
+   * @param {T} type - Type name of the node to search for.
+   * @template {Node['type']} T
+   * @returns {Extract<Node, {type: T}>|undefined} The first ancestor node of the specified type, or undefined if none is found.
    */
   findParentOfType(node, type) {
     const currentIndex = this.parents.findLastIndex(_ => _ === node);
@@ -149,9 +150,9 @@ class Asserter extends Stringifier {
     i--;
     while (i >= 0) {
       parent = parents[i];
-      if (parent.type === 'CallExpression') {
-        break;
-      }
+      //if (parent.type === 'CallExpression') {
+      //  break;
+      //}
       if (nodeIsFunction(parent)) {
         break;
       }
@@ -171,6 +172,47 @@ class Asserter extends Stringifier {
     }
     console.warn(...args);
   }
+  getLeadingCommentsNodeForFunctionExpression(node) {
+    const {parents} = this;
+    let i = parents.findLastIndex(_ => _ === node);
+    let parent = parents[i];
+    if (parent.leadingComments) {
+      return parent;
+    }
+    // Skip now, if we find another function first,
+    // there is no JSDoc for our function anymore.
+    // Not interested in our start node if it didn't
+    // contain leadingComments.
+    i--;
+    while (i >= 0) {
+      parent = parents[i];
+      //if (parent.type === 'CallExpression') {
+      //  break;
+      //}
+      if (nodeIsFunction(parent)) {
+        break;
+      }
+      if (parent.leadingComments) {
+        return parent;
+      }
+      i--;
+    }
+    /** @todo convert all files in test/typechecking/*.mjs into full unit tests */
+    // Old way:
+    // if (node.leadingComments) {
+    //   return node.leadingComments;
+    // }
+    // node = this.findParentOfType(node, 'ExpressionStatement');
+    // if (!node) {
+    //   /**
+    //    * @todo Need more refactoring, see missing type-assertions in test/typechecking/good-old-es5.mjs
+    //    */
+    //   node = this.parents.findLast(_ => _.type === 'VariableDeclaration');
+    //   if (!node) {
+    //     return;
+    //   }
+    // }
+  }
   /**
    * @param {Node} node - The Babel AST node.
    * @returns {undefined | {}} The return value of `parseJSDoc`.
@@ -179,24 +221,12 @@ class Asserter extends Stringifier {
     if (node.type === 'BlockStatement') {
       node = this.parent;
     }
+    let {leadingComments} = node;
     // Receive the leadingComments from the ExpressionStatement, not the FunctionExpression itself.
     if (node.type === 'FunctionExpression') {
-      if (node.leadingComments) {
-        this.warn("Case of FunctionExpression containing its own leadingComments is not handled");
-        return;
-      }
-      node = this.findParentOfType(node, 'ExpressionStatement');
-      if (!node) {
-        /**
-         * @todo Need more refactoring, see missing type-assertions in test/typechecking/good-old-es5.mjs
-         */
-        node = this.parents.findLast(_ => _.type === 'VariableDeclaration');
-        if (!node) {
-          return;
-        }
-      }
+      const tmp = this.getLeadingCommentsNodeForFunctionExpression(node);
+      leadingComments = tmp?.leadingComments;
     }
-    let {leadingComments} = node;
     // Receive the leadingComments from ExportNamedDeclaration, if FunctionDeclaration has none
     if (!leadingComments) {
       if (node.type === 'FunctionDeclaration') {
@@ -470,6 +500,31 @@ class Asserter extends Stringifier {
   }
   /**
    * @param {Node} node - The Babel AST node.
+   * @returns {string} Best possible human-readable name of given node.
+   */
+  getNameForFunctionExpression(node) {
+    const objectProperty = this.findParentOfType(node, 'ObjectProperty');
+    if (objectProperty) {
+      // See good-old-es5.mjs example for a test case
+      // TODO: Make an even better name based on Object.assign(ScopeSpace.prototype
+      // Ideally we would figure out the name: ScopeSpace#resolve
+      // Currently we only find "resolve" (still better than 'unnamed function expression'...)
+      return this.toSource(objectProperty.key);
+    }
+    const expressionStatement = this.findParentOfType(node, 'ExpressionStatement');
+    if (expressionStatement) {
+      // There are many kinds of expressions
+      // type Expression = ArrayExpression | AssignmentExpression | BinaryExpression | CallExpression | ...
+      const {left} = expressionStatement.expression;
+      if (left) {
+        return this.toSource(left);
+      }
+      console.warn("Asserter#getNameForFunctionExpression> expression without left");
+    }
+    return 'unnamed function expression';
+  }
+  /**
+   * @param {Node} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   getName(node) {
@@ -494,11 +549,7 @@ class Asserter extends Stringifier {
         if (id) {
           return toSource(id);
         }
-        const expressionStatement = this.findParentOfType(node, 'ExpressionStatement');
-        if (!expressionStatement) {
-          return 'unnamed function expression';
-        }
-        return toSource(expressionStatement.expression.left);
+        return this.getNameForFunctionExpression(node);
       case 'ArrowFunctionExpression':
         const parent = this.findParentOfType(node, 'VariableDeclarator');
         if (parent) {

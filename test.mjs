@@ -26,15 +26,28 @@ function compareLineByLine(a, b) {
 const content = readFileSync('./test/typechecking.json', 'utf8');
 const tests = JSON.parse(content);
 let discrepancies = 0;
-for (const {input, output} of tests) {
-  const inputContent = readFileSync(input, 'utf8');
-  const outputContent = readFileSync(output, 'utf8');
-  let newOutputContent = addTypeChecks(inputContent, {expandType, addHeader: false});
+/**
+ * @param {*} input - Source code to normalize.
+ * @returns {string} Normalized output.
+ */
+function normalize(input) {
   // Remove multiple newlines into one
   // I would rather not do it, but Stringifier needs a bit more love in other areas:
   //  - multiline array output when elements surpass a max-col option
-  newOutputContent = newOutputContent.replace(/\n+/g, '\n').trim();
-  if (newOutputContent !== outputContent.trim()) {
+  let output = input.replace(/\n+/g, '\n').trim();
+  /** @todo Remove bunch of whitespaces from test outputs */
+  output = output
+    .split('\n')
+    .filter(_ => _.trim().length)
+    .map(_ => _.trim())
+    .join('\n');
+  return output;
+}
+for (const {input, output} of tests) {
+  const inputContent = readFileSync(input, 'utf8');
+  const outputContent = readFileSync(output, 'utf8');
+  const newOutputContent = addTypeChecks(inputContent, {expandType, addHeader: false});
+  if (normalize(newOutputContent) !== normalize(outputContent)) {
     discrepancies++;
     console.error("Discrepancy detected, please check!", {
       input,
