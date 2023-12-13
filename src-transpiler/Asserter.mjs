@@ -511,7 +511,7 @@ class Asserter extends Stringifier {
       // See good-old-es5.mjs example for a test case
       // TODO: Make an even better name based on Object.assign(ScopeSpace.prototype
       // Ideally we would figure out the name: ScopeSpace#resolve
-      // Currently we only find "resolve" (still better than 'unnamed'...)
+      // Currently we only find "resolve" (still better than 'unnamed function expression'...)
       return this.toSource(objectProperty.key);
     }
     const expressionStatement = this.findParentOfType(node, 'ExpressionStatement');
@@ -524,7 +524,7 @@ class Asserter extends Stringifier {
       }
       console.warn("Asserter#getNameForFunctionExpression> expression without left");
     }
-    return 'unnamed';
+    return 'unnamed function expression';
   }
   /**
    * @param {Node} node - The Babel AST node.
