@@ -503,6 +503,31 @@ class Asserter extends Stringifier {
   }
   /**
    * @param {Node} node - The Babel AST node.
+   * @returns {string} Best possible human-readable name of given node.
+   */
+  getNameForFunctionExpression(node) {
+    const objectProperty = this.findParentOfType(node, 'ObjectProperty');
+    if (objectProperty) {
+      // See good-old-es5.mjs example for a test case
+      // TODO: Make an even better name based on Object.assign(ScopeSpace.prototype
+      // Ideally we would figure out the name: ScopeSpace#resolve
+      // Currently we only find "resolve" (still better than 'unnamed'...)
+      return this.toSource(objectProperty.key);
+    }
+    const expressionStatement = this.findParentOfType(node, 'ExpressionStatement');
+    if (expressionStatement) {
+      // There are many kinds of expressions
+      // type Expression = ArrayExpression | AssignmentExpression | BinaryExpression | CallExpression | ...
+      const {left} = expressionStatement.expression;
+      if (left) {
+        return this.toSource(left);
+      }
+      console.warn("Asserter#getNameForFunctionExpression> expression without left");
+    }
+    return 'unnamed';
+  }
+  /**
+   * @param {Node} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   getName(node) {
@@ -527,11 +552,7 @@ class Asserter extends Stringifier {
         if (id) {
           return toSource(id);
         }
-        const expressionStatement = this.findParentOfType(node, 'ExpressionStatement');
-        if (!expressionStatement) {
-          return 'unnamed function expression';
-        }
-        return toSource(expressionStatement.expression.left);
+        return this.getNameForFunctionExpression(node);
       case 'ArrowFunctionExpression':
         const parent = this.findParentOfType(node, 'VariableDeclarator');
         if (parent) {
