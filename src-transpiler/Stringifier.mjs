@@ -91,12 +91,20 @@ class Stringifier {
       return '';
     }
     this.lastCommentBlockIndex = loc.start.index;
-    const {spaces} = this;
+    let {spaces} = this;
     let out = '';
     /** @todo add option for number-of-spaces */
     const dedicatedLine = spaces.length === loc.start.column;
     if (dedicatedLine) {
       out += spaces;
+    }
+    const multiLine = loc.start.line !== loc.end.line;
+    if (multiLine) {
+      // console.log(this.parents.at(-2)?.type === 'AssignmentExpression');
+      if (this.parents.at(-2)?.type === 'AssignmentExpression') {
+        spaces += '  ';
+      }
+      out += '\n' + spaces;
     }
     out += '/*';
     if (value.includes('\n')) {
@@ -484,12 +492,21 @@ class Stringifier {
     // Leading comments for asd=function(){} are in ExpressionStatement
     const {async, body, generator, id/*, leadingComments*/, params/*, extra*/} = node;
     let out = '';
+    if (node.leadingComments) {
+      if (this.parentType === 'AssignmentExpression') {
+        this.numSpaces++;
+      }
+      out += '\n' + this.spaces;
+    }
     if (async) {
       out += 'async ';
     }
     const star = generator ? '*' : '';
     out += 'function' + star + ' ' + this.toSource(id) + this.FunctionDeclarationParams(params);
     out += this.toSource(body);
+    if (node.leadingComments && this.parentType === 'AssignmentExpression') {
+      this.numSpaces--;
+    }
     return out;
   }
   /**
