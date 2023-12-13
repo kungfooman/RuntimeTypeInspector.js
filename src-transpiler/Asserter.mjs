@@ -173,8 +173,6 @@ class Asserter extends Stringifier {
     console.warn(...args);
   }
   getLeadingCommentsNodeForFunctionExpression(node) {
-
-
     const {parents} = this;
     let i = parents.findLastIndex(_ => _ === node);
     let parent = parents[i];
@@ -199,22 +197,21 @@ class Asserter extends Stringifier {
       }
       i--;
     }
-
-    return;
-
-    if (node.leadingComments) {
-      return node.leadingComments;
-    }
-    node = this.findParentOfType(node, 'ExpressionStatement');
-    if (!node) {
-      /**
-       * @todo Need more refactoring, see missing type-assertions in test/typechecking/good-old-es5.mjs
-       */
-      node = this.parents.findLast(_ => _.type === 'VariableDeclaration');
-      if (!node) {
-        return;
-      }
-    }
+    /** @todo convert all files in test/typechecking/*.mjs into full unit tests */
+    // Old way:
+    // if (node.leadingComments) {
+    //   return node.leadingComments;
+    // }
+    // node = this.findParentOfType(node, 'ExpressionStatement');
+    // if (!node) {
+    //   /**
+    //    * @todo Need more refactoring, see missing type-assertions in test/typechecking/good-old-es5.mjs
+    //    */
+    //   node = this.parents.findLast(_ => _.type === 'VariableDeclaration');
+    //   if (!node) {
+    //     return;
+    //   }
+    // }
   }
   /**
    * @param {Node} node - The Babel AST node.
