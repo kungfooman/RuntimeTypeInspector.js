@@ -18,6 +18,23 @@ function addDiff(a, b) {
     },
   });
 }
+/**
+ * @param {*} input - Source code to normalize.
+ * @returns {string} Normalized output.
+ */
+function normalize(input) {
+  // Remove multiple newlines into one
+  // I would rather not do it, but Stringifier needs a bit more love in other areas:
+  //  - multiline array output when elements surpass a max-col option
+  let output = input.replace(/\n+/g, '\n').trim();
+  /** @todo Remove bunch of whitespaces from test outputs */
+  output = output
+    .split('\n')
+    .filter(_ => _.trim().length)
+    .map(_ => _.trim())
+    .join('\n');
+  return output;
+}
 async function main() {
   const resp = await fetch("../test/typechecking.json");
   const json = await resp.json();
@@ -36,12 +53,8 @@ async function main() {
     const txtInput  = await res.text();
     const res2      = await fetch('../' + output);
     const txtOutput = await res2.text();
-    let actualResult = addTypeChecks(txtInput, {expandType, addHeader: false});
-    // Remove multiple newlines into one
-    // I would rather not do it, but Stringifier needs a bit more love in other areas:
-    //  - multiline array output when elements surpass a max-col option
-    actualResult = actualResult.replace(/\n+/g, '\n').trim();
-    const success = actualResult === txtOutput.trim();
+    const actualResult = addTypeChecks(txtInput, {expandType, addHeader: false});
+    const success = normalize(actualResult) === normalize(txtOutput);
     button.style.backgroundColor = success ? 'lime' : 'red';
     button.onclick = async () => {
       aceDiffer.editors.left.ace.setValue(txtInput);
