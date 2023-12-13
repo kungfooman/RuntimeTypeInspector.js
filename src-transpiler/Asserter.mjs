@@ -94,8 +94,9 @@ class Asserter extends Stringifier {
    * Finds the closest ancestor of the given node that matches the specified type.
    *
    * @param {Node} node - The starting node to search from.
-   * @param {string} type - The type of the node to search for.
-   * @returns {Node|undefined} The first ancestor node of the specified type, or undefined if none is found.
+   * @param {T} type - Type name of the node to search for.
+   * @template {Node['type']} T
+   * @returns {Extract<Node, {type: T}>|undefined} The first ancestor node of the specified type, or undefined if none is found.
    */
   findParentOfType(node, type) {
     const currentIndex = this.parents.findLastIndex(_ => _ === node);
