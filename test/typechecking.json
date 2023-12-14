@@ -64,6 +64,10 @@
     "output": "./test/typechecking/good-old-es5-output.mjs"
   },
   {
+    "input": "./test/typechecking/keyof-typeof-input.mjs",
+    "output": "./test/typechecking/keyof-typeof-output.mjs"
+  },
+  {
     "input": "./test/typechecking/simple-ObjectMethod-computed-input.mjs",
     "output": "./test/typechecking/simple-ObjectMethod-computed-output.mjs"
   },
