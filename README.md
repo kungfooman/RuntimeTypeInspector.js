@@ -52,4 +52,5 @@ console.log(rtiTranspiler)
 2) https://www.npmjs.com/package/@runtime-type-inspector/transpiler
 3) https://www.npmjs.com/package/@runtime-type-inspector/parcel-transformer
 4) https://www.npmjs.com/package/@runtime-type-inspector/plugin-rollup
-5) https://www.npmjs.com/package/@runtime-type-inspector/plugin-webpack5
+5) https://www.npmjs.com/package/@runtime-type-inspector/plugin-webpack4
+6) https://www.npmjs.com/package/@runtime-type-inspector/plugin-webpack5

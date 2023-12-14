@@ -1,6 +1,6 @@
 {
   "name": "@runtime-type-inspector/plugin-webpack4",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Webpack 4 plugin for https://runtimetypeinspector.org/",
   "main": "index.cjs",
   "author": "Hermann Rolfes (kungfooman)",
