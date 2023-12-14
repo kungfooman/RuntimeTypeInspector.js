@@ -84,6 +84,10 @@
     "output": "./test/typechecking/simple-ObjectPattern-output.mjs"
   },
   {
+    "input": "./test/typechecking/tuple-named-input.mjs",
+    "output": "./test/typechecking/tuple-named-output.mjs"
+  },
+  {
     "input": "./test/typechecking/typedef-BigIntKeyword-input.mjs",
     "output": "./test/typechecking/typedef-BigIntKeyword-output.mjs"
   },

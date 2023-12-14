@@ -77,6 +77,7 @@ function toSourceTS(node) {
     TypeOperator,    // parseType('keyof typeof obj')
     KeyOfKeyword, // "operator" key in TypeOperator node
     ConstructorType, // parseType('new (...args: any[]) => any');
+    NamedTupleMember,
   } = ts.SyntaxKind;
   // console.log({typeArguments, typeName, kind_, node});
   switch (node.kind) {
@@ -168,6 +169,8 @@ function toSourceTS(node) {
       return node.getText();
     case NumberKeyword:
       return node.getText();
+    case NamedTupleMember:
+      return toSourceTS(node.type);
     case IntersectionType:
       return {
         type: 'intersection',
