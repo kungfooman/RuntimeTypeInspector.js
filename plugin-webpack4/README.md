@@ -3,7 +3,7 @@ Webpack 4 plugin for `@runtime-type-inspector/transpiler`.
 Installation:
 
 ```sh
-npm install @runtime-type-inspector/plugin-webpack5
+npm install @runtime-type-inspector/plugin-webpack4
 ```
 
 Example of integration into your build script:
