@@ -1,4 +1,4 @@
-Webpack 5 plugin for `@runtime-type-inspector/transpiler`.
+Webpack 4 plugin for `@runtime-type-inspector/transpiler`.
 
 Installation:
 
