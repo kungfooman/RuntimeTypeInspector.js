@@ -74,6 +74,8 @@ function toSourceTS(node) {
     UnionType, JSDocNullableType, TrueKeyword, FalseKeyword, VoidKeyword, UnknownKeyword,
     NeverKeyword, BigIntKeyword, BigIntLiteral, ConditionalType, IndexedAccessType, RestType,
     TypeQuery,       // parseType('typeof Number')
+    TypeOperator,    // parseType('keyof typeof obj')
+    KeyOfKeyword, // "operator" key in TypeOperator node
     ConstructorType, // parseType('new (...args: any[]) => any');
   } = ts.SyntaxKind;
   // console.log({typeArguments, typeName, kind_, node});
@@ -123,6 +125,12 @@ function toSourceTS(node) {
     case TypeQuery:
       const argument = toSourceTS(node.exprName);
       return {type: 'typeof', argument};
+    case TypeOperator:
+      if (node.operator === KeyOfKeyword) {
+        const argument = toSourceTS(node.type);
+        return {type: 'keyof', argument};
+      }
+      console.warn("unimplemented TypeOperator", node);
     case TypeReference: {
       if ((typeName.text === 'Object' || typeName.text === 'Record') && typeArguments?.length === 2) {
         return {
