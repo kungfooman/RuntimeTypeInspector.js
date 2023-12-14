@@ -219,7 +219,7 @@ module.exports = {
     "prefer-spread": "warn",
     "prefer-template": "off",
     "quote-props": "off",
-    "radix": "error",
+    // "radix": "error",
     "require-await": "error",
     "require-unicode-regexp": "off",
     "require-yield": "error",
