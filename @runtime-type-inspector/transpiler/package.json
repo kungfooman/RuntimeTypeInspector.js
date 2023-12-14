@@ -1,6 +1,6 @@
 {
   "name": "@runtime-type-inspector/transpiler",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "Validating JSDoc types at runtime for high-quality types - Trust is good, control is better.",
   "main": "index.cjs",
   "module": "index.mjs",
