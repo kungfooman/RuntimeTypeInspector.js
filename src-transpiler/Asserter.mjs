@@ -16,6 +16,7 @@ import {Stringifier      } from './Stringifier.mjs';
  * @property {Function} [expandType] - A function that expands shorthand types into full descriptions.
  * @property {string} [filename] - The name of a file to which the instance pertains.
  * @property {boolean} [addHeader] - Whether to add import declarations headers. Defaults to true.
+ * @property {string[]} [ignoreLocations] - Ignore these locations because they are known false-positives.
  */
 class Asserter extends Stringifier {
   /**
@@ -27,6 +28,7 @@ class Asserter extends Stringifier {
     expandType = expandTypeDepFree,
     filename,
     addHeader = true,
+    ignoreLocations = [],
   } = {}) {
     super();
     this.forceCurly = forceCurly;
@@ -36,6 +38,7 @@ class Asserter extends Stringifier {
     this.expandType = expandType;
     this.filename = filename;
     this.addHeader = addHeader;
+    this.ignoreLocations = ignoreLocations;
   }
   /** @type {Record<string, Stat>} */
   stats = {
@@ -389,6 +392,10 @@ class Asserter extends Stringifier {
     const {spaces} = this;
     let out = '';
     let first = true;
+    const loc = this.getName(node);
+    if (this.ignoreLocations.includes(loc)) {
+      return '// IGNORE RTI TYPE VALIDATIONS, KNOWN ISSUES\n';
+    }
     //out += `${spaces}/*${spaces}  node.type=${node.type}\n${spaces}
     //  ${JSON.stringify(jsdoc)}\n${parent}\n${spaces}*/\n`;
     for (let name in jsdoc) {
