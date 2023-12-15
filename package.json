@@ -6,6 +6,7 @@
   "module": "build/rti-transpiler.mjs",
   "scripts": {
     "build": "rollup -c",
+    "watch": "rollup -c -w",
     "build:atBabelCore": "rollup -c --environment target:atBabelCore",
     "build:dts": "tsc src-transpiler/index.mjs --outDir types/transpiler --allowJs --declaration --emitDeclarationOnly --target esnext",
     "build:types": "npm run build:dts && rollup -c --environment target:types",
