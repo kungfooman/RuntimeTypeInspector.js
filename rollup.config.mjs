@@ -13,21 +13,18 @@ import json from '@rollup/plugin-json';
 //import {addTypeChecks} from "./src-transpiler/typeInserter.mjs";
 //const {addTypeChecks} = await import("runtime-type-inspector/src-transpiler/typeInserter.mjs");
 import commonjs from '@rollup/plugin-commonjs';
-//import {runtimeTypeInspector} from './plugin-rollup/index.mjs';
 /** @typedef {import('rollup').RollupOptions} RollupOptions */
 /** @typedef {import('rollup').Plugin} Plugin */
 /** @typedef {import('rollup').OutputOptions} OutputOptions */
 /** @typedef {import('@rollup/plugin-babel').RollupBabelInputPluginOptions} RollupBabelInputPluginOptions */
 /**
  * The ES5 options for babel(...) plugin.
- *
- * @param {string} buildType - Only 'debug' requires special handling so far.
  * @returns {RollupBabelInputPluginOptions} The babel options.
  */
-const es5Options = buildType => ({
+const es5Options = () => ({
   babelHelpers: 'bundled',
   babelrc: false,
-  comments: buildType === 'debug' || buildType === 'rti',
+  comments: true,
   compact: false,
   minified: false,
   presets: [
@@ -44,14 +41,12 @@ const es5Options = buildType => ({
 });
 /**
  * The ES6 options for babel(...) plugin.
- *
- * @param {string} buildType - Only 'debug' requires special handling so far.
  * @returns {RollupBabelInputPluginOptions} The babel options.
  */
-const moduleOptions = buildType => ({
+const moduleOptions = () => ({
   babelHelpers: 'bundled',
   babelrc: false,
-  comments: buildType === 'debug',
+  comments: true,
   compact: false,
   minified: false,
   presets: [
@@ -134,7 +129,7 @@ function buildTarget(name, rootFile, path, buildType, moduleFormat) {
   };
   const babelOptions = {
     es5: es5Options(buildType),
-    es6: moduleOptions(buildType)
+    es6: moduleOptions()
   };
   return {
     input: rootFile,

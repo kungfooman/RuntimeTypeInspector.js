@@ -1,8 +1,11 @@
 const {Compilation, Compiler} = require('webpack');
 /**
- * @typedef RuntimeTypeInspectorPluginOptions
+ * @typedef OptionsProps
  * @property {RegExp} [test] - Test for file extensions.
  * @property {RegExp} [exclude] - Test for exclusion.
+ */
+/**
+ * @typedef {OptionsProps & import('@runtime-type-inspector/transpiler').Options} Options
  */
 class RuntimeTypeInspectorPlugin {
   static pluginName = 'RuntimeTypeInspectorPlugin';
@@ -14,7 +17,7 @@ class RuntimeTypeInspectorPlugin {
     exclude: /node_modules/
   };
   /**
-   * @param {RuntimeTypeInspectorPluginOptions} options - The options.
+   * @param {Options} options - The options.
    */
   constructor(options) {
     Object.assign(this.options, options);

@@ -3,7 +3,7 @@ import {
   addTypeChecks, expandType, compareAST, code2ast2code
 } from '@runtime-type-inspector/transpiler';
 /**
- * @typedef Options
+ * @typedef OptionsProps
  * @property {boolean} [enable] - Enable or disable entire plugin. Defaults to true.
  * @property {boolean} [selftest] - Every once in a while Babel changes the AST, so we
  * self-test Stringifier class to ensure its functionanlity.
@@ -12,10 +12,13 @@ import {
  * @property {boolean} [validateDivision] - Whether divisions are validated. Defaults to true.
  */
 /**
+ * @typedef {OptionsProps & import('@runtime-type-inspector/transpiler').Options} Options
+ */
+/**
  * @param {Options} [options] - Optional options.
  * @returns {import('rollup').Plugin} The rollup plugin.
  */
-function runtimeTypeInspector({enable = true, selftest = false, ignoredFiles, validateDivision = true} = {}) {
+function runtimeTypeInspector({enable = true, selftest = false, ignoredFiles, ...options} = {}) {
   const filter = createFilter([
     '**/*.js'
   ], []);
@@ -37,10 +40,9 @@ function runtimeTypeInspector({enable = true, selftest = false, ignoredFiles, va
       }
       // todo expose options to rollup plugin
       code = addTypeChecks(code, {
-        validateDivision,
-        // ignoreLocations: ['Tensor#constructor'], // todo
         expandType,
         filename: id,
+        ...options
       });
       return {
         code,
