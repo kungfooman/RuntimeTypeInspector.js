@@ -4,7 +4,7 @@
   "description": "Rollup plugin for https://runtimetypeinspector.org/",
   "main": "index.mjs",
   "type": "module",
-  "types": "types.d.ts",
+  "types": "index.mjs",
   "author": "Hermann Rolfes (kungfooman)",
   "license": "MIT",
   "dependencies": {
