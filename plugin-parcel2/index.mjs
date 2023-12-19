@@ -1,5 +1,5 @@
 import {Transformer} from '@parcel/plugin';
-import {addTypeChecks} from 'runtime-type-inspector';
+import {addTypeChecks} from '@runtime-type-inspector/transpiler';
 export default new Transformer({
   async transform({asset}) {
     // Retrieve the asset's source code and source map.
