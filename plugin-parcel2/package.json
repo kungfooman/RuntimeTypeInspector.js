@@ -1,6 +1,6 @@
 {
   "name": "@runtime-type-inspector/parcel-transformer",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "",
   "main": "index.mjs",
   "author": "Hermann Rolfes (kungfooman)",
