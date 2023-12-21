@@ -1,16 +1,14 @@
 {
   "name": "@runtime-type-inspector/plugin-parcel1",
-  "version": "1.0.0",
-  "description": "",
+  "version": "1.0.2",
+  "description": "RuntimeTypeInspector.js plugin for Parcel v1",
   "main": "index.cjs",
+  "publishConfig": {"access": "public"},
   "type": "commonjs",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "author": "Hermann Rolfes (kungfooman)",
   "license": "MIT",
   "dependencies": {
     "parcel-bundler": "^1.12.5",
-    "runtime-type-inspector": "^2.0.2"
+    "@runtime-type-inspector/transpiler": "^2.2.5"
   }
 }
