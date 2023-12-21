@@ -50,13 +50,14 @@ console.log(rtiTranspiler)
 
 # Available NPM packages
 
-1) https://www.npmjs.com/package/@runtime-type-inspector/runtime
-2) https://www.npmjs.com/package/@runtime-type-inspector/transpiler
-3) https://www.npmjs.com/package/@runtime-type-inspector/parcel-transformer
-4) https://www.npmjs.com/package/@runtime-type-inspector/plugin-rollup
-5) https://www.npmjs.com/package/@runtime-type-inspector/plugin-webpack (version independent)
-6) https://www.npmjs.com/package/@runtime-type-inspector/plugin-webpack4
-7) https://www.npmjs.com/package/@runtime-type-inspector/plugin-webpack5
+- https://www.npmjs.com/package/@runtime-type-inspector/runtime
+- https://www.npmjs.com/package/@runtime-type-inspector/transpiler
+- https://www.npmjs.com/package/@runtime-type-inspector/plugin-parcel1
+- https://www.npmjs.com/package/@runtime-type-inspector/parcel-transformer (Parcel v2)
+- https://www.npmjs.com/package/@runtime-type-inspector/plugin-rollup
+- https://www.npmjs.com/package/@runtime-type-inspector/plugin-webpack (version independent)
+- https://www.npmjs.com/package/@runtime-type-inspector/plugin-webpack4
+- https://www.npmjs.com/package/@runtime-type-inspector/plugin-webpack5
 
 # Acknowledgements
 
