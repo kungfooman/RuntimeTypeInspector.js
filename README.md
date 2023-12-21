@@ -34,8 +34,10 @@ https://www.youtube.com/watch?v=xOp3YWU6M1g
 
 # Installation
 
+Please take my two Pull Requests for [Transformers.js](https://github.com/xenova/transformers.js/pull/409) (using Webpack) and [PlayCanvas](https://github.com/playcanvas/engine/pull/5817) (using Rollup) as example.
+
 ```
-npm install runtime-type-inspector
+npm install @runtime-type-inspector/transpiler
 ```
 
 Live demo: https://runtimetypeinspector.org/
@@ -56,3 +58,18 @@ console.log(rtiTranspiler)
 - https://www.npmjs.com/package/@runtime-type-inspector/plugin-webpack (version independent)
 - https://www.npmjs.com/package/@runtime-type-inspector/plugin-webpack4
 - https://www.npmjs.com/package/@runtime-type-inspector/plugin-webpack5
+
+# Acknowledgements
+
+We are incredibly grateful for the support and contribution of our funders, [Sovereign Tech Fund](https://www.sovereigntechfund.de/). We would like to thank them for their support and contribution towards making this project possible. Their partnership and generous funding have been instrumental in the success and realization of [RuntimeTypeInspector.js](https://github.com/kungfooman/RuntimeTypeInspector.js).
+
+![STF-Logo-Wide-Dark-RGB](https://github.com/kungfooman/RuntimeTypeInspector.js/assets/5236548/a5e5870c-2f93-4047-877f-21f823473a68)
+![STF-Logo-Wide-White-RGB](https://github.com/kungfooman/RuntimeTypeInspector.js/assets/5236548/94e790d9-9fda-4c17-a811-0af370d708b8)
+
+> Open source, a treasure trove for all to embrace,
+> 
+> But its potential is limited, without financial grace.
+> 
+> Let's urge our governments, to invest in its light,
+> 
+> For a resilient digital infrastructure, shining bright.
