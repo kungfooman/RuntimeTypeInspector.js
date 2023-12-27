@@ -68,6 +68,10 @@
     "output": "./test/typechecking/keyof-typeof-output.mjs"
   },
   {
+    "input": "./test/typechecking/literal-numbers-input.mjs",
+    "output": "./test/typechecking/literal-numbers-output.mjs"
+  },
+  {
     "input": "./test/typechecking/simple-ObjectMethod-computed-input.mjs",
     "output": "./test/typechecking/simple-ObjectMethod-computed-output.mjs"
   },
