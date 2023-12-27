@@ -60,8 +60,8 @@ function parseType(str) {
  * or an object representing the type.
  *
  * @param {TypeScriptType} node - The TypeScript AST node to convert.
- * @returns {string | {type: string, [key: string]: any} | undefined} The source string or an object with type information based on the node,
- * or `undefined` if the node kind is not handled.
+ * @returns {string | number | {type: string, [key: string]: any} | undefined} The source string/number,
+ * or an object with type information based on the node, or `undefined` if the node kind is not handled.
  */
 function toSourceTS(node) {
   const {typeArguments, typeName} = node;
@@ -171,21 +171,16 @@ function toSourceTS(node) {
       return node.getText();
     case NamedTupleMember:
       return toSourceTS(node.type);
-    case IntersectionType:
-      return {
-        type: 'intersection',
-        members: node.types.map(toSourceTS)
-      };
+    case IntersectionType: {
+      const members = node.types.map(toSourceTS);
+      return {type: 'intersection', members};
+    }
     case TupleType:
-      return {
-        type: 'tuple',
-        elements: node.elements.map(toSourceTS)
-      };
+      const elements = node.elements.map(toSourceTS);
+      return {type: 'tuple', elements};
     case UnionType:
-      return {
-        type: 'union',
-        members: node.types.map(toSourceTS)
-      };
+      const members = node.types.map(toSourceTS);
+      return {type: 'union', members};
     case TypeLiteral:
       const properties = {};
       node.members.forEach(member => {
@@ -193,20 +188,16 @@ function toSourceTS(node) {
         const type = toSourceTS(member.type);
         properties[name] = type;
       });
-      return {
-        type: 'object',
-        properties
-      };
+      return {type: 'object', properties};
     case PropertySignature:
       console.warn('toSourceTS> should not happen, handled by TypeLiteral directly');
       return `${toSourceTS(node.name)}: ${toSourceTS(node.type)}`;
     case Identifier:
       return node.text;
-    case ArrayType:
-      return {
-        type: 'array',
-        elementType: toSourceTS(node.elementType)
-      };
+    case ArrayType: {
+      const elementType = toSourceTS(node.elementType);
+      return {type: 'array', elementType};
+    }
     case LiteralType:
       return toSourceTS(node.literal);
     case AnyKeyword:
@@ -214,7 +205,6 @@ function toSourceTS(node) {
     // ts.SyntaxKind[parseType("*").kind] === 'JSDocAllType'
     case JSDocAllType:
     case NullKeyword:
-    case NumericLiteral:
     case StringLiteral:
     case ThisType:
     case UndefinedKeyword:
@@ -224,6 +214,8 @@ function toSourceTS(node) {
     case UnknownKeyword:
     case NeverKeyword:
       return node.getText();
+    case NumericLiteral:
+      return Number(node.getText());
     case ObjectKeyword:
       return {
         type: 'object',
