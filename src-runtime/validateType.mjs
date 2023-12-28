@@ -47,6 +47,13 @@ function validateType(value, expect, loc, name, critical = true) {
       optional: false
     };
   }
+  if (typeof expect === 'number') {
+    const ret = value === expect;
+    if (!ret && critical) {
+      typecheckWarn('expected literal number', {value, expect, critical});
+    }
+    return ret;
+  }
   let {type} = expect;
   const {optional, properties} = expect;
   if (!type) {
@@ -171,15 +178,17 @@ function validateType(value, expect, loc, name, critical = true) {
   if (value && value.constructor && value.constructor.name === type) {
     return true;
   }
-  const windowClass = window[type];
-  if (windowClass) {
-    return value instanceof windowClass;
-  }
-  if (type.startsWith('globalThis.')) {
-    const innerType = type.slice(11);
-    const windowClass = window[innerType];
+  if (typeof window !== 'undefined') {
+    const windowClass = window[type];
     if (windowClass) {
       return value instanceof windowClass;
+    }
+    if (type.startsWith('globalThis.')) {
+      const innerType = type.slice(11);
+      const windowClass = window[innerType];
+      if (windowClass) {
+        return value instanceof windowClass;
+      }
     }
   }
   // inheritance check, allow Application for AppBase, allow Entity for GraphNode etc.
