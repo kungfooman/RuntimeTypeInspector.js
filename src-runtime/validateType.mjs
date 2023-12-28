@@ -195,13 +195,6 @@ function validateType(value, expect, loc, name, critical = true) {
   if (classes[type]) {
     return value instanceof classes[type];
   }
-        //} /*else if (typeof theClass === 'number' || typeof theClass === 'string') {
-        // todo register these too individually?
-      //  return value === theClass;
-      //}*/
-    //  typecheckWarn('unhandled pc member', {value, type, expect, theClass});
-    //  return false;
-    //}
   typecheckWarn("unchecked", {value, type, loc, name});
   return false;
 }
