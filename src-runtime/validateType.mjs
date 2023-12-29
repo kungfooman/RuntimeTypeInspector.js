@@ -2,7 +2,6 @@ import {customTypes      } from "./customTypes.mjs";
 import {customValidations} from "./customValidations.mjs";
 import {classes          } from "./registerClass.mjs";
 import {typedefs         } from "./registerTypedef.mjs";
-import {warn             } from "./warn.mjs";
 import {validateArray    } from "./validateArray.mjs";
 import {validateMap      } from "./validateMap.mjs";
 import {validateNumber   } from "./validateNumber.mjs";
@@ -35,9 +34,10 @@ export function enableTypeChecking() {
  * @param {string} loc - String like `BoundingBox#compute`
  * @param {string} name - Name of the argument.
  * @param {boolean} critical - Only false for unions.
+ * @param {console["warn"]} warn - Function to warn with.
  * @returns {boolean} Returns wether `value` is in the shape of `expect`.
  */
-function validateType(value, expect, loc, name, critical = true) {
+function validateType(value, expect, loc, name, critical = true, warn) {
   if (!enabled) {
     return true;
   }
@@ -97,7 +97,7 @@ function validateType(value, expect, loc, name, critical = true) {
     };
     const ret = customValidation(value, expect, loc, name, critical, pushWarning);
     if (!ret) {
-      warn(`${loc}> customValidation failed:`, ...warnings);
+      warn(`Custom validation failed due to:`, ...warnings);
       return false;
     }
   }
@@ -115,7 +115,7 @@ function validateType(value, expect, loc, name, critical = true) {
   }
   // If a typedef is also a class, it's just a shorthand-typedef-class
   if (typedefs[type] && !classes[type]) {
-    return validateTypedef(value, expect, loc, name, critical);
+    return validateTypedef(value, expect, loc, name, critical, warn);
   }
   if (type === 'union') {
     return validateUnion(value, expect, loc, name, critical);

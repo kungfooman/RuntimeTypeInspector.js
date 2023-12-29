@@ -15,16 +15,22 @@ export function assertType(value, expect, loc, name, critical = true) {
     warn("assertType> 'expect' always should be set");
     return false;
   }
-  const ret = validateType(value, expect, loc, name, critical);
+  /** @type {any[]} */
+  const warnings = [];
+  /** @type {console["warn"]} */
+  const innerWarn = (...args) => {
+    warnings.push(...args);
+  };
+  const ret = validateType(value, expect, loc, name, critical, innerWarn);
   if (!ret && critical) {
     options.count++;
-    let expectStr = ', expected: ' + JSON.stringify(expect);
-    if (expectStr.length >= 40) {
-      expectStr = ', expected: ';
-    }
-    expectStr = '';
-    const msg = `${loc}> type of '${name}' is invalid${expectStr}`;
-    warn(msg, {expect, value});
+    // let expectStr = ', expected: ' + JSON.stringify(expect);
+    // if (expectStr.length < 40) {
+    //   //expectStr = ', expected: ';
+    //   expectStr = '';
+    // }
+    const msg = `${loc}> The '${name}' property has an invalid type. ${warnings.join(' ')}`;
+    warn(msg, {expect, value, valueToString: value?.toString()});
     const warnObj = options.warned[msg];
     if (!warnObj.tr) {
       const tr = document.createElement('tr');

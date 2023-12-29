@@ -5,6 +5,9 @@ class Vec3 {
     this.y = y;
     this.z = z;
   }
+  toString() {
+    return `[${this.x}, ${this.y}, ${this.z}]`;
+  }
 }
 class Entity {
   /**

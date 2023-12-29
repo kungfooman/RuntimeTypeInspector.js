@@ -21,7 +21,7 @@ function createDiv() {
   div.style.position = "absolute";
   div.style.bottom = "0px";
   div.style.right = "0px";
-  div.style.zIndex = "1";
+  div.style.zIndex = "10";
   niceDiv(div);
   const spanErrors = document.createElement("span");
   const span = document.createElement("span");
