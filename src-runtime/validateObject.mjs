@@ -1,6 +1,6 @@
-import {assertType      } from "./assertType.mjs";
-import {typecheckOptions} from "./typecheckOptions.mjs";
-import {typecheckWarn   } from "./typecheckWarn.mjs";
+import {assertType} from "./assertType.mjs";
+import {options   } from "./options.mjs";
+import {warn      } from "./warn.mjs";
 /**
  * Did you ever heard of Anakandavada, the doctrine of manifoldness of reality?
  * 1) Check: typeof value === 'object'
@@ -35,8 +35,8 @@ function validateObject(value, properties, loc, name, critical) {
           return;
         }
         if (!properties[key]) {
-          if (typecheckOptions.logSuperfluousProperty) {
-            typecheckWarn(`${loc}> superfluous property> ${name}.${key}`, {properties, value});
+          if (options.logSuperfluousProperty) {
+            warn(`${loc}> superfluous property> ${name}.${key}`, {properties, value});
           }
         }
       });

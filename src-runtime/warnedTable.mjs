@@ -17,5 +17,5 @@ function createTable() {
   //table.style.textWrap = 'nowrap';
   return table;
 }
-const typecheckWarnedTable = createTable();
-export {typecheckWarnedTable};
+const warnedTable = createTable();
+export {warnedTable};

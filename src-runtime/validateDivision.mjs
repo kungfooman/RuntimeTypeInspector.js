@@ -1,4 +1,4 @@
-import {typecheckWarn} from "./typecheckWarn.mjs";
+import {warn} from "./warn.mjs";
 /**
  * @param {number} lhs - The left hand side.
  * @param {number} rhs - The right hand side.
@@ -14,17 +14,17 @@ function validateDivision(lhs, rhs) {
   const twoBigInts = typeof lhs === 'bigint' && typeof rhs === 'bigint';
   const valid = twoNumbers || twoBigInts;
   if (!valid) {
-    typecheckWarn(`validateDivision> incompatible type pair`, {lhs, rhs, twoNumbers, twoBigInts});
+    warn(`validateDivision> incompatible type pair`, {lhs, rhs, twoNumbers, twoBigInts});
   }
   // If we got two bigint's, we are done, as isNaN and isFinite is only for "normal" numbers.
   if (twoBigInts) {
     return ret;
   }
   if (isNaN(ret)) {
-    typecheckWarn(`validateDivision> NaN`, {lhs, rhs});
+    warn(`validateDivision> NaN`, {lhs, rhs});
   }
   if (!isFinite(ret)) {
-    typecheckWarn(`validateDivision> +-Infinity`, {lhs, rhs});
+    warn(`validateDivision> +-Infinity`, {lhs, rhs});
   }
   return ret;
 }

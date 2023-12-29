@@ -1,10 +1,10 @@
-import {typecheckOptions} from "./typecheckOptions.mjs";
+import {options} from "./options.mjs";
 /**
  * @param {string} msg - The main message.
  * @param {...any} extra - Extra strings or objects etc.
  */
-function typecheckWarn(msg, ...extra) {
-  const {mode, warned} = typecheckOptions;
+function warn(msg, ...extra) {
+  const {mode, warned} = options;
   warned[msg] = warned[msg] || {hits: 0};
   warned[msg].hits++;
   switch (mode) {
@@ -19,7 +19,7 @@ function typecheckWarn(msg, ...extra) {
     case 'never':
       break;
     default:
-      console.error("typecheckWarn> unsupported mode:", mode);
+      console.error("warn> unsupported mode:", mode);
   }
 }
-export {typecheckWarn};
+export {warn};

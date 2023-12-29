@@ -1,5 +1,5 @@
-import {assertType   } from "./assertType.mjs";
-import {typecheckWarn} from "./typecheckWarn.mjs";
+import {assertType} from "./assertType.mjs";
+import {warn      } from "./warn.mjs";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -11,11 +11,11 @@ import {typecheckWarn} from "./typecheckWarn.mjs";
 function validateRecord(value, expect, loc, name, critical) {
   const {key, val} = expect;
   if (key !== 'string') {
-    typecheckWarn(`${loc}> validateType> record> unhandled key '${key}'`);
+    warn(`${loc}> validateType> record> unhandled key '${key}'`);
     return false;
   }
   if (typeof value !== 'object') {
-    typecheckWarn(`${loc}> validateType> record> expected object, not '${value}'`);
+    warn(`${loc}> validateType> record> expected object, not '${value}'`);
     return false;
   }
   return Object.keys(value).every(

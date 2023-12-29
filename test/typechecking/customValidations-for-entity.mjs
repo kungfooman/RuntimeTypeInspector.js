@@ -1,4 +1,4 @@
-import {customValidations, typecheckWarn} from '@runtime-type-inspector/runtime';
+import {customValidations, warn} from '@runtime-type-inspector/runtime';
 class Vec3 {
   constructor(x = 0, y = 0, z = 0) {
     this.x = x;
@@ -19,7 +19,7 @@ customValidations.length = 0;
 customValidations.push(value => {
   if (value instanceof Vec3) {
     if (isNaN(value.x)) {
-      typecheckWarn("x is NaN");
+      warn("x is NaN");
       return false;
     }
   }

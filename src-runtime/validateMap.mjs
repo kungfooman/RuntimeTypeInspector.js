@@ -1,5 +1,5 @@
-import {assertType   } from "./assertType.mjs";
-import {typecheckWarn} from "./typecheckWarn.mjs";
+import {assertType} from "./assertType.mjs";
+import {warn      } from "./warn.mjs";
 /**
  * @todo Implement checking all possible key/val types
  * @param {*} value - The actual value that we need to validate.
@@ -12,11 +12,11 @@ import {typecheckWarn} from "./typecheckWarn.mjs";
 function validateMap(value, expect, loc, name, critical) {
   const {key, val} = expect;
   if (key !== 'string') {
-    typecheckWarn(`${loc}> validateType> map> unhandled key '${key}'`);
+    warn(`${loc}> validateType> map> unhandled key '${key}'`);
     return false;
   }
   // if (val !== 'any') {
-  //   typecheckWarn(`${loc}> validateType> map> expected any, not '${value}'`);
+  //   warn(`${loc}> validateType> map> expected any, not '${value}'`);
   //   return false;
   // }
   let ret = true;

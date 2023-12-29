@@ -1,5 +1,6 @@
-import {typecheckOptions    } from "./typecheckOptions.mjs";
-import {typecheckWarnedTable} from "./typecheckTable.mjs";
+import {assertMode } from "./assertMode.js";
+import {options    } from "./options.mjs";
+import {warnedTable} from "./warnedTable.mjs";
 /**
  * @param {HTMLDivElement} div - The <div>.
  */
@@ -11,19 +12,6 @@ function niceDiv(div) {
   div.style.lineHeight = "25px";
   div.style.backgroundColor = "#F3F3F3";
   div.style.borderRadius = "4px";
-}
-/**
- * @returns {asserts mode is typeof typecheckOptions.mode} asd
- * @param {string} mode - The mode to test.
- */
-function assertMode(mode) {
-  switch (mode) {
-    case 'spam':
-    case 'once':
-    case 'never':
-      return;
-  }
-  throw new TypeError("wrong mode - either spam, once or never.");
 }
 /**
  * @returns {HTMLDivElement} The <div> at bottom/right position.
@@ -47,7 +35,7 @@ function createDiv() {
   option_never.text = 'never';
   select.append(option_spam, option_once, option_never);
   const spamTypeReports = localStorage.getItem('rti-spam-type-reports');
-  select.value = typecheckOptions.mode;
+  select.value = options.mode;
   if (spamTypeReports !== null) {
     select.value = spamTypeReports;
   }
@@ -55,16 +43,16 @@ function createDiv() {
     const {value} = select;
     localStorage.setItem('rti-spam-type-reports', value);
     assertMode(value);
-    typecheckOptions.mode = value;
+    options.mode = value;
   };
   select.onchange = onchange;
-  onchange(); // set mode in typecheckOptions
+  onchange(); // set mode in options
   const buttonHide = document.createElement("button");
   buttonHide.textContent = 'Hide';
   buttonHide.onclick = () => {
     div.style.display = 'none';
   };
-  div.append(spanErrors, span, select, buttonHide, typecheckWarnedTable);
+  div.append(spanErrors, span, select, buttonHide, warnedTable);
   div.style.maxHeight = '200px';
   div.style.overflow = 'scroll';
   const finalFunc = () => document.body.append(div);
@@ -75,8 +63,9 @@ function createDiv() {
     // add when page is loaded
     document.addEventListener("DOMContentLoaded", finalFunc);
   }
+  /** @todo debounce or get rid of this interval, ugly html changes all the time even if not needed */
   setInterval(() => {
-    spanErrors.innerText = `Type validation errors: ${typecheckOptions.count}`;
+    spanErrors.innerText = `Type validation errors: ${options.count}`;
   }, 100);
   return div;
 }

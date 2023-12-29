@@ -1,5 +1,5 @@
-import {assertType   } from "./assertType.mjs";
-import {typecheckWarn} from "./typecheckWarn.mjs";
+import {assertType} from "./assertType.mjs";
+import {warn      } from "./warn.mjs";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -17,7 +17,7 @@ function validateSet(value, expect, loc, name, critical) {
   value.forEach((x, i) => {
     const test = assertType(x, elementType, loc, name, critical);
     if (!test) {
-      typecheckWarn(`validateSet> invalid set member at ${i}, expected ${elementType}, got ${typeof x}`);
+      warn(`validateSet> invalid set member at ${i}, expected ${elementType}, got ${typeof x}`);
       errors++;
     }
   });

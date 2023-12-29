@@ -2,7 +2,7 @@ import {customTypes      } from "./customTypes.mjs";
 import {customValidations} from "./customValidations.mjs";
 import {classes          } from "./registerClass.mjs";
 import {typedefs         } from "./registerTypedef.mjs";
-import {typecheckWarn    } from "./typecheckWarn.mjs";
+import {warn             } from "./warn.mjs";
 import {validateArray    } from "./validateArray.mjs";
 import {validateMap      } from "./validateMap.mjs";
 import {validateNumber   } from "./validateNumber.mjs";
@@ -50,7 +50,7 @@ function validateType(value, expect, loc, name, critical = true) {
   if (typeof expect === 'number') {
     const ret = value === expect;
     if (!ret && critical) {
-      typecheckWarn('expected literal number', {value, expect, critical});
+      warn('expected literal number', {value, expect, critical});
     }
     return ret;
   }
@@ -80,18 +80,18 @@ function validateType(value, expect, loc, name, critical = true) {
   }
   if (typeof value === 'number') {
     if (isNaN(value)) {
-      typecheckWarn("value is NaN");
+      warn("value is NaN");
       return false;
     }
     if (!isFinite(value)) {
-      typecheckWarn("value is +-infinite");
+      warn("value is +-infinite");
       return false;
     }
   }
   for (const customValidation of customValidations) {
     const ret = customValidation(value, expect, loc, name, critical);
     if (!ret) {
-      typecheckWarn(`${loc}> customValidation failed`);
+      warn(`${loc}> customValidation failed`);
       return false;
     }
   }
@@ -168,7 +168,7 @@ function validateType(value, expect, loc, name, critical = true) {
         return true;
       }
     }
-    typecheckWarn(`${loc}> validateType> class> expected object, not '${value}'`);
+    warn(`${loc}> validateType> class> expected object, not '${value}'`);
     return false;
   }
   if (type === 'ResourceHandler') {
@@ -195,7 +195,7 @@ function validateType(value, expect, loc, name, critical = true) {
   if (classes[type]) {
     return value instanceof classes[type];
   }
-  typecheckWarn("unchecked", {value, type, loc, name});
+  warn("unchecked", {value, type, loc, name});
   return false;
 }
 export {validateType};

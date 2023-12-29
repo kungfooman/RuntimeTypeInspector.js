@@ -3,12 +3,12 @@
  * @example
  * const a = [];
  * a.length = 10;
- * typecheckEvery(a, (e, i) => {console.log(e); return true;}
+ * every(a, (e, i) => {console.log(e); return true;}
  * @param {*[]} arr - The array to test.
  * @param {Function} fn - The callback function to test each element with.
  * @returns {boolean} True if every callback call is true aswell.
  */
-function typecheckEvery(arr, fn) {
+function every(arr, fn) {
   const n = arr.length;
   for (let i = 0; i < n; i++) {
     const ret = fn(arr[i], i, arr);
@@ -18,4 +18,4 @@ function typecheckEvery(arr, fn) {
   }
   return true;
 }
-export {typecheckEvery};
+export {every};

@@ -1,5 +1,5 @@
-import {assertType    } from "./assertType.mjs";
-import {typecheckEvery} from "./typecheckEvery.mjs";
+import {assertType} from "./assertType.mjs";
+import {every     } from "./every.mjs";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -12,7 +12,7 @@ function validateArray(value, expect, loc, name, critical) {
   if (value && value instanceof Array) {
     const {elementType} = expect;
     // some that not validate -> type error
-    return typecheckEvery(value, (_, i) => assertType(
+    return every(value, (_, i) => assertType(
       _,
       elementType,
       loc,
