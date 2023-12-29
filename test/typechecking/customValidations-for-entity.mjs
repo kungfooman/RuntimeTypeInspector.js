@@ -1,4 +1,4 @@
-import {customValidations, warn} from '@runtime-type-inspector/runtime';
+import {customValidations} from '@runtime-type-inspector/runtime';
 class Vec3 {
   constructor(x = 0, y = 0, z = 0) {
     this.x = x;
@@ -16,7 +16,7 @@ class Entity {
 }
 console.log("customValidations", customValidations);
 customValidations.length = 0;
-customValidations.push(value => {
+customValidations.push((value, expect, loc, name, critical, warn) => {
   if (value instanceof Vec3) {
     if (isNaN(value.x)) {
       warn("x is NaN");

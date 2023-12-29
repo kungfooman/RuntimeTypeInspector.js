@@ -89,9 +89,15 @@ function validateType(value, expect, loc, name, critical = true) {
     }
   }
   for (const customValidation of customValidations) {
-    const ret = customValidation(value, expect, loc, name, critical);
+    /** @type {any[]} */
+    const warnings = [];
+    /** @type {typeof warn} */
+    const pushWarning = (...args) => {
+      warnings.push(...args);
+    };
+    const ret = customValidation(value, expect, loc, name, critical, pushWarning);
     if (!ret) {
-      warn(`${loc}> customValidation failed`);
+      warn(`${loc}> customValidation failed:`, ...warnings);
       return false;
     }
   }
