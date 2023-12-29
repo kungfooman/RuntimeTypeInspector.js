@@ -29,8 +29,9 @@ export function assertType(value, expect, loc, name, critical = true) {
     //   //expectStr = ', expected: ';
     //   expectStr = '';
     // }
-    const msg = `${loc}> The '${name}' property has an invalid type. ${warnings.join(' ')}`;
-    warn(msg, {expect, value, valueToString: value?.toString()});
+    const extraInfo = warnings.filter(_ => typeof _ !== 'string');
+    const msg = `${loc}> The '${name}' argument has an invalid type. ${warnings.filter(_ => typeof _ === 'string').join(' ')}`;
+    warn(msg, {expect, value, valueToString: value?.toString()}, ...extraInfo);
     const warnObj = options.warned[msg];
     if (!warnObj.tr) {
       const tr = document.createElement('tr');

@@ -105,7 +105,7 @@ function validateType(value, expect, loc, name, critical = true, warn) {
     return validateObject(value, properties, loc, name, critical);
   }
   if (type === 'record') {
-    return validateRecord(value, expect, loc, name, critical);
+    return validateRecord(value, expect, loc, name, critical, warn);
   }
   if (type === 'map') {
     return validateMap(value, expect, loc, name, critical);
