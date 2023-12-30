@@ -1,31 +1,36 @@
-import {assertType   } from "./assertType.mjs";
-import {typecheckWarn} from "./typecheckWarn.mjs";
+import {validateType} from "./validateType.mjs";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
  * @param {string} loc - String like `BoundingBox#compute`
  * @param {string} name - Name of the argument
  * @param {boolean} critical - Only `false` for unions.
+ * @param {console["warn"]} warn - Function to warn with.
  * @returns {boolean} Boolean indicating if a type is correct.
  */
-function validateRecord(value, expect, loc, name, critical) {
+function validateRecord(value, expect, loc, name, critical, warn) {
   const {key, val} = expect;
   if (key !== 'string') {
-    typecheckWarn(`${loc}> validateType> record> unhandled key '${key}'`);
+    warn(`> validateType> record> unhandled key '${key}'`);
     return false;
   }
   if (typeof value !== 'object') {
-    typecheckWarn(`${loc}> validateType> record> expected object, not '${value}'`);
+    warn(`> validateType> record> expected object, not '${value}'`);
     return false;
   }
-  return Object.keys(value).every(
-    key => assertType(
-      value[key],
-      val,
-      loc,
-      `${name}['${key}']`,
-      critical
-    )
-  );
+  for (const key of Object.keys(value)) {
+    const valueKey = value[key];
+    const nameKey = `${name}['${key}']`;
+    const ret = validateType(valueKey, val, loc, nameKey, critical, warn);
+    if (!ret) {
+      const info = {
+        expect: val,
+        value: valueKey
+      };
+      warn(`> validateType> record> The ${nameKey} property has an invalid type.`, info);
+      return false;
+    }
+  }
+  return true;
 }
 export {validateRecord};

@@ -6,9 +6,10 @@ import {validateType} from "./validateType.mjs";
  * @param {string} loc - String like `BoundingBox#compute`
  * @param {string} name - Name of the argument
  * @param {boolean} critical - Only `false` for unions.
+ * @param {console["warn"]} warn - Function to warn with.
  * @returns {boolean} Boolean indicating if a type is correct.
  */
-function validateTypedef(value, expect, loc, name, critical) {
+function validateTypedef(value, expect, loc, name, critical, warn) {
   if (expect.optional && value === undefined) {
     return true;
   }
@@ -17,6 +18,6 @@ function validateTypedef(value, expect, loc, name, critical) {
   if (typeof typedef === 'string') {
     return false;
   }
-  return validateType(value, typedef, loc, name, critical);
+  return validateType(value, typedef, loc, name, critical, warn);
 }
 export {validateTypedef};

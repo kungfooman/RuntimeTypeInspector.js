@@ -1,9 +1,12 @@
-import {customValidations, typecheckWarn} from '@runtime-type-inspector/runtime';
+import {customValidations} from '@runtime-type-inspector/runtime';
 class Vec3 {
   constructor(x = 0, y = 0, z = 0) {
     this.x = x;
     this.y = y;
     this.z = z;
+  }
+  toString() {
+    return `[${this.x}, ${this.y}, ${this.z}]`;
   }
 }
 class Entity {
@@ -16,10 +19,10 @@ class Entity {
 }
 console.log("customValidations", customValidations);
 customValidations.length = 0;
-customValidations.push(value => {
+customValidations.push((value, expect, loc, name, critical, warn) => {
   if (value instanceof Vec3) {
     if (isNaN(value.x)) {
-      typecheckWarn("x is NaN");
+      warn("x is NaN");
       return false;
     }
   }

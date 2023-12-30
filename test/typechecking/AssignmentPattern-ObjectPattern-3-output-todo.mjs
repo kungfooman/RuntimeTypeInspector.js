@@ -9,7 +9,7 @@ export class TokenClassificationPipeline extends Pipeline {
   async _call(texts, {
     ignore_labels = ['O'], // TODO init param?
   } = {}) {
-    if (!assertType(texts, "any", 'TokenClassificationPipeline#_call', 'texts')) {
+    if (!inspectType(texts, "any", 'TokenClassificationPipeline#_call', 'texts')) {
       youCanAddABreakpointHere();
     }
     return isBatched ? toReturn : toReturn[0];

@@ -1,6 +1,5 @@
-import {assertType      } from "./assertType.mjs";
-import {typecheckOptions} from "./typecheckOptions.mjs";
-import {typecheckWarn   } from "./typecheckWarn.mjs";
+import {validateType} from "./validateType.mjs";
+import {options     } from "./options.mjs";
 /**
  * Did you ever heard of Anakandavada, the doctrine of manifoldness of reality?
  * 1) Check: typeof value === 'object'
@@ -22,10 +21,12 @@ function isObject(value) {
  * @param {string} loc - String like `BoundingBox#compute`
  * @param {string} name - Name of the argument
  * @param {boolean} critical - Only `false` for unions.
+ * @param {console["warn"]} warn - Function to warn with.
  * @returns {boolean} Boolean indicating if a type is correct.
  */
-function validateObject(value, properties, loc, name, critical) {
+function validateObject(value, properties, loc, name, critical, warn) {
   if (!isObject(value)) {
+    warn('Given value is not an object.');
     return false;
   }
   if (properties && Object.keys(properties).length) {
@@ -35,23 +36,23 @@ function validateObject(value, properties, loc, name, critical) {
           return;
         }
         if (!properties[key]) {
-          if (typecheckOptions.logSuperfluousProperty) {
-            typecheckWarn(`${loc}> superfluous property> ${name}.${key}`, {properties, value});
+          if (options.logSuperfluousProperty) {
+            warn(`Superfluous property: ${name}.${key}`, {properties, value});
           }
         }
       });
     }
-    return Object.keys(properties).every((key) => {
+    for (const key of Object.keys(properties)) {
       const innerValue = value[key];
       const innerType = properties[key];
-      return assertType(
-        innerValue,
-        innerType,
-        loc,
-        `${name}.${key}`,
-        critical
-      );
-    });
+      const nameKey = `${name}.${key}`;
+      const ret = validateType(innerValue, innerType, loc, nameKey, critical, warn);
+      if (!ret) {
+        const info = {expect: innerType, value: innerValue};
+        warn(`Element ${nameKey} has wrong type.`, info);
+        return false;
+      }
+    }
   }
   return true;
 }

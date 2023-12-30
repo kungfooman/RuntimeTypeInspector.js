@@ -121,7 +121,7 @@ class Asserter extends Stringifier {
     if (!this.addHeader) {
       return '';
     }
-    let header = "import {assertType, youCanAddABreakpointHere";
+    let header = "import {inspectType, youCanAddABreakpointHere";
     if (this.validateDivision) {
       header += ", validateDivision";
     }
@@ -436,7 +436,7 @@ class Asserter extends Stringifier {
                   continue;
                 }
                 const t = JSON.stringify(type.elementType, null, 2).replaceAll('\n', '\n' + spaces);
-                out += `${spaces}if (!assertType(${element.name}, ${t}, '${loc}', '${name}')) {\n`;
+                out += `${spaces}if (!inspectType(${element.name}, ${t}, '${loc}', '${name}')) {\n`;
                 out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
               }
               continue;
@@ -462,7 +462,7 @@ class Asserter extends Stringifier {
                   continue;
                 }
                 const t = JSON.stringify(subType, null, 2).replaceAll('\n', '\n' + spaces);
-                out += `${spaces}if (!assertType(${keyName}, ${t}, '${loc}', '${name}')) {\n`;
+                out += `${spaces}if (!inspectType(${keyName}, ${t}, '${loc}', '${name}')) {\n`;
                 out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
               }
               continue;
@@ -500,7 +500,7 @@ class Asserter extends Stringifier {
         out += '\n';
         first = false;
       }
-      out += `${spaces}if (${prevCheck}!assertType(${name}, ${t}, '${loc}', '${name}')) {\n`;
+      out += `${spaces}if (${prevCheck}!inspectType(${name}, ${t}, '${loc}', '${name}')) {\n`;
       out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
     }
     return out;

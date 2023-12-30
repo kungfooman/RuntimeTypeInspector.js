@@ -1,7 +1,8 @@
-import {typecheckOptions    } from "./typecheckOptions.mjs";
-import {typecheckWarnedTable} from "./typecheckTable.mjs";
-import {typecheckWarn       } from "./typecheckWarn.mjs";
-import {validateType        } from "./validateType.mjs";
+import {options     } from './options.mjs';
+import {warnedTable } from './warnedTable.mjs';
+import {warn        } from './warn.mjs';
+import {validateType} from './validateType.mjs';
+import {partition   } from './partition.js';
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -10,22 +11,30 @@ import {validateType        } from "./validateType.mjs";
  * @param {boolean} critical - Only `false` for unions.
  * @returns {boolean} Boolean indicating if a type is correct.
  */
-export function assertType(value, expect, loc, name, critical = true) {
+function inspectType(value, expect, loc, name, critical = true) {
   if (!expect) {
-    typecheckWarn("assertType> 'expect' always should be set");
+    warn("inspectType> 'expect' always should be set");
     return false;
   }
-  const ret = validateType(value, expect, loc, name, critical);
+  /** @type {any[]} */
+  const warnings = [];
+  /** @type {console["warn"]} */
+  const innerWarn = (...args) => {
+    warnings.push(...args);
+  };
+  const ret = validateType(value, expect, loc, name, critical, innerWarn);
   if (!ret && critical) {
-    typecheckOptions.count++;
-    let expectStr = ', expected: ' + JSON.stringify(expect);
-    if (expectStr.length >= 40) {
-      expectStr = ', expected: ';
-    }
-    expectStr = '';
-    const msg = `${loc}> type of '${name}' is invalid${expectStr}`;
-    typecheckWarn(msg, {expect, value});
-    const warnObj = typecheckOptions.warned[msg];
+    options.count++;
+    // let expectStr = ', expected: ' + JSON.stringify(expect);
+    // if (expectStr.length < 40) {
+    //   //expectStr = ', expected: ';
+    //   expectStr = '';
+    // }
+    const [strings, extras] = partition(warnings, _ => typeof _ === 'string');
+    const msg = `${loc}> The '${name}' argument has an invalid type. ${strings.join(' ')}`;
+    warn(msg, {expect, value, valueToString: value?.toString()}, ...extras);
+    // Nytaralyxe: options.warns where each warn callback supports one system (node, div/dom etc.)
+    const warnObj = options.warned[msg];
     if (!warnObj.tr) {
       const tr = document.createElement('tr');
       const dbg = document.createElement('td');
@@ -39,7 +48,7 @@ export function assertType(value, expect, loc, name, critical = true) {
       desc.innerText = msg;
       tr.append(dbg, count, desc);
       dbg.append(dbgInput);
-      typecheckWarnedTable.append(tr);
+      warnedTable.append(tr);
       warnObj.tr = tr;
     }
     const {tr, dbg} = warnObj;
@@ -52,3 +61,4 @@ export function assertType(value, expect, loc, name, critical = true) {
   }
   return ret;
 }
+export {inspectType};

@@ -1,5 +1,4 @@
-import {assertType   } from "./assertType.mjs";
-import {typecheckWarn} from "./typecheckWarn.mjs";
+import {validateType} from "./validateType.mjs";
 /**
  * @todo Implement checking all possible key/val types
  * @param {*} value - The actual value that we need to validate.
@@ -7,31 +6,32 @@ import {typecheckWarn} from "./typecheckWarn.mjs";
  * @param {string} loc - String like `BoundingBox#compute`
  * @param {string} name - Name of the argument
  * @param {boolean} critical - Only `false` for unions.
+ * @param {console["warn"]} warn - Function to warn with.
  * @returns {boolean} Boolean indicating if a type is correct.
  */
-function validateMap(value, expect, loc, name, critical) {
+function validateMap(value, expect, loc, name, critical, warn) {
   const {key, val} = expect;
   if (key !== 'string') {
-    typecheckWarn(`${loc}> validateType> map> unhandled key '${key}'`);
+    warn(`validateMap> unhandled key '${key}'.`);
+    return false;
+  }
+  if (!(value instanceof Map)) {
+    warn(`validateMap> value isn't an instance of Map.`);
     return false;
   }
   // if (val !== 'any') {
-  //   typecheckWarn(`${loc}> validateType> map> expected any, not '${value}'`);
+  //   warn(`${loc}> validateType> map> expected any, not '${value}'`);
   //   return false;
   // }
-  let ret = true;
   for (const [k, v] of value) {
-    const good = assertType(
-      v,
-      val,
-      loc,
-      `${name}.get('${key}')`,
-      critical
-    );
+    const nameKey = `${name}.get('${k}')`;
+    const good = validateType(v, val, loc, nameKey, critical, warn);
     if (!good) {
-      ret = false;
+      const info = {expect: val, value: v};
+      warn(`Element ${nameKey} has wrong type.`, info);
+      return false;
     }
   }
-  return ret;
+  return true;
 }
 export {validateMap};

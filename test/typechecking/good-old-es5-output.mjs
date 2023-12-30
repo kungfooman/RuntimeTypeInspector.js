@@ -6,7 +6,7 @@
  * @property {string} name The scope name.
  */
 var ScopeSpace = function (name) {
-  if (!assertType(name, "string", 'unnamed function expression', 'name')) {
+  if (!inspectType(name, "string", 'unnamed function expression', 'name')) {
     youCanAddABreakpointHere();
   }
   // Store the name
@@ -24,7 +24,7 @@ Object.assign(ScopeSpace.prototype, {
    * @returns {pc.ScopeId} The variable instance.
    */
   resolve: function (name) {
-    if (!assertType(name, "string", 'resolve', 'name')) {
+    if (!inspectType(name, "string", 'resolve', 'name')) {
       youCanAddABreakpointHere();
     }
     // Check if the ScopeId already exists

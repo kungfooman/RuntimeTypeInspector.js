@@ -3,7 +3,7 @@
  * @returns {number} Squared input.
  */
 function square123(a) {
-  if (!assertType(a, {
+  if (!inspectType(a, {
     "type": "union",
     "members": [
       1,

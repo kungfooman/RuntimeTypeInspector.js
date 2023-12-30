@@ -5,10 +5,10 @@ class ShaderProcessor {
    * @returns {object} - The uniform data.
    */
   static processUniforms(device, uniforms) {
-    if (!assertType(device, "GraphicsDevice", 'ShaderProcessor#processUniforms', 'device')) {
+    if (!inspectType(device, "GraphicsDevice", 'ShaderProcessor#processUniforms', 'device')) {
       youCanAddABreakpointHere();
     }
-    if (!assertType(uniforms, {
+    if (!inspectType(uniforms, {
       "type": "array",
       "elementType": "UniformLine",
       "optional": false

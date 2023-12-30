@@ -5,10 +5,10 @@ let add;
  * @returns {number} - Sum of both numbers.
  */
 add = function (a, b) {
-  if (!assertType(a, "number", 'add', 'a')) {
+  if (!inspectType(a, "number", 'add', 'a')) {
     youCanAddABreakpointHere();
   }
-  if (!assertType(b, "number", 'add', 'b')) {
+  if (!inspectType(b, "number", 'add', 'b')) {
     youCanAddABreakpointHere();
   }
   return a + b;
@@ -20,10 +20,10 @@ add =
    * @returns {number} - Sum of both numbers.
    */
   function (a, b) {
-    if (!assertType(a, "number", 'add', 'a')) {
+    if (!inspectType(a, "number", 'add', 'a')) {
       youCanAddABreakpointHere();
     }
-    if (!assertType(b, "number", 'add', 'b')) {
+    if (!inspectType(b, "number", 'add', 'b')) {
       youCanAddABreakpointHere();
     }
     return a + b;
@@ -33,7 +33,7 @@ add =
  * @returns {Function} - Function accepted second number.
  */
 function add2(a) {
-  if (!assertType(a, "number", 'add2', 'a')) {
+  if (!inspectType(a, "number", 'add2', 'a')) {
     youCanAddABreakpointHere();
   }
   return (
@@ -42,7 +42,7 @@ function add2(a) {
      * @returns {number} Sum of a and b.
      */
     function (b) {
-      if (!assertType(b, "number", 'unnamed function expression', 'b')) {
+      if (!inspectType(b, "number", 'unnamed function expression', 'b')) {
         youCanAddABreakpointHere();
       }
       return a + b;

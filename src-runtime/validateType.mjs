@@ -2,7 +2,6 @@ import {customTypes      } from "./customTypes.mjs";
 import {customValidations} from "./customValidations.mjs";
 import {classes          } from "./registerClass.mjs";
 import {typedefs         } from "./registerTypedef.mjs";
-import {typecheckWarn    } from "./typecheckWarn.mjs";
 import {validateArray    } from "./validateArray.mjs";
 import {validateMap      } from "./validateMap.mjs";
 import {validateNumber   } from "./validateNumber.mjs";
@@ -35,9 +34,10 @@ export function enableTypeChecking() {
  * @param {string} loc - String like `BoundingBox#compute`
  * @param {string} name - Name of the argument.
  * @param {boolean} critical - Only false for unions.
+ * @param {console["warn"]} warn - Function to warn with.
  * @returns {boolean} Returns wether `value` is in the shape of `expect`.
  */
-function validateType(value, expect, loc, name, critical = true) {
+function validateType(value, expect, loc, name, critical = true, warn) {
   if (!enabled) {
     return true;
   }
@@ -50,7 +50,7 @@ function validateType(value, expect, loc, name, critical = true) {
   if (typeof expect === 'number') {
     const ret = value === expect;
     if (!ret && critical) {
-      typecheckWarn('expected literal number', {value, expect, critical});
+      warn('Expected literal number.', {value, expect, critical});
     }
     return ret;
   }
@@ -80,46 +80,52 @@ function validateType(value, expect, loc, name, critical = true) {
   }
   if (typeof value === 'number') {
     if (isNaN(value)) {
-      typecheckWarn("value is NaN");
+      warn("value is NaN");
       return false;
     }
     if (!isFinite(value)) {
-      typecheckWarn("value is +-infinite");
+      warn("value is +-infinite");
       return false;
     }
   }
   for (const customValidation of customValidations) {
-    const ret = customValidation(value, expect, loc, name, critical);
+    /** @type {any[]} */
+    const warnings = [];
+    /** @type {typeof warn} */
+    const pushWarning = (...args) => {
+      warnings.push(...args);
+    };
+    const ret = customValidation(value, expect, loc, name, critical, pushWarning);
     if (!ret) {
-      typecheckWarn(`${loc}> customValidation failed`);
+      warn(`Custom validation failed due to:`, ...warnings);
       return false;
     }
   }
   if (type === "object") {
-    return validateObject(value, properties, loc, name, critical);
+    return validateObject(value, properties, loc, name, critical, warn);
   }
   if (type === 'record') {
-    return validateRecord(value, expect, loc, name, critical);
+    return validateRecord(value, expect, loc, name, critical, warn);
   }
   if (type === 'map') {
-    return validateMap(value, expect, loc, name, critical);
+    return validateMap(value, expect, loc, name, critical, warn);
   }
   if (type === 'array') {
-    return validateArray(value, expect, loc, name, critical);
+    return validateArray(value, expect, loc, name, critical, warn);
   }
   // If a typedef is also a class, it's just a shorthand-typedef-class
   if (typedefs[type] && !classes[type]) {
-    return validateTypedef(value, expect, loc, name, critical);
+    return validateTypedef(value, expect, loc, name, critical, warn);
   }
   if (type === 'union') {
-    return validateUnion(value, expect, loc, name, critical);
+    return validateUnion(value, expect, loc, name, critical, warn);
   }
   if (type === 'set') {
-    return validateSet(value, expect, loc, name, critical);
+    return validateSet(value, expect, loc, name, critical, warn);
   }
   // Trigger: pc.app.scene.setSkybox([1, 2, 3]);
   if (type === 'tuple') {
-    return validateTuple(value, expect, loc, name, critical);
+    return validateTuple(value, expect, loc, name, critical, warn);
   }
   if (type === '*' || type === 'any') {
     return true;
@@ -168,7 +174,7 @@ function validateType(value, expect, loc, name, critical = true) {
         return true;
       }
     }
-    typecheckWarn(`${loc}> validateType> class> expected object, not '${value}'`);
+    warn(`${loc}> validateType> class> expected object, not '${value}'`);
     return false;
   }
   if (type === 'ResourceHandler') {
@@ -195,14 +201,7 @@ function validateType(value, expect, loc, name, critical = true) {
   if (classes[type]) {
     return value instanceof classes[type];
   }
-        //} /*else if (typeof theClass === 'number' || typeof theClass === 'string') {
-        // todo register these too individually?
-      //  return value === theClass;
-      //}*/
-    //  typecheckWarn('unhandled pc member', {value, type, expect, theClass});
-    //  return false;
-    //}
-  typecheckWarn("unchecked", {value, type, loc, name});
+  warn("unchecked", {value, type, loc, name});
   return false;
 }
 export {validateType};
