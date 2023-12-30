@@ -33,9 +33,7 @@ function inspectType(value, expect, loc, name, critical = true) {
     const [strings, extras] = partition(warnings, _ => typeof _ === 'string');
     const msg = `${loc}> The '${name}' argument has an invalid type. ${strings.join(' ')}`;
     warn(msg, {expect, value, valueToString: value?.toString()}, ...extras);
-/*
-nytaralyxe: options.warns where each warn callback supports one system (node, div/dom etc.)
-*/
+    // Nytaralyxe: options.warns where each warn callback supports one system (node, div/dom etc.)
     const warnObj = options.warned[msg];
     if (!warnObj.tr) {
       const tr = document.createElement('tr');
