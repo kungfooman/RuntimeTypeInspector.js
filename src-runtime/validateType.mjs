@@ -41,27 +41,13 @@ function validateType(value, expect, loc, name, critical = true, warn) {
   if (!enabled) {
     return true;
   }
-  if (typeof expect === 'string') {
+  if (!(expect instanceof Object)) {
     expect = {
       type: expect,
       optional: false
     };
   }
-  if (typeof expect === 'number') {
-    const ret = value === expect;
-    if (!ret && critical) {
-      warn('Expected literal number.', {value, expect, critical});
-    }
-    return ret;
-  }
-  let {type} = expect;
-  const {optional, properties} = expect;
-  if (!type) {
-    console.error('validateType> missing type');
-    return false;
-  }
-  // todo: keep everything const, should be trimmed anyway already (add unit tests)
-  type = type.trim();
+  const {type, optional, properties} = expect;
   if (optional) {
     if (value === undefined) {
       return true;
@@ -74,6 +60,14 @@ function validateType(value, expect, loc, name, critical = true, warn) {
   const customCheck = customTypes[type];
   if (customCheck) {
     return customCheck(value);
+  }
+  if (typeof type === 'number' || typeof type === 'boolean') {
+    const ret = value === type;
+    if (!ret) {
+      const what = typeof type;
+      warn(`Expected literal ${what}.`, {value, expect});
+    }
+    return ret;
   }
   if (type === "undefined") {
     return value === undefined;

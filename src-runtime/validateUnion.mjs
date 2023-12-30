@@ -18,7 +18,7 @@ function validateUnion(value, expect, loc, name, critical, warn) {
     () => undefined
   ));
   if (!ret) {
-    warn(`> validateUnion> Given value doesn't satisfy any union member.`);
+    warn(`Given value doesn't satisfy any union member.`);
     return false;
   }
   return true;

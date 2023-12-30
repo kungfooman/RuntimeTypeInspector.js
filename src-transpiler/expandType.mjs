@@ -60,7 +60,7 @@ function parseType(str) {
  * or an object representing the type.
  *
  * @param {TypeScriptType} node - The TypeScript AST node to convert.
- * @returns {string | number | {type: string, [key: string]: any} | undefined} The source string/number,
+ * @returns {string | number | boolean | {type: string, [key: string]: any} | undefined} The source string/number,
  * or an object with type information based on the node, or `undefined` if the node kind is not handled.
  */
 function toSourceTS(node) {
@@ -208,12 +208,14 @@ function toSourceTS(node) {
     case StringLiteral:
     case ThisType:
     case UndefinedKeyword:
-    case TrueKeyword:
-    case FalseKeyword:
     case VoidKeyword:
     case UnknownKeyword:
     case NeverKeyword:
       return node.getText();
+    case TrueKeyword:
+      return true;
+    case FalseKeyword:
+      return false;
     case NumericLiteral:
       return Number(node.getText());
     case ObjectKeyword:
