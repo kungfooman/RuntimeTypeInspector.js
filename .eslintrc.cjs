@@ -238,7 +238,7 @@ module.exports = {
 
     // Layout & Formatting
     "array-bracket-newline": ["error", "consistent"],
-    "array-bracket-spacing": ["error", "never"],
+    //"array-bracket-spacing": ["error", "never"],
     "array-element-newline": "off",
     "arrow-parens": /*[
       "error", "as-needed", {
