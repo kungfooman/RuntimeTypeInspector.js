@@ -1,8 +1,8 @@
-import {options     } from "./options.mjs";
-import {warnedTable } from "./warnedTable.mjs";
-import {warn        } from "./warn.mjs";
-import {validateType} from "./validateType.mjs";
-import {partition} from "./partition.js";
+import {options     } from './options.mjs';
+import {warnedTable } from './warnedTable.mjs';
+import {warn        } from './warn.mjs';
+import {validateType} from './validateType.mjs';
+import {partition   } from './partition.js';
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -11,9 +11,9 @@ import {partition} from "./partition.js";
  * @param {boolean} critical - Only `false` for unions.
  * @returns {boolean} Boolean indicating if a type is correct.
  */
-export function assertType(value, expect, loc, name, critical = true) {
+function inspectType(value, expect, loc, name, critical = true) {
   if (!expect) {
-    warn("assertType> 'expect' always should be set");
+    warn("inspectType> 'expect' always should be set");
     return false;
   }
   /** @type {any[]} */
@@ -33,6 +33,9 @@ export function assertType(value, expect, loc, name, critical = true) {
     const [strings, extras] = partition(warnings, _ => typeof _ === 'string');
     const msg = `${loc}> The '${name}' argument has an invalid type. ${strings.join(' ')}`;
     warn(msg, {expect, value, valueToString: value?.toString()}, ...extras);
+/*
+nytaralyxe: options.warns where each warn callback supports one system (node, div/dom etc.)
+*/
     const warnObj = options.warned[msg];
     if (!warnObj.tr) {
       const tr = document.createElement('tr');
@@ -60,3 +63,4 @@ export function assertType(value, expect, loc, name, critical = true) {
   }
   return ret;
 }
+export {inspectType};

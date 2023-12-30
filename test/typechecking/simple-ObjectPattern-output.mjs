@@ -10,10 +10,10 @@ function fetchSomething(url, {
   json = true,
   headers = null
 }) {
-  if (!assertType(url, "string", 'fetchSomething', 'url')) {
+  if (!inspectType(url, "string", 'fetchSomething', 'url')) {
     youCanAddABreakpointHere();
   }
-  if (!assertType(arguments[1], {
+  if (!inspectType(arguments[1], {
     "type": "object",
     "optional": false,
     "properties": {

@@ -1,4 +1,4 @@
-import {assertType} from "./assertType.mjs";
+import {inspectType} from "./assertType.mjs";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -16,7 +16,7 @@ function validateTuple(value, expect, loc, name, critical) {
   }
   const {elements} = expect;
   return elements.every((element, i) => {
-    return assertType(
+    return inspectType(
       value[i],
       element,
       loc,

@@ -6,13 +6,13 @@ class XrManager {
    * @private
    */
   _onSessionStart(session, spaceType, callback) {
-    if (!assertType(session, "XRSession", 'XrManager#_onSessionStart', 'session')) {
+    if (!inspectType(session, "XRSession", 'XrManager#_onSessionStart', 'session')) {
       youCanAddABreakpointHere();
     }
-    if (!assertType(spaceType, "string", 'XrManager#_onSessionStart', 'spaceType')) {
+    if (!inspectType(spaceType, "string", 'XrManager#_onSessionStart', 'spaceType')) {
       youCanAddABreakpointHere();
     }
-    if (!assertType(callback, "Function", 'XrManager#_onSessionStart', 'callback')) {
+    if (!inspectType(callback, "Function", 'XrManager#_onSessionStart', 'callback')) {
       youCanAddABreakpointHere();
     }
     let failed = false;
