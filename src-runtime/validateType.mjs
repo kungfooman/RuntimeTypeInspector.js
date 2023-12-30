@@ -50,7 +50,7 @@ function validateType(value, expect, loc, name, critical = true, warn) {
   if (typeof expect === 'number') {
     const ret = value === expect;
     if (!ret && critical) {
-      warn('expected literal number', {value, expect, critical});
+      warn('Expected literal number.', {value, expect, critical});
     }
     return ret;
   }
