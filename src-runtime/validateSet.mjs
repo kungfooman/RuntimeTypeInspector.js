@@ -1,26 +1,29 @@
-import {assertType} from "./assertType.mjs";
-import {warn      } from "./warn.mjs";
+import {validateType} from "./validateType.mjs";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
  * @param {string} loc - String like `BoundingBox#compute`
  * @param {string} name - Name of the argument
  * @param {boolean} critical - Only `false` for unions.
+ * @param {console["warn"]} warn - Function to warn with.
  * @returns {boolean} Boolean indicating if a type is correct.
  */
-function validateSet(value, expect, loc, name, critical) {
+function validateSet(value, expect, loc, name, critical, warn) {
   if (!(value instanceof Set)) {
+    warn('Given value is not a set.');
     return false;
   }
-  let errors = 0;
   const {elementType} = expect;
-  value.forEach((x, i) => {
-    const test = assertType(x, elementType, loc, name, critical);
+  let i = 0;
+  for (const innerValue of value) {
+    const test = validateType(innerValue, elementType, loc, name, critical, warn);
     if (!test) {
-      warn(`validateSet> invalid set member at ${i}, expected ${elementType}, got ${typeof x}`);
-      errors++;
+      const info = {expect: elementType, got: innerValue};
+      warn(`validateSet> invalid set member at [...${name}.values()][${i}]`, info);
+      return false;
     }
-  });
-  return errors === 0;
+    i++;
+  }
+  return true;
 }
 export {validateSet};
