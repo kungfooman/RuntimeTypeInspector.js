@@ -2,6 +2,7 @@ import {options     } from "./options.mjs";
 import {warnedTable } from "./warnedTable.mjs";
 import {warn        } from "./warn.mjs";
 import {validateType} from "./validateType.mjs";
+import {partition} from "./partition.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -29,9 +30,9 @@ export function assertType(value, expect, loc, name, critical = true) {
     //   //expectStr = ', expected: ';
     //   expectStr = '';
     // }
-    const extraInfo = warnings.filter(_ => typeof _ !== 'string');
-    const msg = `${loc}> The '${name}' argument has an invalid type. ${warnings.filter(_ => typeof _ === 'string').join(' ')}`;
-    warn(msg, {expect, value, valueToString: value?.toString()}, ...extraInfo);
+    const [strings, extras] = partition(warnings, _ => typeof _ === 'string');
+    const msg = `${loc}> The '${name}' argument has an invalid type. ${strings.join(' ')}`;
+    warn(msg, {expect, value, valueToString: value?.toString()}, ...extras);
     const warnObj = options.warned[msg];
     if (!warnObj.tr) {
       const tr = document.createElement('tr');

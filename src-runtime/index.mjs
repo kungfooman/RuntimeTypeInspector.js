@@ -6,6 +6,7 @@ export * from './customValidations.mjs';
 export * from './div.mjs';
 export * from './makeJSDoc.mjs';
 export * from './options.mjs';
+export * from './partition.js';
 export * from './registerClass.mjs';
 export * from './registerTypedef.mjs';
 export * from './validateArray.mjs';
