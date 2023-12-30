@@ -102,30 +102,30 @@ function validateType(value, expect, loc, name, critical = true, warn) {
     }
   }
   if (type === "object") {
-    return validateObject(value, properties, loc, name, critical);
+    return validateObject(value, properties, loc, name, critical, warn);
   }
   if (type === 'record') {
     return validateRecord(value, expect, loc, name, critical, warn);
   }
   if (type === 'map') {
-    return validateMap(value, expect, loc, name, critical);
+    return validateMap(value, expect, loc, name, critical, warn);
   }
   if (type === 'array') {
-    return validateArray(value, expect, loc, name, critical);
+    return validateArray(value, expect, loc, name, critical, warn);
   }
   // If a typedef is also a class, it's just a shorthand-typedef-class
   if (typedefs[type] && !classes[type]) {
     return validateTypedef(value, expect, loc, name, critical, warn);
   }
   if (type === 'union') {
-    return validateUnion(value, expect, loc, name, critical);
+    return validateUnion(value, expect, loc, name, critical, warn);
   }
   if (type === 'set') {
-    return validateSet(value, expect, loc, name, critical);
+    return validateSet(value, expect, loc, name, critical, warn);
   }
   // Trigger: pc.app.scene.setSkybox([1, 2, 3]);
   if (type === 'tuple') {
-    return validateTuple(value, expect, loc, name, critical);
+    return validateTuple(value, expect, loc, name, critical, warn);
   }
   if (type === '*' || type === 'any') {
     return true;
