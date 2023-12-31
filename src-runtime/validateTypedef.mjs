@@ -15,7 +15,7 @@ function validateTypedef(value, expect, loc, name, critical, warn) {
   }
   const typedef = typedefs[expect.type];
   // Prevent circular validation
-  if (typeof typedef === 'string') {
+  if (typeof typedef === 'string' && typedef !== 'Function') {
     return false;
   }
   return validateType(value, typedef, loc, name, critical, warn);
