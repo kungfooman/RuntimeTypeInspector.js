@@ -14,7 +14,7 @@ const imports = {
   "fs": importFile("export default {};"),
   "typescript": importFile("export default ts;"), // UMD import
 };
-if (location.host === 'runtimetypeinspector.org' || location.port === '7000') {
+if (location.host.includes('runtimetypeinspector.org') || location.port === '7000') {
   imports['@runtime-type-inspector/runtime'   ] = './node_modules/@runtime-type-inspector/runtime/index.mjs';
   imports['@runtime-type-inspector/transpiler'] = './node_modules/@runtime-type-inspector/transpiler/index.mjs';
 }

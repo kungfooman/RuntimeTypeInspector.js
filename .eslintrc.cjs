@@ -256,7 +256,7 @@ module.exports = {
       }
     ]*/"off",
     "comma-style": ["error", "last"],
-    "computed-property-spacing": ["error", "never"],
+    // "computed-property-spacing": ["error", "never"],
     "dot-location": ["error", "property"],
     "eol-last": ["error", "always"],
     "func-call-spacing": ["error", "never"],
