@@ -1,14 +1,15 @@
-import {parse                } from '@babel/parser';
-import {parseJSDoc           } from 'runtime-type-inspector/src-transpiler/parseJSDoc.mjs';
-import {addTypeChecks        } from 'runtime-type-inspector/src-transpiler/addTypeChecks.mjs';
-import {expandType           } from 'runtime-type-inspector/src-transpiler/expandType.mjs';
-import {expandTypeBabelTS    } from 'runtime-type-inspector/src-transpiler/expandTypeBabelTS.mjs';
-import {expandTypeDepFree    } from 'runtime-type-inspector/src-transpiler/expandTypeDepFree.mjs';
-import {code2ast2code        } from 'runtime-type-inspector/src-transpiler/code2ast2code.mjs';
-import {ast2jsonForComparison} from 'runtime-type-inspector/src-transpiler/ast2jsonForComparison.mjs';
-import * as ti  from 'runtime-type-inspector/src-transpiler/index.mjs';
-//import * as rti from '@runtime-type-inspector/runtime';
-import * as rti from 'runtime-type-inspector/src-runtime/index.mjs';
+import {parse} from '@babel/parser';
+import {
+  parseJSDoc,
+  addTypeChecks,
+  expandType,
+  expandTypeBabelTS,
+  expandTypeDepFree,
+  code2ast2code,
+  ast2jsonForComparison
+} from '@runtime-type-inspector/transpiler';
+import * as ti  from '@runtime-type-inspector/transpiler';
+import * as rti from '@runtime-type-inspector/runtime';
 const hashvars = new Map(location.hash.slice(1).split('&').map(_ => _.split('=')));
 if (!hashvars.get('action')) {
   hashvars.set('action', 'typechecking');

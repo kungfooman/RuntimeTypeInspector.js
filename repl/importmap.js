@@ -5,38 +5,19 @@
 function importFile(content) {
   return "data:text/javascript;base64," + btoa(content);
 }
-let rti = "../";
-if (location.host === 'runtimetypeinspector.org') {
-  rti = '/node_modules/runtime-type-inspector/';
-}
 const imports = {
-  "@runtime-type-inspector/runtime": rti + 'src-runtime/index.mjs',
-  "@runtime-type-inspector/transpiler": rti + 'src-transpiler/index.mjs',
-  "runtime-type-inspector/": rti,
-  //"@babel/core": "./babel-core.mjs",
+  "@runtime-type-inspector/runtime"   : '../src-runtime/index.mjs',
+  "@runtime-type-inspector/transpiler": '../src-transpiler/index.mjs',
   "@babel/parser": "./babel-parser.mjs",
   //"@babel/helper-plugin-utils": "./babel-helper-plugin-utils.mjs",
   //"@babel/plugin-syntax-typescript": "./babel-plugin-syntax-typescript.mjs",
   "fs": importFile("export default {};"),
   "typescript": importFile("export default ts;"), // UMD import
-  // "path": importFile("export default {};"),
-  // "stream/web": importFile("export default {};"),
-  // "sharp": importFile("export default {};"),
-  // "onnxruntime-node": importFile("export default {};"),
-  // "onnxruntime-web": importFile(`
-  //   //await import("https://cdnjs.cloudflare.com/ajax/libs/onnxruntime-web/1.15.0/ort.es6.min.js");
-  //   await import("https://cdnjs.cloudflare.com/ajax/libs/onnxruntime-web/1.14.0/ort.es6.min.js");
-  //   //http://127.0.0.1/transformer/onnxruntime/js/common/dist/
-  //   //await import("http://127.0.0.1/transformer/onnxruntime/js/common/dist/ort-common.js");
-  //   //await import("http://127.0.0.1/transformer/onnxruntime/js/web/dist/ort-webgl.js");
-  //   //await import("https://cdnjs.cloudflare.com/ajax/libs/onnxruntime-web/1.14.0/ort.es6.min.js");
-  //   let ONNX = globalThis.ort;
-  //   export default ONNX;
-  //   export {
-  //     ONNX
-  //   };
-  // `),
 };
+if (location.host === 'runtimetypeinspector.org' || location.port === '7000') {
+  imports['@runtime-type-inspector/runtime'   ] = './node_modules/@runtime-type-inspector/runtime/index.mjs';
+  imports['@runtime-type-inspector/transpiler'] = './node_modules/@runtime-type-inspector/transpiler/index.mjs';
+}
 const importmap = document.createElement("script");
 importmap.type = "importmap";
 importmap.textContent = JSON.stringify({imports});
