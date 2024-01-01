@@ -978,9 +978,6 @@ class Stringifier {
     const {declaration, source, specifiers, loc} = node;
     let out = this.spaces;
     if (specifiers.length) {
-      if (!source) {
-        console.warn("ExportNamedDeclaration> no source given");
-      }
       if (specifiers.length === 1 && specifiers[0].type === 'ExportNamespaceSpecifier') {
         out += 'export ';
         out += this.toSource(specifiers[0]);
