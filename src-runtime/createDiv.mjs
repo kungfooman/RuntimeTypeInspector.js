@@ -52,7 +52,13 @@ function createDiv() {
   buttonHide.onclick = () => {
     div.style.display = 'none';
   };
-  div.append(spanErrors, span, select, buttonHide, warnedTable);
+  const buttonSaveState = document.createElement("button");
+  buttonSaveState.textContent = 'Save state';
+  buttonSaveState.onclick = () => {
+    console.log("Save state ");
+    // location.hash =
+  };
+  div.append(spanErrors, span, select, buttonHide, buttonSaveState, warnedTable);
   div.style.maxHeight = '200px';
   div.style.overflow = 'scroll';
   const finalFunc = () => document.body.append(div);
