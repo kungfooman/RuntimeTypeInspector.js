@@ -12,6 +12,17 @@ function niceDiv(div) {
   div.style.lineHeight = "25px";
   div.style.backgroundColor = "#F3F3F3";
   div.style.borderRadius = "4px";
+  const rule = document.createElement('style');
+  rule.innerHTML = `
+    .rti tr:nth-child(even) {
+      background-color: #ccc;
+    }
+    .rti {
+      color: black;
+    }
+  `;
+  div.classList.add('rti');
+  document.head.appendChild(rule);
 }
 /**
  * @returns {HTMLDivElement} The <div> at bottom/right position.

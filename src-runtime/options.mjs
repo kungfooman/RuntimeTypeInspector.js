@@ -3,6 +3,8 @@
  * @property {number} hits - How often this error occured.
  * @property {HTMLTableRowElement} tr - The <tr>.
  * @property {boolean} dbg - Trigger `debugger;` next time this error is hit.
+ * @property {boolean} hide - Prevent F12/DevTools spamming for errors that occur often,
+ * even in "spam" mode.
  */
 const options = {
   /**

@@ -38,18 +38,30 @@ function inspectType(value, expect, loc, name, critical = true) {
     if (!warnObj.tr) {
       const tr = document.createElement('tr');
       const dbg = document.createElement('td');
-      const dbgInput = document.createElement("input");
-      dbgInput.type = "checkbox";
-      dbgInput.onchange = () => {
-        warnObj.dbg = dbgInput.checked;
+      const hide = document.createElement('td');
+      const dbgInput = document.createElement("button");
+      dbgInput.textContent = '🧐';
+      dbgInput.onclick = () => {
+        warnObj.dbg = !warnObj.dbg;
+        dbgInput.textContent = warnObj.dbg ? '🐞' : '🧐';
+      };
+      const hideInput = document.createElement("button");
+      hideInput.textContent = '👁️‍🗨️';
+      warnObj.hidden = false;
+      //hideInput.type = "checkbox";
+      hideInput.onclick = () => {
+        warnObj.hidden = !warnObj.hidden;
+        hideInput.textContent = warnObj.hidden ? '🌚' : '👁️‍🗨️';
       };
       const count = document.createElement('td');
       const desc = document.createElement('td');
       desc.innerText = msg;
-      tr.append(dbg, count, desc);
+      tr.append(hide, dbg, count, desc);
       dbg.append(dbgInput);
+      hide.append(hideInput);
       warnedTable.append(tr);
       warnObj.tr = tr;
+      warnObj.hitsTableCell = count;
     }
     const {tr, dbg} = warnObj;
     if (dbg) {
@@ -57,7 +69,7 @@ function inspectType(value, expect, loc, name, critical = true) {
       warnObj.dbg = false; // trigger only once to quickly get app running again
       tr.children[0].children[0].checked = false; // update ui state
     }
-    tr.children[1].textContent = warnObj.hits;
+    warnObj.hitsTableCell.textContent = warnObj.hits;
   }
   return ret;
 }
