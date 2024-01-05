@@ -1,12 +1,12 @@
 {
   "name": "@runtime-type-inspector/plugin-webpack5",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Webpack 5 plugin for https://runtimetypeinspector.org/",
   "main": "index.cjs",
   "author": "Hermann Rolfes (kungfooman)",
   "license": "MIT",
   "dependencies": {
-    "@runtime-type-inspector/transpiler": "^3.0.0",
+    "@runtime-type-inspector/transpiler": "~3.0.4",
     "loader-utils": "^2.0.4",
     "webpack": "^5.89.0"
   }
