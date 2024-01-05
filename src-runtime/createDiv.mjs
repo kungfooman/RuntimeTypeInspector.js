@@ -13,7 +13,7 @@ function niceDiv(div) {
   div.style.backgroundColor = "#F3F3F3";
   div.style.borderRadius = "4px";
   const rule = document.createElement('style');
-  rule.innerHTML = `
+  rule.innerHTML = /* css */ `
     .rti tr:nth-child(even) {
       background-color: #ccc;
     }
