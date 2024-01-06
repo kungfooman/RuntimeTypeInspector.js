@@ -9,6 +9,7 @@ export * from './options.mjs';
 export * from './partition.js';
 export * from './registerClass.mjs';
 export * from './registerTypedef.mjs';
+export * from './registerVariable.js';
 export * from './validateArray.mjs';
 export * from './validateDivision.mjs';
 export * from './validateMap.mjs';

@@ -1,3 +1,4 @@
+import {missingTypeofSymbol, requiredTypeofs} from './expandType.mjs';
 import {expandTypeDepFree} from './expandTypeDepFree.mjs';
 import {nodeIsFunction   } from './nodeIsFunction.mjs';
 import {parseJSDoc       } from './parseJSDoc.mjs';
@@ -121,7 +122,7 @@ class Asserter extends Stringifier {
     if (!this.addHeader) {
       return '';
     }
-    let header = "import {inspectType, youCanAddABreakpointHere";
+    let header = "import {inspectType, youCanAddABreakpointHere, registerVariable";
     if (this.validateDivision) {
       header += ", validateDivision";
     }
@@ -613,6 +614,25 @@ class Asserter extends Stringifier {
     const code = this.toSource(program) + '\n';
     out += code;
     return out;
+  }
+  /**
+   * @override
+   * @todo use 
+   * @param {import("@babel/types").VariableDeclarator} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  VariableDeclaration(node) {
+    const {declarations} = node;
+    let ret = super.VariableDeclaration(node);
+    for (const {id} of declarations) {
+      const name = this.toSource(id);
+      if (requiredTypeofs[name] === missingTypeofSymbol) {
+        ret += `\n${this.spaces}registerVariable('${name}', ${name});\n`;
+      } else {
+        console.warn("Already registered variable with that name for typeof validation");
+      }
+    }
+    return ret;
   }
 }
 export {Asserter};
