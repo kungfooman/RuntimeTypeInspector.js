@@ -617,8 +617,7 @@ class Asserter extends Stringifier {
   }
   /**
    * @override
-   * @todo use 
-   * @param {import("@babel/types").VariableDeclarator} node - The Babel AST node.
+   * @param {import("@babel/types").VariableDeclaration} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
   VariableDeclaration(node) {
