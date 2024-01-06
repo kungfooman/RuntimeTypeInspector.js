@@ -12,6 +12,7 @@ export * from './registerTypedef.mjs';
 export * from './registerVariable.js';
 export * from './validateArray.mjs';
 export * from './validateDivision.mjs';
+export * from './validateKeyof.mjs';
 export * from './validateMap.mjs';
 export * from './validateNumber.mjs';
 export * from './validateObject.mjs';
