@@ -3,6 +3,7 @@ import {customValidations} from "./customValidations.mjs";
 import {classes          } from "./registerClass.mjs";
 import {typedefs         } from "./registerTypedef.mjs";
 import {validateArray    } from "./validateArray.mjs";
+import {validateKeyof    } from "./validateKeyof.mjs";
 import {validateMap      } from "./validateMap.mjs";
 import {validateNumber   } from "./validateNumber.mjs";
 import {validateObject   } from "./validateObject.mjs";
@@ -106,6 +107,9 @@ function validateType(value, expect, loc, name, critical = true, warn) {
   }
   if (type === 'array') {
     return validateArray(value, expect, loc, name, critical, warn);
+  }
+  if (type === 'keyof') {
+    return validateKeyof(value, expect, loc, name, critical, warn);
   }
   // If a typedef is also a class, it's just a shorthand-typedef-class
   if (typedefs[type] && !classes[type]) {
