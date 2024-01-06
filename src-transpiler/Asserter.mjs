@@ -1,4 +1,4 @@
-import {missingTypeofSymbol, requiredTypeofs} from './expandType.mjs';
+import {requiredTypeofs  } from './expandType.mjs';
 import {expandTypeDepFree} from './expandTypeDepFree.mjs';
 import {nodeIsFunction   } from './nodeIsFunction.mjs';
 import {parseJSDoc       } from './parseJSDoc.mjs';
@@ -626,10 +626,11 @@ class Asserter extends Stringifier {
     let ret = super.VariableDeclaration(node);
     for (const {id} of declarations) {
       const name = this.toSource(id);
-      if (requiredTypeofs[name] === missingTypeofSymbol) {
+      if (requiredTypeofs[name] === 'missing') {
         ret += `\n${this.spaces}registerVariable('${name}', ${name});\n`;
-      } else {
-        console.warn("Already registered variable with that name for typeof validation");
+        requiredTypeofs[name] = 'found';
+      } else if (requiredTypeofs[name] === 'found') {
+        console.warn(`Already registered variable named ${name} for typeof validation`);
       }
     }
     return ret;

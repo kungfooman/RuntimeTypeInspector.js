@@ -53,8 +53,7 @@ function parseType(str) {
   const ast = ts.createSourceFile('repl.ts', str, ts.ScriptTarget.Latest, true /*setParentNodes*/);
   return ast.statements[0].type;
 }
-export const missingTypeofSymbol = Symbol('missing typeof');
-/** @type {Record<string, any>} */
+/** @type {Record<string, 'missing'|'found'>} */
 export const requiredTypeofs = {};
 /**
  * Converts a TypeScript AST node to a source string representation or to an intermediate object describing the type.
@@ -143,8 +142,8 @@ function toSourceTS(node) {
     case TypeQuery:
       const argument = toSourceTS(node.exprName);
       // Notify Asserter class that we have to register variables with this name
-      if (requiredTypeofs[argument] !== missingTypeofSymbol) {
-        requiredTypeofs[argument] = missingTypeofSymbol;
+      if (!requiredTypeofs[argument]) {
+        requiredTypeofs[argument] = 'missing';
       }
       return {type: 'typeof', argument};
     case TypeOperator:
