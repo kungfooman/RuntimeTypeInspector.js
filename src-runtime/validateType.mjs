@@ -1,17 +1,18 @@
-import {customTypes      } from "./customTypes.mjs";
-import {customValidations} from "./customValidations.mjs";
-import {classes          } from "./registerClass.mjs";
-import {typedefs         } from "./registerTypedef.mjs";
-import {validateArray    } from "./validateArray.mjs";
-import {validateKeyof    } from "./validateKeyof.mjs";
-import {validateMap      } from "./validateMap.mjs";
-import {validateNumber   } from "./validateNumber.mjs";
-import {validateObject   } from "./validateObject.mjs";
-import {validateRecord   } from "./validateRecord.mjs";
-import {validateSet      } from "./validateSet.mjs";
-import {validateTuple    } from "./validateTuple.mjs";
-import {validateTypedef  } from "./validateTypedef.mjs";
-import {validateUnion    } from "./validateUnion.mjs";
+import {customTypes         } from "./customTypes.mjs";
+import {customValidations   } from "./customValidations.mjs";
+import {classes             } from "./registerClass.mjs";
+import {typedefs            } from "./registerTypedef.mjs";
+import {validateArray       } from "./validateArray.mjs";
+import {validateIntersection} from "./validateIntersection.js";
+import {validateKeyof       } from "./validateKeyof.mjs";
+import {validateMap         } from "./validateMap.mjs";
+import {validateNumber      } from "./validateNumber.mjs";
+import {validateObject      } from "./validateObject.mjs";
+import {validateRecord      } from "./validateRecord.mjs";
+import {validateSet         } from "./validateSet.mjs";
+import {validateTuple       } from "./validateTuple.mjs";
+import {validateTypedef     } from "./validateTypedef.mjs";
+import {validateUnion       } from "./validateUnion.mjs";
 let enabled = true;
 export function disableTypeChecking() {
   enabled = false;
@@ -107,6 +108,9 @@ function validateType(value, expect, loc, name, critical = true, warn) {
   }
   if (type === 'array') {
     return validateArray(value, expect, loc, name, critical, warn);
+  }
+  if (type === 'intersection') {
+    return validateIntersection(value, expect, loc, name, critical, warn);
   }
   if (type === 'keyof') {
     return validateKeyof(value, expect, loc, name, critical, warn);
