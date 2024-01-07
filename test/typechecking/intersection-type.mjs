@@ -16,14 +16,14 @@ const easterBunny = {
   favoriteHobby: "hiding eggs",
   favoriteAnimal: "bunny",
 };
-/** @typedef {Entity & { superpower: string }} Superhero */
+/** @typedef {Entity & {superpower: string}} Superhero */
 /**
  * This function takes two objects, combines them, and returns the result.
  * @param {Entity} entity - Any old entity
  * @returns {Superhero} The super combined entity with a superpower
  */
 function turnIntoSuperhero(entity) {
-  return { ...entity, superpower: "super strength" };
+  return {...entity, superpower: "super strength"};
 }
 const superSanta = turnIntoSuperhero(santa);
 const superEasterBunny = turnIntoSuperhero(easterBunny);
