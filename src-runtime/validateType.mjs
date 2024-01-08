@@ -51,6 +51,10 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
   if (!enabled) {
     return true;
   }
+  if (depth > 16) {
+    warn('Exceeded recursive depth limit.');
+    return false;
+  }
   if (!(expect instanceof Object)) {
     expect = {
       type: expect,

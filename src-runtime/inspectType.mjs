@@ -22,7 +22,7 @@ function inspectType(value, expect, loc, name, critical = true) {
   const innerWarn = (...args) => {
     warnings.push(...args);
   };
-  const ret = validateType(value, expect, loc, name, critical, innerWarn);
+  const ret = validateType(value, expect, loc, name, critical, innerWarn, 0);
   if (!ret && critical) {
     options.count++;
     // let expectStr = ', expected: ' + JSON.stringify(expect);
