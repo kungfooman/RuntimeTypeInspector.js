@@ -7,9 +7,10 @@ import {validateType} from "./validateType.mjs";
  * @param {string} name - Name of the argument
  * @param {boolean} critical - Only `false` for unions.
  * @param {console["warn"]} warn - Function to warn with.
+ * @param {number} depth - The depth to detect recursion.
  * @returns {boolean} Boolean indicating if a type is correct.
  */
-function validateMap(value, expect, loc, name, critical, warn) {
+function validateMap(value, expect, loc, name, critical, warn, depth) {
   const {key, val} = expect;
   if (key !== 'string') {
     warn(`validateMap> unhandled key '${key}'.`);
@@ -25,7 +26,7 @@ function validateMap(value, expect, loc, name, critical, warn) {
   // }
   for (const [k, v] of value) {
     const nameKey = `${name}.get('${k}')`;
-    const good = validateType(v, val, loc, nameKey, critical, warn);
+    const good = validateType(v, val, loc, nameKey, critical, warn, depth + 1);
     if (!good) {
       const info = {expect: val, value: v};
       warn(`Element ${nameKey} has wrong type.`, info);

@@ -21,25 +21,33 @@ export function enableTypeChecking() {
   enabled = true;
 }
 /**
+ * @typedef {object} TypeObject
+ * @property {string} type - Something like 'string', 'number', 'object', 'MeshInstance' etc.
+ * @property {boolean} optional - Is it an optional argument?
+ * @property {object} [properties] - Extra information for `expect.type === 'object'`.
+ * @property {string} [key] - Extra information for `expect.type === 'record'`.
+ * @property {any} [val] - Extra information for `expect.type === 'record'`, same
+ * type as "expect".
+ * @property {any[]} [elements] - Extra information for `expect.type === 'record'`, same
+ * type as "expect".
+ * @property {any[]} [elementType] - Extra information for array/class.
+ * @property {any[]} [members] - Extra information for union.
+ */
+/**
+ * @typedef {string|TypeObject} Type
+ */
+/**
  * @param {*} value - The actual value which we need to check.
- * @param {object} expect - Can also be a string, but string|object is unsupported in VSCode
- * @param {string} expect.type - Something like 'string', 'number', 'object', 'MeshInstance' etc.
- * @param {boolean} expect.optional - Is it an optional argument?
- * @param {object} [expect.properties] - Extra information for `expect.type === 'object'`.
- * @param {string} [expect.key] - Extra information for `expect.type === 'record'`.
- * @param {any} [expect.val] - Extra information for `expect.type === 'record'`, same
- * type as "expect".
- * @param {any[]} [expect.elements] - Extra information for `expect.type === 'record'`, same
- * type as "expect".
- * @param {any[]} [expect.elementType] - Extra information for array/class.
+ * @param {Type} expect - Expected type structure.
  * @todo Split array/class.
  * @param {string} loc - String like `BoundingBox#compute`
  * @param {string} name - Name of the argument.
  * @param {boolean} critical - Only false for unions.
  * @param {console["warn"]} warn - Function to warn with.
+ * @param {number} depth - The depth to detect recursion.
  * @returns {boolean} Returns wether `value` is in the shape of `expect`.
  */
-function validateType(value, expect, loc, name, critical = true, warn) {
+function validateType(value, expect, loc, name, critical = true, warn, depth) {
   if (!enabled) {
     return true;
   }
@@ -98,36 +106,36 @@ function validateType(value, expect, loc, name, critical = true, warn) {
     }
   }
   if (type === "object") {
-    return validateObject(value, properties, loc, name, critical, warn);
+    return validateObject(value, properties, loc, name, critical, warn, depth + 1);
   }
   if (type === 'record') {
-    return validateRecord(value, expect, loc, name, critical, warn);
+    return validateRecord(value, expect, loc, name, critical, warn, depth + 1);
   }
   if (type === 'map') {
-    return validateMap(value, expect, loc, name, critical, warn);
+    return validateMap(value, expect, loc, name, critical, warn, depth + 1);
   }
   if (type === 'array') {
-    return validateArray(value, expect, loc, name, critical, warn);
+    return validateArray(value, expect, loc, name, critical, warn, depth + 1);
   }
   if (type === 'intersection') {
-    return validateIntersection(value, expect, loc, name, critical, warn);
+    return validateIntersection(value, expect, loc, name, critical, warn, depth + 1);
   }
   if (type === 'keyof') {
-    return validateKeyof(value, expect, loc, name, critical, warn);
+    return validateKeyof(value, expect, loc, name, critical, warn, depth + 1);
   }
   // If a typedef is also a class, it's just a shorthand-typedef-class
   if (typedefs[type] && !classes[type]) {
-    return validateTypedef(value, expect, loc, name, critical, warn);
+    return validateTypedef(value, expect, loc, name, critical, warn, depth + 1);
   }
   if (type === 'union') {
-    return validateUnion(value, expect, loc, name, critical, warn);
+    return validateUnion(value, expect, loc, name, critical, warn, depth + 1);
   }
   if (type === 'set') {
-    return validateSet(value, expect, loc, name, critical, warn);
+    return validateSet(value, expect, loc, name, critical, warn, depth + 1);
   }
   // Trigger: pc.app.scene.setSkybox([1, 2, 3]);
   if (type === 'tuple') {
-    return validateTuple(value, expect, loc, name, critical, warn);
+    return validateTuple(value, expect, loc, name, critical, warn, depth + 1);
   }
   if (type === '*' || type === 'any') {
     return true;

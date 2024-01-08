@@ -22,9 +22,10 @@ function isObject(value) {
  * @param {string} name - Name of the argument
  * @param {boolean} critical - Only `false` for unions.
  * @param {console["warn"]} warn - Function to warn with.
+ * @param {number} depth - The depth to detect recursion.
  * @returns {boolean} Boolean indicating if a type is correct.
  */
-function validateObject(value, properties, loc, name, critical, warn) {
+function validateObject(value, properties, loc, name, critical, warn, depth) {
   if (!isObject(value)) {
     warn('Given value is not an object.');
     return false;
@@ -46,7 +47,7 @@ function validateObject(value, properties, loc, name, critical, warn) {
       const innerValue = value[key];
       const innerType = properties[key];
       const nameKey = `${name}.${key}`;
-      const ret = validateType(innerValue, innerType, loc, nameKey, critical, warn);
+      const ret = validateType(innerValue, innerType, loc, nameKey, critical, warn, depth + 1);
       if (!ret) {
         const info = {expect: innerType, value: innerValue};
         warn(`Element ${nameKey} has wrong type.`, info);
