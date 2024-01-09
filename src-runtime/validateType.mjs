@@ -6,6 +6,7 @@ import {validateArray       } from "./validateArray.mjs";
 import {validateIntersection} from "./validateIntersection.js";
 import {validateKeyof       } from "./validateKeyof.mjs";
 import {validateMap         } from "./validateMap.mjs";
+import {validateMapping     } from "./validateMapping.mjs";
 import {validateNumber      } from "./validateNumber.mjs";
 import {validateObject      } from "./validateObject.mjs";
 import {validateRecord      } from "./validateRecord.mjs";
@@ -117,6 +118,9 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
   }
   if (type === 'map') {
     return validateMap(value, expect, loc, name, critical, warn, depth + 1);
+  }
+  if (type === 'mapping') {
+    return validateMapping(value, expect, loc, name, critical, warn, depth + 1);
   }
   if (type === 'array') {
     return validateArray(value, expect, loc, name, critical, warn, depth + 1);

@@ -15,6 +15,7 @@ export * from './validateDivision.mjs';
 export * from './validateIntersection.js';
 export * from './validateKeyof.mjs';
 export * from './validateMap.mjs';
+export * from './validateMapping.mjs';
 export * from './validateNumber.mjs';
 export * from './validateObject.mjs';
 export * from './validateRecord.mjs';
