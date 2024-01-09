@@ -18,4 +18,4 @@ function createTable() {
   return table;
 }
 const warnedTable = createTable();
-export {warnedTable};
+export {createTable, warnedTable};

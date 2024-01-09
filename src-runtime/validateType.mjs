@@ -14,7 +14,7 @@ import {validateSet         } from "./validateSet.mjs";
 import {validateTuple       } from "./validateTuple.mjs";
 import {validateTypedef     } from "./validateTypedef.mjs";
 import {validateUnion       } from "./validateUnion.mjs";
-let enabled = true;
+export let enabled = true;
 export function disableTypeChecking() {
   enabled = false;
 }

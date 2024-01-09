@@ -325,11 +325,11 @@ module.exports = {
     ],
     // Even errors for ImportDeclaration, but exception doesn't work here (todo figure out)
     //"object-curly-spacing": ["error", "never"],
-    "object-property-newline": [
-      "error", {
-        "allowAllPropertiesOnSameLine": true
-      }
-    ],
+    //"object-property-newline": [
+    //  "error", {
+    //    "allowAllPropertiesOnSameLine": true
+    //  }
+    //],
     "operator-linebreak": ["error", "after"],
     "padded-blocks": [
       "error", {

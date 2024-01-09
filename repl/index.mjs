@@ -141,6 +141,13 @@ function activateREPL() {
   // @ts-ignore
   selectAction.value = "eval";
 }
+function activateREPLRuntime() {
+  const code = Object.entries(rti)
+    .map(([key, val]) => data2code(key, val))
+    .join('\n')
+    .replace('let warnedTable = {};', 'const warnedTable = createTable();');
+  setRight(code + '\n' + getRight());
+}
 buttonREPL.onclick = activateREPL;
 Object.assign(window, {
   parse,
@@ -152,7 +159,7 @@ function statsPrint() {
   console.table(lastStats);
 }
 /**
- * @param {string} value
+ * @param {string} value - New value for left editor.
  */
 function setLeft(value) {
   if (typeof value !== 'string') {
@@ -163,7 +170,7 @@ function setLeft(value) {
   aceEditorLeft.clearSelection(); // setValue() selects everything, so unselect it now
 }
 /**
- * @param {string} value
+ * @param {string} value - New value for right editor.
  */
 function setRight(value) {
   if (typeof value !== 'string') {
@@ -470,4 +477,6 @@ export {
   expandTypeAll,
   runAction,
   data2code,
+  activateREPL,
+  activateREPLRuntime,
 };
