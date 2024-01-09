@@ -6,9 +6,10 @@ import {validateType} from "./validateType.mjs";
  * @param {string} name - Name of the argument
  * @param {boolean} critical - Only `false` for unions.
  * @param {console["warn"]} warn - Function to warn with.
+ * @param {number} depth - The depth to detect recursion.
  * @returns {boolean} Boolean indicating if a type is correct.
  */
-function validateSet(value, expect, loc, name, critical, warn) {
+function validateSet(value, expect, loc, name, critical, warn, depth) {
   if (!(value instanceof Set)) {
     warn('Given value is not a set.');
     return false;
@@ -16,7 +17,7 @@ function validateSet(value, expect, loc, name, critical, warn) {
   const {elementType} = expect;
   let i = 0;
   for (const innerValue of value) {
-    const test = validateType(innerValue, elementType, loc, name, critical, warn);
+    const test = validateType(innerValue, elementType, loc, name, critical, warn, depth + 1);
     if (!test) {
       const info = {expect: elementType, got: innerValue};
       warn(`validateSet> invalid set member at [...${name}.values()][${i}]`, info);
