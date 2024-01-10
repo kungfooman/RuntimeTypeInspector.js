@@ -1,8 +1,9 @@
 /**
- * @param {*} type 
- * @param {*} search 
- * @param {*} replace 
- * @param {*} warn 
+ * @todo To prevent circularity, check that "search" isn't in "replace" in the first place?
+ * @param {*} type - The type.
+ * @param {*} search - The search.
+ * @param {*} replace - The replace.
+ * @param {*} warn - The warn.
  */
 function replaceType(type, search, replace, warn) {
   if (type.type === 'object') {

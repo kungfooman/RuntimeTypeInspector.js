@@ -39,6 +39,7 @@ function validateMapping(value, expect, loc, name, critical, warn, depth) {
   console.log('typedefs', typedefs);
   console.log('typeKeys', typeKeys);
   console.log('tempTypeObject', tempTypeObject);
+  return validateType(value, tempTypeObject, loc, name, critical, warn, depth + 1);
   //for (const [k, v] of value) {
   //  const nameKey = `${name}.get('${k}')`;
   //  const good = validateType(v, val, loc, nameKey, critical, warn, depth + 1);
