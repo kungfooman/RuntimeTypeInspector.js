@@ -141,6 +141,9 @@ function activateREPL() {
   // @ts-ignore
   selectAction.value = "eval";
 }
+/**
+ * @todo remove import/exports of RTI Runtime, since we are injecting them
+ */
 function activateREPLRuntime() {
   const code = Object.entries(rti)
     .map(([key, val]) => data2code(key, val))

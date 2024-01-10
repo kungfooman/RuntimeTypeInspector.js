@@ -1,4 +1,5 @@
 import {variables} from "./registerVariable.js";
+import {typedefs } from "./registerTypedef.mjs";
 /**
  * @example
  * getTypeKeys({type: 'typeof', argument: 'DataTypeMap'}, console.warn);
@@ -15,7 +16,14 @@ function getTypeKeys(expect, warn) {
       return;
     }
     return Object.keys(variable);
+  } else if (typedefs[expect]) {
+    const typedef = typedefs[expect];
+    if (typedef.type === 'union') {
+      return typedef.members;
+    }
+    warn("getTypeKeys: Unhandled typedef", {expect, typedef});
   }
+  warn(`Couldn't get keys for type`, expect);
 }
 /**
  * @param {*} value - The actual value that we need to validate.
