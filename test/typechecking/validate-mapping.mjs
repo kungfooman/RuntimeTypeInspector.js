@@ -7,6 +7,11 @@
  * @typedef {{[Key in Iterable2]: {testkey: Key}}} Test2
  * @typedef {{[Key in Iterable3]: {testkey: Key}}} Test3
  * @typedef {{[Key in 1|2|3]: {testkey: Key}}} Test4
+ * @typedef {keyof (1|2|3)} Test5
+ * @typedef {keyof Iterable1} Test5_2
+ * @typedef {keyof Test5} KeyOfTest5
+ * @typedef {keyof ('a'|'b'|'c')} Test6
+ * @typedef {keyof ('a'|'b'|'c')} Test7
  */
 /**
  * @param {Test1} x - First argument.

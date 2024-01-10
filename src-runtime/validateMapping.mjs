@@ -21,7 +21,7 @@ import {getTypeKeys } from "./validateKeyof.mjs";
  */
 function validateMapping(value, expect, loc, name, critical, warn, depth) {
   const {iterable, element, result} = expect;
-  console.log("validateMapping test", {iterable, element, result});
+  // console.log("validateMapping test", {iterable, element, result});
   const typeKeys = getTypeKeys(iterable, warn);
   if (!typeKeys) {
     warn('validateMapping: missing typeKeys');
@@ -36,9 +36,9 @@ function validateMapping(value, expect, loc, name, critical, warn, depth) {
   }
   const tempTypeObject = {type: 'object', properties};
   //typeKeys.map(typeKey => [Type])
-  console.log('typedefs', typedefs);
-  console.log('typeKeys', typeKeys);
-  console.log('tempTypeObject', tempTypeObject);
+  // console.log('typedefs', typedefs);
+  // console.log('typeKeys', typeKeys);
+  console.log('tempTypeObject for ' + loc, tempTypeObject);
   return validateType(value, tempTypeObject, loc, name, critical, warn, depth + 1);
   //for (const [k, v] of value) {
   //  const nameKey = `${name}.get('${k}')`;
