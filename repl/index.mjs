@@ -149,7 +149,10 @@ function activateREPLRuntime() {
     .map(([key, val]) => data2code(key, val))
     .join('\n')
     .replace('let warnedTable = {};', 'const warnedTable = createTable();');
-  setRight(code + '\n' + getRight());
+  // options.warned needs to be cleared since it contains "tr" values from old session
+  const extra = 'clearObject(options.warned)';
+  const newCode = [code, extra, getRight()].join('\n');
+  setRight(newCode);
 }
 buttonREPL.onclick = activateREPL;
 Object.assign(window, {

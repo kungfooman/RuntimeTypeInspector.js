@@ -6,6 +6,7 @@
  * @typedef {{[Key in Iterable1]: {testkey: Key}}} Test1
  * @typedef {{[Key in Iterable2]: {testkey: Key}}} Test2
  * @typedef {{[Key in Iterable3]: {testkey: Key}}} Test3
+ * @typedef {{[Key in 1|2|3]: {testkey: Key}}} Test4
  */
 /**
  * @param {Test1} x - First argument.
@@ -28,6 +29,30 @@ function identity2(x) {
 function identity3(x) {
   return x;
 }
-identity1(123);
-identity2(123);
-identity3(123);
+/**
+ * @param {Test4} x - First argument.
+ * @returns {Test4} - Return value.
+ */
+function identity4(x) {
+  return x;
+}
+identity1({
+  1: {testkey: 1},
+  2: {testkey: 2},
+  3: {testkey: 3},
+});
+identity2({
+  a: {testkey: 'a'},
+  b: {testkey: 'b'},
+  c: {testkey: 'c'},
+});
+identity3({
+  aa: {testkey: 'aa'},
+  bb: {testkey: 'bb'},
+  cc: {testkey: 'cc'},
+});
+identity4({
+  1: {testkey: 1},
+  2: {testkey: 2},
+  3: {testkey: 3},
+});
