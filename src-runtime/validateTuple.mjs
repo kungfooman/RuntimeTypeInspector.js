@@ -15,6 +15,10 @@ function validateTuple(value, expect, loc, name, critical, warn, depth) {
     return false;
   }
   const {elements} = expect;
+  if (value.length !== elements.length) {
+    warn('Value and tuple elements have different lengths.');
+    return false;
+  }
   // const innerWarn = warnAccumulator(10); // max 10 warnings
   const ret = elements.every((element, i) => {
     return validateType(

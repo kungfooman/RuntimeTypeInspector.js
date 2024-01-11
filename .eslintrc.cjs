@@ -354,7 +354,7 @@ module.exports = {
         "named": "never"
       }
     ],
-    "space-in-parens": ["error", "never"],
+    //"space-in-parens": ["error", "never"],
     "space-infix-ops": [
       "error", {
         "int32Hint": false
