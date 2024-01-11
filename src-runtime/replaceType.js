@@ -23,9 +23,7 @@ function replaceType(type, search, replace, warn) {
     // const newProperties = {};
     for (const prop in properties) {
       const val = properties[prop];
-      const replacedVal = replaceType(val, search, replace, warn);
-      properties[prop] = replacedVal;
-      properties[prop] = val;
+      properties[prop] = replaceType(val, search, replace, warn);
     }
     return type;
   } else if (type.type === "tuple") {

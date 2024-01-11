@@ -1,7 +1,5 @@
-import {validateType} from "./validateType.mjs";
-import {typedefs    } from "./registerTypedef.mjs";
-import {replaceType } from "./replaceType.js";
-import {getTypeKeys } from "./validateKeyof.mjs";
+import {createTypeFromMapping} from "./createTypeFromMapping.js";
+import {validateType         } from "./validateType.mjs";
 /**
  * @typedef {object} Mapping
  * @property {import('./validateType.mjs').Type} iterable - The iterable.
@@ -9,7 +7,6 @@ import {getTypeKeys } from "./validateKeyof.mjs";
  * @property {import('./validateType.mjs').Type} result - The result.
  */
 /**
- * @todo Implement checking all possible key/val types
  * @param {*} value - The actual value that we need to validate.
  * @param {Mapping} expect - The supposed type information of said value.
  * @param {string} loc - String like `BoundingBox#compute`
@@ -20,21 +17,7 @@ import {getTypeKeys } from "./validateKeyof.mjs";
  * @returns {boolean} Boolean indicating if a type is correct.
  */
 function validateMapping(value, expect, loc, name, critical, warn, depth) {
-  const {iterable, element, result} = expect;
-  // console.log("validateMapping test", {iterable, element, result});
-  const typeKeys = getTypeKeys(iterable, warn);
-  if (!typeKeys) {
-    warn('validateMapping: missing typeKeys');
-    return false;
-  }
-  /** @type {Record<string, import('./validateType.mjs').Type>} */
-  const properties = {};
-  for (const typeKey of typeKeys) {
-    const cloneResult = structuredClone(result);
-    replaceType(cloneResult, element, typeKey, warn);
-    properties[typeKey] = cloneResult;
-  }
-  const tempTypeObject = {type: 'object', properties};
+  const tempTypeObject = createTypeFromMapping(expect, warn);
   // console.log('typedefs', typedefs);
   // console.log('typeKeys', typeKeys);
   // console.log('tempTypeObject for ' + loc, tempTypeObject);

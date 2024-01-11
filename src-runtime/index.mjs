@@ -1,5 +1,6 @@
 export * from './assertMode.js';
 export * from './createDiv.mjs';
+export * from './createTypeFromMapping.js';
 export * from './customTypes.mjs';
 export * from './customValidations.mjs';
 export * from './div.mjs';
