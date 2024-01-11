@@ -1,6 +1,10 @@
 import {validateType} from "./validateType.mjs";
 /**
- * @typedef {object} Union
+ * @typedef {object} UnionProps
+ * @property {any[]} members - The members.
+ */
+/**
+ * @typedef {import('./validateType.mjs').TypeObject & UnionProps} Union
  * @property {any[]} members - The members.
  */
 /**
