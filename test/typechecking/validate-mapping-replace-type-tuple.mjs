@@ -1,5 +1,5 @@
 /**
- * @typedef {{[Key in 1|2|3]: {testkey: [Key, Key, Key]}}} Test1
+ * @typedef {{[Key in 1|2|3]: {testkey: [Key, Key, Key], bla: Key}}} Test1
  */
 /**
  * @param {Test1} x - First argument.
@@ -9,7 +9,7 @@ function identity1(x) {
   return x;
 }
 identity1({
-  1: {testkey: [1, 1, 1]},
-  2: {testkey: [2, 2, 2]},
-  3: {testkey: [3, 3, 3]},
+  1: {testkey: [1, 1, 1], bla: 1},
+  2: {testkey: [2, 2, 2], bla: 2},
+  3: {testkey: [3, 3, 3], bla: 3},
 });
