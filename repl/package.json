@@ -1,6 +1,6 @@
 {
   "name": "@runtime-type-inspector/repl",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "REPL of RuntimeTypeInspector.js",
   "main": "index.html",
   "dependencies": {
