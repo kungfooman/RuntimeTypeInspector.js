@@ -9,22 +9,16 @@ import {validateType} from "./validateType.mjs";
  * @param {number} depth - The depth to detect recursion.
  * @returns {boolean} Boolean indicating if a type is correct.
  */
-function validateSet(value, expect, loc, name, critical, warn, depth) {
-  if (!(value instanceof Set)) {
-    warn('Given value is not a set.');
-    return false;
-  }
-  const {elementType} = expect;
-  let i = 0;
-  for (const innerValue of value) {
-    const test = validateType(innerValue, elementType, loc, name, critical, warn, depth + 1);
-    if (!test) {
-      const info = {expect: elementType, got: innerValue};
-      warn(`validateSet> invalid set member at [...${name}.values()][${i}]`, info);
+function validateIntersection(value, expect, loc, name, critical, warn, depth) {
+  const {members} = expect;
+  // console.log('validateIntersection', {value, expect, loc, name, critical, warn});
+  for (const member of members) {
+    const good = validateType(value, member, loc, name, critical, warn, depth + 1);
+    if (!good) {
+      warn(`Doesn't match intersection member.`, {member});
       return false;
     }
-    i++;
   }
   return true;
 }
-export {validateSet};
+export {validateIntersection};

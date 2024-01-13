@@ -53,6 +53,8 @@ function parseType(str) {
   const ast = ts.createSourceFile('repl.ts', str, ts.ScriptTarget.Latest, true /*setParentNodes*/);
   return ast.statements[0].type;
 }
+/** @type {Record<string, 'missing'|'found'>} */
+export const requiredTypeofs = {};
 /**
  * Converts a TypeScript AST node to a source string representation or to an intermediate object describing the type.
  *
@@ -75,9 +77,11 @@ function toSourceTS(node) {
     NeverKeyword, BigIntKeyword, BigIntLiteral, ConditionalType, IndexedAccessType, RestType,
     TypeQuery,       // parseType('typeof Number')
     TypeOperator,    // parseType('keyof typeof obj')
-    KeyOfKeyword, // "operator" key in TypeOperator node
+    KeyOfKeyword,    // "operator" key in TypeOperator node
     ConstructorType, // parseType('new (...args: any[]) => any');
     NamedTupleMember,
+    MappedType,      // parseType('{[K in TaskType]: InstanceType<typeof SUPPORTED_TASKS[K]["pipeline"]>}')
+    TypeParameter,   // Basically K and TaskType of MappedType
   } = ts.SyntaxKind;
   // console.log({typeArguments, typeName, kind_, node});
   switch (node.kind) {
@@ -113,6 +117,18 @@ function toSourceTS(node) {
     case JSDocNullableType:
       const t = toSourceTS(node.type);
       return {type: 'union', members: [t, 'null']};
+    case MappedType: {
+      const result = toSourceTS(node.type);
+      const parameter = node.typeParameter;
+      if (parameter.kind === TypeParameter) {
+        // For example: {[K in TaskType]: InstanceType etc.
+        const iterable = toSourceTS(parameter.constraint); // TaskType
+        const element = toSourceTS(parameter.name); // K
+        return {type: 'mapping', iterable, element, result};
+      }
+      console.warn("MappedType: expected TypeParameter");
+      return 'transpiler-error';
+    }
     // todo work out more: const jsdoc = `(...a: ...number) => 123
     // TS even thinks it's two parameters... just go for array/[]
     case Parameter:
@@ -125,6 +141,10 @@ function toSourceTS(node) {
       return ret;
     case TypeQuery:
       const argument = toSourceTS(node.exprName);
+      // Notify Asserter class that we have to register variables with this name
+      if (!requiredTypeofs[argument]) {
+        requiredTypeofs[argument] = 'missing';
+      }
       return {type: 'typeof', argument};
     case TypeOperator:
       if (node.operator === KeyOfKeyword) {

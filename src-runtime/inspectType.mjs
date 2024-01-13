@@ -22,7 +22,7 @@ function inspectType(value, expect, loc, name, critical = true) {
   const innerWarn = (...args) => {
     warnings.push(...args);
   };
-  const ret = validateType(value, expect, loc, name, critical, innerWarn);
+  const ret = validateType(value, expect, loc, name, critical, innerWarn, 0);
   if (!ret && critical) {
     options.count++;
     // let expectStr = ', expected: ' + JSON.stringify(expect);
@@ -32,7 +32,10 @@ function inspectType(value, expect, loc, name, critical = true) {
     // }
     const [strings, extras] = partition(warnings, _ => typeof _ === 'string');
     const msg = `${loc}> The '${name}' argument has an invalid type. ${strings.join(' ')}`;
-    warn(msg, {expect, value, valueToString: value?.toString()}, ...extras);
+    // String form allows us to see more about certain values, like a vector with a NaN component.
+    // Since `value` will "only" be the actual reference and might be "repaired" after further calculations.
+    const valueToString = value?.toString?.();
+    warn(msg, {expect, value, valueToString}, ...extras);
     // Nytaralyxe: options.warns where each warn callback supports one system (node, div/dom etc.)
     const warnObj = options.warned[msg];
     if (!warnObj.tr) {

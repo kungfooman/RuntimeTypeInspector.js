@@ -141,6 +141,19 @@ function activateREPL() {
   // @ts-ignore
   selectAction.value = "eval";
 }
+/**
+ * @todo remove import/exports of RTI Runtime, since we are injecting them
+ */
+function activateREPLRuntime() {
+  const code = Object.entries(rti)
+    .map(([key, val]) => data2code(key, val))
+    .join('\n')
+    .replace('let warnedTable = {};', 'const warnedTable = createTable();');
+  // options.warned needs to be cleared since it contains "tr" values from old session
+  const extra = 'clearObject(options.warned)';
+  const newCode = [code, extra, getRight()].join('\n');
+  setRight(newCode);
+}
 buttonREPL.onclick = activateREPL;
 Object.assign(window, {
   parse,
@@ -152,7 +165,7 @@ function statsPrint() {
   console.table(lastStats);
 }
 /**
- * @param {string} value
+ * @param {string} value - New value for left editor.
  */
 function setLeft(value) {
   if (typeof value !== 'string') {
@@ -163,7 +176,7 @@ function setLeft(value) {
   aceEditorLeft.clearSelection(); // setValue() selects everything, so unselect it now
 }
 /**
- * @param {string} value
+ * @param {string} value - New value for right editor.
  */
 function setRight(value) {
   if (typeof value !== 'string') {
@@ -470,4 +483,6 @@ export {
   expandTypeAll,
   runAction,
   data2code,
+  activateREPL,
+  activateREPLRuntime,
 };

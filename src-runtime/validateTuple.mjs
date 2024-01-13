@@ -6,14 +6,19 @@ import {validateType} from "./validateType.mjs";
  * @param {string} name - Name of the argument
  * @param {boolean} critical - Only `false` for unions.
  * @param {console["warn"]} warn - Function to warn with.
+ * @param {number} depth - The depth to detect recursion.
  * @returns {boolean} Boolean indicating if a type is correct.
  */
-function validateTuple(value, expect, loc, name, critical, warn) {
+function validateTuple(value, expect, loc, name, critical, warn, depth) {
   if (!(value instanceof Array)) {
     warn('Given value for tuple must be an array.');
     return false;
   }
   const {elements} = expect;
+  if (value.length !== elements.length) {
+    warn('Value and tuple elements have different lengths.');
+    return false;
+  }
   // const innerWarn = warnAccumulator(10); // max 10 warnings
   const ret = elements.every((element, i) => {
     return validateType(
@@ -22,7 +27,8 @@ function validateTuple(value, expect, loc, name, critical, warn) {
       loc,
       `${name}[${i}]`,
       critical,
-      warn
+      warn,
+      depth + 1
     );
   });
   if (!ret) {
