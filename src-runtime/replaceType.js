@@ -9,10 +9,9 @@
  * @param {*} search - The search.
  * @param {*} replace - The replace.
  * @param {*} warn - The warn.
- * @returns {any} - A copy of the structured type.
+ * @returns {any} - In-place replaced version of the structured type.
  */
 function replaceType(type, search, replace, warn) {
-  //if (typeof type )
   if (type === search) {
     // console.log("replaceType", {type, search, replace, warn});
     return replace;
@@ -37,6 +36,9 @@ function replaceType(type, search, replace, warn) {
     }
     return type;
   }
-  warn('replaceType: unhandled', {type, search, replace});
+  if (type.type) {
+    warn('replaceType: unhandled', {type, search, replace});
+  }
+  return type;
 }
 export {replaceType};
