@@ -1,10 +1,10 @@
 {
   "name": "@runtime-type-inspector/repl",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "REPL of RuntimeTypeInspector.js",
   "main": "index.html",
   "dependencies": {
-    "@runtime-type-inspector/transpiler": "^3.0.3",
+    "@runtime-type-inspector/transpiler": "^3.0.8",
     "ace-builds": "^1.28.0",
     "express": "^4.18.2"
   },
