@@ -32,7 +32,8 @@ const tests = [
     const keys = Object.values(type.properties).map(_ => _.properties.bla);
     const ret = keys[0] === 1 && keys[1] === 2 && keys[2] === 3;
     return ret;
-  }
+  },
+  ...(await import('./src-runtime/resolveType.spec.js')).tests,
   //() => validateUnion(null,      {type: 'union', members: ['a', 2, null]       }, 'loc', 'name', true, warn),
   //() => validateUnion(undefined, {type: 'union', members: ['str', 1, false]    }, 'loc', 'name', true, warn) === false,
 ];

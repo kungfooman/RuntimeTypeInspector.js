@@ -14,6 +14,7 @@ export * from './registerClass.mjs';
 export * from './registerTypedef.mjs';
 export * from './registerVariable.js';
 export * from './replaceType.js';
+export * from './resolveType.js';
 export * from './validateArray.mjs';
 export * from './validateDivision.mjs';
 export * from './validateIntersection.js';
