@@ -25,8 +25,34 @@ registerTypedef('ObjValues', {
 });
 registerTypedef('ObjValuesTypedef', "ObjValues");
 registerTypedef('ObjValuesTypedef2', "ObjValuesTypedef");
+for (let i = 2; i < 30; i++) {
+  registerTypedef(`ObjValuesTypedef${i + 1}`, `ObjValuesTypedef${i}`);
+}
 function test1() {
-  const res = resolveType('ObjValuesTypedef', 'indexedAccess');
+  const res = resolveType('ObjValues', 'indexedAccess', console.warn);
   return res.object === 'Obj';
 }
-export const tests = [test1];
+function test2() {
+  const res = resolveType('ObjValuesTypedef', 'indexedAccess', console.warn);
+  return res.object === 'Obj';
+}
+function test3() {
+  const res = resolveType('ObjValuesTypedef2', 'indexedAccess', console.warn);
+  return res.object === 'Obj';
+}
+function test4() {
+  const res = resolveType('ObjValuesTypedef15', 'indexedAccess', console.warn);
+  return res.object === 'Obj';
+}
+function test5() {
+  let failed = false;
+  resolveType('ObjValuesTypedef30', 'indexedAccess', () => failed = true);
+  return failed; // should fail, because 20 is max depth
+}
+export const tests = [
+  test1,
+  test2,
+  test3,
+  test4,
+  test5,
+];
