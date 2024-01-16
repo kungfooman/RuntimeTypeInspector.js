@@ -1,5 +1,5 @@
-import {createType               } from './createType.js';
-import {registerTypedef, typedefs} from './registerTypedef.mjs';
+import {createType     } from './createType.js';
+import {registerTypedef} from './registerTypedef.mjs';
 /**
  * @template T
  * @typedef {{[K in keyof T]: T[K] extends object ? Unpack<T[K]> : T[K]}} Unpack
@@ -23,33 +23,31 @@ registerTypedef('ObjKeys', {
   "argument": "Obj"
 });
 registerTypedef('ObjKeysTypedef', "ObjKeys");
-console.log("ObjKeys", typedefs.ObjKeys);
-const newType = createType("ObjKeysTypedef", console.warn);
-console.log('newType', newType);
 function test1() {
   /** @type {import('./validateUnion.mjs').Union} */
-  const t = createType("ObjValuesTypedef2", console.warn);
-  if (!t) {
+  const newType = createType('ObjKeysTypedef', console.warn);
+  if (!newType) {
     console.warn('t is not defined.');
     return false;
   }
-  if (t.type !== 'union') {
+  const {type, members} = newType;
+  if (type !== 'union') {
     console.warn('t is not an union.');
     return false;
   }
-  if (t.members.length !== 3) {
+  if (members.length !== 3) {
     console.warn('t should have three union members.');
     return false;
   }
-  if (t.members[0] !== 'a') {
+  if (members[0] !== 'a') {
     console.warn("t.elements[0] should be 'a'");
     return false;
   }
-  if (t.members[1] !== 'b') {
+  if (members[1] !== 'b') {
     console.warn("t.elements[1] should be 'b'");
     return false;
   }
-  if (t.members[2] !== 'c') {
+  if (members[2] !== 'c') {
     console.warn("t.elements[2] should be 'c'");
     return false;
   }

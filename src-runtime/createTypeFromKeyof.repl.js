@@ -3,6 +3,7 @@
  * @typedef {keyof Obj} ObjKeys
  * @typedef {ObjKeys} ObjKeysTypedef
  */
-console.log("ObjKeys", typedefs.ObjKeys);
+console.log('Obj', typedefs.Obj);
+console.log('ObjKeys', typedefs.ObjKeys);
 const newType = createType("ObjKeysTypedef", console.warn);
 console.log('newType', newType);
