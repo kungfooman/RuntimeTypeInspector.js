@@ -67,13 +67,18 @@ function createDiv() {
   buttonSaveState.textContent = 'Save state';
   buttonSaveState.onclick = () => {
     console.log("Save state ");
-    const fullState = {};
+    /** @type {object[]} */
+    const fullState = [];
+    /**
+     * @todo I would rather save loc/name because it's less likely to change in future... to keep state URL's alive
+     */
     for (const key in options.warned) {
-        const e = options.warned[key];
-        const {deltaState} = e;
-        if (deltaState) {
-            fullState[key] = e.state;
-        }
+      const e = options.warned[key];
+      const {deltaState} = e;
+      if (deltaState) {
+        const {loc, name} = e;
+        fullState.push({loc, name, ...deltaState});
+      }
     }
     console.log("fullState", JSON.stringify(fullState), fullState);
     // location.hash =

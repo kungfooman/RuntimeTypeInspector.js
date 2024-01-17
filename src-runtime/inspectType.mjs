@@ -32,7 +32,7 @@ function inspectType(value, expect, loc, name, critical = true) {
     //   expectStr = '';
     // }
     const [strings, extras] = partition(warnings, _ => typeof _ === 'string');
-    const msg = `${loc}> The '${name}' argument has an invalid type. ${strings.join(' ')}`;
+    const msg = `${loc}> The '${name}' argument has an invalid type. ${strings.join(' ')}`.trim();
     // String form allows us to see more about certain values, like a vector with a NaN component.
     // Since `value` will "only" be the actual reference and might be "repaired" after further calculations.
     const valueToString = value?.toString?.();

@@ -19,6 +19,8 @@ class Warning {
   /** @type {any} */
   _value;
   constructor(msg, value, expect, loc, name) {
+    this.loc = loc;
+    this.name = name;
     const {
       tr,
       td_hide, td_dbg, td_count, td_location, td_name, td_expect, td_value, td_desc,
