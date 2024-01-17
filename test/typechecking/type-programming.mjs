@@ -239,3 +239,11 @@ const TASK_ALIASES = Object.freeze({
  * @typedef {{[K in AliasType]: InstanceType<typeof SUPPORTED_TASKS[TASK_ALIASES[K]]["pipeline"]>}} AliasTasks A mapping from pipeline aliases to their corresponding pipeline classes.
  * @typedef {SupportedTasks & AliasTasks} AllTasks A mapping from all pipeline names and aliases to their corresponding pipeline classes.
  */
+/**
+ * @param {AliasTasks} x - Input
+ * @returns {AliasTasks} Returns input.
+ */
+function identity(x) {
+  return x;
+}
+identity(123);
