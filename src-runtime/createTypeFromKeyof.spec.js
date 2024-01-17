@@ -1,29 +1,32 @@
 import {createType     } from './createType.js';
 import {registerTypedef} from './registerTypedef.mjs';
-/**
- * @template T
- * @typedef {{[K in keyof T]: T[K] extends object ? Unpack<T[K]> : T[K]}} Unpack
- */
-/**
- * @typedef {{a: 'aa', b: 'bb', c: 'cc'}} Obj
- * @typedef {keyof Obj} ObjKeys
- * @typedef {ObjKeys} ObjKeysTypedef
- * @typedef {Unpack<ObjKeys>} ObjKeysUnpacked
- */
-registerTypedef('Obj', {
-  "type": "object",
-  "properties": {
-    "a": "'aa'",
-    "b": "'bb'",
-    "c": "'cc'"
-  }
-});
-registerTypedef('ObjKeys', {
-  "type": "keyof",
-  "argument": "Obj"
-});
-registerTypedef('ObjKeysTypedef', "ObjKeys");
+function prepare() {
+  /**
+   * @template T
+   * @typedef {{[K in keyof T]: T[K] extends object ? Unpack<T[K]> : T[K]}} Unpack
+   */
+  /**
+   * @typedef {{a: 'aa', b: 'bb', c: 'cc'}} Obj
+   * @typedef {keyof Obj} ObjKeys
+   * @typedef {ObjKeys} ObjKeysTypedef
+   * @typedef {Unpack<ObjKeys>} ObjKeysUnpacked
+   */
+  registerTypedef('Obj', {
+    "type": "object",
+    "properties": {
+      "a": "'aa'",
+      "b": "'bb'",
+      "c": "'cc'"
+    }
+  });
+  registerTypedef('ObjKeys', {
+    "type": "keyof",
+    "argument": "Obj"
+  });
+  registerTypedef('ObjKeysTypedef', "ObjKeys");
+}
 function test1() {
+  prepare();
   /** @type {import('./validateUnion.mjs').Union} */
   const newType = createType('ObjKeysTypedef', console.warn);
   if (!newType) {

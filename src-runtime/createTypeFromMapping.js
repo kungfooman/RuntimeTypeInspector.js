@@ -4,7 +4,7 @@ import {typedefs    } from "./registerTypedef.mjs";
 /**
  * @param {string|import('./validateMapping.mjs').Mapping} expect - The supposed type information of said value.
  * @param {console["warn"]} warn - Function to warn with.
- * @returns {import('./validateType.mjs').TypeObject|undefined} - New type that can be used for validatoin
+ * @returns {import('./validateType.mjs').TypeObject|undefined} - New type that can be used for validation.
  */
 function createTypeFromMapping(expect, warn) {
   /** @todo some kind of resolveType(expect, 'mapping', depth = 0) function */
