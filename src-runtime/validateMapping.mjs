@@ -21,6 +21,10 @@ function validateMapping(value, expect, loc, name, critical, warn, depth) {
   // console.log('typedefs', typedefs);
   // console.log('typeKeys', typeKeys);
   // console.log('tempTypeObject for ' + loc, tempTypeObject);
+  if (!tempTypeObject) {
+    warn('validateMapping: missing tempTypeObject');
+    return false;
+  }
   const good = validateType(value, tempTypeObject, loc, name, critical, warn, depth + 1);
   if (!good) {
     const info = {tempTypeObject};

@@ -1,10 +1,10 @@
 /**
- * @type {Record<string, object>}
+ * @type {Record<string, string|object>}
  */
 const typedefs = {};
 /**
  * @param {string} name - Name of typedef.
- * @param {Record<string, object>} typedef - The parsed typedef from source.
+ * @param {string|object} typedef - The parsed typedef from source.
  */
 function registerTypedef(name, typedef) {
   // If it already exists as object but now it's a string

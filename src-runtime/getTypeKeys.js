@@ -38,6 +38,20 @@ function getTypeKeys(expect, warn) {
     const {argument} = expect;
     //console.log("want key for", argument);
     return getTypeKeys(argument, warn);
+  } else if (type === 'indexedAccess') {
+    const {index} = expect;
+    let {object} = expect;
+    // todo replace with resolveType
+    if (typeof object === 'string' && typedefs[object]) {
+      object = typedefs[object];
+    }
+    const indexKeys = getTypeKeys(index, warn);
+    const arr = [];
+    for (const indexKey of indexKeys) {
+      arr.push(object.properties[indexKey]);
+    }
+    // console.log({object, index, indexKeys, arr});
+    return arr;
   }
   warn(`Couldn't get keys for type`, expect);
 }

@@ -3,6 +3,8 @@ import {expandType           } from './src-transpiler/expandType.mjs';
 import {validateType         } from './src-runtime/validateType.mjs';
 import {validateUnion        } from './src-runtime/validateUnion.mjs';
 import {validateTuple        } from './src-runtime/validateTuple.mjs';
+import {clearObject          } from './src-runtime/options.mjs';
+import {typedefs             } from './src-runtime/registerTypedef.mjs';
 const warn = () => undefined;
 // We expect all functions to return true.
 const tests = [
@@ -32,12 +34,16 @@ const tests = [
     const keys = Object.values(type.properties).map(_ => _.properties.bla);
     const ret = keys[0] === 1 && keys[1] === 2 && keys[2] === 3;
     return ret;
-  }
+  },
+  ...(await import('./src-runtime/createType.spec.js'         )).tests,
+  ...(await import('./src-runtime/createTypeFromKeyof.spec.js')).tests,
+  ...(await import('./src-runtime/resolveType.spec.js'        )).tests,
   //() => validateUnion(null,      {type: 'union', members: ['a', 2, null]       }, 'loc', 'name', true, warn),
   //() => validateUnion(undefined, {type: 'union', members: ['str', 1, false]    }, 'loc', 'name', true, warn) === false,
 ];
 let errors = 0;
 for (const test of tests) {
+  clearObject(typedefs); // Each test starts with a clean slate of typedefs
   const ret = test();
   if (!ret) {
     console.error("Test failed: " + test);

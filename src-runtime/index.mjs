@@ -1,5 +1,8 @@
 export * from './assertMode.js';
 export * from './createDiv.mjs';
+export * from './createType.js';
+export * from './createTypeFromIndexedAccess.js';
+export * from './createTypeFromKeyof.js';
 export * from './createTypeFromMapping.js';
 export * from './customTypes.mjs';
 export * from './customValidations.mjs';
@@ -14,6 +17,7 @@ export * from './registerClass.mjs';
 export * from './registerTypedef.mjs';
 export * from './registerVariable.js';
 export * from './replaceType.js';
+export * from './resolveType.js';
 export * from './validateArray.mjs';
 export * from './validateDivision.mjs';
 export * from './validateIntersection.js';
