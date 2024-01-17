@@ -1,8 +1,10 @@
 /**
  * @typedef {{a: 'aa', b: 'bb', c: 'cc'}} Obj
+ * @typedef {{a: 'aa', d: 'dd'}} Obj2
  * @typedef {keyof Obj} Keys
  * @typedef {Obj[keyof Obj]} ObjKeys1
  * @typedef {Obj[Keys]} ObjKeys2
+ * @typedef {Obj[keyof Obj2]} ObjKeys3 - Interesting, throwing error: Property 'd' does not exist on type 'Obj'.ts(2339)
  * @typedef {{[Key in ObjKeys1]: {testkey: Key}}} ObjTest1
  * @typedef {{[Key in ObjKeys2]: {testkey: Key}}} ObjTest2
  */
