@@ -1,3 +1,6 @@
+/**
+ * @todo Also construct a Node.js version, WarningConsole and WarningBrowser
+ */
 class Warning {
   tr               = document.createElement('tr');
   td_dbg           = document.createElement('td');
@@ -56,9 +59,11 @@ class Warning {
   get hits() {
     return this._hits;
   }
+  /**
+   * @todo Log and show old values aswell for more comprehensive overview?
+   */
   set value(_) {
     this._value = _;
-    console.log("set new value", _);
     this.td_value.textContent = _;
   }
   get value() {
