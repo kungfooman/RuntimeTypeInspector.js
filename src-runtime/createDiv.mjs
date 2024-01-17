@@ -67,6 +67,15 @@ function createDiv() {
   buttonSaveState.textContent = 'Save state';
   buttonSaveState.onclick = () => {
     console.log("Save state ");
+    const fullState = {};
+    for (const key in options.warned) {
+        const e = options.warned[key];
+        const {deltaState} = e;
+        if (deltaState) {
+            fullState[key] = e.state;
+        }
+    }
+    console.log("fullState", JSON.stringify(fullState), fullState);
     // location.hash =
   };
   div.append(spanErrors, span, select, buttonHide, buttonSaveState, warnedTable);

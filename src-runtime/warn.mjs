@@ -6,8 +6,6 @@ import {Warning} from "./Warning.js";
  */
 function warn(msg, ...extra) {
   const {mode, warned} = options;
-  warned[msg] = warned[msg] || new Warning();
-  warned[msg].hits++;
   switch (mode) {
     case 'spam':
       console.error(msg, ...extra);
