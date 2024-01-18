@@ -66,7 +66,7 @@ class Warning {
    */
   set value(_) {
     this._value = _;
-    this.td_value.textContent = _;
+    this.td_value.textContent = _ + '';
   }
   get value() {
     return this._value;
