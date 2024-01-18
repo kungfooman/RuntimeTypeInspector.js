@@ -4,6 +4,7 @@ import {warn        } from './warn.mjs';
 import {validateType} from './validateType.mjs';
 import {partition   } from './partition.js';
 import {Warning     } from './Warning.js';
+import {typePanel   } from './TypePanel.js';
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -26,6 +27,7 @@ function inspectType(value, expect, loc, name, critical = true) {
   const ret = validateType(value, expect, loc, name, critical, innerWarn, 0);
   if (!ret && critical) {
     options.count++;
+    typePanel.updateErrorCount();
     // let expectStr = ', expected: ' + JSON.stringify(expect);
     // if (expectStr.length < 40) {
     //   //expectStr = ', expected: ';
