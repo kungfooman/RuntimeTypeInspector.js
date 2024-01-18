@@ -1,8 +1,11 @@
 /**
+ * @todo move into new Warning class, should be unused everywhere
  * @typedef {object} TypeError
  * @property {number} hits - How often this error occured.
  * @property {HTMLTableRowElement} tr - The <tr>.
  * @property {boolean} dbg - Trigger `debugger;` next time this error is hit.
+ * @property {boolean} hide - Prevent F12/DevTools spamming for errors that occur often,
+ * even in "spam" mode.
  */
 const options = {
   /**
@@ -12,7 +15,7 @@ const options = {
    * Spam-mode basically retains the order, which mentally helps to figure out the actual issues.
    */
   mode: 'spam',
-  /** @type {Record<string, TypeError>} */
+  /** @type {Record<string, import('./Warning.js').Warning>} */
   warned: {},
   logSuperfluousProperty: false,
   count: 0,

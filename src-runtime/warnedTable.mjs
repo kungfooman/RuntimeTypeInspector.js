@@ -1,16 +1,21 @@
+/**
+ * @param {string} text - The text.
+ * @returns {HTMLTableCellElement} - The header cell.
+ */
+function createTableHead(text) {
+  const th = document.createElement('th');
+  th.innerText = text;
+  return th;
+}
 function createTable() {
   if (typeof document === 'undefined') {
     return null;
   }
   const table = document.createElement('table');
   const tr = document.createElement('tr');
-  const th_0 = document.createElement('th');
-  const th_1 = document.createElement('th');
-  const th_2 = document.createElement('th');
-  th_0.innerText = 'dbg;';
-  th_1.innerText = 'Hits';
-  th_2.innerText = 'Message';
-  tr.append(th_0, th_1, th_2);
+  const descs = ['Hide', 'Debug', 'Hits', 'Loc', 'Name', 'Expect', 'Value', 'Message'];
+  const ths = descs.map(createTableHead);
+  tr.append(...ths);
   table.append(tr);
   //table.style.maxHeight = '200px';
   //table.style.overflow = 'scroll';

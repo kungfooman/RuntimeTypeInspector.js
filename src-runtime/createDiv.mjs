@@ -12,6 +12,17 @@ function niceDiv(div) {
   div.style.lineHeight = "25px";
   div.style.backgroundColor = "#F3F3F3";
   div.style.borderRadius = "4px";
+  const rule = document.createElement('style');
+  rule.innerHTML = /* css */ `
+    .rti tr:nth-child(even) {
+      background-color: #ccc;
+    }
+    .rti {
+      color: black;
+    }
+  `;
+  div.classList.add('rti');
+  document.head.appendChild(rule);
 }
 /**
  * @returns {HTMLDivElement} The <div> at bottom/right position.
@@ -52,7 +63,27 @@ function createDiv() {
   buttonHide.onclick = () => {
     div.style.display = 'none';
   };
-  div.append(spanErrors, span, select, buttonHide, warnedTable);
+  const buttonSaveState = document.createElement("button");
+  buttonSaveState.textContent = 'Save state';
+  buttonSaveState.onclick = () => {
+    console.log("Save state ");
+    /** @type {object[]} */
+    const fullState = [];
+    /**
+     * @todo I would rather save loc/name because it's less likely to change in future... to keep state URL's alive
+     */
+    for (const key in options.warned) {
+      const e = options.warned[key];
+      const {deltaState} = e;
+      if (deltaState) {
+        const {loc, name} = e;
+        fullState.push({loc, name, ...deltaState});
+      }
+    }
+    console.log("fullState", JSON.stringify(fullState), fullState);
+    // location.hash =
+  };
+  div.append(spanErrors, span, select, buttonHide, buttonSaveState, warnedTable);
   div.style.maxHeight = '200px';
   div.style.overflow = 'scroll';
   const finalFunc = () => document.body.append(div);

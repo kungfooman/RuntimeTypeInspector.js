@@ -1,12 +1,11 @@
 import {options} from "./options.mjs";
+import {Warning} from "./Warning.js";
 /**
  * @param {string} msg - The main message.
  * @param {...any} extra - Extra strings or objects etc.
  */
 function warn(msg, ...extra) {
   const {mode, warned} = options;
-  warned[msg] = warned[msg] || {hits: 0};
-  warned[msg].hits++;
   switch (mode) {
     case 'spam':
       console.error(msg, ...extra);
