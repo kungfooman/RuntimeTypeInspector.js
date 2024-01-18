@@ -64,24 +64,7 @@ class TypePanel {
       div.style.display = 'none';
     };
     buttonSaveState.textContent = 'Save state';
-    buttonSaveState.onclick = () => {
-      console.log("Save state ");
-      /** @type {object[]} */
-      const fullState = [];
-      /**
-       * @todo I would rather save loc/name because it's less likely to change in future... to keep state URL's alive
-       */
-      for (const key in options.warned) {
-        const e = options.warned[key];
-        const {deltaState} = e;
-        if (deltaState) {
-          const {loc, name} = e;
-          fullState.push({loc, name, ...deltaState});
-        }
-      }
-      console.log("fullState", JSON.stringify(fullState), fullState);
-      // location.hash =
-    };
+    buttonSaveState.onclick = () => this.saveState();
     div.append(spanErrors, span, select, buttonHide, buttonSaveState, warnedTable);
     div.style.maxHeight = '200px';
     div.style.overflow = 'scroll';
@@ -93,6 +76,29 @@ class TypePanel {
       // add when page is loaded
       document.addEventListener("DOMContentLoaded", finalFunc);
     }
+  }
+  get state() {
+    /** @type {object[]} */
+    const fullState = [];
+    /**
+     * @todo I would rather save loc/name because it's less likely to change in future... to keep state URL's alive
+     */
+    for (const key in options.warned) {
+      const e = options.warned[key];
+      const {state} = e;
+      if (state) {
+        const {loc, name} = e;
+        fullState.push({loc, name, state});
+      }
+    }
+    return fullState;
+  }
+  saveState() {
+    const str = btoa(JSON.stringify(this.state));
+    const map = new Map(location.hash.slice(1).split('&').map(_ => _.split('=')));
+    map.set('typepanel', str);
+    const hash = [...map].map(_ => _.join('=')).join('&');
+    location.hash = hash;
   }
   updateErrorCount() {
     this.spanErrors.innerText = `Type validation errors: ${options.count}`;

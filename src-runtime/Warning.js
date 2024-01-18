@@ -75,12 +75,19 @@ class Warning {
    * Returns state of dbg/hidden only if relevant (meaning not being default values).
    * @returns {object|undefined} Relevant changes or `undefined`.
    */
-  get deltaState() {
+  get state() {
     const {dbg, hidden} = this;
-    if (dbg || hidden) {
-      return {dbg, hidden};
+    const ret = [];
+    if (dbg) {
+      ret.push('dbg');
     }
-    return undefined; // Just for ESLint, change rule...
+    if (hidden) {
+      ret.push('hidden');
+    }
+    if (!ret.length) {
+      return undefined; // ESLint bs
+    }
+    return ret;
   }
 }
 export {Warning};
