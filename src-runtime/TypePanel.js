@@ -93,17 +93,10 @@ class TypePanel {
       // add when page is loaded
       document.addEventListener("DOMContentLoaded", finalFunc);
     }
-    /** @todo debounce or get rid of this interval, ugly html changes all the time even if not needed */
-    setInterval(() => {
-      spanErrors.innerText = `Type validation errors: ${options.count}`;
-    }, 100);
+  }
+  updateErrorCount() {
+    this.spanErrors.innerText = `Type validation errors: ${options.count}`;
   }
 }
-/**
- * @returns {HTMLDivElement} The <div> at bottom/right position.
- */
-function createDiv() {
-  const typePanel = new TypePanel();
-  return typePanel.div;
-}
-export {createDiv, TypePanel};
+const typePanel = new TypePanel();
+export {typePanel, TypePanel};
