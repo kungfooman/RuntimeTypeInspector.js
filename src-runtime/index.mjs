@@ -32,4 +32,5 @@ export * from './validateTypedef.mjs';
 export * from './validateUnion.mjs';
 export * from './warn.mjs';
 export * from './warnedTable.mjs';
+export * from './Warning.js';
 export * from './youCanAddABreakpointHere.mjs';

@@ -1,6 +1,7 @@
 import {assertMode } from "./assertMode.js";
 import {options    } from "./options.mjs";
 import {warnedTable} from "./warnedTable.mjs";
+import {Warning    } from "./Warning.js";
 /**
  * @param {HTMLDivElement} div - The <div>.
  */
@@ -33,9 +34,10 @@ class TypePanel {
   option_once     = document.createElement('option');
   option_never    = document.createElement('option');
   buttonHide      = document.createElement('button');
+  buttonLoadState = document.createElement('button');
   buttonSaveState = document.createElement('button');
   constructor() {
-    const {div, spanErrors, span, select, option_spam, option_once, option_never, buttonHide, buttonSaveState} = this;
+    const {div, spanErrors, span, select, option_spam, option_once, option_never, buttonHide, buttonLoadState, buttonSaveState} = this;
     div.style.position = "absolute";
     div.style.bottom = "0px";
     div.style.right = "0px";
@@ -63,9 +65,11 @@ class TypePanel {
     buttonHide.onclick = () => {
       div.style.display = 'none';
     };
+    buttonLoadState.textContent = 'Load state';
+    buttonLoadState.onclick = () => this.loadState();
     buttonSaveState.textContent = 'Save state';
     buttonSaveState.onclick = () => this.saveState();
-    div.append(spanErrors, span, select, buttonHide, buttonSaveState, warnedTable);
+    div.append(spanErrors, span, select, buttonHide, buttonLoadState, buttonSaveState, warnedTable);
     div.style.maxHeight = '200px';
     div.style.overflow = 'scroll';
     const finalFunc = () => document.body.append(div);
@@ -92,6 +96,37 @@ class TypePanel {
       }
     }
     return fullState;
+  }
+  get stateFromLocation() {
+    const arr = location.hash.slice(1).split('&').filter(_ => _.startsWith('typepanel='));
+    if (!arr.length) {
+      return;
+    }
+    const base64 = arr[0].slice(10); // 'typepanel='.length === 10
+    const text = atob(base64);
+    const json = JSON.parse(text);
+    return json;
+  }
+  loadState() {
+    const json = this.stateFromLocation;
+    for (const e of json) {
+      const {loc, name, state} = e;
+      let foundWarning;
+      for (const key in options.warned) {
+        const warning = options.warned[key];
+        if (warning.loc === loc && warning.name === name) {
+          foundWarning = warning;
+          break;
+        }
+      }
+      // If we didn't find it, create it.
+      if (!foundWarning) {
+        foundWarning = new Warning('msg', 'value', 'expect', loc, name);
+        warnedTable?.append(foundWarning.tr);
+        options.warned[`${loc}-${name}`] = foundWarning;
+      }
+      foundWarning.state = state;
+    }
   }
   saveState() {
     const str = btoa(JSON.stringify(this.state));

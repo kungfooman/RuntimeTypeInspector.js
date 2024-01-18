@@ -13,6 +13,7 @@ class Warning {
   td_desc          = document.createElement('td');
   button_dbgInput  = document.createElement('button');
   button_hideInput = document.createElement('button');
+  _msg             = '';
   _hits            = 0;
   _hidden          = false;
   _dbg             = false;
@@ -71,9 +72,30 @@ class Warning {
   get value() {
     return this._value;
   }
+  set msg(_) {
+    this._msg = _;
+    this.td_desc.textContent = _ + '';
+  }
+  get msg() {
+    return this._msg;
+  }
+  /**
+   * @type {string[]}
+   */
+  set state(_) {
+    if (!_) {
+      return;
+    }
+    if (_.includes('dbg')) {
+      this.dbg = true;
+    }
+    if (_.includes('hidden')) {
+      this.hidden = true;
+    }
+  }
   /**
    * Returns state of dbg/hidden only if relevant (meaning not being default values).
-   * @returns {object|undefined} Relevant changes or `undefined`.
+   * @returns {string[]|undefined} Relevant changes or `undefined`.
    */
   get state() {
     const {dbg, hidden} = this;

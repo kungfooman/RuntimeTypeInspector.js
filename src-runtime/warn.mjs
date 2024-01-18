@@ -1,17 +1,17 @@
 import {options} from "./options.mjs";
-import {Warning} from "./Warning.js";
 /**
+ * @param {import('./Warning.js').Warning} warning - The warning.
  * @param {string} msg - The main message.
  * @param {...any} extra - Extra strings or objects etc.
  */
-function warn(msg, ...extra) {
-  const {mode, warned} = options;
+function warn(warning, msg, ...extra) {
+  const {mode} = options;
   switch (mode) {
     case 'spam':
       console.error(msg, ...extra);
       break;
     case 'once':
-      if (warned[msg].hits === 1) {
+      if (warning.hits === 1) {
         console.error(msg, ...extra);
       }
       break;
