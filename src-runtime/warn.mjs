@@ -1,11 +1,15 @@
 import {options} from "./options.mjs";
 /**
+ * @todo this should be a method of Warning by now.
  * @param {import('./Warning.js').Warning} warning - The warning.
  * @param {string} msg - The main message.
  * @param {...any} extra - Extra strings or objects etc.
  */
 function warn(warning, msg, ...extra) {
   const {mode} = options;
+  if (warning.hidden) {
+    return;
+  }
   switch (mode) {
     case 'spam':
       console.error(msg, ...extra);
