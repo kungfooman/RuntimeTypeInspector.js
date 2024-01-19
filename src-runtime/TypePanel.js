@@ -98,6 +98,7 @@ class TypePanel {
     }
     return fullState;
   }
+  /** @type {object|undefined} */
   get stateFromLocation() {
     const arr = location.hash.slice(1).split('&').filter(_ => _.startsWith('typepanel='));
     if (!arr.length) {
@@ -110,6 +111,9 @@ class TypePanel {
   }
   loadState() {
     const json = this.stateFromLocation;
+    if (!json) {
+      return false;
+    }
     for (const e of json) {
       const {loc, name, state} = e;
       /** @type {Warning|undefined} */
@@ -129,6 +133,7 @@ class TypePanel {
       }
       foundWarning.state = state;
     }
+    return true;
   }
   saveState() {
     const str = btoa(JSON.stringify(this.state));
