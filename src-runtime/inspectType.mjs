@@ -1,6 +1,5 @@
 import {options     } from './options.mjs';
 import {warnedTable } from './warnedTable.mjs';
-import {warn        } from './warn.mjs';
 import {validateType} from './validateType.mjs';
 import {partition   } from './partition.js';
 import {Warning     } from './Warning.js';
@@ -15,7 +14,7 @@ import {typePanel   } from './TypePanel.js';
  */
 function inspectType(value, expect, loc, name, critical = true) {
   if (!expect) {
-    warn("inspectType> 'expect' always should be set");
+    console.warn("inspectType> 'expect' always should be set");
     return false;
   }
   /** @type {any[]} */
@@ -47,7 +46,7 @@ function inspectType(value, expect, loc, name, critical = true) {
       options.warned[key] = warnObj;
     }
     warnObj.hits++;
-    warn(warnObj, msg, {expect, value, valueToString}, ...extras);
+    warnObj.warn(msg, {expect, value, valueToString}, ...extras);
     const {dbg} = warnObj;
     if (dbg) {
       debugger;

@@ -1,3 +1,4 @@
+import {options} from "./options.mjs";
 /**
  * @todo Also construct a Node.js version, WarningConsole and WarningBrowser
  */
@@ -110,6 +111,30 @@ class Warning {
       return undefined; // ESLint bs
     }
     return ret;
+  }
+  /**
+   * @param {string} msg - The main message.
+   * @param {...any} extra - Extra strings or objects etc.
+   */
+  warn(msg, ...extra) {
+    const {mode} = options;
+    if (this.hidden) {
+      return;
+    }
+    switch (mode) {
+      case 'spam':
+        console.error(msg, ...extra);
+        break;
+      case 'once':
+        if (this.hits === 1) {
+          console.error(msg, ...extra);
+        }
+        break;
+      case 'never':
+        break;
+      default:
+        console.error("warn> unsupported mode:", mode);
+    }
   }
 }
 export {Warning};
