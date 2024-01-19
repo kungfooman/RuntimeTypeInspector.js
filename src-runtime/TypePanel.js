@@ -80,6 +80,7 @@ class TypePanel {
       // add when page is loaded
       document.addEventListener("DOMContentLoaded", finalFunc);
     }
+    this.loadState();
   }
   get state() {
     /** @type {object[]} */
@@ -111,6 +112,7 @@ class TypePanel {
     const json = this.stateFromLocation;
     for (const e of json) {
       const {loc, name, state} = e;
+      /** @type {Warning|undefined} */
       let foundWarning;
       for (const key in options.warned) {
         const warning = options.warned[key];
