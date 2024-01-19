@@ -101,7 +101,7 @@ class TypePanel {
   get stateFromLocation() {
     const arr = location.hash.slice(1).split('&').filter(_ => _.startsWith('typepanel='));
     if (!arr.length) {
-      return;
+      return undefined; // ESLint bs
     }
     const base64 = arr[0].slice(10); // 'typepanel='.length === 10
     const text = atob(base64);
