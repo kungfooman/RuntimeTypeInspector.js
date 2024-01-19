@@ -1,6 +1,5 @@
 import {options     } from './options.mjs';
 import {warnedTable } from './warnedTable.mjs';
-import {warn        } from './warn.mjs';
 import {validateType} from './validateType.mjs';
 import {partition   } from './partition.js';
 import {Warning     } from './Warning.js';
@@ -15,7 +14,7 @@ import {typePanel   } from './TypePanel.js';
  */
 function inspectType(value, expect, loc, name, critical = true) {
   if (!expect) {
-    warn("inspectType> 'expect' always should be set");
+    console.warn("inspectType> 'expect' always should be set");
     return false;
   }
   /** @type {any[]} */
@@ -34,19 +33,20 @@ function inspectType(value, expect, loc, name, critical = true) {
     //   expectStr = '';
     // }
     const [strings, extras] = partition(warnings, _ => typeof _ === 'string');
+    const key = `${loc}-${name}`;
     const msg = `${loc}> The '${name}' argument has an invalid type. ${strings.join(' ')}`.trim();
     // String form allows us to see more about certain values, like a vector with a NaN component.
     // Since `value` will "only" be the actual reference and might be "repaired" after further calculations.
     const valueToString = value?.toString?.();
     // Nytaralyxe: options.warns where each warn callback supports one system (node, div/dom etc.)
-    let warnObj = options.warned[msg];
+    let warnObj = options.warned[key];
     if (!warnObj) {
       warnObj = new Warning(msg, value, expect, loc, name);
       warnedTable?.append(warnObj.tr);
-      options.warned[msg] = warnObj;
+      options.warned[key] = warnObj;
     }
     warnObj.hits++;
-    warn(msg, {expect, value, valueToString}, ...extras);
+    warnObj.warn(msg, {expect, value, valueToString}, ...extras);
     const {dbg} = warnObj;
     if (dbg) {
       debugger;
@@ -54,6 +54,8 @@ function inspectType(value, expect, loc, name, critical = true) {
     }
     // The value may change and we only show the latest wrong value
     warnObj.value = value;
+    // Message may change aswell, especially after loadint state.
+    warnObj.msg = msg;
   }
   return ret;
 }

@@ -1,3 +1,4 @@
+import {options} from "./options.mjs";
 /**
  * @todo Also construct a Node.js version, WarningConsole and WarningBrowser
  */
@@ -13,6 +14,7 @@ class Warning {
   td_desc          = document.createElement('td');
   button_dbgInput  = document.createElement('button');
   button_hideInput = document.createElement('button');
+  _msg             = '';
   _hits            = 0;
   _hidden          = false;
   _dbg             = false;
@@ -71,16 +73,68 @@ class Warning {
   get value() {
     return this._value;
   }
+  set msg(_) {
+    this._msg = _;
+    this.td_desc.textContent = _ + '';
+  }
+  get msg() {
+    return this._msg;
+  }
+  /**
+   * @type {string[]}
+   */
+  set state(_) {
+    if (!_) {
+      return;
+    }
+    if (_.includes('dbg')) {
+      this.dbg = true;
+    }
+    if (_.includes('hidden')) {
+      this.hidden = true;
+    }
+  }
   /**
    * Returns state of dbg/hidden only if relevant (meaning not being default values).
-   * @returns {object|undefined} Relevant changes or `undefined`.
+   * @returns {string[]|undefined} Relevant changes or `undefined`.
    */
-  get deltaState() {
+  get state() {
     const {dbg, hidden} = this;
-    if (dbg || hidden) {
-      return {dbg, hidden};
+    const ret = [];
+    if (dbg) {
+      ret.push('dbg');
     }
-    return undefined; // Just for ESLint, change rule...
+    if (hidden) {
+      ret.push('hidden');
+    }
+    if (!ret.length) {
+      return undefined; // ESLint bs
+    }
+    return ret;
+  }
+  /**
+   * @param {string} msg - The main message.
+   * @param {...any} extra - Extra strings or objects etc.
+   */
+  warn(msg, ...extra) {
+    const {mode} = options;
+    if (this.hidden) {
+      return;
+    }
+    switch (mode) {
+      case 'spam':
+        console.error(msg, ...extra);
+        break;
+      case 'once':
+        if (this.hits === 1) {
+          console.error(msg, ...extra);
+        }
+        break;
+      case 'never':
+        break;
+      default:
+        console.error("warn> unsupported mode:", mode);
+    }
   }
 }
 export {Warning};
