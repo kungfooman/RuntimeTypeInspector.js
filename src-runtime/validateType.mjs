@@ -104,7 +104,7 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
     const pushWarning = (...args) => {
       warnings.push(...args);
     };
-    const ret = customValidation(value, expect, loc, name, critical, pushWarning);
+    const ret = customValidation(value, expect, loc, name, critical, pushWarning, depth + 1);
     if (!ret) {
       warn(`Custom validation failed due to:`, ...warnings);
       return false;

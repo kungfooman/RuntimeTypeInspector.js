@@ -1,5 +1,5 @@
-import {warn} from "./warn.mjs";
 /**
+ * @todo validateNumber and validateDivision aren't validation functions like the others... streamline or change names.
  * Validates if a given property is neither NaN nor +-Infinity
  * @param {Object<string|number, number>} obj - The object to test a property of.
  * @param {string|number} prop - Name or index or property.
@@ -9,19 +9,19 @@ function validateNumber(obj, prop) {
   const val = obj[prop];
   const type = typeof obj;
   if (val === null) {
-    warn(`${type}#${prop} null`, {obj});
+    console.warn(`${type}#${prop} null`, {obj});
     return false;
   }
   if (val === undefined) {
-    warn(`${type}#${prop} undefined`, {obj});
+    console.warn(`${type}#${prop} undefined`, {obj});
     return false;
   }
   if (isNaN(val)) {
-    warn(`${type}#${prop} NaN`, {obj});
+    console.warn(`${type}#${prop} NaN`, {obj});
     return false;
   }
   if (!isFinite(val)) {
-    warn(`${type}#${prop} +-Infinity`, {obj});
+    console.warn(`${type}#${prop} +-Infinity`, {obj});
     return false;
   }
   return true;
