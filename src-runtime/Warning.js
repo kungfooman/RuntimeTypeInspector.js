@@ -41,6 +41,8 @@ class Warning {
     td_expect.textContent = expect;
     td_value.textContent = value;
     td_desc.innerText = msg;
+    td_value.classList.add('value');
+    td_desc.classList.add('desc');
   }
   set dbg(_) {
     this._dbg = _;

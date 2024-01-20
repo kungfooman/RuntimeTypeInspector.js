@@ -21,6 +21,16 @@ function niceDiv(div) {
     .rti {
       color: black;
     }
+    .rti .value {
+      max-width: 20vw;
+      text-wrap: nowrap;
+      overflow: hidden;
+    }
+    .rti .desc {
+      max-width: 20vw;
+      text-wrap: nowrap;
+      overflow: hidden;
+    }
   `;
   div.classList.add('rti');
   document.head.appendChild(rule);
