@@ -22,14 +22,17 @@ function niceDiv(div) {
       color: black;
     }
     .rti .value {
-      max-width: 20vw;
+      max-width: 15vw;
       text-wrap: nowrap;
       overflow: hidden;
     }
     .rti .desc {
       max-width: 20vw;
-      text-wrap: nowrap;
       overflow: hidden;
+    }
+    .rti td {
+      word-break: break-all;
+      max-width: 10vw;
     }
   `;
   div.classList.add('rti');
