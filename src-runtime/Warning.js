@@ -1,4 +1,5 @@
 import {options} from "./options.mjs";
+import {DisplayAnything} from 'display-anything';
 /**
  * @todo Also construct a Node.js version, WarningConsole and WarningBrowser
  */
@@ -20,9 +21,12 @@ class Warning {
   _dbg             = false;
   /** @type {any} */
   _value;
+  /** @type {import('./validateType.mjs').Type} */
+  _expect;
   constructor(msg, value, expect, loc, name) {
     this.loc = loc;
     this.name = name;
+    this._expect = expect;
     const {
       tr,
       td_hide, td_dbg, td_count, td_location, td_name, td_expect, td_value, td_desc,
@@ -38,8 +42,8 @@ class Warning {
     // todo hits setter/getter
     td_location.textContent = loc;
     td_name.textContent = name;
-    td_expect.textContent = expect;
-    td_value.textContent = value;
+    //td_expect.textContent = expect;
+    this.expect = expect;
     td_desc.innerText = msg;
     td_value.classList.add('value');
     td_desc.classList.add('desc');
@@ -70,10 +74,24 @@ class Warning {
    */
   set value(_) {
     this._value = _;
-    this.td_value.textContent = _ + '';
+    const val = new DisplayAnything(_);
+    this.td_value.innerHTML = '';
+    this.td_value.append(val.render());
   }
   get value() {
     return this._value;
+  }
+  /**
+   * @type {import('./validateType.mjs').Type}
+   * @param {import('./validateType.mjs').Type} _ - The expected type.
+   */
+  set expect(_) {
+    const val = new DisplayAnything(_);
+    this.td_expect.innerHTML = '';
+    this.td_expect.append(val.render());
+  }
+  get expect() {
+    return this._expect;
   }
   set msg(_) {
     this._msg = _;

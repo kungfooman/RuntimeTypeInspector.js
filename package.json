@@ -53,6 +53,7 @@
   },
   "dependencies": {
     "@babel/core": "^7.2.0",
+    "display-anything": "^1.1.0",
     "typescript": "^5.1.6"
   }
 }

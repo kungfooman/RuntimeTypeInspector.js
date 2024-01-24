@@ -32,7 +32,8 @@ function niceDiv(div) {
     }
     .rti td {
       word-break: break-all;
-      max-width: 10vw;
+      max-width: 200px;
+      width: min-content;
     }
   `;
   div.classList.add('rti');
