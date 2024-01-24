@@ -21,9 +21,12 @@ class Warning {
   _dbg             = false;
   /** @type {any} */
   _value;
+  /** @type {import('./validateType.mjs').Type} */
+  _expect;
   constructor(msg, value, expect, loc, name) {
     this.loc = loc;
     this.name = name;
+    this._expect = expect;
     const {
       tr,
       td_hide, td_dbg, td_count, td_location, td_name, td_expect, td_value, td_desc,
@@ -79,13 +82,16 @@ class Warning {
     return this._value;
   }
   /**
-   * @type {any}
-   * @param {any} _ - The expect type.
+   * @type {import('./validateType.mjs').Type}
+   * @param {import('./validateType.mjs').Type} _ - The expected type.
    */
   set expect(_) {
     const val = new DisplayAnything(_);
     this.td_expect.innerHTML = '';
     this.td_expect.append(val.render());
+  }
+  get expect() {
+    return this._expect;
   }
   set msg(_) {
     this._msg = _;
