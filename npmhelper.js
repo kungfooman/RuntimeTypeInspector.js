@@ -18,8 +18,10 @@ const dirs = [
   'plugin-parcel1',
   'plugin-parcel2',
   'plugin-rollup',
+  'plugin-webpack',
   'plugin-webpack4',
   'plugin-webpack5',
+  'repl',
 ];
 const newVersion = '3.2.0';
 for (const dir of dirs) {
