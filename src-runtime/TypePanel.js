@@ -161,4 +161,4 @@ class TypePanel {
   }
 }
 const typePanel = new TypePanel();
-export {typePanel, TypePanel};
+export {niceDiv, TypePanel, typePanel};

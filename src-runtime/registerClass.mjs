@@ -1,6 +1,4 @@
-/**
- * @type {Record<string, Function>}
- */
+/** @type {Record<string, Function>} */
 const classes = {};
 /**
  * @param {Function} theClass - The class.

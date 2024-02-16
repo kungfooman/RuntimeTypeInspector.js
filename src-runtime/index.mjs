@@ -12,6 +12,7 @@ export * from './makeJSDoc.mjs';
 export * from './options.mjs';
 export * from './partition.js';
 export * from './registerClass.mjs';
+export * from './registerImportNamespaceSpecifier.js';
 export * from './registerTypedef.mjs';
 export * from './registerVariable.js';
 export * from './replaceType.js';

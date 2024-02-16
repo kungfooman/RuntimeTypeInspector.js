@@ -23,4 +23,4 @@ function createTable() {
   return table;
 }
 const warnedTable = createTable();
-export {createTable, warnedTable};
+export {createTableHead, createTable, warnedTable};
