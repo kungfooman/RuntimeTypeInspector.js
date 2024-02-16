@@ -126,7 +126,7 @@ class Asserter extends Stringifier {
     if (this.validateDivision) {
       header += ", validateDivision";
     }
-    header += ", registerTypedef, registerClass} from '@runtime-type-inspector/runtime';\n";
+    header += ", registerTypedef, registerClass, registerImportNamespaceSpecifier} from '@runtime-type-inspector/runtime';\n";
     // Prevent tree-shaking in UMD build so we can always "add a breakpoint here".
     header += "export * from '@runtime-type-inspector/runtime';\n";
     return header;
