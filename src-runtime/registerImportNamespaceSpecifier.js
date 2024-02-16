@@ -5,6 +5,6 @@ const importNamespaceSpecifiers = {};
  * @param {object} module - The module.
  */
 function registerImportNamespaceSpecifier(name, module) {
-    importNamespaceSpecifiers[name] = module;
+  importNamespaceSpecifiers[name] = module;
 }
 export {importNamespaceSpecifiers, registerImportNamespaceSpecifier};
