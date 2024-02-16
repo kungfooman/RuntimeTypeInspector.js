@@ -9,6 +9,7 @@
   "license": "MIT",
   "dependencies": {
     "@runtime-type-inspector/transpiler": "^3.2.0",
+    "@rollup/pluginutils": "^5.1.0",
     "rollup": "^3.29.4"
   }
 }
