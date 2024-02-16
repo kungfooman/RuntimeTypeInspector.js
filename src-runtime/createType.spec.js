@@ -1,5 +1,5 @@
 import {createType     } from './createType.js';
-import {registerTypedef} from './registerTypedef.mjs';
+import {registerTypedef} from './registerTypedef.js';
 function prepare() {
   /**
    * @typedef {{a: 'aa', b: 'bb', c: 'cc'}} Obj
@@ -28,7 +28,7 @@ function prepare() {
 }
 function test1() {
   prepare();
-  /** @type {import('./validateUnion.mjs').Union} */
+  /** @type {import('./validateUnion.js').Union} */
   // @ts-ignore
   const t = createType("ObjValuesTypedef2", console.warn);
   if (!t) {

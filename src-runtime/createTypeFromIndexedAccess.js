@@ -1,11 +1,11 @@
 //import {createType } from "./createType.js";
 import {resolveType } from "./resolveType.js";
 //import {replaceType } from "./replaceType.js";
-import {getTypeKeys } from "./validateKeyof.mjs";
+import {getTypeKeys } from "./validateKeyof.js";
 /**
  * @param {import('./validateIndexedAccess.js').IndexedAccess} expect - The supposed type information of said value.
  * @param {console["warn"]} warn - Function to warn with.
- * @returns {import('./validateType.mjs').TypeObject|undefined} - New type that can be used for validation.
+ * @returns {import('./validateType.js').TypeObject|undefined} - New type that can be used for validation.
  */
 function createTypeFromIndexedAccess(expect, warn) {
   const {object, index} = expect;
@@ -18,7 +18,7 @@ function createTypeFromIndexedAccess(expect, warn) {
       warn('createTypeFromIndexedAccess: missing indexKeys');
       return;
     }
-    /** @type {import('./validateType.mjs').Type[]} */
+    /** @type {import('./validateType.js').Type[]} */
     const members = [];
     for (const indexKey of indexKeys) {
       let prop = resolvedObject.properties[indexKey];

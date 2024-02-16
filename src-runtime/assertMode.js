@@ -1,5 +1,5 @@
 /**
- * @returns {asserts mode is typeof import('./options.mjs').options.mode} asd
+ * @returns {asserts mode is typeof import('./options.js').options.mode} asd
  * @param {string} mode - The mode to test.
  */
 function assertMode(mode) {

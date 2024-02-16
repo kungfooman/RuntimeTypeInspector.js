@@ -1,10 +1,10 @@
 import {createTypeFromMapping} from "./createTypeFromMapping.js";
-import {validateType         } from "./validateType.mjs";
+import {validateType         } from "./validateType.js";
 /**
  * @typedef {object} Mapping
- * @property {import('./validateType.mjs').Type} iterable - The iterable.
+ * @property {import('./validateType.js').Type} iterable - The iterable.
  * @property {string} element - The element.
- * @property {import('./validateType.mjs').Type} result - The result.
+ * @property {import('./validateType.js').Type} result - The result.
  */
 /**
  * @param {*} value - The actual value that we need to validate.

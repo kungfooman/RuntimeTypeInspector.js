@@ -1,10 +1,10 @@
 import {replaceType } from "./replaceType.js";
-import {getTypeKeys } from "./validateKeyof.mjs";
-import {typedefs    } from "./registerTypedef.mjs";
+import {getTypeKeys } from "./validateKeyof.js";
+import {typedefs    } from "./registerTypedef.js";
 /**
- * @param {string|import('./validateMapping.mjs').Mapping} expect - The supposed type information of said value.
+ * @param {string|import('./validateMapping.js').Mapping} expect - The supposed type information of said value.
  * @param {console["warn"]} warn - Function to warn with.
- * @returns {import('./validateType.mjs').TypeObject|undefined} - New type that can be used for validation.
+ * @returns {import('./validateType.js').TypeObject|undefined} - New type that can be used for validation.
  */
 function createTypeFromMapping(expect, warn) {
   /** @todo some kind of resolveType(expect, 'mapping', depth = 0) function */
@@ -17,7 +17,7 @@ function createTypeFromMapping(expect, warn) {
     warn('validateMapping: missing typeKeys');
     return;
   }
-  /** @type {Record<string, import('./validateType.mjs').Type>} */
+  /** @type {Record<string, import('./validateType.js').Type>} */
   const properties = {};
   for (const typeKey of typeKeys) {
     const cloneResult = structuredClone(result);

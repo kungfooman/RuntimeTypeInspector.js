@@ -1,6 +1,6 @@
 import {assertMode } from "./assertMode.js";
-import {options    } from "./options.mjs";
-import {warnedTable} from "./warnedTable.mjs";
+import {options    } from "./options.js";
+import {warnedTable} from "./warnedTable.js";
 import {Warning    } from "./Warning.js";
 /**
  * @param {HTMLDivElement} div - The <div>.

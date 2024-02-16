@@ -1,8 +1,8 @@
-import {typedefs    } from "./registerTypedef.mjs";
-import {validateType} from "./validateType.mjs";
+import {typedefs    } from "./registerTypedef.js";
+import {validateType} from "./validateType.js";
 /**
  * @param {*} value - The actual value that we need to validate.
- * @param {import('./validateType.mjs').TypeObject} expect - The supposed type information of said value.
+ * @param {import('./validateType.js').TypeObject} expect - The supposed type information of said value.
  * @param {string} loc - String like `BoundingBox#compute`
  * @param {string} name - Name of the argument
  * @param {boolean} critical - Only `false` for unions.

@@ -1,4 +1,4 @@
-import {typedefs} from "./registerTypedef.mjs";
+import {typedefs} from "./registerTypedef.js";
 /**
  * @param {any} type - The type.
  * @param {string} as - What to resolve as.

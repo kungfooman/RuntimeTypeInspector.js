@@ -6,7 +6,7 @@ function importFile(content) {
   return "data:text/javascript;base64," + btoa(content);
 }
 const imports = {
-  "@runtime-type-inspector/runtime"   : '../src-runtime/index.mjs',
+  "@runtime-type-inspector/runtime"   : '../src-runtime/index.js',
   "@runtime-type-inspector/transpiler": '../src-transpiler/index.mjs',
   "@babel/parser": "./babel-parser.mjs",
   "display-anything": "./node_modules/display-anything/src/index.js",

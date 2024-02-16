@@ -2,7 +2,7 @@ import {getTypeKeys} from "./getTypeKeys.js";
 /**
  * @typedef {object} Keyof
  * @property {'keyof'} iterable - The type.
- * @property {import('./validateType.mjs').Type} argument - The argument.
+ * @property {import('./validateType.js').Type} argument - The argument.
  */
 /**
  * @param {*} value - The actual value that we need to validate.

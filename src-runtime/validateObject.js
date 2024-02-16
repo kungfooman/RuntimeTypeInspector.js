@@ -1,5 +1,5 @@
-import {validateType} from "./validateType.mjs";
-import {options     } from "./options.mjs";
+import {validateType} from "./validateType.js";
+import {options     } from "./options.js";
 import {isObject    } from "./isObject.js";
 /**
  * @param {*} value - The actual value that we need to validate.
