@@ -10,6 +10,7 @@ const imports = {
   "@runtime-type-inspector/transpiler": '../src-transpiler/index.mjs',
   "@babel/parser": "./babel-parser.mjs",
   "display-anything": "./node_modules/display-anything/src/index.js",
+  "test-import-validation-b": "../test/typechecking/import-validation/b.js",
   //"@babel/helper-plugin-utils": "./babel-helper-plugin-utils.mjs",
   //"@babel/plugin-syntax-typescript": "./babel-plugin-syntax-typescript.mjs",
   "fs": importFile("export default {};"),
