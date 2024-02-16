@@ -1,5 +1,5 @@
-import {expandTypeDepFree} from "./expandTypeDepFree.mjs";
-import {simplifyType} from "./simplifyType.mjs";
+import {expandTypeDepFree} from "./expandTypeDepFree.js";
+import {simplifyType} from "./simplifyType.js";
 /**
  * Parses JSDoc comments to extract parameter type information.
  *

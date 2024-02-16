@@ -1,15 +1,15 @@
-import {requiredTypeofs  } from './expandType.mjs';
-import {expandTypeDepFree} from './expandTypeDepFree.mjs';
-import {nodeIsFunction   } from './nodeIsFunction.mjs';
-import {parseJSDoc       } from './parseJSDoc.mjs';
-import {parseJSDocSetter } from './parseJSDocSetter.mjs';
-import {parseJSDocTypedef} from './parseJSDocTypedef.mjs';
-import {statReset        } from './stat.mjs';
-import {Stringifier      } from './Stringifier.mjs';
+import {requiredTypeofs  } from './expandType.js';
+import {expandTypeDepFree} from './expandTypeDepFree.js';
+import {nodeIsFunction   } from './nodeIsFunction.js';
+import {parseJSDoc       } from './parseJSDoc.js';
+import {parseJSDocSetter } from './parseJSDocSetter.js';
+import {parseJSDocTypedef} from './parseJSDocTypedef.js';
+import {statReset        } from './stat.js';
+import {Stringifier      } from './Stringifier.js';
 /** @typedef {import('@babel/types').Node              } Node               */
 /** @typedef {import("@babel/types").ClassMethod       } ClassMethod        */
 /** @typedef {import("@babel/types").ClassPrivateMethod} ClassPrivateMethod */
-/** @typedef {import('./stat.mjs').Stat                } Stat               */
+/** @typedef {import('./stat.js').Stat                } Stat               */
 /**
  * @typedef {object} Options
  * @property {boolean} [forceCurly] - Determines whether curly braces are enforced in Stringifier.

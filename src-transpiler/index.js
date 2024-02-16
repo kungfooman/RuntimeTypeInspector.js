@@ -4,20 +4,20 @@
  * @namespace
  * @description Root namespace for the RTI Transpiler.
  */
-export * from './addTypeChecks.mjs';
-export * from './Asserter.mjs';
-export * from './ast2json.mjs';
-export * from './ast2jsonForComparison.mjs';
-export * from './code2ast2code.mjs';
-export * from './compareAST.mjs';
-export * from './expandType.mjs';
-export * from './expandTypeBabelTS.mjs';
-export * from './expandTypeDepFree.mjs';
-export * from './extractNameAndOptionality.mjs';
-export * from './nodeIsFunction.mjs';
-export * from './parseJSDoc.mjs';
-export * from './parseJSDocSetter.mjs';
-export * from './parseJSDocTypedef.mjs';
-export * from './simplifyType.mjs';
-export * from './Stringifier.mjs';
-export * from './trimEndSpaces.mjs';
+export * from './addTypeChecks.js';
+export * from './Asserter.js';
+export * from './ast2json.js';
+export * from './ast2jsonForComparison.js';
+export * from './code2ast2code.js';
+export * from './compareAST.js';
+export * from './expandType.js';
+export * from './expandTypeBabelTS.js';
+export * from './expandTypeDepFree.js';
+export * from './extractNameAndOptionality.js';
+export * from './nodeIsFunction.js';
+export * from './parseJSDoc.js';
+export * from './parseJSDocSetter.js';
+export * from './parseJSDocTypedef.js';
+export * from './simplifyType.js';
+export * from './Stringifier.js';
+export * from './trimEndSpaces.js';

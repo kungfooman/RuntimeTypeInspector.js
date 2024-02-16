@@ -1,4 +1,4 @@
-import {trimEndSpaces} from './trimEndSpaces.mjs';
+import {trimEndSpaces} from './trimEndSpaces.js';
 /**
  * @typedef {import("@babel/types").Node} Node
  */
@@ -247,7 +247,7 @@ class Stringifier {
    * Generates a string representing type checks for a given Babel AST node.
    *
    * Note: This method serves as a stub and should be overridden in subclasses.
-   * The actual implementation is expected to be provided in Asserter.mjs, where
+   * The actual implementation is expected to be provided in Asserter.js, where
    * it would create runtime type assertions based on the AST node provided.
    *
    * @param {Node} node - The Babel AST node for which to generate type checks.

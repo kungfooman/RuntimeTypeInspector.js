@@ -2,7 +2,7 @@ import {parse} from '@babel/parser';
 /**
  * @todo Better handling of weird case: Array<>
  * @example
- * const {expandTypeBabelTS} = await import("./src-transpiler/expandTypeBabelTS.mjs");
+ * const {expandTypeBabelTS} = await import("./src-transpiler/expandTypeBabelTS.js");
  * expandTypeBabelTS('[string, Array|AnyTypedArray, number[]]|[ONNXTensor]');
  * expandTypeBabelTS('(123)                    '); // Outputs: '123'
  * expandTypeBabelTS('  ( ( 123 ) )            '); // Outputs: '123'

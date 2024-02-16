@@ -1,5 +1,5 @@
-import {extractNameAndOptionality} from './extractNameAndOptionality.mjs';
-import {simplifyType             } from './simplifyType.mjs';
+import {extractNameAndOptionality} from './extractNameAndOptionality.js';
+import {simplifyType             } from './simplifyType.js';
 /**
  * Extracts the content of a string that is delimited by curly braces.
  * @example

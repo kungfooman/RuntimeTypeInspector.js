@@ -1,5 +1,5 @@
 import {parse   } from '@babel/parser';
-import {Asserter} from './Asserter.mjs';
+import {Asserter} from './Asserter.js';
 /**
  * Simple facade which does all the processing. Processes the input
  * source string, adding runtime type checks based on JSDoc comments.
@@ -11,7 +11,7 @@ import {Asserter} from './Asserter.mjs';
  *
  * @param {string} src - The input source code containing JSDoc comments to be processed
  * for type checks.
- * @param {import('./Asserter.mjs').Options} [options] - Configuration options that dictate
+ * @param {import('./Asserter.js').Options} [options] - Configuration options that dictate
  * how the processing is performed.
  * @returns {string} The transformed source code with inserted runtime type checks, or the
  * original source code commented with an error if processing fails.
