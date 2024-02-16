@@ -1,6 +1,6 @@
-import {replaceType } from "./replaceType.js";
-import {getTypeKeys } from "./validateKeyof.js";
-import {typedefs    } from "./registerTypedef.js";
+import {replaceType} from "./replaceType.js";
+import {getTypeKeys} from "./getTypeKeys.js";
+import {typedefs   } from "./registerTypedef.js";
 /**
  * @param {string|import('./validateMapping.js').Mapping} expect - The supposed type information of said value.
  * @param {console["warn"]} warn - Function to warn with.

@@ -1,7 +1,7 @@
 //import {createType } from "./createType.js";
 import {resolveType } from "./resolveType.js";
 //import {replaceType } from "./replaceType.js";
-import {getTypeKeys } from "./validateKeyof.js";
+import {getTypeKeys } from "./getTypeKeys.js";
 /**
  * @param {import('./validateIndexedAccess.js').IndexedAccess} expect - The supposed type information of said value.
  * @param {console["warn"]} warn - Function to warn with.
@@ -10,7 +10,7 @@ import {getTypeKeys } from "./validateKeyof.js";
 function createTypeFromIndexedAccess(expect, warn) {
   const {object, index} = expect;
   const resolvedObject = resolveType(object, 'object', warn);
-  if (resolvedObject)  {
+  if (resolvedObject) {
     // const indexType = createType(index, warn);
     const indexKeys = getTypeKeys(index, warn);
     //console.log("createTypeFromIndexedAccess", {resolvedObject, object, index, indexType, indexKeys});
