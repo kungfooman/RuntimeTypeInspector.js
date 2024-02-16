@@ -1,5 +1,5 @@
 import {variables} from "./registerVariable.js";
-import {typedefs } from "./registerTypedef.mjs";
+import {typedefs } from "./registerTypedef.js";
 /**
  * @example
  * getTypeKeys({type: 'typeof', argument: 'DataTypeMap'}, console.warn);

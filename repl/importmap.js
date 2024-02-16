@@ -6,15 +6,15 @@ function importFile(content) {
   return "data:text/javascript;base64," + btoa(content);
 }
 const imports = {
-  "@runtime-type-inspector/runtime"   : '../src-runtime/index.mjs',
-  "@runtime-type-inspector/transpiler": '../src-transpiler/index.mjs',
-  "@babel/parser": "./babel-parser.mjs",
-  "display-anything": "./node_modules/display-anything/src/index.js",
-  "test-import-validation-b": "../test/typechecking/import-validation/b.js",
-  //"@babel/helper-plugin-utils": "./babel-helper-plugin-utils.mjs",
-  //"@babel/plugin-syntax-typescript": "./babel-plugin-syntax-typescript.mjs",
-  "fs": importFile("export default {};"),
-  "typescript": importFile("export default ts;"), // UMD import
+  "@runtime-type-inspector/runtime"   : '../src-runtime/index.js',
+  "@runtime-type-inspector/transpiler": '../src-transpiler/index.js',
+  "@babel/parser"                     : "./babel-parser.js",
+  "display-anything"                  : "./node_modules/display-anything/src/index.js",
+  "test-import-validation-b"          : "../test/typechecking/import-validation/b.js",
+  //"@babel/helper-plugin-utils"      : "./babel-helper-plugin-utils.js",
+  //"@babel/plugin-syntax-typescript" : "./babel-plugin-syntax-typescript.js",
+  "fs"                                : importFile("export default {};"),
+  "typescript"                        : importFile("export default ts;"), // UMD import
 };
 if (location.host.includes('runtimetypeinspector.org') || location.port === '7000') {
   imports['@runtime-type-inspector/runtime'   ] = './node_modules/@runtime-type-inspector/runtime/index.mjs';

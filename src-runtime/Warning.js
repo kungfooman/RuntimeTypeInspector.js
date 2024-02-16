@@ -1,4 +1,4 @@
-import {options} from "./options.mjs";
+import {options} from "./options.js";
 import {DisplayAnything} from 'display-anything';
 /**
  * @todo Also construct a Node.js version, WarningConsole and WarningBrowser
@@ -21,7 +21,7 @@ class Warning {
   _dbg             = false;
   /** @type {any} */
   _value;
-  /** @type {import('./validateType.mjs').Type} */
+  /** @type {import('./validateType.js').Type} */
   _expect;
   constructor(msg, value, expect, loc, name) {
     this.loc = loc;
@@ -82,8 +82,8 @@ class Warning {
     return this._value;
   }
   /**
-   * @type {import('./validateType.mjs').Type}
-   * @param {import('./validateType.mjs').Type} _ - The expected type.
+   * @type {import('./validateType.js').Type}
+   * @param {import('./validateType.js').Type} _ - The expected type.
    */
   set expect(_) {
     const val = new DisplayAnything(_);

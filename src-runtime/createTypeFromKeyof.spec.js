@@ -1,5 +1,5 @@
 import {createType     } from './createType.js';
-import {registerTypedef} from './registerTypedef.mjs';
+import {registerTypedef} from './registerTypedef.js';
 function prepare() {
   /**
    * @template T
@@ -27,7 +27,7 @@ function prepare() {
 }
 function test1() {
   prepare();
-  /** @type {import('./validateUnion.mjs').Union} */
+  /** @type {import('./validateUnion.js').Union} */
   const newType = createType('ObjKeysTypedef', console.warn);
   if (!newType) {
     console.warn('t is not defined.');

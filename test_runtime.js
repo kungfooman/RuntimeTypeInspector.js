@@ -1,10 +1,10 @@
 import {createTypeFromMapping} from './src-runtime/createTypeFromMapping.js';
-import {expandType           } from './src-transpiler/expandType.mjs';
-import {validateType         } from './src-runtime/validateType.mjs';
-import {validateUnion        } from './src-runtime/validateUnion.mjs';
-import {validateTuple        } from './src-runtime/validateTuple.mjs';
-import {clearObject          } from './src-runtime/options.mjs';
-import {typedefs             } from './src-runtime/registerTypedef.mjs';
+import {expandType           } from './src-transpiler/expandType.js';
+import {validateType         } from './src-runtime/validateType.js';
+import {validateUnion        } from './src-runtime/validateUnion.js';
+import {validateTuple        } from './src-runtime/validateTuple.js';
+import {clearObject          } from './src-runtime/options.js';
+import {typedefs             } from './src-runtime/registerTypedef.js';
 const warn = () => undefined;
 // We expect all functions to return true.
 const tests = [

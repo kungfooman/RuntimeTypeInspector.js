@@ -1,4 +1,4 @@
-import {validateType} from "./validateType.mjs";
+import {validateType} from "./validateType.js";
 /**
  * @typedef {object} Union
  * @property {'union'} type - The type.

@@ -1,6 +1,6 @@
-import {options                  } from './options.mjs';
-import {warnedTable              } from './warnedTable.mjs';
-import {validateType             } from './validateType.mjs';
+import {options                  } from './options.js';
+import {warnedTable              } from './warnedTable.js';
+import {validateType             } from './validateType.js';
 import {partition                } from './partition.js';
 import {Warning                  } from './Warning.js';
 import {typePanel                } from './TypePanel.js';

@@ -1,4 +1,4 @@
-import {validateType} from "./validateType.mjs";
+import {validateType} from "./validateType.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.

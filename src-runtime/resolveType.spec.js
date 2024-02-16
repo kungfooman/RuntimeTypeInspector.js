@@ -1,4 +1,4 @@
-import {registerTypedef} from './registerTypedef.mjs';
+import {registerTypedef} from './registerTypedef.js';
 import {resolveType    } from './resolveType.js';
 function prepare() {
   /**

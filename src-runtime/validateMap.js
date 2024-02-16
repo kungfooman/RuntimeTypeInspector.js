@@ -1,4 +1,4 @@
-import {validateType} from "./validateType.mjs";
+import {validateType} from "./validateType.js";
 /**
  * @todo Implement checking all possible key/val types
  * @param {*} value - The actual value that we need to validate.

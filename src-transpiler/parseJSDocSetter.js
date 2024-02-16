@@ -1,5 +1,5 @@
-import {expandTypeDepFree} from "./expandTypeDepFree.mjs";
-import {simplifyType} from "./simplifyType.mjs";
+import {expandTypeDepFree} from "./expandTypeDepFree.js";
+import {simplifyType} from "./simplifyType.js";
 /**
  * @param {string} src - JSDoc comment of the setter.
  * @param {Function} expandType - The expandType function.

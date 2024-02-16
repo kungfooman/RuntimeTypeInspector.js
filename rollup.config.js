@@ -10,8 +10,8 @@ import terser from '@rollup/plugin-terser';
 import dts from 'rollup-plugin-dts';
 import {visualizer} from 'rollup-plugin-visualizer';
 import json from '@rollup/plugin-json';
-//import {addTypeChecks} from "./src-transpiler/typeInserter.mjs";
-//const {addTypeChecks} = await import("runtime-type-inspector/src-transpiler/typeInserter.mjs");
+//import {addTypeChecks} from "./src-transpiler/typeInserter.js";
+//const {addTypeChecks} = await import("runtime-type-inspector/src-transpiler/typeInserter.js");
 import commonjs from '@rollup/plugin-commonjs';
 /** @typedef {import('rollup').RollupOptions} RollupOptions */
 /** @typedef {import('rollup').Plugin} Plugin */
@@ -174,8 +174,8 @@ export default (args) => {
     ['release', /*'debug', 'profiler', 'min', 'rti'*/].forEach((t) => {
       ['es5', 'es6'].forEach((m) => {
         if (envTarget === null || envTarget === t || envTarget === m || envTarget === `${t}_${m}`) {
-          targets.push(buildTarget('rtiTranspiler', 'src-transpiler/index.mjs', '@runtime-type-inspector/transpiler/index', t, m));
-          targets.push(buildTarget('rtiRuntime'   , 'src-runtime/index.mjs'   , '@runtime-type-inspector/runtime/index'   , t, m));
+          targets.push(buildTarget('rtiTranspiler', 'src-transpiler/index.js', '@runtime-type-inspector/transpiler/index', t, m));
+          targets.push(buildTarget('rtiRuntime'   , 'src-runtime/index.js'   , '@runtime-type-inspector/runtime/index'   , t, m));
         }
       });
     });

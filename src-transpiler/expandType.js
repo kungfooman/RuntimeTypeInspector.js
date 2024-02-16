@@ -8,7 +8,7 @@ import ts from 'typescript';
  *
  * @todo Better handling of weird case: Array<>
  * @example
- * const {expandType} = await import("./src-transpiler/expandType.mjs");
+ * const {expandType} = await import("./src-transpiler/expandType.js");
  * expandType('[string, Array|AnyTypedArray, number[]]|[ONNXTensor]');
  * expandType('(123)                    '); // Outputs: '123'
  * expandType('  ( ( 123 ) )            '); // Outputs: '123'
