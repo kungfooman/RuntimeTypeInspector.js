@@ -1,9 +1,10 @@
-import {options     } from './options.mjs';
-import {warnedTable } from './warnedTable.mjs';
-import {validateType} from './validateType.mjs';
-import {partition   } from './partition.js';
-import {Warning     } from './Warning.js';
-import {typePanel   } from './TypePanel.js';
+import {options                  } from './options.mjs';
+import {warnedTable              } from './warnedTable.mjs';
+import {validateType             } from './validateType.mjs';
+import {partition                } from './partition.js';
+import {Warning                  } from './Warning.js';
+import {typePanel                } from './TypePanel.js';
+import {importNamespaceSpecifiers} from './registerImportNamespaceSpecifier.js';
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -16,6 +17,20 @@ function inspectType(value, expect, loc, name, critical = true) {
   if (!expect) {
     console.warn("inspectType> 'expect' always should be set");
     return false;
+  }
+  if (typeof expect === 'string' && expect.includes('.')) {
+      // E.g. ['MathUtils', 'Quaternion']
+    const parts = expect.split('.');
+    if (parts.length === 2) {
+      const [a, b] = parts;
+      if (importNamespaceSpecifiers[a]) {
+        const expectWhat = typeof importNamespaceSpecifiers[a][b];
+        // console.log("expectWhat", expectWhat);
+        expect = expectWhat;
+      }
+    } else {
+      console.log("import namespace specifier rewrite unhandled", {expect, parts});
+    }
   }
   /** @type {any[]} */
   const warnings = [];
