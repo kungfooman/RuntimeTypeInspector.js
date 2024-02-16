@@ -10,8 +10,8 @@ import terser from '@rollup/plugin-terser';
 import dts from 'rollup-plugin-dts';
 import {visualizer} from 'rollup-plugin-visualizer';
 import json from '@rollup/plugin-json';
-//import {addTypeChecks} from "./src-transpiler/typeInserter.mjs";
-//const {addTypeChecks} = await import("runtime-type-inspector/src-transpiler/typeInserter.mjs");
+//import {addTypeChecks} from "./src-transpiler/typeInserter.js";
+//const {addTypeChecks} = await import("runtime-type-inspector/src-transpiler/typeInserter.js");
 import commonjs from '@rollup/plugin-commonjs';
 /** @typedef {import('rollup').RollupOptions} RollupOptions */
 /** @typedef {import('rollup').Plugin} Plugin */
