@@ -655,10 +655,9 @@ class Asserter extends Stringifier {
    */
   ImportNamespaceSpecifier(node) {
     const {local} = node;
-    let out = super.ImportNamespaceSpecifier(node);
     const name = this.toSource(local);
     this.addLaterImportNamespaceSpecifier.push(name);
-    return out;
+    return super.ImportNamespaceSpecifier(node);
   }
 }
 export {Asserter};
