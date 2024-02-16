@@ -8,11 +8,11 @@ function importFile(content) {
 const imports = {
   "@runtime-type-inspector/runtime"   : '../src-runtime/index.js',
   "@runtime-type-inspector/transpiler": '../src-transpiler/index.js',
-  "@babel/parser"                     : "./babel-parser.mjs",
+  "@babel/parser"                     : "./babel-parser.js",
   "display-anything"                  : "./node_modules/display-anything/src/index.js",
   "test-import-validation-b"          : "../test/typechecking/import-validation/b.js",
-  //"@babel/helper-plugin-utils"      : "./babel-helper-plugin-utils.mjs",
-  //"@babel/plugin-syntax-typescript" : "./babel-plugin-syntax-typescript.mjs",
+  //"@babel/helper-plugin-utils"      : "./babel-helper-plugin-utils.js",
+  //"@babel/plugin-syntax-typescript" : "./babel-plugin-syntax-typescript.js",
   "fs"                                : importFile("export default {};"),
   "typescript"                        : importFile("export default ts;"), // UMD import
 };
