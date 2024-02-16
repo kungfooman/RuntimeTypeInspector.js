@@ -145,13 +145,25 @@ function activateREPL() {
  * @todo remove import/exports of RTI Runtime, since we are injecting them
  */
 function activateREPLRuntime() {
-  const code = Object.entries(rti)
+  /** @type {Partial<typeof rti>} */
+  const fixedModule = {...rti};
+  delete fixedModule.warnedTable;
+  delete fixedModule.typePanel;
+  const code = Object.entries(fixedModule)
     .map(([key, val]) => data2code(key, val))
-    .join('\n')
-    .replace('let warnedTable = {};', 'const warnedTable = createTable();');
-  // options.warned needs to be cleared since it contains "tr" values from old session
-  const extra = 'clearObject(options.warned)';
-  const newCode = [code, extra, getRight()].join('\n');
+    .join('\n');
+  const precode = [
+    'import {DisplayAnything} from "display-anything";',
+  ].join('\n');
+  const postcode = [
+    // options.warned needs to be cleared since it contains "tr" values from old session
+    'clearObject(options.warned)',
+    // replacers because we get the old/initialized values that need to be renewed
+    'const warnedTable = createTable();',
+    'const typePanel = new TypePanel();',
+  ].join('\n');
+  const right = getRight().replace('import {inspect', '// import {inspect}');
+  const newCode = [precode, code, postcode, right].join('\n');
   setRight(newCode);
 }
 buttonREPL.onclick = activateREPL;
