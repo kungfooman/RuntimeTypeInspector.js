@@ -634,5 +634,31 @@ class Asserter extends Stringifier {
     }
     return ret;
   }
+  /** @type {string[]} */
+  addLaterImportNamespaceSpecifier = [];
+  /**
+   * @override
+   * @param {import("@babel/types").ImportDeclaration} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  ImportDeclaration(node) {
+    let out = super.ImportDeclaration(node);
+    for (const name of this.addLaterImportNamespaceSpecifier) {
+      out += `\nregisterImportNamespaceSpecifier('${name}', ${name});`;
+    }
+    return out;
+  }
+  /**
+   * @override
+   * @param {import("@babel/types").ImportNamespaceSpecifier} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  ImportNamespaceSpecifier(node) {
+    const {local} = node;
+    let out = super.ImportNamespaceSpecifier(node);
+    const name = this.toSource(local);
+    this.addLaterImportNamespaceSpecifier.push(name);
+    return out;
+  }
 }
 export {Asserter};
