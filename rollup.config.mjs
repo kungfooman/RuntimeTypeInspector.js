@@ -174,8 +174,8 @@ export default (args) => {
     ['release', /*'debug', 'profiler', 'min', 'rti'*/].forEach((t) => {
       ['es5', 'es6'].forEach((m) => {
         if (envTarget === null || envTarget === t || envTarget === m || envTarget === `${t}_${m}`) {
-          targets.push(buildTarget('rtiTranspiler', 'src-transpiler/index.mjs', '@runtime-type-inspector/transpiler/index', t, m));
-          targets.push(buildTarget('rtiRuntime'   , 'src-runtime/index.mjs'   , '@runtime-type-inspector/runtime/index'   , t, m));
+          targets.push(buildTarget('rtiTranspiler', 'src-transpiler/index.js', '@runtime-type-inspector/transpiler/index', t, m));
+          targets.push(buildTarget('rtiRuntime'   , 'src-runtime/index.js'   , '@runtime-type-inspector/runtime/index'   , t, m));
         }
       });
     });

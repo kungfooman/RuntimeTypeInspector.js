@@ -27,4 +27,4 @@ function validateKeyof(value, expect, loc, name, critical, warn, depth) {
   }
   return ret;
 }
-export {getTypeKeys, validateKeyof};
+export {validateKeyof};
