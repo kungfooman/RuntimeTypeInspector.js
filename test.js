@@ -1,5 +1,5 @@
-import {addTypeChecks} from './src-transpiler/addTypeChecks.mjs';
-import {expandType   } from './src-transpiler/expandType.mjs';
+import {addTypeChecks} from './src-transpiler/addTypeChecks.js';
+import {expandType   } from './src-transpiler/expandType.js';
 import {readFileSync } from 'fs';
 /**
  * @param {string} a - Left source code.
