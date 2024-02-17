@@ -1,4 +1,5 @@
 {
+  "bin": "bin.js",
   "name": "@runtime-type-inspector/transpiler",
   "version": "3.2.1",
   "description": "Validating JSDoc types at runtime for high-quality types - Trust is good, control is better.",
