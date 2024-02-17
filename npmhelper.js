@@ -23,7 +23,7 @@ const dirs = [
   'plugin-webpack5',
   'repl',
 ];
-const newVersion = '3.2.0';
+const newVersion = '3.2.1';
 for (const dir of dirs) {
   const file = `${dir}/package.json`;
   const command = [
