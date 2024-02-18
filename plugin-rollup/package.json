@@ -1,14 +1,14 @@
 {
   "name": "@runtime-type-inspector/plugin-rollup",
   "type": "module",
-  "version": "3.2.1",
+  "version": "3.2.3",
   "description": "Rollup plugin for https://runtimetypeinspector.org/",
   "main": "index.mjs",
   "types": "index.mjs",
   "author": "Hermann Rolfes (kungfooman)",
   "license": "MIT",
   "dependencies": {
-    "@runtime-type-inspector/transpiler": "^3.2.1",
+    "@runtime-type-inspector/transpiler": "^3.2.3",
     "@rollup/pluginutils": "^5.1.0",
     "rollup": "^3.29.4"
   }
