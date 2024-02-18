@@ -26,7 +26,7 @@ function inspectType(value, expect, loc, name, critical = true) {
       if (importNamespaceSpecifiers[a]) {
         const ns = importNamespaceSpecifiers[a][b];
         const expectWhat = typeof ns;
-        console.log("expectWhat", expectWhat);
+        // console.log("expectWhat", expectWhat);
         if (value?.constructor === ns) {
           return true;
         }
