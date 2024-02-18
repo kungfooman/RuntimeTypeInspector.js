@@ -24,8 +24,12 @@ function inspectType(value, expect, loc, name, critical = true) {
     if (parts.length === 2) {
       const [a, b] = parts;
       if (importNamespaceSpecifiers[a]) {
-        const expectWhat = typeof importNamespaceSpecifiers[a][b];
-        // console.log("expectWhat", expectWhat);
+        const ns = importNamespaceSpecifiers[a][b];
+        const expectWhat = typeof ns;
+        console.log("expectWhat", expectWhat);
+        if (value?.constructor === ns) {
+          return true;
+        }
         expect = expectWhat;
       }
     } else {
