@@ -72,6 +72,10 @@
     "output": "./test/typechecking/literal-numbers-output.mjs"
   },
   {
+    "input": "./test/typechecking/setter-no-type-input.mjs",
+    "output": "./test/typechecking/setter-no-type-output.mjs"
+  },
+  {
     "input": "./test/typechecking/simple-ObjectMethod-computed-input.mjs",
     "output": "./test/typechecking/simple-ObjectMethod-computed-output.mjs"
   },

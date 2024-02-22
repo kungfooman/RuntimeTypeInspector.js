@@ -24,16 +24,9 @@ const dirs = [
   'plugin-webpack5',
   'repl',
 ];
-const newVersion = '3.2.3';
+const newVersion = JSON.parse(readFileSync('package.json', 'utf-8')).version;
 for (const dir of dirs) {
   const file = `${dir}/package.json`;
-  const command = [
-    `cd ${dir}`,
-    'npm publish'
-  ].join(' && ');
-  //console.log(`# Package: ${dir}`);
-  //console.log(command);
-  //execSync(command);
   const content = readFileSync(file, 'utf8');
   const json = JSON.parse(content);
   json.version = newVersion;
@@ -50,10 +43,20 @@ for (const dir of dirs) {
   const newContent = JSON.stringify(json, null, 2) + '\n';
   writeFileSync(file, newContent);
 }
+console.log('# For publishing: ');
+console.log('export OTP=123');
 for (const dir of dirs) {
   const command = [
     `cd ${dir}`,
-    'npm publish',
+    'npm publish --otp=$OTP',
+  ].join(' && ') + '\ncd -';
+  console.log(command);
+}
+console.log('# For updating package-lock.json files');
+for (const dir of dirs) {
+  const command = [
+    `cd ${dir}`,
+    'npm install',
   ].join(' && ') + '\ncd -';
   console.log(command);
 }
