@@ -253,9 +253,11 @@ class Asserter extends Stringifier {
           if (node.params.length !== 1) {
             this.warn("getJSDoc> setters require exactly one argument");
           }
-          return {
-            [paramName]: parseJSDocSetter(lastComment.value, this.expandType)
-          };
+          const setterType = parseJSDocSetter(lastComment.value, this.expandType);
+          if (!setterType) {
+            return;
+          }
+          return {[paramName]: setterType};
         }
         if (lastComment.value.includes('@ignoreRTI')) {
           return;
