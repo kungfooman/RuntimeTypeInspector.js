@@ -20,6 +20,10 @@ function validateDivisionAddWarning(value, expect, loc, name, msg, details) {
   }
   warnObj.hits++;
   warnObj.warn(msg, details);
+  if (warnObj.dbg) {
+    debugger;
+    warnObj.dbg = false; // trigger only once to quickly get app running again
+  }
   warnObj.value = value;
 }
 /**
