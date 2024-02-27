@@ -568,10 +568,18 @@ class Asserter extends Stringifier {
         return 'getName> missing parent for ' + node.type;
       case 'ObjectMethod':
         return toSource(key);
-      default:
-        this.warn('getName> unhandled type', type, 'for', node);
-        return '/*MISSING*/';
+      case 'BinaryExpression':
+        const goodNames = ['FunctionDeclaration', 'ClassMethod', 'ClassPrivateMethod'];
+        const goodParent = this.parents.findLast(_ => goodNames.includes(_.type));
+        if (goodParent) {
+          return this.getName(goodParent);
+        }
+        // top scope
+        return `${this.filename}:${node?.loc?.start?.line}`;
     }
+    this.warn('getName> unhandled type', type, 'for', node, this.path);
+    //debugger;
+    return `${this.filename}:${node?.loc?.start?.line}`;
   }
   /**
    * @override
@@ -586,7 +594,8 @@ class Asserter extends Stringifier {
     const left_ = this.toSource(left);
     const right_ = this.toSource(right);
     if (operator === '/') {
-      return `validateDivision(${left_}, ${right_})`;
+      const loc = this.getName(node);
+      return `validateDivision(${left_}, ${right_}, ${JSON.stringify(loc)})`;
     }
     return `${left_} ${operator} ${right_}`;
   }
