@@ -23,7 +23,6 @@ function validateDivisionAddWarning(value, expect, loc, name, msg, details) {
   warnObj.value = value;
 }
 /**
- * @todo Fix transpiler to include loc/name for divisions and use warn system connected to UI.
  * @param {number} lhs - The left hand side.
  * @param {number} rhs - The right hand side.
  * @param {string} loc - Location of division.
@@ -34,7 +33,6 @@ function validateDivisionAddWarning(value, expect, loc, name, msg, details) {
  * @returns {number} The division result.
  */
 function validateDivision(lhs, rhs, loc = 'unspecified') {
-  const ret = lhs / rhs;
   const twoNumbers = typeof lhs === 'number' && typeof rhs === 'number';
   const twoBigInts = typeof lhs === 'bigint' && typeof rhs === 'bigint';
   const valid = twoNumbers || twoBigInts;
@@ -42,8 +40,9 @@ function validateDivision(lhs, rhs, loc = 'unspecified') {
     const expect = {type: 'union', members: ['number', 'bigint']};
     const msg = `validateDivision> incompatible type pair`;
     const details = {lhs, rhs, twoNumbers, twoBigInts};
-    validateDivisionAddWarning(ret, expect, loc, 'division', msg, details);
+    validateDivisionAddWarning('would throw', expect, loc, 'division', msg, details);
   }
+  const ret = lhs / rhs;
   // If we got two bigint's, we are done, as isNaN and isFinite is only for "normal" numbers.
   if (twoBigInts) {
     return ret;
