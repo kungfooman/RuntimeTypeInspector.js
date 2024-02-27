@@ -275,7 +275,9 @@ function actionJSDoc() {
   setRight(out);
 }
 function actionTypeChecking() {
-  setRight(addTypeChecks(getLeft(), {expandType: getPreferredExpandType()}));
+  const expandType = getPreferredExpandType();
+  const filename = 'repl.js';
+  setRight(addTypeChecks(getLeft(), {expandType, filename}));
 }
 /**
  * @todo use Monaco Diff Editor
