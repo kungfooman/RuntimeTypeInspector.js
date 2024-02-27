@@ -263,10 +263,12 @@ class Stringifier {
   get spaces() {
     return '  '.repeat(this.numSpaces);
   }
+  get path() {
+    return this.parents.map(_ => _.type).join('/');
+  }
   debugSpaces() {
-    const {spaces, parents} = this;
+    const {spaces, path} = this;
     const n = spaces.length;
-    const path = parents.map(_ => _.type).join('/');
     return `${spaces}// got ${n} spaces for ${path}\n`;
   }
   /**

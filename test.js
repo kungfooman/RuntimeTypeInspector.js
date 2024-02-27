@@ -46,7 +46,11 @@ function normalize(input) {
 for (const {input, output} of tests) {
   const inputContent = readFileSync(input, 'utf8');
   const outputContent = readFileSync(output, 'utf8');
-  const newOutputContent = addTypeChecks(inputContent, {expandType, addHeader: false});
+  const newOutputContent = addTypeChecks(inputContent, {
+    expandType,
+    addHeader: false,
+    filename: 'repl.js'
+  });
   if (normalize(newOutputContent) !== normalize(outputContent)) {
     discrepancies++;
     console.error("Discrepancy detected, please check!", {
