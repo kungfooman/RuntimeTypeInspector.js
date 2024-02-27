@@ -118,5 +118,17 @@
   {
     "input": "./test/typechecking/typedef-promise-input.mjs",
     "output": "./test/typechecking/typedef-promise-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/validateDivision-class-input.mjs",
+    "output": "./test/typechecking/validateDivision-class-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/validateDivision-function-input.mjs",
+    "output": "./test/typechecking/validateDivision-function-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/validateDivision-top-input.mjs",
+    "output": "./test/typechecking/validateDivision-top-output.mjs"
   }
 ]
