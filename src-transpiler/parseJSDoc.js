@@ -36,21 +36,22 @@ function parseJSDoc(src, expandType = expandTypeDepFree) {
     const resolveSubProperty = () => {
       let properties = params;
       for (const part of parts) {
+        /** @type {object} */
         const toptype = properties[part];
         if (!toptype) {
           // No toptype means we resolved as far as possible, now we can add `simplifiedType`.
           break;
-        } else if (toptype?.type === "union") {
+        } else if (toptype.type === "union") {
           const typeObject = toptype.members.find(_ => _?.type === 'object');
           properties = typeObject.properties;
-        } else if (toptype?.type === "array") {
+        } else if (toptype.type === "array") {
           properties = toptype.elementType.properties;
-        } else if (toptype?.type === "object") {
+        } else if (toptype.type === "object") {
           toptype.properties = toptype.properties || Object.create(null);
           properties = toptype.properties;
         } else {
           console.warn(
-            "parseJSDoc> skipping @param, unseen syntax detected, please check if your JSDoc is valid or open an issue about this",
+            "parseJSDoc> Skipping @param, unseen syntax detected. Please check if your JSDoc is valid or open an issue about this!",
             {src, toptype, parts, simplifiedType}
           );
         }
