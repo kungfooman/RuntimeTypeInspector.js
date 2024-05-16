@@ -31,39 +31,30 @@ function parseJSDoc(src, expandType = expandTypeDepFree) {
     // Strip the rest (either leftover of optional value or description)
     name = name.split(' ')[0].split('=')[0].trim();
     const simplifiedType = simplifyType(type, optional);
-    const parts = name.split(".");
-    if (parts.length === 3) {
-      // Something like: @param {number[]} settings.render.skyboxRotation - Rotation of skybox.
-      const parts0 = parts[0]; // settings
-      const parts1 = parts[1]; // render
-      const parts2 = parts[2]; // skyboxRotation
-      const toptype = params[parts0];
-      toptype.properties[parts1].properties = toptype.properties[parts1].properties || {};
-      toptype.properties[parts1].properties[parts2] = simplifiedType;
-    } else if (parts.length === 2) {
-      // Something like: @param {number} description[].components
-      let   parts0 = parts[0]; // description[]
-      const parts1 = parts[1]; // components
-      if (parts0.endsWith('[]')) {
-        parts0 = parts0.slice(0, -2); // description[] -> description
-      }
-      const toptype = params[parts0];
-      if (toptype?.type === "union") {
+    // Turn "options.stats[].unitsName" into ['options', 'stats', 'unitsName'].
+    const parts = name.split(/[\[\]]*\./);
+    let properties = params;
+    for (const part of parts) {
+      /** @type {object} */
+      const toptype = properties[part];
+      if (!toptype) {
+        // No toptype means we resolved as far as possible, now we can add `simplifiedType`.
+        console.assert(part === parts.at(-1), 'Current part and last part should be the same.');
+        properties[part] = simplifiedType;
+      } else if (toptype.type === "union") {
         const typeObject = toptype.members.find(_ => _?.type === 'object');
-        typeObject.properties[parts1] = simplifiedType;
-        //typeObject.properties = simplifiedType; // todo add test case
-      } else if (toptype?.type === "array") {
-        toptype.elementType.properties[parts1] = simplifiedType;
-      } else if (toptype?.type === "object") {
-        toptype.properties = toptype.properties || {};
-        toptype.properties[parts1] = simplifiedType;
+        properties = typeObject.properties;
+      } else if (toptype.type === "array") {
+        properties = toptype.elementType.properties;
+      } else if (toptype.type === "object") {
+        toptype.properties = toptype.properties || Object.create(null);
+        properties = toptype.properties;
       } else {
-        console.warn("parseJSDoc> skipping @param, unseen syntax detected, please check if your JSDoc is valid or open an issue about this", {
-          src, toptype, parts0, parts1, simplifiedType
-        });
+        console.warn(
+          "parseJSDoc> Skipping @param, unseen syntax detected. Please check if your JSDoc is valid or open an issue about this!",
+          {src, toptype, parts, simplifiedType}
+        );
       }
-    } else {
-      params[name] = simplifiedType;
     }
   });
   if (Object.keys(params).length === 0) {
