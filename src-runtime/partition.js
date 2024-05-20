@@ -14,8 +14,8 @@ function partition(arr, fn) {
   /** @type {any[]} */
   const fail = [];
   for (const element of arr) {
-    const arr = fn(element) ? pass : fail;
-    arr.push(element);
+    const pick = fn(element) ? pass : fail;
+    pick.push(element);
   }
   return [pass, fail];
 }
