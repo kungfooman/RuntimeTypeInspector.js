@@ -1,13 +1,13 @@
 import {expandTypeDepFree} from "./expandTypeDepFree.js";
 /**
- * @typedef {typeof expandTypeDepFree} ExpandTypeType
- * @typedef {ReturnType<ExpandTypeType>} ExpandTypeReturnType
+ * @typedef {typeof expandTypeDepFree} ExpandType
+ * @typedef {ReturnType<ExpandType>} ExpandTypeReturnType
  */
 /**
  * Parses JSDoc comments to extract parameter type information.
  *
  * @param {string} src - The JSDoc comment string to parse.
- * @param {ExpandTypeType} [expandType] - An optional function to process the types found in the JSDoc.
+ * @param {ExpandType} [expandType] - An optional function to process the types found in the JSDoc.
  * @returns {Record<string, ExpandTypeReturnType> | undefined} An object mapping template names to their parsed types,
  * or `undefined` if no template tags were found.
  */
