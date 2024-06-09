@@ -1,4 +1,4 @@
-import ts from 'typescript';
+import * as ts from 'typescript';
 /**
  * Transforms a type string into a structured type representation.
  *
@@ -69,32 +69,48 @@ function toSourceTS(node) {
   const {typeArguments, typeName} = node;
   const kind_ = ts.SyntaxKind[node.kind];
   const {
-    AnyKeyword, ArrayType, BooleanKeyword, FunctionType, Identifier, IntersectionType,
-    JSDocAllType, LastTypeNode, LiteralType, NullKeyword, NumberKeyword, NumericLiteral,
-    ObjectKeyword, Parameter, ParenthesizedType, PropertySignature, StringKeyword,
-    StringLiteral, ThisType, TupleType,
-    TypeLiteral,     // parseType todo
-    TypeReference,
-    UndefinedKeyword,
-    UnionType,
-    JSDocNullableType,
-    TrueKeyword,
-    FalseKeyword,
-    VoidKeyword,
-    UnknownKeyword,
-    NeverKeyword,
-    BigIntKeyword,
-    BigIntLiteral,
-    ConditionalType,
-    IndexedAccessType,
-    RestType,
-    TypeQuery,       // parseType('typeof Number')
-    TypeOperator,    // parseType('keyof typeof obj')
-    KeyOfKeyword,    // "operator" key in TypeOperator node
-    ConstructorType, // parseType('new (...args: any[]) => any');
-    NamedTupleMember,
-    MappedType,      // parseType('{[K in TaskType]: InstanceType<typeof SUPPORTED_TASKS[K]["pipeline"]>}')
-    TypeParameter,   // Basically K and TaskType of MappedType
+    AnyKeyword,          // parseType('any'                            ).kind                 === ts.SyntaxKind.AnyKeyword && toSourceTS(parseType('any')) === 'any'
+    ArrayType,           // parseType('number[]'                       ).kind                 === ts.SyntaxKind.ArrayType // todo toSourceTS(parseType('number[]')) === {type: 'array etc.
+    BooleanKeyword,      // parseType("boolean"                        ).kind                 === ts.SyntaxKind.BooleanKeyword
+    FunctionType,        // parseType("() => void"                     ).kind                 === ts.SyntaxKind.FunctionType
+    Identifier,          // parseType("{a: 1, b: 2}"                   ).members[0].name.kind === ts.SyntaxKind.Identifier
+    IntersectionType,    // parseType("1 & 2"                          ).kind                 === ts.SyntaxKind.IntersectionType
+    JSDocAllType,        // parseType("*"                              ).kind                 === ts.SyntaxKind.JSDocAllType
+    ImportType,          // parseType('import("test").Test'            ).kind                 === ts.SyntaxKind.ImportType
+    LiteralType,         // parseType("123"                            ).kind                 === ts.SyntaxKind.LiteralType
+    NullKeyword,         // parseType("null"                           ).literal.kind         === ts.SyntaxKind.NullKeyword
+    NumberKeyword,       // parseType("number"                         ).kind                 === ts.SyntaxKind.NumberKeyword
+    NumericLiteral,      // parseType("123"                            ).literal.kind         === ts.SyntaxKind.NumericLiteral
+    ObjectKeyword,       // parseType("object"                         ).kind                 === ts.SyntaxKind.ObjectKeyword
+    Parameter,           // parseType("(a) => void"                    ).parameters[0].kind   === ts.SyntaxKind.Parameter
+    ParenthesizedType,   // parseType("(SomeType)"                     ).kind                 === ts.SyntaxKind.ParenthesizedType
+    PropertySignature,   // parseType("{a: 1, b: 2}"                   ).members[0].kind      === ts.SyntaxKind.PropertySignature
+    StringKeyword,       // parseType("string"                         ).kind                 === ts.SyntaxKind.StringKeyword
+    StringLiteral,       // parseType("'test'"                         ).literal.kind         === ts.SyntaxKind.StringLiteral
+    ThisType,            // parseType("this"                           ).kind                 === ts.SyntaxKind.ThisType
+    TupleType,           // parseType("[1, 2, 3]"                      ).kind                 === ts.SyntaxKind.TupleType
+    TypeLiteral,         // parseType("{a: 1, b: 2}"                   ).kind                 === ts.SyntaxKind.TypeLiteral
+    TypeReference,       // parseType("SomeOtherType"                  ).kind                 === ts.SyntaxKind.TypeReference
+    UndefinedKeyword,    // parseType("undefined"                      ).kind                 === ts.SyntaxKind.UndefinedKeyword
+    UnionType,           // parseType("1|2"                            ).kind                 === ts.SyntaxKind.UnionType
+    JSDocNullableType,   // parseType("?lol?"                          ).kind                 === ts.SyntaxKind.JSDocNullableType
+    TrueKeyword,         // parseType("true"                           ).literal.kind         === ts.SyntaxKind.TrueKeyword
+    FalseKeyword,        // parseType("false"                          ).literal.kind         === ts.SyntaxKind.FalseKeyword
+    VoidKeyword,         // parseType("void"                           ).kind                 === ts.SyntaxKind.VoidKeyword
+    UnknownKeyword,      // parseType("unknown"                        ).kind                 === ts.SyntaxKind.UnknownKeyword
+    NeverKeyword,        // parseType("never"                          ).kind                 === ts.SyntaxKind.NeverKeyword
+    BigIntKeyword,       // parseType("bigint"                         ).kind                 === ts.SyntaxKind.BigIntKeyword
+    BigIntLiteral,       // parseType("123n"                           ).literal.kind         === ts.SyntaxKind.BigIntLiteral
+    ConditionalType,     // parseType("1 extends number ? true : false").kind                 === ts.SyntaxKind.ConditionalType
+    IndexedAccessType,   // parseType('Test[123]'                      ).kind                 === ts.SyntaxKind.IndexedAccessType
+    RestType,            // parseType("[...number]"                    ).elements[0].kind     === ts.SyntaxKind.RestType
+    TypeQuery,           // parseType('typeof Number'                  ).kind                 === ts.SyntaxKind.TypeQuery
+    TypeOperator,        // parseType('keyof typeof obj'               ).kind                 === ts.SyntaxKind.TypeOperator
+    KeyOfKeyword,        // parseType('keyof typeof obj'               ).operator             === ts.SyntaxKind.KeyOfKeyword
+    ConstructorType,     // parseType('new (...args: any[]) => any'    ).kind                 === ts.SyntaxKind.ConstructorType
+    NamedTupleMember,    // parseType('[a: 1]'                         ).elements[0].kind     === ts.SyntaxKind.NamedTupleMember
+    MappedType,          // parseType('{[K in TaskType]: 123}'         ).kind                 === ts.SyntaxKind.MappedType
+    TypeParameter,       // parseType('{[K in TaskType]: 123}'         ).typeParameter.kind   ===  ts.SyntaxKind.TypeParameter
   } = ts.SyntaxKind;
   // console.log({typeArguments, typeName, kind_, node});
   switch (node.kind) {
@@ -323,7 +339,11 @@ function toSourceTS(node) {
       }
       // fall-through for parentheses
       return toSourceTS(node.type);
-    case LastTypeNode:
+    case ImportType:
+      if (!ts.isImportTypeNode(node)) {
+        throw Error("Impossible");
+      }
+      /** @todo Handle case without any qualifier like `import('test')` */
       return toSourceTS(node.qualifier);
     default:
         // const test = {};
