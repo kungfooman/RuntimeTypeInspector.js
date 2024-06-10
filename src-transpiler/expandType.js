@@ -1,4 +1,4 @@
-import * as ts from 'typescript';
+import ts from 'typescript';
 /**
  * Transforms a type string into a structured type representation.
  *
