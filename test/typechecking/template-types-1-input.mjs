@@ -38,20 +38,10 @@ export function permute_data(array, dims, axes) {
   }
   return [permutedData, shape];
 }
-//const ret = permute_data([1, 2, 3, 4], [2], [2]);
-//console.log("ret", ret);
-
 const arr = new Float32Array([1, 2, 3, 4]);
+//const arr = [1, 2, 3, 4]; // Should fail, since it's no typed array.
 const dims = [2, 2];
 const axes = [1, 0];
 const [permutedData, shape] = permute_data(arr, dims, axes);
 const tmp = {arr, dims, axes, permutedData, shape};
 console.log(JSON.stringify(tmp, null, 2));
-
-
-
-
-
-
-
-
