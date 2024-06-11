@@ -5,7 +5,7 @@ import {createTypeFromMapping      } from "./createTypeFromMapping.js";
 /**
  * @param {string|import('./validateType.js').Type} expect - The supposed type information of said value.
  * @param {console["warn"]} warn - Function to warn with.
- * @returns {import('./validateType.js').Type|undefined} - New type that can be used for validatoin
+ * @returns {import('./validateType.js').Type|undefined} - New type that can be used for validation.
  */
 function createType(expect, warn) {
   const mapping = resolveType(expect, 'mapping', warn);
