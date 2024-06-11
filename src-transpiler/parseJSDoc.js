@@ -1,17 +1,24 @@
 import {expandTypeDepFree} from "./expandTypeDepFree.js";
 import {simplifyType} from "./simplifyType.js";
 /**
+ * @typedef {ReturnType<typeof parseJSDoc>} ParseJSDocReturnType
+ */
+/**
+ * @typedef {typeof expandTypeDepFree} ExpandType
+ * @typedef {ReturnType<ExpandType>} ExpandTypeReturnType
+ */
+/**
  * Parses JSDoc comments to extract parameter type information.
  *
  * @param {string} src - The JSDoc comment string to parse.
- * @param {Function} [expandType] - An optional function to process the types found in the JSDoc.
- * @returns {Record<string, any> | undefined} An object mapping parameter names to their parsed types, or undefined if no parameters are found.
+ * @param {ExpandType} [expandType] - An optional function to process the types found in the JSDoc.
+ * @returns {Record<string, ExpandTypeReturnType> | undefined} An object mapping parameter names to their parsed types, or undefined if no parameters are found.
  */
 function parseJSDoc(src, expandType = expandTypeDepFree) {
   // Parse something like: @param {Object} [kwargs={}] Optional arguments.
   const regex = /@param \{(.*?)\} ([\[\]a-zA-Z0-9_$=\{\}\.'" ]+)/g;
   const matches = [...src.matchAll(regex)];
-  /** @type {Record<string, any>} */
+  /** @type {Record<string, ExpandTypeReturnType>} */
   const params = Object.create(null);
   matches.forEach(_ => {
     const type = expandType(_[1].trim());
@@ -35,7 +42,6 @@ function parseJSDoc(src, expandType = expandTypeDepFree) {
     const parts = name.split(/[\[\]]*\./);
     let properties = params;
     for (const part of parts) {
-      /** @type {object} */
       const toptype = properties[part];
       if (!toptype) {
         // No toptype means we resolved as far as possible, now we can add `simplifiedType`.

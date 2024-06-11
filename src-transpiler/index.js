@@ -17,6 +17,7 @@ export * from './extractNameAndOptionality.js';
 export * from './nodeIsFunction.js';
 export * from './parseJSDoc.js';
 export * from './parseJSDocSetter.js';
+export * from './parseJSDocTemplates.js';
 export * from './parseJSDocTypedef.js';
 export * from './simplifyType.js';
 export * from './Stringifier.js';

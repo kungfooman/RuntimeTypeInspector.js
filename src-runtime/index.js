@@ -7,6 +7,7 @@ export * from './customTypes.js';
 export * from './customValidations.js';
 export * from './getTypeKeys.js';
 export * from './inspectType.js';
+export * from './inspectTypeWithTemplates.js';
 export * from './isObject.js';
 export * from './makeJSDoc.js';
 export * from './options.js';
