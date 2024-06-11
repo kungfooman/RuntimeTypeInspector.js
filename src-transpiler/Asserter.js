@@ -1,20 +1,21 @@
-import {requiredTypeofs  } from './expandType.js';
-import {expandTypeDepFree} from './expandTypeDepFree.js';
-import {nodeIsFunction   } from './nodeIsFunction.js';
-import {parseJSDoc       } from './parseJSDoc.js';
-import {parseJSDocSetter } from './parseJSDocSetter.js';
-import {parseJSDocTypedef} from './parseJSDocTypedef.js';
-import {statReset        } from './stat.js';
-import {Stringifier      } from './Stringifier.js';
+import {requiredTypeofs    } from './expandType.js';
+import {expandTypeDepFree  } from './expandTypeDepFree.js';
+import {nodeIsFunction     } from './nodeIsFunction.js';
+import {parseJSDoc         } from './parseJSDoc.js';
+import {parseJSDocSetter   } from './parseJSDocSetter.js';
+import {parseJSDocTemplates} from './parseJSDocTemplates.js';
+import {parseJSDocTypedef  } from './parseJSDocTypedef.js';
+import {statReset          } from './stat.js';
+import {Stringifier        } from './Stringifier.js';
 /** @typedef {import('@babel/types').Node              } Node               */
-/** @typedef {import("@babel/types").ClassMethod       } ClassMethod        */
-/** @typedef {import("@babel/types").ClassPrivateMethod} ClassPrivateMethod */
-/** @typedef {import('./stat.js').Stat                } Stat               */
+/** @typedef {import('@babel/types').ClassMethod       } ClassMethod        */
+/** @typedef {import('@babel/types').ClassPrivateMethod} ClassPrivateMethod */
+/** @typedef {import('./stat.js').Stat                 } Stat               */
 /**
  * @typedef {object} Options
  * @property {boolean} [forceCurly] - Determines whether curly braces are enforced in Stringifier.
  * @property {boolean} [validateDivision] - Indicates whether division operations should be validated.
- * @property {Function} [expandType] - A function that expands shorthand types into full descriptions.
+ * @property {import('./parseJSDoc.js').ExpandType} [expandType] - A function that expands shorthand types into full descriptions.
  * @property {string} [filename] - The name of a file to which the instance pertains.
  * @property {boolean} [addHeader] - Whether to add import declarations headers. Defaults to true.
  * @property {string[]} [ignoreLocations] - Ignore these locations because they are known false-positives.
@@ -219,9 +220,9 @@ class Asserter extends Stringifier {
   }
   /**
    * @param {Node} node - The Babel AST node.
-   * @returns {undefined | {}} The return value of `parseJSDoc`.
+   * @returns {string|undefined} The JSDoc comment of `node`.
    */
-  getJSDoc(node) {
+  getLeadingComment(node) {
     if (node.type === 'BlockStatement') {
       node = this.parent;
     }
@@ -245,26 +246,48 @@ class Asserter extends Stringifier {
     if (leadingComments && leadingComments.length) {
       const lastComment = leadingComments[leadingComments.length - 1];
       if (lastComment.type === "CommentBlock") {
-        if (lastComment.value.includes('@event')) {
-          return;
-        }
-        if (node.type === 'ClassMethod' && node.kind === 'set') {
-          const paramName = this.getNameOfParam(node.params[0]);
-          if (node.params.length !== 1) {
-            this.warn("getJSDoc> setters require exactly one argument");
-          }
-          const setterType = parseJSDocSetter(lastComment.value, this.expandType);
-          if (!setterType) {
-            return;
-          }
-          return {[paramName]: setterType};
-        }
-        if (lastComment.value.includes('@ignoreRTI')) {
-          return;
-        }
-        return parseJSDoc(lastComment.value, this.expandType);
+        return lastComment.value;
       }
     }
+  }
+  /**
+   * @param {Node} node - The Babel AST node.
+   * @todo ESLint problem:
+   * returns {import('./parseJSDoc.js').ParseJSDocReturnType} The return value of `parseJSDoc`
+   * returns {Record<string, import('./parseJSDoc.js').ExpandTypeReturnType> | undefined} The
+   * return value of `parseJSDoc`.
+   * @returns {Record<string, any>|undefined} asd
+   */
+  getJSDoc(node) {
+    const comment = this.getLeadingComment(node);
+    if (!comment) {
+      return;
+    }
+    if (comment.includes('@event')) {
+      return;
+    }
+    if (comment.includes('@ignoreRTI')) {
+      return;
+    }
+    // Need to do same resolving as in: this.getLeadingComment(node)
+    if (node.type === 'BlockStatement') {
+      node = this.parent;
+    }
+    if (node.type === 'ClassMethod' && node.kind === 'set') {
+      const paramName = this.getNameOfParam(node.params[0]);
+      if (node.params.length !== 1) {
+        this.warn("getJSDoc> setters require exactly one argument");
+      }
+      const setterType = parseJSDocSetter(comment, this.expandType);
+      if (!setterType) {
+        return;
+      }
+      const params = {[paramName]: setterType};
+      return {templates: undefined, params};
+    }
+    const templates = parseJSDocTemplates(comment);
+    const params = parseJSDoc(comment, this.expandType);
+    return {templates, params};
   }
   /**
    * Retrieves the name of a parameter from a Babel AST node.
@@ -283,8 +306,7 @@ class Asserter extends Stringifier {
         return param.left.name;
       }
     }
-    debugger;
-    this.warn("unable to extra name from param in specified way - may contain too much information");
+    this.warn("Unable to retrieve name from param in specified way - may contain too much information.");
     return this.toSource(param);
   }
   statsReset() {
@@ -391,6 +413,12 @@ class Asserter extends Stringifier {
       stat.unchecked++;
       return '';
     }
+    const {templates, params} = jsdoc;
+    if (!params) {
+      console.warn("This should never happen, please check your input code.", this.getLeadingComment(node), {jsdoc});
+      stat.unchecked++;
+      return '';
+    }
     stat.checked++;
     const {spaces} = this;
     let out = '';
@@ -399,17 +427,21 @@ class Asserter extends Stringifier {
     if (this.ignoreLocations.includes(loc)) {
       return '// IGNORE RTI TYPE VALIDATIONS, KNOWN ISSUES\n';
     }
+    if (templates) {
+      const tmp = JSON.stringify(templates, null, 2).replaceAll('\n', '\n' + spaces);
+      out += `\n${spaces}const rtiTemplates = ${tmp};`;
+    }
     //out += `${spaces}/*${spaces}  node.type=${node.type}\n${spaces}
     //  ${JSON.stringify(jsdoc)}\n${parent}\n${spaces}*/\n`;
-    for (let name in jsdoc) {
-      const type = jsdoc[name];
+    for (let name in params) {
+      const type = params[name];
       const hasParam = this.nodeHasParamName(node, name);
       if (!hasParam) {
         let testNode = node;
         if (node.type === 'BlockStatement') {
           testNode = this.parent;
         }
-        const paramIndex = Object.keys(jsdoc).findIndex(_ => _ === name);
+        const paramIndex = Object.keys(params).findIndex(_ => _ === name);
         const param = testNode.params[paramIndex];
         if (param) {
           const isObjectPattern = param.type === 'ObjectPattern';
@@ -439,7 +471,11 @@ class Asserter extends Stringifier {
                   continue;
                 }
                 const t = JSON.stringify(type.elementType, null, 2).replaceAll('\n', '\n' + spaces);
-                out += `${spaces}if (!inspectType(${element.name}, ${t}, '${loc}', '${name}')) {\n`;
+                if (templates) {
+                  out += `${spaces}if (!inspectTypeWithTemplates(${element.name}, ${t}, '${loc}', '${name}', rtiTemplates)) {\n`;
+                } else {
+                  out += `${spaces}if (!inspectType(${element.name}, ${t}, '${loc}', '${name}')) {\n`;
+                }
                 out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
               }
               continue;
@@ -465,7 +501,11 @@ class Asserter extends Stringifier {
                   continue;
                 }
                 const t = JSON.stringify(subType, null, 2).replaceAll('\n', '\n' + spaces);
-                out += `${spaces}if (!inspectType(${keyName}, ${t}, '${loc}', '${name}')) {\n`;
+                if (templates) {
+                  out += `${spaces}if (!inspectTypeWithTemplates(${keyName}, ${t}, '${loc}', '${name}', rtiTemplates)) {\n`;
+                } else {
+                  out += `${spaces}if (!inspectType(${keyName}, ${t}, '${loc}', '${name}')) {\n`;
+                }
                 out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
               }
               continue;
@@ -503,7 +543,11 @@ class Asserter extends Stringifier {
         out += '\n';
         first = false;
       }
-      out += `${spaces}if (${prevCheck}!inspectType(${name}, ${t}, '${loc}', '${name}')) {\n`;
+      if (templates) {
+        out += `${spaces}if (${prevCheck}!inspectTypeWithTemplates(${name}, ${t}, '${loc}', '${name}', rtiTemplates)) {\n`;
+      } else {
+        out += `${spaces}if (${prevCheck}!inspectType(${name}, ${t}, '${loc}', '${name}')) {\n`;
+      }
       out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
     }
     return out;
