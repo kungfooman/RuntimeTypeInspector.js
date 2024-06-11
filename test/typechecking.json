@@ -76,6 +76,14 @@
     "output": "./test/typechecking/setter-no-type-output.mjs"
   },
   {
+    "input": "./test/typechecking/setter-type-input.mjs",
+    "output": "./test/typechecking/setter-type-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/simple-ArrayPattern-input.mjs",
+    "output": "./test/typechecking/simple-ArrayPattern-output.mjs"
+  },
+  {
     "input": "./test/typechecking/simple-ObjectMethod-computed-input.mjs",
     "output": "./test/typechecking/simple-ObjectMethod-computed-output.mjs"
   },
