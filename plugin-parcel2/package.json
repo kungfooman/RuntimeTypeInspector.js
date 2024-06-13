@@ -1,13 +1,13 @@
 {
   "name": "@runtime-type-inspector/parcel-transformer",
-  "version": "3.2.6",
+  "version": "3.2.7",
   "description": "RuntimeTypeInspector.js plugin for Parcel v2",
   "main": "index.mjs",
   "author": "Hermann Rolfes (kungfooman)",
   "license": "MIT",
   "dependencies": {
     "@parcel/plugin": "^2.10.1",
-    "@runtime-type-inspector/transpiler": "^3.2.6"
+    "@runtime-type-inspector/transpiler": "^3.2.7"
   },
   "engines": {
     "parcel": "2.x"
