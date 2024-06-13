@@ -24,6 +24,14 @@
     "output": "./test/typechecking/ExportNamespaceSpecifier-output.mjs"
   },
   {
+    "input": "./test/typechecking/IndexSignature-1-input.mjs",
+    "output": "./test/typechecking/IndexSignature-1-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/IndexSignature-2-input.mjs",
+    "output": "./test/typechecking/IndexSignature-2-output.mjs"
+  },
+  {
     "input": "./test/typechecking/JSDoc-FunctionExpression-ExpressionStatement-input.mjs",
     "output": "./test/typechecking/JSDoc-FunctionExpression-ExpressionStatement-output.mjs"
   },
