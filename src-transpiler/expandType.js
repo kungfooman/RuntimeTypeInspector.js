@@ -298,7 +298,7 @@ function toSourceTS(node) {
         }
       });
       const ret = {type: 'object'};
-      if (properties) {
+      if (Object.keys(properties).length) {
         ret.properties = properties;
       }
       if (indexSignatures) {
