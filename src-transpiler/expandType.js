@@ -61,7 +61,7 @@ export const requiredTypeofs = {};
  * This function handles various TypeScript AST node types and converts them into a string
  * or an object representing the type.
  *
- * @param {ts.TypeNode} node - The TypeScript AST node to convert.
+ * @param {ts.TypeNode|ts.Identifier} node - The TypeScript AST node to convert.
  * @returns {string | number | boolean | {type: string, [key: string]: any} | undefined} The source string/number,
  * or an object with type information based on the node, or `undefined` if the node kind is not handled.
  */
@@ -103,6 +103,7 @@ function toSourceTS(node) {
     BigIntLiteral,       // parseType("123n"                           ).literal.kind         === ts.SyntaxKind.BigIntLiteral
     ConditionalType,     // parseType("1 extends number ? true : false").kind                 === ts.SyntaxKind.ConditionalType
     IndexedAccessType,   // parseType('Test[123]'                      ).kind                 === ts.SyntaxKind.IndexedAccessType
+    IndexSignature,      // parseType('{[n: number]: string}'          ).members[0].kind      === ts.SyntaxKind.IndexSignature
     RestType,            // parseType("[...number]"                    ).elements[0].kind     === ts.SyntaxKind.RestType
     TypeQuery,           // parseType('typeof Number'                  ).kind                 === ts.SyntaxKind.TypeQuery
     TypeOperator,        // parseType('keyof typeof obj'               ).kind                 === ts.SyntaxKind.TypeOperator
@@ -274,23 +275,52 @@ function toSourceTS(node) {
       }
       const members = node.types.map(toSourceTS);
       return {type: 'union', members};
-    case TypeLiteral:
+    case TypeLiteral: {
       if (!ts.isTypeLiteralNode(node)) {
         throw Error("Impossible");
       }
       const properties = {};
+      /** @type {object[]} */
+      let indexSignatures;
       node.members.forEach(member => {
-        const name = toSourceTS(member.name);
-        const type = toSourceTS(member.type);
-        properties[name] = type;
+        if (member.kind === IndexSignature) {
+          indexSignatures = indexSignatures ?? [];
+          indexSignatures.push(toSourceTS(member));
+        } else if (member.kind === PropertySignature) {
+          if (!ts.isPropertySignature(member)) {
+            throw Error("Impossible");
+          }
+          const name = toSourceTS(member.name);
+          const type = toSourceTS(member.type);
+          properties[name] = type;
+        } else {
+          console.warn('TypeLiteral: unhandled member', member);
+        }
       });
-      return {type: 'object', properties};
+      const ret = {type: 'object'};
+      if (properties) {
+        ret.properties = properties;
+      }
+      if (indexSignatures) {
+        ret.indexSignatures = indexSignatures;
+      }
+      return ret;
+    }
     case PropertySignature:
       if (!ts.isPropertySignature(node)) {
         throw Error("Impossible");
       }
       console.warn('toSourceTS> should not happen, handled by TypeLiteral directly');
       return `${toSourceTS(node.name)}: ${toSourceTS(node.type)}`;
+    case IndexSignature:
+      if (!ts.isIndexSignatureDeclaration(node)) {
+        throw Error("Impossible");
+      }
+      // Only possible modifier I know of, but we don't need it:
+      //   {readonly [n: number]: string, length: number}
+      const indexType = toSourceTS(node.type);
+      const indexParameters = node.parameters.map(toSourceTS);
+      return {type: 'indexSignature', indexType, indexParameters};
     case Identifier:
       if (!ts.isIdentifier(node)) {
         throw Error("Impossible");
