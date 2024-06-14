@@ -84,9 +84,6 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
     }
     return ret;
   }
-  if (type === "undefined") {
-    return value === undefined;
-  }
   if (typeof value === 'number') {
     if (isNaN(value)) {
       warn("value is NaN");
@@ -110,97 +107,86 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
       return false;
     }
   }
-  if (type === "object") {
-    return validateObject(value, properties, loc, name, critical, warn, depth + 1);
-  }
-  if (type === 'record') {
-    return validateRecord(value, expect, loc, name, critical, warn, depth + 1);
-  }
-  if (type === 'map') {
-    return validateMap(value, expect, loc, name, critical, warn, depth + 1);
-  }
-  if (type === 'mapping') {
-    return validateMapping(value, expect, loc, name, critical, warn, depth + 1);
-  }
-  if (type === 'array') {
-    return validateArray(value, expect, loc, name, critical, warn, depth + 1);
-  }
-  if (type === 'intersection') {
-    return validateIntersection(value, expect, loc, name, critical, warn, depth + 1);
-  }
-  if (type === 'keyof') {
-    return validateKeyof(value, expect, loc, name, critical, warn, depth + 1);
-  }
-  // If a typedef is also a class, it's just a shorthand-typedef-class
   if (typedefs[type] && !classes[type]) {
+    // If a typedef is also a class, it's just a shorthand-typedef-class
     return validateTypedef(value, expect, loc, name, critical, warn, depth + 1);
   }
-  if (type === 'union') {
-    return validateUnion(value, expect, loc, name, critical, warn, depth + 1);
-  }
-  if (type === 'set') {
-    return validateSet(value, expect, loc, name, critical, warn, depth + 1);
-  }
-  // Trigger: pc.app.scene.setSkybox([1, 2, 3]);
-  if (type === 'tuple') {
-    return validateTuple(value, expect, loc, name, critical, warn, depth + 1);
-  }
-  if (type === '*' || type === 'any') {
-    return true;
-  }
-  /** @todo allow strict/non-strict null/undefined with checkbox in <div> */
-  if (type === 'null') {
-    return value === null;
-  }
-  /** @todo add unit-tests/asserts tests to make sure this never happens */
-  if (value === null) {
-    // type !== null already, so this can only be false
-    return false;
-  }
-  /** @todo use validateNumber() */
-  if (type === 'number') {
-    if (Number.isNaN(value)) {
+  switch (type) {
+    case 'undefined':
+      return value === undefined;
+    case 'object':
+      return validateObject(value, properties, loc, name, critical, warn, depth + 1);
+    case 'record':
+      return validateRecord(value, expect, loc, name, critical, warn, depth + 1);
+    case 'map':
+      return validateMap(value, expect, loc, name, critical, warn, depth + 1);
+    case 'mapping':
+      return validateMapping(value, expect, loc, name, critical, warn, depth + 1);
+    case 'array':
+      return validateArray(value, expect, loc, name, critical, warn, depth + 1);
+    case 'intersection':
+      return validateIntersection(value, expect, loc, name, critical, warn, depth + 1);
+    case 'keyof':
+      return validateKeyof(value, expect, loc, name, critical, warn, depth + 1);
+    case 'union':
+      return validateUnion(value, expect, loc, name, critical, warn, depth + 1);
+    case 'set':
+      return validateSet(value, expect, loc, name, critical, warn, depth + 1);
+    case 'tuple':
+      // Trigger: pc.app.scene.setSkybox([1, 2, 3]);
+      return validateTuple(value, expect, loc, name, critical, warn, depth + 1);
+    case '*':
+    case 'any':
+      return true;
+    case 'null':
+      /** @todo allow strict/non-strict null/undefined with checkbox in <div> */
+      return value === null;
+    case 'number':
+      /** @todo use validateNumber() */
+      if (Number.isNaN(value)) {
+        return false;
+      }
+      return typeof value === type;
+    case 'string':
+    case 'boolean':
+      return typeof value === type;
+    case 'Function':
+    case 'function':
+    case 'new':
+      return typeof value === 'function';
+    case 'ObjectConstructor':
+      return typeof value.constructor === 'function';
+    case 'class':
+      /** @todo PlayCanvas specific, move into custom validations */
+      if (value && expect.elementType === 'ScriptType') {
+        if (value.name === 'scriptType') {
+          return true;
+        }
+        const proto = Object.getPrototypeOf(value);
+        if (proto?.name === 'ScriptType') {
+          return true;
+        }
+      }
+      warn(`${loc}> validateType> class> expected object, not '${value}'`);
       return false;
-    }
-    return typeof value === type;
   }
-  if (type === 'string' || type === 'boolean') {
-    return typeof value === type;
-  }
+  //if (value === null) {
+  //  /** @todo Add unit-tests/asserts tests to make sure this never happens */
+  //  console.warn('type !== null already, so this can only be false');
+  //  return false;
+  //} else
   if (type[0] === '"' && type[type.length - 1] === '"') {
     const typeSlice = type.slice(1, -1);
     return value === typeSlice;
-  }
-  if (type[0] === "'" && type[type.length - 1] === "'") {
+  } else if (type[0] === "'" && type[type.length - 1] === "'") {
     const typeSlice = type.slice(1, -1);
     return value === typeSlice;
-  }
-  /** @todo Callback is PC specific, parse JSDoc callback types like typedefs */
-  if (type === 'Function' || type === 'function' || type.includes('Callback')) {
-    return typeof value === "function";
-  }
-  if (type === 'ObjectConstructor') {
-    return typeof value.constructor === 'function';
-  }
-  if (type === 'class') {
-    if (value && expect.elementType === 'ScriptType') {
-      if (value.name === 'scriptType') {
-        return true;
-      }
-      const proto = Object.getPrototypeOf(value);
-      if (proto?.name === 'ScriptType') {
-        return true;
-      }
-    }
-    warn(`${loc}> validateType> class> expected object, not '${value}'`);
-    return false;
-  }
-  if (type === 'ResourceHandler') {
-    return value?.constructor?.name.endsWith('Handler');
-  }
-  // Camera, Float32Array etc.
-  if (value && value.constructor && value.constructor.name === type) {
+  } else if (value && value.constructor && value.constructor.name === type) {
+    // Camera, Float32Array etc.
     return true;
+  } else if (classes[type]) {
+    // Inheritance check, allow Application for AppBase, allow Entity for GraphNode etc.
+    return value instanceof classes[type];
   }
   if (typeof window !== 'undefined') {
     const windowClass = window[type];
@@ -215,11 +201,7 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
       }
     }
   }
-  // inheritance check, allow Application for AppBase, allow Entity for GraphNode etc.
-  if (classes[type]) {
-    return value instanceof classes[type];
-  }
-  warn("unchecked", {value, type, loc, name});
+  warn('unchecked', {value, type, loc, name});
   return false;
 }
 export {validateType};
