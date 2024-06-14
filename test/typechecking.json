@@ -124,6 +124,10 @@
     "output": "./test/typechecking/tuple-named-output.mjs"
   },
   {
+    "input": "./test/typechecking/type-new-input.mjs",
+    "output": "./test/typechecking/type-new-output.mjs"
+  },
+  {
     "input": "./test/typechecking/typedef-BigIntKeyword-input.mjs",
     "output": "./test/typechecking/typedef-BigIntKeyword-output.mjs"
   },
