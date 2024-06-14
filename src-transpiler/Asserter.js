@@ -292,6 +292,9 @@ class Asserter extends Stringifier {
     }
     const templates = parseJSDocTemplates(comment);
     const params = parseJSDoc(comment, this.expandType);
+    if (!templates && !params) {
+      return;
+    }
     return {templates, params};
   }
   /**
