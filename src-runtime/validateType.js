@@ -172,10 +172,14 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
     case 'IArguments':
       // Used in playcanvas-engine/src/core/tags.js
       // Testable via physics/offset-collision example.
+      /** @todo unit tests */
       return value[Symbol.iterator] instanceof Function;
     case 'ArrayBufferView':
+      /**
+       * @todo unit tests + TS Lib object like customObjects...
+       * for e.g. different TS versions or environments
+       */
       return ArrayBuffer.isView(value);
-    }
   }
   //if (value === null) {
   //  /** @todo Add unit-tests/asserts tests to make sure this never happens */
