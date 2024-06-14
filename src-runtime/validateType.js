@@ -169,6 +169,13 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
       }
       warn(`${loc}> validateType> class> expected object, not '${value}'`);
       return false;
+    case 'IArguments':
+      // Used in playcanvas-engine/src/core/tags.js
+      // Testable via physics/offset-collision example.
+      return value[Symbol.iterator] instanceof Function;
+    case 'ArrayBufferView':
+      return ArrayBuffer.isView(value);
+    }
   }
   //if (value === null) {
   //  /** @todo Add unit-tests/asserts tests to make sure this never happens */
