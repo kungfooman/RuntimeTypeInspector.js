@@ -273,17 +273,22 @@ class Asserter extends Stringifier {
     if (node.type === 'BlockStatement') {
       node = this.parent;
     }
-    if (node.type === 'ClassMethod' && node.kind === 'set') {
-      const paramName = this.getNameOfParam(node.params[0]);
-      if (node.params.length !== 1) {
-        this.warn("getJSDoc> setters require exactly one argument");
-      }
-      const setterType = parseJSDocSetter(comment, this.expandType);
-      if (!setterType) {
+    if (node.type === 'ClassMethod') {
+      if (node.kind === 'get') {
+        // JSDoc on a getter is just some documentation.
         return;
+      } else if (node.kind === 'set') {
+        if (node.params.length !== 1) {
+          this.warn("getJSDoc> setters require exactly one argument");
+        }
+        const setterType = parseJSDocSetter(comment, this.expandType);
+        if (!setterType) {
+          return;
+        }
+        const paramName = this.getNameOfParam(node.params[0]);
+        const params    = {[paramName]: setterType};
+        return {templates: undefined, params};
       }
-      const params = {[paramName]: setterType};
-      return {templates: undefined, params};
     }
     const templates = parseJSDocTemplates(comment);
     const params = parseJSDoc(comment, this.expandType);

@@ -80,6 +80,10 @@
     "output": "./test/typechecking/literal-numbers-output.mjs"
   },
   {
+    "input": "./test/typechecking/setter-no-type-getter-no-type-input.mjs",
+    "output": "./test/typechecking/setter-no-type-getter-no-type-output.mjs"
+  },
+  {
     "input": "./test/typechecking/setter-no-type-input.mjs",
     "output": "./test/typechecking/setter-no-type-output.mjs"
   },
