@@ -170,11 +170,12 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
       warn(`${loc}> validateType> class> expected object, not '${value}'`);
       return false;
   }
-  if (value === null) {
-    /** @todo Add unit-tests/asserts tests to make sure this never happens */
-    console.warn('type !== null already, so this can only be false');
-    return false;
-  } else if (type[0] === '"' && type[type.length - 1] === '"') {
+  //if (value === null) {
+  //  /** @todo Add unit-tests/asserts tests to make sure this never happens */
+  //  console.warn('type !== null already, so this can only be false');
+  //  return false;
+  //} else
+  if (type[0] === '"' && type[type.length - 1] === '"') {
     const typeSlice = type.slice(1, -1);
     return value === typeSlice;
   } else if (type[0] === "'" && type[type.length - 1] === "'") {
