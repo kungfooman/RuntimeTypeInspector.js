@@ -1,6 +1,6 @@
 {
   "name": "@runtime-type-inspector/plugin-parcel1",
-  "version": "3.3.2",
+  "version": "3.3.3",
   "description": "RuntimeTypeInspector.js plugin for Parcel v1",
   "main": "index.cjs",
   "publishConfig": {
@@ -11,6 +11,6 @@
   "license": "MIT",
   "dependencies": {
     "parcel-bundler": "^1.12.5",
-    "@runtime-type-inspector/transpiler": "^3.3.2"
+    "@runtime-type-inspector/transpiler": "^3.3.3"
   }
 }
