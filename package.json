@@ -1,6 +1,6 @@
 {
   "name": "runtime-type-inspector",
-  "version": "3.3.3",
+  "version": "3.3.4",
   "description": "Validating JSDoc types at runtime for high-quality types - Trust is good, control is better.",
   "scripts": {
     "build": "rollup -c",
@@ -46,14 +46,14 @@
     "rollup-plugin-jscc": "^2.0.0",
     "rollup-plugin-visualizer": "^5.9.2",
     "to-fast-properties": "^4.0.0",
-    "@runtime-type-inspector/runtime": "^3.3.3",
-    "@runtime-type-inspector/transpiler": "^3.3.3",
-    "@runtime-type-inspector/plugin-parcel1": "^3.3.3",
-    "@runtime-type-inspector/parcel-transformer": "^3.3.3",
-    "@runtime-type-inspector/plugin-rollup": "^3.3.3",
-    "@runtime-type-inspector/plugin-webpack": "^3.3.3",
-    "@runtime-type-inspector/plugin-webpack4": "^3.3.3",
-    "@runtime-type-inspector/plugin-webpack5": "^3.3.3",
-    "@runtime-type-inspector/repl": "^3.3.3"
+    "@runtime-type-inspector/runtime": "^3.3.4",
+    "@runtime-type-inspector/transpiler": "^3.3.4",
+    "@runtime-type-inspector/plugin-parcel1": "^3.3.4",
+    "@runtime-type-inspector/parcel-transformer": "^3.3.4",
+    "@runtime-type-inspector/plugin-rollup": "^3.3.4",
+    "@runtime-type-inspector/plugin-webpack": "^3.3.4",
+    "@runtime-type-inspector/plugin-webpack4": "^3.3.4",
+    "@runtime-type-inspector/plugin-webpack5": "^3.3.4",
+    "@runtime-type-inspector/repl": "^3.3.4"
   }
 }
