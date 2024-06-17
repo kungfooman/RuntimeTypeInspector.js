@@ -1,7 +1,9 @@
-import {assertMode } from "./assertMode.js";
-import {options    } from "./options.js";
-import {warnedTable} from "./warnedTable.js";
-import {Warning    } from "./Warning.js";
+import {assertMode         } from "./assertMode.js";
+import {options            } from "./options.js";
+import {disableTypeChecking} from "./validateType.js";
+import {enableTypeChecking } from "./validateType.js";
+import {warnedTable        } from "./warnedTable.js";
+import {Warning            } from "./Warning.js";
 /**
  * @param {HTMLDivElement} div - The <div>.
  */
@@ -39,8 +41,13 @@ function niceDiv(div) {
   div.classList.add('rti');
   document.head.appendChild(rule);
 }
+function isEnabled() {
+  const tmp = localStorage.getItem('rti-enabled');
+  return tmp === null || tmp === 'true';
+}
 class TypePanel {
   div             = document.createElement('div');
+  inputEnable     = document.createElement('input');
   spanErrors      = document.createElement('span');
   span            = document.createElement('span');
   select          = document.createElement('select');
@@ -51,12 +58,22 @@ class TypePanel {
   buttonLoadState = document.createElement('button');
   buttonSaveState = document.createElement('button');
   constructor() {
-    const {div, spanErrors, span, select, option_spam, option_once, option_never, buttonHide, buttonLoadState, buttonSaveState} = this;
+    const {div, inputEnable, spanErrors, span, select, option_spam, option_once, option_never, buttonHide, buttonLoadState, buttonSaveState} = this;
     div.style.position = "absolute";
     div.style.bottom = "0px";
     div.style.right = "0px";
     div.style.zIndex = "10";
     niceDiv(div);
+    inputEnable.checked = isEnabled();
+    inputEnable.type = "checkbox";
+    inputEnable.onchange = (e) => {
+      if (inputEnable.checked) {
+        enableTypeChecking();
+      } else {
+        disableTypeChecking();
+      }
+    }
+    inputEnable.onchange();
     span.innerText = " Type report mode:";
     option_spam.text = 'spam';
     option_once.text = 'once';
@@ -83,7 +100,7 @@ class TypePanel {
     buttonLoadState.onclick = () => this.loadState();
     buttonSaveState.textContent = 'Save state';
     buttonSaveState.onclick = () => this.saveState();
-    div.append(spanErrors, span, select, buttonHide, buttonLoadState, buttonSaveState, warnedTable);
+    div.append(inputEnable, spanErrors, span, select, buttonHide, buttonLoadState, buttonSaveState, warnedTable);
     div.style.maxHeight = '200px';
     div.style.overflow = 'scroll';
     const finalFunc = () => document.body.append(div);
