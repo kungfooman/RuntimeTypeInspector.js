@@ -123,7 +123,7 @@ class Asserter extends Stringifier {
     if (!this.addHeader) {
       return '';
     }
-    let header = "import {inspectType, youCanAddABreakpointHere, registerVariable";
+    let header = "import {inspectType, inspectTypeWithTemplates, youCanAddABreakpointHere, registerVariable";
     if (this.validateDivision) {
       header += ", validateDivision";
     }
