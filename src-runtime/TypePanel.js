@@ -57,8 +57,12 @@ class TypePanel {
   buttonHide      = document.createElement('button');
   buttonLoadState = document.createElement('button');
   buttonSaveState = document.createElement('button');
+  buttonClear     = document.createElement('button');
   constructor() {
-    const {div, inputEnable, spanErrors, span, select, option_spam, option_once, option_never, buttonHide, buttonLoadState, buttonSaveState} = this;
+    const {
+      div, inputEnable, spanErrors, span, select, option_spam, option_once, option_never,
+      buttonHide, buttonLoadState, buttonSaveState, buttonClear
+    } = this;
     div.style.position = "absolute";
     div.style.bottom = "0px";
     div.style.right = "0px";
@@ -100,7 +104,9 @@ class TypePanel {
     buttonLoadState.onclick = () => this.loadState();
     buttonSaveState.textContent = 'Save state';
     buttonSaveState.onclick = () => this.saveState();
-    div.append(inputEnable, spanErrors, span, select, buttonHide, buttonLoadState, buttonSaveState, warnedTable);
+    buttonClear.textContent = 'Clear';
+    buttonClear.onclick = () => this.clear();
+    div.append(inputEnable, spanErrors, span, select, buttonHide, buttonLoadState, buttonSaveState, buttonClear, warnedTable);
     div.style.maxHeight = '200px';
     div.style.overflow = 'scroll';
     const finalFunc = () => document.body.append(div);
@@ -112,6 +118,14 @@ class TypePanel {
       document.addEventListener("DOMContentLoaded", finalFunc);
     }
     this.loadState();
+  }
+  clear() {
+    const {warned} = options;
+    for (const key in warned) {
+      const warning = warned[key];
+      warning.tr.remove();
+      delete warned[key];
+    }
   }
   get state() {
     /** @type {object[]} */
