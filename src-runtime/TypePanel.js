@@ -72,7 +72,7 @@ class TypePanel {
       } else {
         disableTypeChecking();
       }
-    }
+    };
     inputEnable.onchange();
     span.innerText = " Type report mode:";
     option_spam.text = 'spam';
