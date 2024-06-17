@@ -395,7 +395,7 @@ module.exports = {
 
     // Style guide
     "import/extensions": ["error", "always", {"ts": "never", "tsx": "never"}],
-    "import/no-duplicates": "warn",
+    "import/no-duplicates": "off",
 
     // JSDoc rules
     "jsdoc/check-access": "error",
