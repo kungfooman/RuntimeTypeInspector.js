@@ -17,9 +17,11 @@ import {validateUnion       } from "./validateUnion.js";
 export let enabled = true;
 export function disableTypeChecking() {
   enabled = false;
+  localStorage.setItem('rti-enabled', 'false');
 }
 export function enableTypeChecking() {
   enabled = true;
+  localStorage.setItem('rti-enabled', 'true');
 }
 /**
  * @typedef {object} TypeObject
