@@ -9,7 +9,7 @@ function center_to_corners_format([centerX, centerY, width, height]) {
     "type": "array",
     "elementType": "number",
     "optional": false
-  }, 'center_to_corners_format', 'arguments[0]')) {
+  }, 'center_to_corners_format', 'arr')) {
     youCanAddABreakpointHere();
   }
   return [

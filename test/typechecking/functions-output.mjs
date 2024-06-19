@@ -37,7 +37,7 @@ function fetchSomething(url, {
         "optional": true
       }
     }
-  }, 'fetchSomething', 'arguments[1]')) {
+  }, 'fetchSomething', 'options')) {
     youCanAddABreakpointHere();
   }
   function inner() {}
