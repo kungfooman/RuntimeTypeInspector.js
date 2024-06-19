@@ -442,6 +442,7 @@ class Asserter extends Stringifier {
     //out += `${spaces}/*${spaces}  node.type=${node.type}\n${spaces}
     //  ${JSON.stringify(jsdoc)}\n${parent}\n${spaces}*/\n`;
     for (let name in params) {
+      let nameFancy = name;
       const type = params[name];
       const hasParam = this.nodeHasParamName(node, name);
       if (!hasParam) {
@@ -480,47 +481,53 @@ class Asserter extends Stringifier {
                 }
                 const t = JSON.stringify(type.elementType, null, 2).replaceAll('\n', '\n' + spaces);
                 if (templates) {
-                  out += `${spaces}if (!inspectTypeWithTemplates(${element.name}, ${t}, '${loc}', '${name}', rtiTemplates)) {\n`;
+                  out += `${spaces}if (!inspectTypeWithTemplates(${element.name}, ${t}, '${loc}', '${nameFancy}', rtiTemplates)) {\n`;
                 } else {
-                  out += `${spaces}if (!inspectType(${element.name}, ${t}, '${loc}', '${name}')) {\n`;
+                  out += `${spaces}if (!inspectType(${element.name}, ${t}, '${loc}', '${nameFancy}')) {\n`;
                 }
                 out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
               }
               continue;
-            } else if (param.left.type === 'ObjectPattern' && type.type === 'object') {
-              // Add a type assertion for each property of the ObjectPattern
-              for (const property of param.left.properties) {
-                if (property.key.type !== 'Identifier') {
-                  this.warn('ObjectPattern> Only Identifier case handled right now');
-                  continue;
+            } else if (param.left.type === 'ObjectPattern') {
+              if (type.type === 'object') {
+                // Add a type assertion for each property of the ObjectPattern
+                for (const property of param.left.properties) {
+                  if (property.key.type !== 'Identifier') {
+                    this.warn('ObjectPattern> Only Identifier case handled right now');
+                    continue;
+                  }
+                  const keyName = property.key.name;
+                  if (type.type !== 'object' || !type.properties) {
+                    this.warn(
+                      "missing subtype information in JSDoc> in type",
+                      JSON.stringify(type, null, 2),
+                      "for ObjectPattern:", this.toSource(property).trim()
+                    );
+                    continue;
+                  }
+                  const subType = type.properties[keyName];
+                  if (!subType) {
+                    this.warn("missing subtype information in JSDoc");
+                    continue;
+                  }
+                  const t = JSON.stringify(subType, null, 2).replaceAll('\n', '\n' + spaces);
+                  if (templates) {
+                    out += `${spaces}if (!inspectTypeWithTemplates(${keyName}, ${t}, '${loc}', '${nameFancy}', rtiTemplates)) {\n`;
+                  } else {
+                    out += `${spaces}if (!inspectType(${keyName}, ${t}, '${loc}', '${nameFancy}')) {\n`;
+                  }
+                  out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
                 }
-                const keyName = property.key.name;
-                if (type.type !== 'object' || !type.properties) {
-                  this.warn(
-                    "missing subtype information in JSDoc> in type",
-                    JSON.stringify(type, null, 2),
-                    "for ObjectPattern:", this.toSource(property).trim()
-                  );
-                  continue;
-                }
-                const subType = type.properties[keyName];
-                if (!subType) {
-                  this.warn("missing subtype information in JSDoc");
-                  continue;
-                }
-                const t = JSON.stringify(subType, null, 2).replaceAll('\n', '\n' + spaces);
-                if (templates) {
-                  out += `${spaces}if (!inspectTypeWithTemplates(${keyName}, ${t}, '${loc}', '${name}', rtiTemplates)) {\n`;
-                } else {
-                  out += `${spaces}if (!inspectType(${keyName}, ${t}, '${loc}', '${name}')) {\n`;
-                }
-                out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
+                continue;
+              } else if (typeof type === 'string') {
+                // The case when we have an ObjectPattern with a @typedef
+                name = `arguments[${paramIndex}]`;
               }
+            } else {
+              this.warn(`generateTypeChecks> ${loc}> todo implement`,
+                        `AssignmentPattern for parameter ${name}`);
               continue;
             }
-            this.warn(`generateTypeChecks> ${loc}> todo implement`,
-                      `AssignmentPattern for parameter ${name}`);
-            continue;
           }
         } else {
           const loc = this.getName(node);
@@ -552,9 +559,9 @@ class Asserter extends Stringifier {
         first = false;
       }
       if (templates) {
-        out += `${spaces}if (${prevCheck}!inspectTypeWithTemplates(${name}, ${t}, '${loc}', '${name}', rtiTemplates)) {\n`;
+        out += `${spaces}if (${prevCheck}!inspectTypeWithTemplates(${name}, ${t}, '${loc}', '${nameFancy}', rtiTemplates)) {\n`;
       } else {
-        out += `${spaces}if (${prevCheck}!inspectType(${name}, ${t}, '${loc}', '${name}')) {\n`;
+        out += `${spaces}if (${prevCheck}!inspectType(${name}, ${t}, '${loc}', '${nameFancy}')) {\n`;
       }
       out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
     }
