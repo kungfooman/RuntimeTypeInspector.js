@@ -16,7 +16,7 @@ import {simplifyType} from "./simplifyType.js";
  */
 function parseJSDoc(src, expandType = expandTypeDepFree) {
   // Parse something like: @param {Object} [kwargs={}] Optional arguments.
-  const regex = /@param \{(.*?)\} ([\[\]a-zA-Z0-9_$=\{\}\.'" ]+)/g;
+  const regex = /@param \{(.*?)\} ([\[\]a-zA-Z0-9_$=\-\{\}\.'" ]+)/g;
   const matches = [...src.matchAll(regex)];
   /** @type {Record<string, ExpandTypeReturnType>} */
   const params = Object.create(null);
