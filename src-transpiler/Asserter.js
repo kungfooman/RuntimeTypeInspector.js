@@ -442,8 +442,9 @@ class Asserter extends Stringifier {
     //out += `${spaces}/*${spaces}  node.type=${node.type}\n${spaces}
     //  ${JSON.stringify(jsdoc)}\n${parent}\n${spaces}*/\n`;
     for (let name in params) {
-      let nameFancy = name;
       const type = params[name];
+      // Copy name for warnings, `name` may become `arguments[${paramIndex}]`.
+      const nameFancy = name;
       const hasParam = this.nodeHasParamName(node, name);
       if (!hasParam) {
         let testNode = node;
