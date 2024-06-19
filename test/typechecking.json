@@ -116,6 +116,10 @@
     "output": "./test/typechecking/simple-ObjectPattern-output.mjs"
   },
   {
+    "input": "./test/typechecking/simple-ObjectPattern-typedef-input.mjs",
+    "output": "./test/typechecking/simple-ObjectPattern-typedef-output.mjs"
+  },
+  {
     "input": "./test/typechecking/template-types-1-input.mjs",
     "output": "./test/typechecking/template-types-1-output.mjs"
   },
