@@ -439,6 +439,12 @@ class Asserter extends Stringifier {
       const tmp = JSON.stringify(templates, null, 2).replaceAll('\n', '\n' + spaces);
       out += `\n${spaces}const rtiTemplates = ${tmp};`;
     }
+    function newlineBeforeFirst() {
+      if (first) {
+        out += '\n';
+        first = false;
+      }
+    }
     //out += `${spaces}/*${spaces}  node.type=${node.type}\n${spaces}
     //  ${JSON.stringify(jsdoc)}\n${parent}\n${spaces}*/\n`;
     for (let name in params) {
@@ -476,11 +482,19 @@ class Asserter extends Stringifier {
             if (param.left.type === 'ArrayPattern' && type.type === 'array') {
               // Add a type assertion for each element of the ArrayPattern
               for (const element of param.left.elements) {
+                if (element.type === 'RestElement') {
+                  // Case for:
+                  // function test([a, b, ...rest] = [1, 2, 3]) {return rest;}
+                  /** @todo We could typecheck the rest element too */
+                  // console.log("Ignore RestElement", element);
+                  continue;
+                }
                 if (element.type !== 'Identifier') {
                   this.warn('Only Identifier case handled right now');
                   continue;
                 }
                 const t = JSON.stringify(type.elementType, null, 2).replaceAll('\n', '\n' + spaces);
+                newlineBeforeFirst();
                 if (templates) {
                   out += `${spaces}if (!inspectTypeWithTemplates(${element.name}, ${t}, '${loc}', '${nameFancy}', rtiTemplates)) {\n`;
                 } else {
@@ -493,6 +507,11 @@ class Asserter extends Stringifier {
               if (type.type === 'object') {
                 // Add a type assertion for each property of the ObjectPattern
                 for (const property of param.left.properties) {
+                  if (property.type !== 'ObjectProperty') {
+                    // E.g. case of RestElement, {a, b, c, ...kwargs}
+                    // console.log("Ignore property", property);
+                    continue;
+                  }
                   if (property.key.type !== 'Identifier') {
                     this.warn('ObjectPattern> Only Identifier case handled right now');
                     continue;
@@ -512,6 +531,7 @@ class Asserter extends Stringifier {
                     continue;
                   }
                   const t = JSON.stringify(subType, null, 2).replaceAll('\n', '\n' + spaces);
+                  newlineBeforeFirst();
                   if (templates) {
                     out += `${spaces}if (!inspectTypeWithTemplates(${keyName}, ${t}, '${loc}', '${nameFancy}', rtiTemplates)) {\n`;
                   } else {
@@ -555,10 +575,7 @@ class Asserter extends Stringifier {
       ) {
         prevCheck = 'arguments.length !== 0 && ';
       }
-      if (first) {
-        out += '\n';
-        first = false;
-      }
+      newlineBeforeFirst();
       if (templates) {
         out += `${spaces}if (${prevCheck}!inspectTypeWithTemplates(${name}, ${t}, '${loc}', '${nameFancy}', rtiTemplates)) {\n`;
       } else {
