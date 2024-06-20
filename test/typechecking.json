@@ -104,6 +104,10 @@
     "output": "./test/typechecking/simple-ArrayPattern-output.mjs"
   },
   {
+    "input": "./test/typechecking/simple-ArrayPattern-rest-input.mjs",
+    "output": "./test/typechecking/simple-ArrayPattern-rest-output.mjs"
+  },
+  {
     "input": "./test/typechecking/simple-ObjectMethod-computed-input.mjs",
     "output": "./test/typechecking/simple-ObjectMethod-computed-output.mjs"
   },
@@ -118,6 +122,10 @@
   {
     "input": "./test/typechecking/simple-ObjectPattern-input.mjs",
     "output": "./test/typechecking/simple-ObjectPattern-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/simple-ObjectPattern-rest-input.mjs",
+    "output": "./test/typechecking/simple-ObjectPattern-rest-output.mjs"
   },
   {
     "input": "./test/typechecking/simple-ObjectPattern-typedef-input.mjs",
