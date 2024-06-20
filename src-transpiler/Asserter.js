@@ -504,7 +504,8 @@ class Asserter extends Stringifier {
               }
               continue;
             } else if (param.left.type === 'ObjectPattern') {
-              if (type.type === 'object') {
+              // If we have properties from JSDoc, we can create individual type inspections.
+              if (type?.properties && Object.keys(type.properties).length) {
                 // Add a type assertion for each property of the ObjectPattern
                 for (const property of param.left.properties) {
                   if (property.type !== 'ObjectProperty') {
@@ -540,7 +541,7 @@ class Asserter extends Stringifier {
                   out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
                 }
                 continue;
-              } else if (typeof type === 'string') {
+              } else {
                 // The case when we have an ObjectPattern with a @typedef
                 name = `arguments[${paramIndex}]`;
               }
