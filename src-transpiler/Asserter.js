@@ -493,6 +493,11 @@ class Asserter extends Stringifier {
               if (type.type === 'object') {
                 // Add a type assertion for each property of the ObjectPattern
                 for (const property of param.left.properties) {
+                  if (property.type !== 'ObjectProperty') {
+                    // E.g. case of RestElement, {a, b, c, ...kwargs}
+                    // console.log("Ignore property", property);
+                    continue;
+                  }
                   if (property.key.type !== 'Identifier') {
                     this.warn('ObjectPattern> Only Identifier case handled right now');
                     continue;
