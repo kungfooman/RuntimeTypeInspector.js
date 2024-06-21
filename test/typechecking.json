@@ -72,6 +72,10 @@
     "output": "./test/typechecking/good-old-es5-output.mjs"
   },
   {
+    "input": "./test/typechecking/jsdoc-param-end-detection-input.mjs",
+    "output": "./test/typechecking/jsdoc-param-end-detection-output.mjs"
+  },
+  {
     "input": "./test/typechecking/jsdoc-regexp-default-values-sci-input.mjs",
     "output": "./test/typechecking/jsdoc-regexp-default-values-sci-output.mjs"
   },

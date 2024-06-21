@@ -355,11 +355,7 @@ module.exports = {
       }
     ],
     //"space-in-parens": ["error", "never"],
-    "space-infix-ops": [
-      "error", {
-        "int32Hint": false
-      }
-    ],
+    "space-infix-ops": "off",
     "space-unary-ops": [
       "error", {
         "words": true,
