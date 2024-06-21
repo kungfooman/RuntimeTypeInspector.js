@@ -17,37 +17,48 @@ function replaceType(type, search, replace, warn) {
     // console.log("replaceType", {type, search, replace, warn});
     return replace;
   }
-  if (type.type === 'object') {
-    const {properties} = type;
-    // todo I need unit tests making sure I don't need a full copy
-    // const newProperties = {};
-    for (const prop in properties) {
-      const val = properties[prop];
-      properties[prop] = replaceType(val, search, replace, warn);
+  switch (type.type) {
+    case 'object': {
+      const {properties} = type;
+      // todo I need unit tests making sure I don't need a full copy
+      // const newProperties = {};
+      for (const prop in properties) {
+        const val = properties[prop];
+        properties[prop] = replaceType(val, search, replace, warn);
+      }
+      return type;
     }
-    return type;
-  } else if (type.type === 'tuple') {
-    const {elements} = type;
-    const {length  } = elements;
-    for (let i = 0; i < length; i++) {
-      const element = elements[i];
-      elements[i] = replaceType(element, search, replace, warn);
+    case 'tuple': {
+      const {elements} = type;
+      const {length  } = elements;
+      for (let i = 0; i < length; i++) {
+        const element = elements[i];
+        elements[i] = replaceType(element, search, replace, warn);
+      }
+      return type;
     }
-    return type;
-  } else if (type.type === 'array') {
-    type.elementType = replaceType(type.elementType, search, replace, warn);
-    return type;
-  } else if (type.type === 'union') {
-    const {members} = type;
-    const {length } = members;
-    for (let i = 0; i < length; i++) {
-      const member = members[i];
-      members[i] = replaceType(member, search, replace, warn);
+    case 'array':
+      type.elementType = replaceType(type.elementType, search, replace, warn);
+      return type;
+    case 'union': {
+      const {members} = type;
+      const {length } = members;
+      for (let i = 0; i < length; i++) {
+        const member = members[i];
+        members[i] = replaceType(member, search, replace, warn);
+      }
+      return type;
     }
-    return type;
-  }
-  if (type.type) {
-    warn('replaceType: unhandled', {type, search, replace});
+    case 'indexedAccess':
+    case 'record':
+    case 'map':
+    case 'mapping':
+    case 'intersection':
+    case 'keyof':
+    case 'set':
+    case 'new':
+      warn('replaceType: @todo unhandled', {type, search, replace});
+      break;
   }
   return type;
 }
