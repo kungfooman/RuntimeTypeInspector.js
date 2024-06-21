@@ -28,10 +28,22 @@ function parseJSDoc(src, expandType = expandTypeDepFree) {
     //   name: [kwargs={}] The configuration parameters.
     //   name: [d = 1.0] Sample spacing
     if (name[0] === '[') {
-      // Possible improvement: counting opening/closing brackets for perfect match
-      const closer = name.lastIndexOf(']');
+      // Counting opening/closing brackets for perfect match
+      let openCloseCount = 1;
+      let i = 1;
+      for (; i<name.length; i++) {
+        const c = name[i];
+        if (c === '[') {
+          openCloseCount++;
+        } else if (c === ']') {
+          openCloseCount--;
+        }
+        if (openCloseCount === 0) {
+          break;
+        }
+      }
       // Afterwards name will be: d = 1.0
-      name = name.substring(1, closer);
+      name = name.substring(1, i);
       // mark it for the type:
       optional = true;
     }
