@@ -1039,6 +1039,119 @@ class Stringifier {
     return `${spaces}${right} as ${left}`;
   }
   /**
+   * @param {import("@babel/types").JSXAttribute} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  JSXAttribute(node) {
+    const {name, value} = node;
+    // console.log("JSXAttribute", {name, value});
+    const keySource = this.toSource(name);
+    const valSource = this.toSource(value);
+    if (keySource === 'key') {
+      console.log("Check difference to Babel jsx generator");
+    }
+    if (keySource === valSource) {
+      return this.spaces + keySource;
+    }
+    return `${this.spaces}${keySource}: ${valSource}`;
+  }
+  /**
+   * @param {import("@babel/types").JSXElement} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  JSXElement(node) {
+    const {openingElement, closingElement, children} = node;
+    // console.log("JSXElement", {openingElement, closingElement, children});
+    if (openingElement.type !== 'JSXOpeningElement') {
+      debugger;
+    }
+    let {spaces} = this;
+    const {name, attributes} = openingElement;
+    let out = '';
+    //out += '\n';
+    //out += spaces;
+    out += 'jsx(';
+    this.numSpaces++;
+    spaces = this.spaces;
+    out += '\n';
+    out += spaces;
+    let sourceName = this.toSource(name);
+    if (sourceName[0] === sourceName[0].toLowerCase()) {
+      // If something like 'div', it has to become "'div'"
+      sourceName = JSON.stringify(sourceName);
+    }
+    out += sourceName;
+    out += ',';
+    if (attributes.length) {
+      out += '\n';
+      out += spaces;
+      out += '{\n';
+      this.numSpaces++;
+      out += attributes
+        .map(attr => this.toSource(attr) + ',\n')
+        .join('');
+      this.numSpaces--;
+      out += spaces;
+      out += '}';
+      //out += '\n';
+    } else {
+      out += 'null';
+    }
+    if (children.length) {
+      out += ',\n';
+      //out += spaces;
+      //this.numSpaces++;
+      //spaces = this.spaces;
+      for (const child of children) {
+        const source = this.toSource(child);
+        if (!source.length) {
+          continue;
+        }
+        out += spaces;
+        out += source;
+        out += ',\n';
+      }
+      //this.numSpaces--;
+    } else {
+      out += '\n';
+    }
+    this.numSpaces--;
+    out += this.spaces;
+    out += ')';
+    return out;
+  }
+  /**
+   * @param {import("@babel/types").JSXIdentifier} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  JSXIdentifier(node) {
+    const {name} = node;
+    // console.log('JSXIdentifier', {name});
+    return name;
+  }
+  /**
+   * @param {import("@babel/types").JSXExpressionContainer} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  JSXExpressionContainer(node) {
+    const {expression} = node;
+    // console.log('JSXExpressionContainer', {expression});
+    return this.toSource(expression);
+  }
+  /**
+   * @param {import("@babel/types").JSXText} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  JSXText(node) {
+    const {extra, value} = node;
+    // console.log('JSXText', {extra, value});
+    const trimmed = value.trim();
+    if (!trimmed.length) {
+      return '';
+    }
+    return JSON.stringify(trimmed);
+  }
+  /**
    * @param {import("@babel/types").Super} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
