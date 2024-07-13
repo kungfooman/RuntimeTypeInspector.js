@@ -22,6 +22,7 @@ function addTypeChecks(src, options) {
     const ast = parse(src, {
       sourceType: 'module',
       createParenthesizedExpressions: true,
+      plugins: ['jsx'],
     });
     const out = asserter.getHeader() + asserter.toSource(ast);
     return out;
