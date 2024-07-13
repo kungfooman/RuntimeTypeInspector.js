@@ -78,7 +78,11 @@ class Asserter extends Stringifier {
     } else {
       out += ' {\n';
       out += this.generateTypeChecks(node);
+      const {spaces} = this;
+      this.numSpaces++;
       out += this.spaces + 'return ' + this.toSource(body) + ';\n';
+      this.numSpaces--;
+      out += spaces;
       out += '}';
     }
     return out;
