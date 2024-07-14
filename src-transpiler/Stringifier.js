@@ -1112,6 +1112,8 @@ class Stringifier {
       out += spaces;
       out += '}';
     } else {
+      out += '\n';
+      out += spaces;
       out += 'null';
     }
     if (children.length) {
