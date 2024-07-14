@@ -229,7 +229,7 @@ class Stringifier {
     return out;
   }
   /**
-   * @returns {string}
+   * @returns {string} The header.
    */
   getHeader() {
     if (!this.addReactImport) {
