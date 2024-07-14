@@ -1064,11 +1064,6 @@ class Stringifier {
       return `${this.spaces}${keySource}: true`;
     }
     const valSource = this.toSource(value);
-    if (keySource === 'key') {
-      // https://react.dev/reference/react/createElement
-      // ref also seems to be a special case
-      console.log("Check difference to Babel jsx generator");
-    }
     if (keySource === valSource) {
       return this.spaces + keySource;
     }
