@@ -1158,11 +1158,10 @@ class Stringifier {
   JSXText(node) {
     const {extra, value} = node;
     // console.log('JSXText', {extra, value});
-    const trimmed = value.trim();
-    if (!trimmed.length) {
+    if (!value.trim().length) {
       return '';
     }
-    return JSON.stringify(trimmed);
+    return JSON.stringify(value);
   }
   /**
    * @param {import("@babel/types").Super} node - The Babel AST node.
