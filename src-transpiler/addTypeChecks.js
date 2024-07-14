@@ -1,5 +1,6 @@
-import {parse   } from '@babel/parser';
-import {Asserter} from './Asserter.js';
+import {parse        } from '@babel/parser';
+import {Asserter     } from './Asserter.js';
+import {parserOptions} from './parserOptions.js';
 /**
  * Simple facade which does all the processing. Processes the input
  * source string, adding runtime type checks based on JSDoc comments.
@@ -19,11 +20,10 @@ import {Asserter} from './Asserter.js';
 function addTypeChecks(src, options) {
   try {
     const asserter = new Asserter(options);
-    const ast = parse(src, {
-      sourceType: 'module',
-      createParenthesizedExpressions: true,
-    });
-    const out = asserter.getHeader() + asserter.toSource(ast);
+    const ast = parse(src, parserOptions);
+    // Must be called before getHeader since it's keeping an eye open for JSX elements.
+    const source = asserter.toSource(ast);
+    const out = asserter.getHeader() + source;
     return out;
   } catch (e) {
     console.error(e);

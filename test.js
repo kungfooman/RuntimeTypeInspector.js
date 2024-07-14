@@ -1,6 +1,9 @@
-import {addTypeChecks} from './src-transpiler/addTypeChecks.js';
-import {expandType   } from './src-transpiler/expandType.js';
 import {readFileSync } from 'fs';
+import {parse        } from '@babel/parser';
+import {expandType   } from './src-transpiler/expandType.js';
+import {Asserter     } from './src-transpiler/Asserter.js';
+import {Stringifier  } from './src-transpiler/Stringifier.js';
+import {parserOptions} from './src-transpiler/parserOptions.js';
 /**
  * @param {string} a - Left source code.
  * @param {string} b - Right source code.
@@ -44,13 +47,18 @@ function normalize(input) {
   return output;
 }
 for (const {input, output} of tests) {
-  const inputContent = readFileSync(input, 'utf8');
+  const inputContent  = readFileSync(input, 'utf8');
   const outputContent = readFileSync(output, 'utf8');
-  const newOutputContent = addTypeChecks(inputContent, {
+  const Converter = input.includes('jsx') ? Stringifier : Asserter;
+  const converter = new Converter({
     expandType,
-    addHeader: false,
+    addHeader: input.includes('jsx'),
     filename: 'repl.js'
   });
+  const ast = parse(inputContent, parserOptions);
+  // Must be called before getHeader since it's keeping an eye open for JSX elements.
+  const source = converter.toSource(ast);
+  const newOutputContent = converter.getHeader() + source;
   if (normalize(newOutputContent) !== normalize(outputContent)) {
     discrepancies++;
     console.error("Discrepancy detected, please check!", {

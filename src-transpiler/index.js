@@ -19,6 +19,7 @@ export * from './parseJSDoc.js';
 export * from './parseJSDocSetter.js';
 export * from './parseJSDocTemplates.js';
 export * from './parseJSDocTypedef.js';
+export * from './parserOptions.js';
 export * from './simplifyType.js';
 export * from './Stringifier.js';
 export * from './trimEndSpaces.js';

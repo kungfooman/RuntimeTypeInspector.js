@@ -10,6 +10,10 @@ class Stringifier {
   /** @type {Node[]} */
   parents = [];
   /**
+   * If we encounter JSX elements, we add React's createElement as import.
+   */
+  addReactImport = false;
+  /**
    * @param {Node} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
@@ -223,6 +227,15 @@ class Stringifier {
       out += '}';
     }
     return out;
+  }
+  /**
+   * @returns {string} The header.
+   */
+  getHeader() {
+    if (!this.addReactImport) {
+      return '';
+    }
+    return "import {createElement} from 'react';\n";
   }
   get parent() {
     return this.parents[this.parents.length - 2];
@@ -1037,6 +1050,115 @@ class Stringifier {
     // PostEffect: PostEffect$1\n
     // createMesh: createMesh$1\n
     return `${spaces}${right} as ${left}`;
+  }
+  /**
+   * @param {import("@babel/types").JSXAttribute} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  JSXAttribute(node) {
+    const {name, value} = node;
+    // console.log("JSXAttribute", {name, value});
+    const keySource = this.toSource(name);
+    // E.g. <audio controls/>
+    if (value === null) {
+      return `${this.spaces}${keySource}: true`;
+    }
+    const valSource = this.toSource(value);
+    if (keySource === valSource) {
+      return this.spaces + keySource;
+    }
+    return `${this.spaces}${keySource}: ${valSource}`;
+  }
+  /**
+   * @param {import("@babel/types").JSXElement} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  JSXElement(node) {
+    this.addReactImport = true;
+    const {openingElement, closingElement, children} = node;
+    // console.log("JSXElement", {openingElement, closingElement, children});
+    if (openingElement.type !== 'JSXOpeningElement') {
+      debugger;
+    }
+    let {spaces} = this;
+    const {name, attributes} = openingElement;
+    let out = '';
+    out += 'createElement(';
+    this.numSpaces++;
+    spaces = this.spaces;
+    out += '\n';
+    out += spaces;
+    let sourceName = this.toSource(name);
+    if (sourceName[0] === sourceName[0].toLowerCase()) {
+      // If something like 'div', it has to become "'div'"
+      sourceName = JSON.stringify(sourceName);
+    }
+    out += sourceName;
+    out += ',';
+    if (attributes.length) {
+      out += '\n';
+      out += spaces;
+      out += '{\n';
+      this.numSpaces++;
+      out += attributes
+        .map(attr => this.toSource(attr) + ',\n')
+        .join('');
+      this.numSpaces--;
+      out += spaces;
+      out += '}';
+    } else {
+      out += '\n';
+      out += spaces;
+      out += 'null';
+    }
+    if (children.length) {
+      out += ',\n';
+      for (const child of children) {
+        const source = this.toSource(child);
+        if (!source.length) {
+          continue;
+        }
+        out += spaces;
+        out += source;
+        out += ',\n';
+      }
+    } else {
+      out += '\n';
+    }
+    this.numSpaces--;
+    out += this.spaces;
+    out += ')';
+    return out;
+  }
+  /**
+   * @param {import("@babel/types").JSXIdentifier} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  JSXIdentifier(node) {
+    const {name} = node;
+    // console.log('JSXIdentifier', {name});
+    return name;
+  }
+  /**
+   * @param {import("@babel/types").JSXExpressionContainer} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  JSXExpressionContainer(node) {
+    const {expression} = node;
+    // console.log('JSXExpressionContainer', {expression});
+    return this.toSource(expression);
+  }
+  /**
+   * @param {import("@babel/types").JSXText} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  JSXText(node) {
+    const {extra, value} = node;
+    // console.log('JSXText', {extra, value});
+    if (!value.trim().length) {
+      return '';
+    }
+    return JSON.stringify(value);
   }
   /**
    * @param {import("@babel/types").Super} node - The Babel AST node.
