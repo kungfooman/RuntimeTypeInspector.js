@@ -84,6 +84,10 @@
     "output": "./test/typechecking/jsx-output.mjs"
   },
   {
+    "input": "./test/typechecking/jsx-member-expression-input.mjs",
+    "output": "./test/typechecking/jsx-member-expression-output.mjs"
+  },
+  {
     "input": "./test/typechecking/keyof-typeof-input.mjs",
     "output": "./test/typechecking/keyof-typeof-output.mjs"
   },

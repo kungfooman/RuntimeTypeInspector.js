@@ -1149,6 +1149,17 @@ class Stringifier {
     return this.toSource(expression);
   }
   /**
+   * @param {import("@babel/types").JSXMemberExpression} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  JSXMemberExpression(node) {
+    const {object, property} = node;
+    // console.log('JSXMemberExpression', 'object', object, 'property', property);
+    const o = this.toSource(object);
+    const p = this.toSource(property);
+    return `${o}.${p}`;
+  }
+  /**
    * @param {import("@babel/types").JSXText} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
