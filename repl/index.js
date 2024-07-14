@@ -6,7 +6,8 @@ import {
   expandTypeBabelTS,
   expandTypeDepFree,
   code2ast2code,
-  ast2jsonForComparison
+  ast2jsonForComparison,
+  parserOptions,
 } from '@runtime-type-inspector/transpiler';
 import * as ti  from '@runtime-type-inspector/transpiler';
 import * as rti from '@runtime-type-inspector/runtime';
@@ -205,7 +206,7 @@ function getRight() {
   return aceEditorRight.getValue();
 }
 function actionAST() {
-  const ast = parse(getLeft(), {sourceType: 'module'});
+  const ast = parse(getLeft(), parserOptions);
   const out = JSON.stringify(ast, function (name, val) {
     if (name === "loc" || name === "start" || name === "end") {
       return undefined; // remove
