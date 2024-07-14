@@ -13,6 +13,6 @@ function code2ast2code(code) {
   }
   const stringifier = new Stringifier();
   const out = stringifier.toSource(ast);
-  return out;
+  return stringifier.getHeader() + out;
 }
 export {code2ast2code};

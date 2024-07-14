@@ -122,12 +122,14 @@ class Asserter extends Stringifier {
    * @todo
    * Once we went over every node, we can see if we really require registerTypef, registerClass etc.
    * @returns {string} The import declaration header for importing RTI.
+   * @override
    */
   getHeader() {
     if (!this.addHeader) {
       return '';
     }
-    let header = "import {inspectType, inspectTypeWithTemplates, youCanAddABreakpointHere, registerVariable";
+    let header = super.getHeader();
+    header += "import {inspectType, inspectTypeWithTemplates, youCanAddABreakpointHere, registerVariable";
     if (this.validateDivision) {
       header += ", validateDivision";
     }

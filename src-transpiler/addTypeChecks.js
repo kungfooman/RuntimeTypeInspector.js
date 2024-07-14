@@ -21,7 +21,9 @@ function addTypeChecks(src, options) {
   try {
     const asserter = new Asserter(options);
     const ast = parse(src, parserOptions);
-    const out = asserter.getHeader() + asserter.toSource(ast);
+    // Must be called before getHeader since it's keeping an eye open for JSX elements.
+    const source = asserter.toSource(ast);
+    const out = asserter.getHeader() + source;
     return out;
   } catch (e) {
     console.error(e);

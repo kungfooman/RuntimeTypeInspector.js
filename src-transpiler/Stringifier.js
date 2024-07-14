@@ -10,6 +10,10 @@ class Stringifier {
   /** @type {Node[]} */
   parents = [];
   /**
+   * If we encounter JSX elements, we add React's createElement as import.
+   */
+  addReactImport = false;
+  /**
    * @param {Node} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
@@ -223,6 +227,15 @@ class Stringifier {
       out += '}';
     }
     return out;
+  }
+  /**
+   * @returns {string}
+   */
+  getHeader() {
+    if (!this.addReactImport) {
+      return '';
+    }
+    return "import {createElement} from 'react';\n";
   }
   get parent() {
     return this.parents[this.parents.length - 2];
@@ -1066,6 +1079,7 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   JSXElement(node) {
+    this.addReactImport = true;
     const {openingElement, closingElement, children} = node;
     // console.log("JSXElement", {openingElement, closingElement, children});
     if (openingElement.type !== 'JSXOpeningElement') {
@@ -1074,9 +1088,7 @@ class Stringifier {
     let {spaces} = this;
     const {name, attributes} = openingElement;
     let out = '';
-    //out += '\n';
-    //out += spaces;
-    out += 'jsx(';
+    out += 'createElement(';
     this.numSpaces++;
     spaces = this.spaces;
     out += '\n';
