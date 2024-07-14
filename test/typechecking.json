@@ -80,6 +80,10 @@
     "output": "./test/typechecking/jsdoc-regexp-default-values-sci-output.mjs"
   },
   {
+    "input": "./test/typechecking/jsx-input.mjs",
+    "output": "./test/typechecking/jsx-output.mjs"
+  },
+  {
     "input": "./test/typechecking/keyof-typeof-input.mjs",
     "output": "./test/typechecking/keyof-typeof-output.mjs"
   },
