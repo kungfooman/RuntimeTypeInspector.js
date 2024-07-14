@@ -1046,8 +1046,14 @@ class Stringifier {
     const {name, value} = node;
     // console.log("JSXAttribute", {name, value});
     const keySource = this.toSource(name);
+    // E.g. <audio controls/>
+    if (value === null) {
+      return `${this.spaces}${keySource}: true`;
+    }
     const valSource = this.toSource(value);
     if (keySource === 'key') {
+      // https://react.dev/reference/react/createElement
+      // ref also seems to be a special case
       console.log("Check difference to Babel jsx generator");
     }
     if (keySource === valSource) {
@@ -1093,15 +1099,11 @@ class Stringifier {
       this.numSpaces--;
       out += spaces;
       out += '}';
-      //out += '\n';
     } else {
       out += 'null';
     }
     if (children.length) {
       out += ',\n';
-      //out += spaces;
-      //this.numSpaces++;
-      //spaces = this.spaces;
       for (const child of children) {
         const source = this.toSource(child);
         if (!source.length) {
@@ -1111,7 +1113,6 @@ class Stringifier {
         out += source;
         out += ',\n';
       }
-      //this.numSpaces--;
     } else {
       out += '\n';
     }
