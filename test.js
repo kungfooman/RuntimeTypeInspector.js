@@ -5,6 +5,11 @@ import {Asserter     } from './src-transpiler/Asserter.js';
 import {Stringifier  } from './src-transpiler/Stringifier.js';
 import {parserOptions} from './src-transpiler/parserOptions.js';
 /**
+ * @typedef InputOutput
+ * @property {string} input
+ * @property {string} output
+ */
+/**
  * @param {string} a - Left source code.
  * @param {string} b - Right source code.
  */
@@ -27,10 +32,11 @@ function compareLineByLine(a, b) {
   console.log(t);
 }
 const content = readFileSync('./test/typechecking.json', 'utf8');
+/** @type {InputOutput[]} */
 const tests = JSON.parse(content);
 let discrepancies = 0;
 /**
- * @param {*} input - Source code to normalize.
+ * @param {string} input - Source code to normalize.
  * @returns {string} Normalized output.
  */
 function normalize(input) {
@@ -49,7 +55,8 @@ function normalize(input) {
 for (const {input, output} of tests) {
   const inputContent  = readFileSync(input, 'utf8');
   const outputContent = readFileSync(output, 'utf8');
-  const Converter = input.includes('jsx') ? Stringifier : Asserter;
+  const useStringifer = input.includes('stringifier-') || input.includes('jsx');
+  const Converter = useStringifer ? Stringifier : Asserter;
   const converter = new Converter({
     expandType,
     addHeader: input.includes('jsx'),
