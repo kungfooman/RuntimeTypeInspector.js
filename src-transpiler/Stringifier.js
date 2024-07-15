@@ -538,7 +538,10 @@ class Stringifier {
       out += ' * ';
     }
     out += this.FunctionDeclarationParams(params);
-    out += ' => ';
+    out += ' =>';
+    if (body.type !== 'BlockStatement') {
+      out += ' ';
+    }
     out += this.toSource(body);
     return out;
   }
