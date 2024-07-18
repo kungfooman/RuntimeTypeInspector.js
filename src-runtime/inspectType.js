@@ -45,7 +45,6 @@ function inspectType(value, expect, loc, name, critical = true) {
   const ret = validateType(value, expect, loc, name, critical, innerWarn, 0);
   if (!ret && critical) {
     options.count++;
-    typePanel.updateErrorCount();
     // let expectStr = ', expected: ' + JSON.stringify(expect);
     // if (expectStr.length < 40) {
     //   //expectStr = ', expected: ';
@@ -58,23 +57,28 @@ function inspectType(value, expect, loc, name, critical = true) {
     // Since `value` will "only" be the actual reference and might be "repaired" after further calculations.
     const valueToString = value?.toString?.();
     // Nytaralyxe: options.warns where each warn callback supports one system (node, div/dom etc.)
-    let warnObj = options.warned[key];
-    if (!warnObj) {
-      warnObj = new Warning(msg, value, expect, loc, name);
-      warnedTable?.append(warnObj.tr);
-      options.warned[key] = warnObj;
+    if (typeof importScripts !== 'function') {
+      typePanel.updateErrorCount();
+      let warnObj = options.warned[key];
+      if (!warnObj) {
+        warnObj = new Warning(msg, value, expect, loc, name);
+        warnedTable?.append(warnObj.tr);
+        options.warned[key] = warnObj;
+      }
+      warnObj.hits++;
+      warnObj.warn(msg, {expect, value, valueToString}, ...extras);
+      const {dbg} = warnObj;
+      if (dbg) {
+        debugger;
+        warnObj.dbg = false; // trigger only once to quickly get app running again
+      }
+      // The value may change and we only show the latest wrong value
+      warnObj.value = value;
+      // Message may change aswell, especially after loadint state.
+      warnObj.msg = msg;
+    } else {
+      self.postMessage({type: 'rti', value, expect, loc, name, valueToString});
     }
-    warnObj.hits++;
-    warnObj.warn(msg, {expect, value, valueToString}, ...extras);
-    const {dbg} = warnObj;
-    if (dbg) {
-      debugger;
-      warnObj.dbg = false; // trigger only once to quickly get app running again
-    }
-    // The value may change and we only show the latest wrong value
-    warnObj.value = value;
-    // Message may change aswell, especially after loadint state.
-    warnObj.msg = msg;
   }
   return ret;
 }
