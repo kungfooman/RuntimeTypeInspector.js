@@ -6,6 +6,35 @@ import {partition                } from './partition.js';
 import {Warning                  } from './Warning.js';
 import {typePanel                } from './TypePanel.js';
 import {importNamespaceSpecifiers} from './registerImportNamespaceSpecifier.js';
+if (typeof importScripts !== 'function') {
+  window.addEventListener('message', ({data}) => {
+    const {type, value, expect, loc, name, valueToString, strings, extras} = data;
+    if (type !== 'rti') {
+      return;
+    }
+    // console.log("Raw message data", data);
+    const key = `${loc}-${name}`;
+    const msg = `${loc}> The '${name}' argument has an invalid type. ${strings.join(' ')}`.trim();
+    typePanel.updateErrorCount();
+    let warnObj = options.warned[key];
+    if (!warnObj) {
+      warnObj = new Warning(msg, value, expect, loc, name);
+      warnedTable?.append(warnObj.tr);
+      options.warned[key] = warnObj;
+    }
+    warnObj.hits++;
+    warnObj.warn(msg, {expect, value, valueToString}, ...extras);
+    const {dbg} = warnObj;
+    if (dbg) {
+      debugger;
+      warnObj.dbg = false; // trigger only once to quickly get app running again
+    }
+    // The value may change and we only show the latest wrong value
+    warnObj.value = value;
+    // Message may change aswell, especially after loadint state.
+    warnObj.msg = msg;
+  });
+}
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -52,34 +81,11 @@ function inspectType(value, expect, loc, name, critical = true) {
     //   expectStr = '';
     // }
     const [strings, extras] = partition(warnings, _ => typeof _ === 'string');
-    const key = `${loc}-${name}`;
-    const msg = `${loc}> The '${name}' argument has an invalid type. ${strings.join(' ')}`.trim();
     // String form allows us to see more about certain values, like a vector with a NaN component.
     // Since `value` will "only" be the actual reference and might be "repaired" after further calculations.
     const valueToString = value?.toString?.();
     // Nytaralyxe: options.warns where each warn callback supports one system (node, div/dom etc.)
-    if (typeof importScripts !== 'function') {
-      typePanel.updateErrorCount();
-      let warnObj = options.warned[key];
-      if (!warnObj) {
-        warnObj = new Warning(msg, value, expect, loc, name);
-        warnedTable?.append(warnObj.tr);
-        options.warned[key] = warnObj;
-      }
-      warnObj.hits++;
-      warnObj.warn(msg, {expect, value, valueToString}, ...extras);
-      const {dbg} = warnObj;
-      if (dbg) {
-        debugger;
-        warnObj.dbg = false; // trigger only once to quickly get app running again
-      }
-      // The value may change and we only show the latest wrong value
-      warnObj.value = value;
-      // Message may change aswell, especially after loadint state.
-      warnObj.msg = msg;
-    } else {
-      crossContextPostMessage({type: 'rti', value, expect, loc, name, valueToString});
-    }
+    crossContextPostMessage({type: 'rti', value, expect, loc, name, valueToString, strings, extras});
   }
   return ret;
 }
