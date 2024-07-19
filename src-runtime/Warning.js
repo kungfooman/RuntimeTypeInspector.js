@@ -51,6 +51,14 @@ class Warning {
   set dbg(_) {
     this._dbg = _;
     this.button_dbgInput.textContent = _ ? '🐞' : '🧐';
+    // @todo Case for Worker
+    const to = this.event.source;
+    to.postMessage({
+      type: 'rti',
+      action: _ ? 'addBreakpoint' : 'deleteBreakpoint',
+      destination: 'worker',
+      key: `${this.loc}-${this.name}`
+    });
   }
   get dbg() {
     return this._dbg;
