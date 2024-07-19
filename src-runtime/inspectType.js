@@ -1,3 +1,4 @@
+import {crossContextPostMessage  } from './crossContextPostMessage.js';
 import {options                  } from './options.js';
 import {warnedTable              } from './warnedTable.js';
 import {validateType             } from './validateType.js';
@@ -77,7 +78,7 @@ function inspectType(value, expect, loc, name, critical = true) {
       // Message may change aswell, especially after loadint state.
       warnObj.msg = msg;
     } else {
-      self.postMessage({type: 'rti', value, expect, loc, name, valueToString});
+      crossContextPostMessage({type: 'rti', value, expect, loc, name, valueToString});
     }
   }
   return ret;
