@@ -51,9 +51,17 @@ class Warning {
   set dbg(_) {
     this._dbg = _;
     this.button_dbgInput.textContent = _ ? '🐞' : '🧐';
-    console.log("// @todo Think about case for Worker");
-    const to = this.event.source;
-    to.postMessage({
+    // If event came from window:
+    let to = this.event.source;
+    if (!to) {
+      // If the event came from a worker, we get access to worker via this:
+      to = this.event.srcElement;
+    }
+    if (!to) {
+      console.log("Should not happen, why no event source?");
+      debugger;
+    }
+    to?.postMessage({
       type: 'rti',
       action: _ ? 'addBreakpoint' : 'deleteBreakpoint',
       destination: 'worker',
