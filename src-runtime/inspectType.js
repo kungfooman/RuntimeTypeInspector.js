@@ -2,7 +2,6 @@ import {crossContextPostMessage  } from './crossContextPostMessage.js';
 import {options                  } from './options.js';
 import {validateType             } from './validateType.js';
 import {partition                } from './partition.js';
-import {Warning                  } from './Warning.js';
 import {typePanel                } from './TypePanel.js';
 import {importNamespaceSpecifiers} from './registerImportNamespaceSpecifier.js';
 const breakpoints = new Set();
@@ -15,56 +14,27 @@ const breakpoints = new Set();
   if (type !== 'rti') {
     return;
   }
+  if (destination === 'ui') {
+    typePanel?.handleEvent(e);
+    return;
+  }
   if (action === 'addError') {
-    const {value, expect, loc, name, valueToString, strings, extras, key} = data;
     if (destination === 'worker') {
       console.warn('We are not keeping track of errors in workers at all.');
       return;
     }
-    if (destination === 'ui') {
-      const msg = `${loc}> The '${name}' argument has an invalid type. ${strings.join(' ')}`.trim();
-      typePanel?.updateErrorCount();
-      let warnObj = options.warned[key];
-      if (!warnObj) {
-        warnObj = new Warning(msg, value, expect, loc, name);
-        typePanel?.warnedTable?.append(warnObj.tr);
-        options.warned[key] = warnObj;
-      }
-      warnObj.event = e;
-      warnObj.hits++;
-      warnObj.warn(msg, {expect, value, valueToString}, ...extras);
-      // The value may change and we only show the latest wrong value
-      warnObj.value = value;
-      // Message may change aswell, especially after loading state.
-      warnObj.msg = msg;
-      return;
-    }
+
   }
-  if (action === 'deleteBreakpoint') {
-    // Message comes from Worker/IFrame to update UI state
-    const {key} = data;
-    if (destination === 'worker') {
+  // Messages come from Worker/IFrame/window to update UI state
+  if (destination === 'worker') {
+    if (action === 'deleteBreakpoint') {
+      const {key} = data;
       breakpoints.delete(key);
       return;
     }
-    if (destination === 'ui') {
-      const warnObj = options.warned[key];
-      if (!warnObj) {
-        console.warn("warnObj doesn't exist", {key});
-        return;
-      }
-      warnObj.dbg = false;
-      return;
-    }
-  }
-  if (action === 'addBreakpoint') {
-    const {key} = data;
-    if (destination === 'worker') {
+    if (action === 'addBreakpoint') {
+      const {key} = data;
       breakpoints.add(key);
-      return;
-    }
-    if (destination === 'ui') {
-      console.warn("Not adding breakpoints for UI via messages");
       return;
     }
   }

@@ -5,6 +5,9 @@ import {enableTypeChecking } from "./validateType.js";
 import {createTable        } from "./warnedTable.js";
 import {Warning            } from "./Warning.js";
 /**
+ * @typedef {MessageEvent<{action: string}>} MessageEventRTI
+ */
+/**
  * @param {HTMLDivElement} div - The <div>.
  */
 function niceDiv(div) {
@@ -190,6 +193,52 @@ class TypePanel {
   }
   updateErrorCount() {
     this.spanErrors.innerText = `Type validation errors: ${options.count}`;
+  }
+  /**
+   * @param {MessageEventRTI} event - The event from Worker, IFrame or own window.
+   */
+  addError(event) {
+    const {value, expect, loc, name, valueToString, strings, extras, key} = event.data;
+    const msg = `${loc}> The '${name}' argument has an invalid type. ${strings.join(' ')}`.trim();
+    this.updateErrorCount();
+    let warnObj = options.warned[key];
+    if (!warnObj) {
+      warnObj = new Warning(msg, value, expect, loc, name);
+      this.warnedTable?.append(warnObj.tr);
+      options.warned[key] = warnObj;
+    }
+    warnObj.event = event;
+    warnObj.hits++;
+    warnObj.warn(msg, {expect, value, valueToString}, ...extras);
+    // The value may change and we only show the latest wrong value
+    warnObj.value = value;
+    // Message may change aswell, especially after loading state.
+    warnObj.msg = msg;
+  }
+  /**
+   * @param {MessageEventRTI} event - The event from Worker, IFrame or own window.
+   */
+  deleteBreakpoint(event) {
+    const {key} = event.data;
+    const warnObj = options.warned[key];
+    if (!warnObj) {
+      console.warn("warnObj doesn't exist", {key});
+      return;
+    }
+    warnObj.dbg = false;
+  }
+  /**
+   * @param {MessageEventRTI} event - The event from Worker, IFrame or own window.
+   */
+  addBreakpoint(event) {
+    console.warn('TypePanel#addBreakpoint> Not adding breakpoints for UI via messages, event', event);
+  }
+  /**
+   * @param {MessageEventRTI} event - The event from Worker, IFrame or own window.
+   */
+  handleEvent(event) {
+    const {action} = event.data;
+    this[action](event);
   }
 }
 /** @type {TypePanel | undefined} */
