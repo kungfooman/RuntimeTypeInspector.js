@@ -2,7 +2,7 @@ import {assertMode         } from "./assertMode.js";
 import {options            } from "./options.js";
 import {disableTypeChecking} from "./validateType.js";
 import {enableTypeChecking } from "./validateType.js";
-import {warnedTable        } from "./warnedTable.js";
+import {createTable        } from "./warnedTable.js";
 import {Warning            } from "./Warning.js";
 /**
  * @param {HTMLDivElement} div - The <div>.
@@ -58,10 +58,11 @@ class TypePanel {
   buttonLoadState = document.createElement('button');
   buttonSaveState = document.createElement('button');
   buttonClear     = document.createElement('button');
+  warnedTable     = createTable();
   constructor() {
     const {
       div, inputEnable, spanErrors, span, select, option_spam, option_once, option_never,
-      buttonHide, buttonLoadState, buttonSaveState, buttonClear
+      buttonHide, buttonLoadState, buttonSaveState, buttonClear, warnedTable,
     } = this;
     div.style.position = "absolute";
     div.style.bottom = "0px";
@@ -173,7 +174,7 @@ class TypePanel {
       // If we didn't find it, create it.
       if (!foundWarning) {
         foundWarning = new Warning('msg', 'value', 'expect', loc, name);
-        warnedTable?.append(foundWarning.tr);
+        this.warnedTable?.append(foundWarning.tr);
         options.warned[`${loc}-${name}`] = foundWarning;
       }
       foundWarning.state = state;
@@ -191,5 +192,10 @@ class TypePanel {
     this.spanErrors.innerText = `Type validation errors: ${options.count}`;
   }
 }
-const typePanel = new TypePanel();
+/** @type {TypePanel | undefined} */
+let typePanel;
+// @todo create UI explicitly programmatically inside e.g. src/index.rti.js of the projects using it.
+if (typeof importScripts === 'undefined') {
+  typePanel = new TypePanel();
+}
 export {niceDiv, TypePanel, typePanel};

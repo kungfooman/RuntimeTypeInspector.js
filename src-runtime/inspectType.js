@@ -1,6 +1,5 @@
 import {crossContextPostMessage  } from './crossContextPostMessage.js';
 import {options                  } from './options.js';
-import {warnedTable              } from './warnedTable.js';
 import {validateType             } from './validateType.js';
 import {partition                } from './partition.js';
 import {Warning                  } from './Warning.js';
@@ -24,11 +23,11 @@ const breakpoints = new Set();
     }
     if (destination === 'ui') {
       const msg = `${loc}> The '${name}' argument has an invalid type. ${strings.join(' ')}`.trim();
-      typePanel.updateErrorCount();
+      typePanel?.updateErrorCount();
       let warnObj = options.warned[key];
       if (!warnObj) {
         warnObj = new Warning(msg, value, expect, loc, name);
-        warnedTable?.append(warnObj.tr);
+        typePanel?.warnedTable?.append(warnObj.tr);
         options.warned[key] = warnObj;
       }
       warnObj.event = e;

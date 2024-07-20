@@ -1,6 +1,6 @@
-import {Warning    } from "./Warning.js";
-import {options    } from "./options.js";
-import {warnedTable} from "./warnedTable.js";
+import {Warning  } from './Warning.js';
+import {options  } from './options.js';
+import {typePanel} from './TypePanel.js';
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -15,7 +15,7 @@ function validateDivisionAddWarning(value, expect, loc, name, msg, details) {
   let warnObj = options.warned[key];
   if (!warnObj) {
     warnObj = new Warning(msg, value, expect, loc, name);
-    warnedTable?.append(warnObj.tr);
+    typePanel?.warnedTable?.append(warnObj.tr);
     options.warned[key] = warnObj;
   }
   warnObj.hits++;

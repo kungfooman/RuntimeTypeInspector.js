@@ -51,7 +51,7 @@ class Warning {
   set dbg(_) {
     this._dbg = _;
     this.button_dbgInput.textContent = _ ? '🐞' : '🧐';
-    // @todo Case for Worker
+    console.log("// @todo Think about case for Worker");
     const to = this.event.source;
     to.postMessage({
       type: 'rti',

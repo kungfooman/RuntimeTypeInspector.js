@@ -22,5 +22,4 @@ function createTable() {
   //table.style.textWrap = 'nowrap';
   return table;
 }
-const warnedTable = createTable();
-export {createTableHead, createTable, warnedTable};
+export {createTableHead, createTable};
