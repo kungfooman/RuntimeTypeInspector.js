@@ -101,7 +101,7 @@ function inspectType(value, expect, loc, name, critical = true) {
     const valueToString = value?.toString?.();
     const key = `${loc}-${name}`;
     if (breakpoints.has(key)) {
-      console.log("breakpoints", breakpoints);
+      // console.log("breakpoints", breakpoints);
       debugger;
       breakpoints.delete(key); // trigger only once to quickly get app running again
       crossContextPostMessage({type: 'rti', action: 'deleteBreakpoint', destination: 'ui', key});
@@ -111,4 +111,4 @@ function inspectType(value, expect, loc, name, critical = true) {
   }
   return ret;
 }
-export {inspectType};
+export {breakpoints, inspectType};

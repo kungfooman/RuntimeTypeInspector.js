@@ -256,7 +256,7 @@ class TypePanel {
    * @param {MessageEventRTI} event - The event from Worker, IFrame or own window.
    */
   addError(event) {
-    const {value, expect, loc, name, valueToString, strings, extras, key} = event.data;
+    const {value, expect, loc, name, valueToString, strings, extras = [], key} = event.data;
     const msg = `${loc}> The '${name}' argument has an invalid type. ${strings.join(' ')}`.trim();
     this.updateErrorCount();
     let warnObj = options.warned[key];

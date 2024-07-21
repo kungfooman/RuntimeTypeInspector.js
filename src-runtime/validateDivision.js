@@ -1,6 +1,8 @@
-import {Warning  } from './Warning.js';
-import {options  } from './options.js';
-import {typePanel} from './TypePanel.js';
+import {Warning                } from './Warning.js';
+import {options                } from './options.js';
+import {typePanel              } from './TypePanel.js';
+import {crossContextPostMessage} from './crossContextPostMessage.js';
+import {breakpoints            } from './inspectType.js';
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -12,19 +14,22 @@ import {typePanel} from './TypePanel.js';
  */
 function validateDivisionAddWarning(value, expect, loc, name, msg, details) {
   const key = `${loc}-${name}`;
-  let warnObj = options.warned[key];
-  if (!warnObj) {
-    warnObj = new Warning(msg, value, expect, loc, name);
-    typePanel?.warnedTable?.append(warnObj.tr);
-    options.warned[key] = warnObj;
-  }
-  warnObj.hits++;
-  warnObj.warn(msg, details);
-  if (warnObj.dbg) {
+  if (breakpoints.has(key)) {
+    // console.log("breakpoints", breakpoints);
     debugger;
-    warnObj.dbg = false; // trigger only once to quickly get app running again
+    breakpoints.delete(key); // trigger only once to quickly get app running again
+    crossContextPostMessage({type: 'rti', action: 'deleteBreakpoint', destination: 'ui', key});
   }
-  warnObj.value = value;
+  const strings = [msg];
+  crossContextPostMessage({
+    type: 'rti',
+    action: 'addError',
+    destination: 'ui',
+    value, expect, loc, name, strings, /*valueToString, extras,*/ key,
+    // validateDivision specific:
+    // msg,
+    details, // not handled in TypePanel
+  });
 }
 /**
  * @param {number} lhs - The left hand side.
