@@ -1,8 +1,6 @@
-import {Warning                } from './Warning.js';
-import {options                } from './options.js';
-import {typePanel              } from './TypePanel.js';
 import {crossContextPostMessage} from './crossContextPostMessage.js';
 import {breakpoints            } from './inspectType.js';
+import {options                } from './options.js';
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -42,6 +40,9 @@ function validateDivisionAddWarning(value, expect, loc, name, msg, details) {
  * @returns {number} The division result.
  */
 function validateDivision(lhs, rhs, loc = 'unspecified') {
+  if (!options.enabled) {
+    return lhs / rhs;
+  }
   const twoNumbers = typeof lhs === 'number' && typeof rhs === 'number';
   const twoBigInts = typeof lhs === 'bigint' && typeof rhs === 'bigint';
   const valid = twoNumbers || twoBigInts;

@@ -8,6 +8,7 @@
  * even in "spam" mode.
  */
 const options = {
+  enabled: true,
   /**
    * @type {'spam'|'once'|'never'} - In spam-mode every message is printed. In once-mode a cache is
    * looked up to check if it was printed already. Spam can be too noisy if there are too

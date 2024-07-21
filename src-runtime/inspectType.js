@@ -4,7 +4,6 @@ import {validateType             } from './validateType.js';
 import {partition                } from './partition.js';
 import {importNamespaceSpecifiers} from './registerImportNamespaceSpecifier.js';
 const breakpoints = new Set();
-let enabled = true;
 // In the simplest case we are attaching to `window` here, but it's designed to handle
 // more complex scenarious like running RTI inside a `Worker` or `<iframe>` aswell.
 (globalThis.window || self).addEventListener('message', (e) => {
@@ -37,11 +36,11 @@ let enabled = true;
       return;
     }
     if (action === 'enable') {
-      enabled = true;
+      options.enabled = true;
       return;
     }
     if (action === 'disable') {
-      enabled = false;
+      options.enabled = false;
       return;
     }
   }
@@ -56,7 +55,7 @@ let enabled = true;
  * @returns {boolean} Boolean indicating if a type is correct.
  */
 function inspectType(value, expect, loc, name, critical = true) {
-  if (!enabled) {
+  if (!options.enabled) {
     return true;
   }
   if (!expect) {
