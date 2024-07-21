@@ -29,6 +29,7 @@ const imports = {
   "@runtime-type-inspector/transpiler": '../src-transpiler/index.js',
   "@babel/parser"                     : "./babel-parser.js",
   "display-anything"                  : "./node_modules/display-anything/src/index.js",
+  "worker-with-import-map"            : "./node_modules/worker-with-import-map/src/index.js",
   "test-import-validation-b"          : "../test/typechecking/import-validation/b.js",
   //"@babel/helper-plugin-utils"      : "./babel-helper-plugin-utils.js",
   //"@babel/plugin-syntax-typescript" : "./babel-plugin-syntax-typescript.js",

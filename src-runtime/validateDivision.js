@@ -1,6 +1,6 @@
-import {Warning    } from "./Warning.js";
-import {options    } from "./options.js";
-import {warnedTable} from "./warnedTable.js";
+import {crossContextPostMessage} from './crossContextPostMessage.js';
+import {breakpoints            } from './inspectType.js';
+import {options                } from './options.js';
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -12,19 +12,22 @@ import {warnedTable} from "./warnedTable.js";
  */
 function validateDivisionAddWarning(value, expect, loc, name, msg, details) {
   const key = `${loc}-${name}`;
-  let warnObj = options.warned[key];
-  if (!warnObj) {
-    warnObj = new Warning(msg, value, expect, loc, name);
-    warnedTable?.append(warnObj.tr);
-    options.warned[key] = warnObj;
-  }
-  warnObj.hits++;
-  warnObj.warn(msg, details);
-  if (warnObj.dbg) {
+  if (breakpoints.has(key)) {
+    // console.log("breakpoints", breakpoints);
     debugger;
-    warnObj.dbg = false; // trigger only once to quickly get app running again
+    breakpoints.delete(key); // trigger only once to quickly get app running again
+    crossContextPostMessage({type: 'rti', action: 'deleteBreakpoint', destination: 'ui', key});
   }
-  warnObj.value = value;
+  const strings = [msg];
+  crossContextPostMessage({
+    type: 'rti',
+    action: 'addError',
+    destination: 'ui',
+    value, expect, loc, name, strings, /*valueToString, extras,*/ key,
+    // validateDivision specific:
+    // msg,
+    details, // not handled in TypePanel
+  });
 }
 /**
  * @param {number} lhs - The left hand side.
@@ -37,6 +40,9 @@ function validateDivisionAddWarning(value, expect, loc, name, msg, details) {
  * @returns {number} The division result.
  */
 function validateDivision(lhs, rhs, loc = 'unspecified') {
+  if (!options.enabled) {
+    return lhs / rhs;
+  }
   const twoNumbers = typeof lhs === 'number' && typeof rhs === 'number';
   const twoBigInts = typeof lhs === 'bigint' && typeof rhs === 'bigint';
   const valid = twoNumbers || twoBigInts;

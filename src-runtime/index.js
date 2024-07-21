@@ -3,6 +3,7 @@ export * from './createType.js';
 export * from './createTypeFromIndexedAccess.js';
 export * from './createTypeFromKeyof.js';
 export * from './createTypeFromMapping.js';
+export * from './crossContextPostMessage.js';
 export * from './customTypes.js';
 export * from './customValidations.js';
 export * from './getTypeKeys.js';

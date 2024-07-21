@@ -51,13 +51,54 @@ class Warning {
   set dbg(_) {
     this._dbg = _;
     this.button_dbgInput.textContent = _ ? '🐞' : '🧐';
+    this.eventSource?.postMessage({
+      type: 'rti',
+      action: _ ? 'addBreakpoint' : 'deleteBreakpoint',
+      destination: 'worker',
+      key: `${this.loc}-${this.name}`
+    });
   }
   get dbg() {
     return this._dbg;
   }
+  /**
+   * The event from Worker, IFrame or window.
+   * @type {import('./TypePanel.js').MessageEventRTI | undefined}
+   */
+  event;
+  /**
+   * @type {MessageEventSource | EventTarget | null}
+   */
+  get eventSource() {
+    const {event} = this;
+    if (!event) {
+      // We have no event yet for restored state
+      return null;
+    }
+    // If event came from window:
+    /** @type {MessageEventSource | EventTarget | null} */
+    let to = event.source;
+    if (!to) {
+      // If the event came from a worker, we get access to worker via this:
+      to = event.srcElement;
+    }
+    if (!to) {
+      console.log("Should not happen, why no event source?");
+      debugger;
+    }
+    return to;
+  }
   set hidden(_) {
     this._hidden = _;
     this.button_hideInput.textContent = _ ? '🌚' : '👁️‍🗨️';
+    // Doesn't really matter if the workers know about it, we can just early-out in `Warning#warn`.
+    // Maybe performance could be improved with many warnings, so might reconsider...
+    // this.eventSource?.postMessage({
+    //   type: 'rti',
+    //   action: _ ? 'hide' : 'show',
+    //   destination: 'worker',
+    //   key: `${this.loc}-${this.name}`
+    // });
   }
   get hidden() {
     return this._hidden;

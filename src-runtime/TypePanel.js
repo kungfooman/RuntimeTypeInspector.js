@@ -1,9 +1,10 @@
-import {assertMode         } from "./assertMode.js";
-import {options            } from "./options.js";
-import {disableTypeChecking} from "./validateType.js";
-import {enableTypeChecking } from "./validateType.js";
-import {warnedTable        } from "./warnedTable.js";
-import {Warning            } from "./Warning.js";
+import {assertMode } from "./assertMode.js";
+import {options    } from "./options.js";
+import {createTable} from "./warnedTable.js";
+import {Warning    } from "./Warning.js";
+/**
+ * @typedef {MessageEvent<{action: string}>} MessageEventRTI
+ */
 /**
  * @param {HTMLDivElement} div - The <div>.
  */
@@ -58,10 +59,11 @@ class TypePanel {
   buttonLoadState = document.createElement('button');
   buttonSaveState = document.createElement('button');
   buttonClear     = document.createElement('button');
+  warnedTable     = createTable();
   constructor() {
     const {
       div, inputEnable, spanErrors, span, select, option_spam, option_once, option_never,
-      buttonHide, buttonLoadState, buttonSaveState, buttonClear
+      buttonHide, buttonLoadState, buttonSaveState, buttonClear, warnedTable,
     } = this;
     div.style.position = "absolute";
     div.style.bottom = "0px";
@@ -72,9 +74,9 @@ class TypePanel {
     inputEnable.type = "checkbox";
     inputEnable.onchange = (e) => {
       if (inputEnable.checked) {
-        enableTypeChecking();
+        this.enableTypeChecking();
       } else {
-        disableTypeChecking();
+        this.disableTypeChecking();
       }
     };
     inputEnable.onchange();
@@ -98,7 +100,7 @@ class TypePanel {
     onchange(); // set mode in options
     buttonHide.textContent = 'Hide';
     buttonHide.onclick = () => {
-      div.style.display = 'none';
+      this.hide();
     };
     buttonLoadState.textContent = 'Load state';
     buttonLoadState.onclick = () => this.loadState();
@@ -118,6 +120,55 @@ class TypePanel {
       document.addEventListener("DOMContentLoaded", finalFunc);
     }
     this.loadState();
+    // In the simplest case RTI sends its errors onto `window` to update UI state.
+    // If you start a Worker, you have to attach RTI yourself.
+    window.addEventListener('message', (e) => {
+      const {data} = e;
+      const {type, destination} = data;
+      // console.log("TypePanel Message event", e);
+      // console.log("TypePanel Message data", data);
+      if (type !== 'rti') {
+        return;
+      }
+      if (destination !== 'ui') {
+        return;
+      }
+      this.handleEvent(e);
+    });
+  }
+  hide() {
+    this.div.style.display = 'none';
+  }
+  show() {
+    this.div.style.display = '';
+  }
+  disableTypeChecking() {
+    localStorage.setItem('rti-enabled', 'false');
+    this.sendEnabledDisabledStateToWorker();
+  }
+  enableTypeChecking() {
+    localStorage.setItem('rti-enabled', 'true');
+    this.sendEnabledDisabledStateToWorker();
+  }
+  lastKnownCountWithStatus = '0-true';
+  sendEnabledDisabledStateToWorker() {
+    // Problem: First time the worker may not even have started and `this.eventSources.size === 0`
+    // So we first know a RTI worker started after receiving the first message from it.
+    const {eventSources} = this;
+    const key = `${eventSources.size}-${this.inputEnable.checked}`;
+    // Only update when either changed.
+    if (key === this.lastKnownCountWithStatus) {
+      return;
+    }
+    this.lastKnownCountWithStatus = key;
+    // console.log("Update state to eventSources", eventSources, "key", key);
+    this.eventSources.forEach(eventSource => {
+      eventSource.postMessage({
+        type: 'rti',
+        action: this.inputEnable.checked ? 'enable' : 'disable',
+        destination: 'worker',
+      });
+    });
   }
   clear() {
     const {warned} = options;
@@ -173,7 +224,7 @@ class TypePanel {
       // If we didn't find it, create it.
       if (!foundWarning) {
         foundWarning = new Warning('msg', 'value', 'expect', loc, name);
-        warnedTable?.append(foundWarning.tr);
+        this.warnedTable?.append(foundWarning.tr);
         options.warned[`${loc}-${name}`] = foundWarning;
       }
       foundWarning.state = state;
@@ -190,6 +241,70 @@ class TypePanel {
   updateErrorCount() {
     this.spanErrors.innerText = `Type validation errors: ${options.count}`;
   }
+  get eventSources() {
+    /** @type {Set<EventTarget | MessageEventSource>} */
+    const eventSources = new Set();
+    for (const key in options.warned) {
+      const warning = options.warned[key];
+      if (warning.eventSource) {
+        eventSources.add(warning.eventSource);
+      }
+    }
+    return eventSources;
+  }
+  /**
+   * @param {MessageEventRTI} event - The event from Worker, IFrame or own window.
+   */
+  addError(event) {
+    const {value, expect, loc, name, valueToString, strings, extras = [], key} = event.data;
+    const msg = `${loc}> The '${name}' argument has an invalid type. ${strings.join(' ')}`.trim();
+    this.updateErrorCount();
+    let warnObj = options.warned[key];
+    if (!warnObj) {
+      warnObj = new Warning(msg, value, expect, loc, name);
+      this.warnedTable?.append(warnObj.tr);
+      options.warned[key] = warnObj;
+    }
+    warnObj.event = event;
+    warnObj.hits++;
+    warnObj.warn(msg, {expect, value, valueToString}, ...extras);
+    // The value may change and we only show the latest wrong value
+    warnObj.value = value;
+    // Message may change aswell, especially after loading state.
+    warnObj.msg = msg;
+  }
+  /**
+   * @param {MessageEventRTI} event - The event from Worker, IFrame or own window.
+   */
+  deleteBreakpoint(event) {
+    const {key} = event.data;
+    const warnObj = options.warned[key];
+    if (!warnObj) {
+      console.warn("warnObj doesn't exist", {key});
+      return;
+    }
+    warnObj.dbg = false;
+  }
+  /**
+   * @param {MessageEventRTI} event - The event from Worker, IFrame or own window.
+   */
+  addBreakpoint(event) {
+    console.warn('TypePanel#addBreakpoint> Not adding breakpoints for UI via messages, event', event);
+  }
+  /**
+   * @param {MessageEventRTI} event - The event from Worker, IFrame or own window.
+   */
+  handleEvent(event) {
+    const {action} = event.data;
+    this[action](event);
+    // Could be anywhere we know that a new worker is sending RTI messages.
+    this.sendEnabledDisabledStateToWorker();
+  }
 }
-const typePanel = new TypePanel();
+/** @type {TypePanel | undefined} */
+let typePanel;
+// @todo create UI explicitly programmatically inside e.g. src/index.rti.js of the projects using it.
+if (typeof importScripts === 'undefined') {
+  typePanel = new TypePanel();
+}
 export {niceDiv, TypePanel, typePanel};
