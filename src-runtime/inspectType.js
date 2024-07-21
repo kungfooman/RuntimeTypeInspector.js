@@ -5,6 +5,7 @@ import {partition                } from './partition.js';
 import {typePanel                } from './TypePanel.js';
 import {importNamespaceSpecifiers} from './registerImportNamespaceSpecifier.js';
 const breakpoints = new Set();
+let enabled = true;
 // Handle events for either window or worker/iframe
 (globalThis.window || self).addEventListener('message', (e) => {
   const {data} = e;
@@ -37,6 +38,14 @@ const breakpoints = new Set();
       breakpoints.add(key);
       return;
     }
+    if (action === 'enable') {
+      enabled = true;
+      return;
+    }
+    if (action === 'disable') {
+      enabled = false;
+      return;
+    }
   }
   console.log('Unhandled action destination combo', {action, destination, e, data});
 });
@@ -49,6 +58,9 @@ const breakpoints = new Set();
  * @returns {boolean} Boolean indicating if a type is correct.
  */
 function inspectType(value, expect, loc, name, critical = true) {
+  if (!enabled) {
+    return true;
+  }
   if (!expect) {
     console.warn("inspectType> 'expect' always should be set");
     return false;

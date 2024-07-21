@@ -14,15 +14,6 @@ import {validateSet         } from "./validateSet.js";
 import {validateTuple       } from "./validateTuple.js";
 import {validateTypedef     } from "./validateTypedef.js";
 import {validateUnion       } from "./validateUnion.js";
-export let enabled = true;
-export function disableTypeChecking() {
-  enabled = false;
-  localStorage.setItem('rti-enabled', 'false');
-}
-export function enableTypeChecking() {
-  enabled = true;
-  localStorage.setItem('rti-enabled', 'true');
-}
 /**
  * @typedef {object} TypeObject
  * @property {string} type - Something like 'string', 'number', 'object', 'MeshInstance' etc.
@@ -51,9 +42,6 @@ export function enableTypeChecking() {
  * @returns {boolean} Returns wether `value` is in the shape of `expect`.
  */
 function validateType(value, expect, loc, name, critical = true, warn, depth) {
-  if (!enabled) {
-    return true;
-  }
   if (depth > 16) {
     warn('Exceeded recursive depth limit.');
     return false;

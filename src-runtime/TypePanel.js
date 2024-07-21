@@ -1,9 +1,7 @@
-import {assertMode         } from "./assertMode.js";
-import {options            } from "./options.js";
-import {disableTypeChecking} from "./validateType.js";
-import {enableTypeChecking } from "./validateType.js";
-import {createTable        } from "./warnedTable.js";
-import {Warning            } from "./Warning.js";
+import {assertMode } from "./assertMode.js";
+import {options    } from "./options.js";
+import {createTable} from "./warnedTable.js";
+import {Warning    } from "./Warning.js";
 /**
  * @typedef {MessageEvent<{action: string}>} MessageEventRTI
  */
@@ -76,9 +74,9 @@ class TypePanel {
     inputEnable.type = "checkbox";
     inputEnable.onchange = (e) => {
       if (inputEnable.checked) {
-        enableTypeChecking();
+        this.enableTypeChecking();
       } else {
-        disableTypeChecking();
+        this.disableTypeChecking();
       }
     };
     inputEnable.onchange();
@@ -122,6 +120,34 @@ class TypePanel {
       document.addEventListener("DOMContentLoaded", finalFunc);
     }
     this.loadState();
+  }
+  disableTypeChecking() {
+    localStorage.setItem('rti-enabled', 'false');
+    this.sendEnabledDisabledStateToWorker();
+  }
+  enableTypeChecking() {
+    localStorage.setItem('rti-enabled', 'true');
+    this.sendEnabledDisabledStateToWorker();
+  }
+  lastKnownCountWithStatus = '0-true';
+  sendEnabledDisabledStateToWorker() {
+    // Problem: First time the worker may not even have started and `this.eventSources.size === 0`
+    // So we first know a RTI worker started after receiving the first message from it.
+    const {eventSources} = this;
+    const key = `${eventSources.size}-${this.inputEnable.checked}`;
+    // Only update when either changed.
+    if (key === this.lastKnownCountWithStatus) {
+      return;
+    }
+    this.lastKnownCountWithStatus = key;
+    console.log("Update state to eventSources", eventSources, "key", key);
+    this.eventSources.forEach(eventSource => {
+      eventSource.postMessage({
+        type: 'rti',
+        action: this.inputEnable.checked ? 'enable' : 'disable',
+        destination: 'worker',
+      });
+    });
   }
   clear() {
     const {warned} = options;
@@ -194,6 +220,14 @@ class TypePanel {
   updateErrorCount() {
     this.spanErrors.innerText = `Type validation errors: ${options.count}`;
   }
+  get eventSources() {
+    const eventSources = new Set();
+    for (const key in options.warned) {
+      const warning = options.warned[key];
+      eventSources.add(warning.eventSource);
+    }
+    return eventSources;
+  }
   /**
    * @param {MessageEventRTI} event - The event from Worker, IFrame or own window.
    */
@@ -239,6 +273,8 @@ class TypePanel {
   handleEvent(event) {
     const {action} = event.data;
     this[action](event);
+    // Could be anywhere we know that a new worker is sending RTI messages.
+    this.sendEnabledDisabledStateToWorker();
   }
 }
 /** @type {TypePanel | undefined} */
