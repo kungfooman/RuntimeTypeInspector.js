@@ -100,7 +100,7 @@ class TypePanel {
     onchange(); // set mode in options
     buttonHide.textContent = 'Hide';
     buttonHide.onclick = () => {
-      div.style.display = 'none';
+      this.hide();
     };
     buttonLoadState.textContent = 'Load state';
     buttonLoadState.onclick = () => this.loadState();
@@ -120,6 +120,27 @@ class TypePanel {
       document.addEventListener("DOMContentLoaded", finalFunc);
     }
     this.loadState();
+    // In the simplest case RTI sends its errors onto `window` to update UI state.
+    // If you start a Worker, you have to attach RTI yourself.
+    window.addEventListener('message', (e) => {
+      const {data} = e;
+      const {type, destination} = data;
+      // console.log("TypePanel Message event", e);
+      // console.log("TypePanel Message data", data);
+      if (type !== 'rti') {
+        return;
+      }
+      if (destination !== 'ui') {
+        return;
+      }
+      this.handleEvent(e);
+    });
+  }
+  hide() {
+    this.div.style.display = 'none';
+  }
+  show() {
+    this.div.style.display = '';
   }
   disableTypeChecking() {
     localStorage.setItem('rti-enabled', 'false');

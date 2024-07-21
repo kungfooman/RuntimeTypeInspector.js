@@ -2,11 +2,11 @@ import {crossContextPostMessage  } from './crossContextPostMessage.js';
 import {options                  } from './options.js';
 import {validateType             } from './validateType.js';
 import {partition                } from './partition.js';
-import {typePanel                } from './TypePanel.js';
 import {importNamespaceSpecifiers} from './registerImportNamespaceSpecifier.js';
 const breakpoints = new Set();
 let enabled = true;
-// Handle events for either window or worker/iframe
+// In the simplest case we are attaching to `window` here, but it's designed to handle
+// more complex scenarious like running RTI inside a `Worker` or `<iframe>` aswell.
 (globalThis.window || self).addEventListener('message', (e) => {
   const {data} = e;
   const {type, action, destination} = data;
@@ -15,19 +15,17 @@ let enabled = true;
   if (type !== 'rti') {
     return;
   }
+  // Messages come from Worker/IFrame/window to update UI state:
   if (destination === 'ui') {
-    typePanel?.handleEvent(e);
+    // console.log("Ignoring UI events here, handled in TypePanel instead.");
     return;
   }
-  if (action === 'addError') {
-    if (destination === 'worker') {
+  // Messages come from UI to control a few behaviours:
+  if (destination === 'worker') {
+    if (action === 'addError') {
       console.warn('We are not keeping track of errors in workers at all.');
       return;
     }
-
-  }
-  // Messages come from Worker/IFrame/window to update UI state
-  if (destination === 'worker') {
     if (action === 'deleteBreakpoint') {
       const {key} = data;
       breakpoints.delete(key);
