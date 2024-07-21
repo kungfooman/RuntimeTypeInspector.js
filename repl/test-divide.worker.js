@@ -3,20 +3,20 @@ import {inspectType, youCanAddABreakpointHere, validateDivision} from '@runtime-
  * @param {number} a
  * @param {number} b
  */
-function divide(a, b) {
-  if (!inspectType(a, "number", 'divide', 'a')) {
+function testDivide(a, b) {
+  if (!inspectType(a, "number", 'testDivide', 'a')) {
     youCanAddABreakpointHere();
   }
-  if (!inspectType(b, "number", 'divide', 'b')) {
+  if (!inspectType(b, "number", 'testDivide', 'b')) {
     youCanAddABreakpointHere();
   }
-  return validateDivision(a, b, "divide");
+  return validateDivision(a, b, "testDivide");
 }
 function f() {
   /** @type {number[]} */
   const arr = [10_20];
   const [a, b] = arr;
-  const ret = divide(a, b);
+  const ret = testDivide(a, b);
   self.postMessage(`ret ${ret}`);
 }
 f();
@@ -26,8 +26,8 @@ setInterval(f, 2000); // Test spam mode
 import {typePanel} from '@runtime-type-inspector/runtime';
 import {WorkerWithImportMapViaBedfordsShim} from 'worker-with-import-map';
 // console.log("WorkerWithImportMapViaBedfordsShim", WorkerWithImportMapViaBedfordsShim);
-// const url = './add.worker.js';
-const url = './divide.worker.js';
+// const url = './test-add.worker.js';
+const url = './test-divide.worker.js';
 const worker = new WorkerWithImportMapViaBedfordsShim(url, {
   importMap: 'inherit'
 });
