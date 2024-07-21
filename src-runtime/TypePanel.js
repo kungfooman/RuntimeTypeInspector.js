@@ -140,7 +140,7 @@ class TypePanel {
       return;
     }
     this.lastKnownCountWithStatus = key;
-    console.log("Update state to eventSources", eventSources, "key", key);
+    // console.log("Update state to eventSources", eventSources, "key", key);
     this.eventSources.forEach(eventSource => {
       eventSource.postMessage({
         type: 'rti',
@@ -221,10 +221,13 @@ class TypePanel {
     this.spanErrors.innerText = `Type validation errors: ${options.count}`;
   }
   get eventSources() {
+    /** @type {Set<EventTarget | MessageEventSource>} */
     const eventSources = new Set();
     for (const key in options.warned) {
       const warning = options.warned[key];
-      eventSources.add(warning.eventSource);
+      if (warning.eventSource) {
+        eventSources.add(warning.eventSource);
+      }
     }
     return eventSources;
   }
