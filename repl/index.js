@@ -439,6 +439,7 @@ const aceEditorLeft = setupAce(
 //              write result to right editor
 // Tip: open F12/DevTools to see errors and warnings
 // Press Shift-Enter in right editor to eval result.
+import {TypePanel} from '@runtime-type-inspector/runtime';
 /**
  * @param {number} a
  * @param {number} b
@@ -451,6 +452,8 @@ const arr = [10_20];
 const [a, b] = arr;
 const ret = add(a, b);
 console.log("ret", ret);
+const typePanel = new TypePanel();
+Object.assign(window, {add, typePanel});
 `,
   //editor => insertTypes(),
   editor => runAction(),
