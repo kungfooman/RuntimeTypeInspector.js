@@ -23,7 +23,7 @@ f();
 setInterval(f, 2000); // Test spam mode
 
 /*
-import {typePanel} from '@runtime-type-inspector/runtime';
+import {TypePanel} from '@runtime-type-inspector/runtime';
 import {WorkerWithImportMapViaBedfordsShim} from 'worker-with-import-map';
 // console.log("WorkerWithImportMapViaBedfordsShim", WorkerWithImportMapViaBedfordsShim);
 // const url = './test-add.worker.js';
@@ -32,6 +32,7 @@ const worker = new WorkerWithImportMapViaBedfordsShim(url, {
   importMap: 'inherit'
 });
 console.log("worker", worker);
+const typePanel = new TypePanel();
 worker.addEventListener('message', (e) => {
   // console.log('addEventListener message', e.data);
   if (e.data.type !== 'rti') {

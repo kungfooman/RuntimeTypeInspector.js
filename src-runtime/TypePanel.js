@@ -47,6 +47,8 @@ function isEnabled() {
   return tmp === null || tmp === 'true';
 }
 class TypePanel {
+  /** @type {HTMLDivElement | null} */
+  static divAll = null;
   div             = document.createElement('div');
   inputEnable     = document.createElement('input');
   spanErrors      = document.createElement('span');
@@ -60,15 +62,19 @@ class TypePanel {
   buttonSaveState = document.createElement('button');
   buttonClear     = document.createElement('button');
   warnedTable     = createTable();
+  /** @type {Record<string, import('./Warning.js').Warning>} */
+  warnings = {};
   constructor() {
     const {
       div, inputEnable, spanErrors, span, select, option_spam, option_once, option_never,
       buttonHide, buttonLoadState, buttonSaveState, buttonClear, warnedTable,
     } = this;
-    div.style.position = "absolute";
-    div.style.bottom = "0px";
-    div.style.right = "0px";
-    div.style.zIndex = "10";
+    TypePanel.divAll ??= document.createElement('div');
+    const {divAll} = TypePanel;
+    divAll.style.position = "absolute";
+    divAll.style.bottom = "0px";
+    divAll.style.right = "0px";
+    divAll.style.zIndex = "10";
     niceDiv(div);
     inputEnable.checked = isEnabled();
     inputEnable.type = "checkbox";
@@ -111,7 +117,8 @@ class TypePanel {
     div.append(inputEnable, spanErrors, span, select, buttonHide, buttonLoadState, buttonSaveState, buttonClear, warnedTable);
     div.style.maxHeight = '200px';
     div.style.overflow = 'scroll';
-    const finalFunc = () => document.body.append(div);
+    divAll.append(div);
+    const finalFunc = () => document.body.append(divAll);
     // Add our <div> to <body> when possible
     if (document.readyState === "complete") {
       finalFunc();
@@ -150,6 +157,9 @@ class TypePanel {
     localStorage.setItem('rti-enabled', 'true');
     this.sendEnabledDisabledStateToWorker();
   }
+  report() {
+    console.table(this.warnings);
+  }
   lastKnownCountWithStatus = '0-true';
   sendEnabledDisabledStateToWorker() {
     // Problem: First time the worker may not even have started and `this.eventSources.size === 0`
@@ -171,11 +181,11 @@ class TypePanel {
     });
   }
   clear() {
-    const {warned} = options;
-    for (const key in warned) {
-      const warning = warned[key];
+    const {warnings} = this;
+    for (const key in warnings) {
+      const warning = warnings[key];
       warning.tr.remove();
-      delete warned[key];
+      delete warnings[key];
     }
   }
   get state() {
@@ -184,8 +194,8 @@ class TypePanel {
     /**
      * @todo I would rather save loc/name because it's less likely to change in future... to keep state URL's alive
      */
-    for (const key in options.warned) {
-      const e = options.warned[key];
+    for (const key in this.warnings) {
+      const e = this.warnings[key];
       const {state} = e;
       if (state) {
         const {loc, name} = e;
@@ -210,12 +220,13 @@ class TypePanel {
     if (!json) {
       return false;
     }
+    const {warnings} = this;
     for (const e of json) {
       const {loc, name, state} = e;
       /** @type {Warning|undefined} */
       let foundWarning;
-      for (const key in options.warned) {
-        const warning = options.warned[key];
+      for (const key in warnings) {
+        const warning = warnings[key];
         if (warning.loc === loc && warning.name === name) {
           foundWarning = warning;
           break;
@@ -225,7 +236,7 @@ class TypePanel {
       if (!foundWarning) {
         foundWarning = new Warning('msg', 'value', 'expect', loc, name);
         this.warnedTable?.append(foundWarning.tr);
-        options.warned[`${loc}-${name}`] = foundWarning;
+        warnings[`${loc}-${name}`] = foundWarning;
       }
       foundWarning.state = state;
     }
@@ -244,8 +255,9 @@ class TypePanel {
   get eventSources() {
     /** @type {Set<EventTarget | MessageEventSource>} */
     const eventSources = new Set();
-    for (const key in options.warned) {
-      const warning = options.warned[key];
+    const {warnings} = this;
+    for (const key in warnings) {
+      const warning = warnings[key];
       if (warning.eventSource) {
         eventSources.add(warning.eventSource);
       }
@@ -259,11 +271,11 @@ class TypePanel {
     const {value, expect, loc, name, valueToString, strings, extras = [], key} = event.data;
     const msg = `${loc}> The '${name}' argument has an invalid type. ${strings.join(' ')}`.trim();
     this.updateErrorCount();
-    let warnObj = options.warned[key];
+    let warnObj = this.warnings[key];
     if (!warnObj) {
       warnObj = new Warning(msg, value, expect, loc, name);
       this.warnedTable?.append(warnObj.tr);
-      options.warned[key] = warnObj;
+      this.warnings[key] = warnObj;
     }
     warnObj.event = event;
     warnObj.hits++;
@@ -278,7 +290,7 @@ class TypePanel {
    */
   deleteBreakpoint(event) {
     const {key} = event.data;
-    const warnObj = options.warned[key];
+    const warnObj = this.warnings[key];
     if (!warnObj) {
       console.warn("warnObj doesn't exist", {key});
       return;
@@ -301,10 +313,4 @@ class TypePanel {
     this.sendEnabledDisabledStateToWorker();
   }
 }
-/** @type {TypePanel | undefined} */
-let typePanel;
-// @todo create UI explicitly programmatically inside e.g. src/index.rti.js of the projects using it.
-if (typeof importScripts === 'undefined') {
-  typePanel = new TypePanel();
-}
-export {niceDiv, TypePanel, typePanel};
+export {niceDiv, TypePanel};

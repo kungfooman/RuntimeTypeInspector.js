@@ -3,8 +3,13 @@ import {expandType           } from './src-transpiler/expandType.js';
 import {validateType         } from './src-runtime/validateType.js';
 import {validateUnion        } from './src-runtime/validateUnion.js';
 import {validateTuple        } from './src-runtime/validateTuple.js';
-import {clearObject          } from './src-runtime/options.js';
 import {typedefs             } from './src-runtime/registerTypedef.js';
+/**
+ * @param {Object<string, any>} obj - The object to clear.
+ */
+function clearObject(obj) {
+  Object.keys(obj).forEach(_ => delete obj[_]);
+}
 const warn = () => undefined;
 // We expect all functions to return true.
 const tests = [
