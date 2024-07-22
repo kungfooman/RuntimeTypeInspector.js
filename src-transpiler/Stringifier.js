@@ -228,12 +228,16 @@ class Stringifier {
     }
     return out;
   }
+  encounteredFragment = false;
   /**
    * @returns {string} The header.
    */
   getHeader() {
     if (!this.addReactImport) {
       return '';
+    }
+    if (this.encounteredFragment) {
+      return "import {createElement, Fragment} from 'react';\n";
     }
     return "import {createElement} from 'react';\n";
   }
@@ -1114,6 +1118,42 @@ class Stringifier {
       out += spaces;
       out += 'null';
     }
+    if (children.length) {
+      out += ',\n';
+      for (const child of children) {
+        const source = this.toSource(child);
+        if (!source.length) {
+          continue;
+        }
+        out += spaces;
+        out += source;
+        out += ',\n';
+      }
+    } else {
+      out += '\n';
+    }
+    this.numSpaces--;
+    out += this.spaces;
+    out += ')';
+    return out;
+  }
+  /**
+   * @param {import("@babel/types").JSXFragment} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  JSXFragment(node) {
+    const {/*openingFragment, closingFragment,*/ children} = node;
+    this.encounteredFragment = true;
+    // console.log('JSXFragment', {openingFragment, closingFragment, children});
+    let {spaces} = this;
+    let out = 'createElement(\n';
+    this.numSpaces++;
+    spaces = this.spaces;
+    out += spaces;
+    out += 'Fragment,\n';
+    out += spaces;
+    out += 'null';
+    // Same code for children as in JSXElement
     if (children.length) {
       out += ',\n';
       for (const child of children) {
