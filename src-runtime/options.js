@@ -1,11 +1,5 @@
 /**
- * @todo move into new Warning class, should be unused everywhere
- * @typedef {object} TypeError
- * @property {number} hits - How often this error occured.
- * @property {HTMLTableRowElement} tr - The <tr>.
- * @property {boolean} dbg - Trigger `debugger;` next time this error is hit.
- * @property {boolean} hide - Prevent F12/DevTools spamming for errors that occur often,
- * even in "spam" mode.
+ * @todo Move everything into TypePanel, since every panel/worker should have its own controls.
  */
 const options = {
   enabled: true,
@@ -16,21 +10,7 @@ const options = {
    * Spam-mode basically retains the order, which mentally helps to figure out the actual issues.
    */
   mode: 'spam',
-  /** @type {Record<string, import('./Warning.js').Warning>} */
-  warned: {},
   logSuperfluousProperty: false,
   count: 0,
 };
-function report() {
-  console.table(options.warned);
-}
-/**
- * @param {Object<string, any>} obj - The object to clear.
- */
-function clearObject(obj) {
-  Object.keys(obj).forEach(_ => delete obj[_]);
-}
-function reset() {
-  clearObject(options.warned);
-}
-export {report, clearObject, reset, options};
+export {options};

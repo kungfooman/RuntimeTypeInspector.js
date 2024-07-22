@@ -60,6 +60,8 @@ class TypePanel {
   buttonSaveState = document.createElement('button');
   buttonClear     = document.createElement('button');
   warnedTable     = createTable();
+  /** @type {Record<string, import('./Warning.js').Warning>} */
+  warnings = {};
   constructor() {
     const {
       div, inputEnable, spanErrors, span, select, option_spam, option_once, option_never,
@@ -150,6 +152,9 @@ class TypePanel {
     localStorage.setItem('rti-enabled', 'true');
     this.sendEnabledDisabledStateToWorker();
   }
+  report() {
+    console.table(this.warnings);
+  }
   lastKnownCountWithStatus = '0-true';
   sendEnabledDisabledStateToWorker() {
     // Problem: First time the worker may not even have started and `this.eventSources.size === 0`
@@ -171,11 +176,11 @@ class TypePanel {
     });
   }
   clear() {
-    const {warned} = options;
-    for (const key in warned) {
-      const warning = warned[key];
+    const {warnings} = this;
+    for (const key in warnings) {
+      const warning = warnings[key];
       warning.tr.remove();
-      delete warned[key];
+      delete warnings[key];
     }
   }
   get state() {
@@ -184,8 +189,8 @@ class TypePanel {
     /**
      * @todo I would rather save loc/name because it's less likely to change in future... to keep state URL's alive
      */
-    for (const key in options.warned) {
-      const e = options.warned[key];
+    for (const key in this.warnings) {
+      const e = this.warnings[key];
       const {state} = e;
       if (state) {
         const {loc, name} = e;
@@ -210,12 +215,13 @@ class TypePanel {
     if (!json) {
       return false;
     }
+    const {warnings} = this;
     for (const e of json) {
       const {loc, name, state} = e;
       /** @type {Warning|undefined} */
       let foundWarning;
-      for (const key in options.warned) {
-        const warning = options.warned[key];
+      for (const key in warnings) {
+        const warning = warnings[key];
         if (warning.loc === loc && warning.name === name) {
           foundWarning = warning;
           break;
@@ -225,7 +231,7 @@ class TypePanel {
       if (!foundWarning) {
         foundWarning = new Warning('msg', 'value', 'expect', loc, name);
         this.warnedTable?.append(foundWarning.tr);
-        options.warned[`${loc}-${name}`] = foundWarning;
+        warnings[`${loc}-${name}`] = foundWarning;
       }
       foundWarning.state = state;
     }
@@ -244,8 +250,9 @@ class TypePanel {
   get eventSources() {
     /** @type {Set<EventTarget | MessageEventSource>} */
     const eventSources = new Set();
-    for (const key in options.warned) {
-      const warning = options.warned[key];
+    const {warnings} = this;
+    for (const key in warnings) {
+      const warning = warnings[key];
       if (warning.eventSource) {
         eventSources.add(warning.eventSource);
       }
@@ -259,11 +266,11 @@ class TypePanel {
     const {value, expect, loc, name, valueToString, strings, extras = [], key} = event.data;
     const msg = `${loc}> The '${name}' argument has an invalid type. ${strings.join(' ')}`.trim();
     this.updateErrorCount();
-    let warnObj = options.warned[key];
+    let warnObj = this.warnings[key];
     if (!warnObj) {
       warnObj = new Warning(msg, value, expect, loc, name);
       this.warnedTable?.append(warnObj.tr);
-      options.warned[key] = warnObj;
+      this.warnings[key] = warnObj;
     }
     warnObj.event = event;
     warnObj.hits++;
@@ -278,7 +285,7 @@ class TypePanel {
    */
   deleteBreakpoint(event) {
     const {key} = event.data;
-    const warnObj = options.warned[key];
+    const warnObj = this.warnings[key];
     if (!warnObj) {
       console.warn("warnObj doesn't exist", {key});
       return;

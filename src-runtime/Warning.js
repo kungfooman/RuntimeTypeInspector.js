@@ -58,6 +58,9 @@ class Warning {
       key: `${this.loc}-${this.name}`
     });
   }
+  /**
+   * Trigger `debugger;` next time this error is hit.
+   */
   get dbg() {
     return this._dbg;
   }
@@ -100,6 +103,9 @@ class Warning {
     //   key: `${this.loc}-${this.name}`
     // });
   }
+  /**
+   * Prevent F12/DevTools spamming for errors that occur often, even in "spam" mode.
+   */
   get hidden() {
     return this._hidden;
   }
@@ -107,6 +113,9 @@ class Warning {
     this._hits = _;
     this.td_count.textContent = _ + '';
   }
+  /**
+   * How often this error occured.
+   */
   get hits() {
     return this._hits;
   }
