@@ -228,6 +228,7 @@ class Stringifier {
     }
     return out;
   }
+  encounteredFragment = false;
   /**
    * @returns {string} The header.
    */
@@ -235,7 +236,10 @@ class Stringifier {
     if (!this.addReactImport) {
       return '';
     }
-    return "import {createElement, Fragment} from 'react';\n";
+    if (this.encounteredFragment) {
+      return "import {createElement, Fragment} from 'react';\n";
+    }
+    return "import {createElement} from 'react';\n";
   }
   get parent() {
     return this.parents[this.parents.length - 2];
@@ -1139,6 +1143,7 @@ class Stringifier {
    */
   JSXFragment(node) {
     const {/*openingFragment, closingFragment,*/ children} = node;
+    this.encounteredFragment = true;
     // console.log('JSXFragment', {openingFragment, closingFragment, children});
     let {spaces} = this;
     let out = 'createElement(\n';
