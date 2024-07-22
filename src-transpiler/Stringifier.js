@@ -235,7 +235,7 @@ class Stringifier {
     if (!this.addReactImport) {
       return '';
     }
-    return "import {createElement} from 'react';\n";
+    return "import {createElement, Fragment} from 'react';\n";
   }
   get parent() {
     return this.parents[this.parents.length - 2];
@@ -1145,7 +1145,7 @@ class Stringifier {
     this.numSpaces++;
     spaces = this.spaces;
     out += spaces;
-    out += 'React.Fragment,\n';
+    out += 'Fragment,\n';
     out += spaces;
     out += 'null';
     // Same code for children as in JSXElement
