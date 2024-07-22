@@ -301,10 +301,4 @@ class TypePanel {
     this.sendEnabledDisabledStateToWorker();
   }
 }
-/** @type {TypePanel | undefined} */
-let typePanel;
-// @todo create UI explicitly programmatically inside e.g. src/index.rti.js of the projects using it.
-if (typeof importScripts === 'undefined') {
-  typePanel = new TypePanel();
-}
-export {niceDiv, TypePanel, typePanel};
+export {niceDiv, TypePanel};
