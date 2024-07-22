@@ -439,7 +439,8 @@ module.exports = {
     "jsdoc/require-property-description": "error",
     "jsdoc/require-property-name": "error",
     "jsdoc/require-property-type": "error",
-    "jsdoc/require-returns": "error",
+    // https://github.com/gajus/eslint-plugin-jsdoc/issues/503
+    "jsdoc/require-returns": ["error", {checkGetters: false}],
     "jsdoc/require-returns-check": "error",
     "jsdoc/require-returns-description": "error",
     "jsdoc/require-returns-type": "error",
