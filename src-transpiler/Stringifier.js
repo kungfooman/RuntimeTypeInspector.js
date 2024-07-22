@@ -1134,6 +1134,41 @@ class Stringifier {
     return out;
   }
   /**
+   * @param {import("@babel/types").JSXFragment} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  JSXFragment(node) {
+    const {/*openingFragment, closingFragment,*/ children} = node;
+    // console.log('JSXFragment', {openingFragment, closingFragment, children});
+    let {spaces} = this;
+    let out = 'createElement(\n';
+    this.numSpaces++;
+    spaces = this.spaces;
+    out += spaces;
+    out += 'React.Fragment,\n';
+    out += spaces;
+    out += 'null';
+    // Same code for children as in JSXElement
+    if (children.length) {
+      out += ',\n';
+      for (const child of children) {
+        const source = this.toSource(child);
+        if (!source.length) {
+          continue;
+        }
+        out += spaces;
+        out += source;
+        out += ',\n';
+      }
+    } else {
+      out += '\n';
+    }
+    this.numSpaces--;
+    out += this.spaces;
+    out += ')';
+    return out;
+  }
+  /**
    * @param {import("@babel/types").JSXIdentifier} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
