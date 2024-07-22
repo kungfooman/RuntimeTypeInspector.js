@@ -47,6 +47,8 @@ function isEnabled() {
   return tmp === null || tmp === 'true';
 }
 class TypePanel {
+  /** @type {HTMLDivElement | null} */
+  static divAll = null;
   div             = document.createElement('div');
   inputEnable     = document.createElement('input');
   spanErrors      = document.createElement('span');
@@ -67,10 +69,12 @@ class TypePanel {
       div, inputEnable, spanErrors, span, select, option_spam, option_once, option_never,
       buttonHide, buttonLoadState, buttonSaveState, buttonClear, warnedTable,
     } = this;
-    div.style.position = "absolute";
-    div.style.bottom = "0px";
-    div.style.right = "0px";
-    div.style.zIndex = "10";
+    TypePanel.divAll ??= document.createElement('div');
+    const {divAll} = TypePanel;
+    divAll.style.position = "absolute";
+    divAll.style.bottom = "0px";
+    divAll.style.right = "0px";
+    divAll.style.zIndex = "10";
     niceDiv(div);
     inputEnable.checked = isEnabled();
     inputEnable.type = "checkbox";
@@ -113,7 +117,8 @@ class TypePanel {
     div.append(inputEnable, spanErrors, span, select, buttonHide, buttonLoadState, buttonSaveState, buttonClear, warnedTable);
     div.style.maxHeight = '200px';
     div.style.overflow = 'scroll';
-    const finalFunc = () => document.body.append(div);
+    divAll.append(div);
+    const finalFunc = () => document.body.append(divAll);
     // Add our <div> to <body> when possible
     if (document.readyState === "complete") {
       finalFunc();
