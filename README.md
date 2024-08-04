@@ -63,8 +63,7 @@ console.log(rtiTranspiler)
 
 We are incredibly grateful for the support and contribution of our funders, [Sovereign Tech Fund](https://www.sovereigntechfund.de/). We would like to thank them for their support and contribution towards making this project possible. Their partnership and generous funding have been instrumental in the success and realization of [RuntimeTypeInspector.js](https://github.com/kungfooman/RuntimeTypeInspector.js).
 
-![STF-Logo-Wide-Dark-RGB](https://github.com/kungfooman/RuntimeTypeInspector.js/assets/5236548/a5e5870c-2f93-4047-877f-21f823473a68)
-![STF-Logo-Wide-White-RGB](https://github.com/kungfooman/RuntimeTypeInspector.js/assets/5236548/94e790d9-9fda-4c17-a811-0af370d708b8)
+![stf-logo-1-light-background](https://github.com/user-attachments/assets/118e457e-cda4-49cc-ae63-2452c49313e7)
 
 > Open source, a treasure trove for all to embrace,
 > 
