@@ -1181,6 +1181,11 @@ class Stringifier {
   JSXIdentifier(node) {
     const {name} = node;
     // console.log('JSXIdentifier', {name});
+    // https://github.com/kungfooman/RuntimeTypeInspector.js/issues/201
+    // https://stackoverflow.com/questions/38998987/using-aria-attributes-on-elements-in-react
+    if (name.includes('-')) {
+      return JSON.stringify(name);
+    }
     return name;
   }
   /**
