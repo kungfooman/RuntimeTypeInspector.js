@@ -88,6 +88,10 @@
     "output": "./test/typechecking/jsx-member-expression-output.mjs"
   },
   {
+    "input": "./test/typechecking/jsx-namespaced-name-input.mjs",
+    "output": "./test/typechecking/jsx-namespaced-name-output.mjs"
+  },
+  {
     "input": "./test/typechecking/keyof-typeof-input.mjs",
     "output": "./test/typechecking/keyof-typeof-output.mjs"
   },

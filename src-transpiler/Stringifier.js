@@ -1,3 +1,4 @@
+import {capitalize   } from './capitalize.js';
 import {trimEndSpaces} from './trimEndSpaces.js';
 /**
  * @typedef {import("@babel/types").Node} Node
@@ -1181,6 +1182,16 @@ class Stringifier {
     const {name} = node;
     // console.log('JSXIdentifier', {name});
     return name;
+  }
+  /**
+   * @param {import("@babel/types").JSXNamespacedName} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  JSXNamespacedName(node) {
+    const {namespace, name} = node;
+    const a =            this.toSource(namespace) ;
+    const b = capitalize(this.toSource(name     ));
+    return a + b;
   }
   /**
    * @param {import("@babel/types").JSXExpressionContainer} node - The Babel AST node.

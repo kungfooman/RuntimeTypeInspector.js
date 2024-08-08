@@ -340,12 +340,15 @@ module.exports = {
     "quotes": ["off", "single"],
     "rest-spread-spacing": "error",
     "semi": ["error", "always"],
+    /*
+    Disabled because nice for horizontal alignment.
     "semi-spacing": [
       "error", {
         "before": false,
         "after": true
       }
     ],
+    */
     "semi-style": ["error", "last"],
     "space-before-blocks": "error",
     "space-before-function-paren": [
