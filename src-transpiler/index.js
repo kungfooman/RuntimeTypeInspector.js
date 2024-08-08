@@ -8,6 +8,7 @@ export * from './addTypeChecks.js';
 export * from './Asserter.js';
 export * from './ast2json.js';
 export * from './ast2jsonForComparison.js';
+export * from './capitalize.js';
 export * from './code2ast2code.js';
 export * from './compareAST.js';
 export * from './expandType.js';
