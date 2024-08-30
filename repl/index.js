@@ -1,4 +1,5 @@
 import {parse} from '@babel/parser';
+import {ace} from 'ace-builds';
 import {
   parseJSDoc,
   addTypeChecks,

@@ -5,7 +5,7 @@
 function importFile(content) {
   return "data:text/javascript;base64," + btoa(content);
 }
-const nodeModules = './node_modules/';
+const nodeModules = location.href + './node_modules/';
 // For React ESM importmap to work you need React ESM: npm i react-es6
 const react = {
   'prop-types'               : nodeModules + 'react-es6/prop-types/index.js',
@@ -27,14 +27,33 @@ const reactMin = {
 const imports = {
   "@runtime-type-inspector/runtime"   : '../src-runtime/index.js',
   "@runtime-type-inspector/transpiler": '../src-transpiler/index.js',
-  "@babel/parser"                     : "./babel-parser.js",
+  "@babel/parser"                     : importFile(`
+    // Note: this is still ugly, but Babel 8 should be "nice" ESM (when it's out)
+    // Test: const {parse} = await import("@babel/parser");
+    // Now we have this, but requires never npm version:
+    // https://github.com/kungfooman/babel-8-via-importmap/blob/main/importmap.js
+    globalThis.exports = {};
+    const ret = await import("${nodeModules}@babel/parser/lib/index.js");
+    export const {parse, parseExpression, tokTypes} = globalThis.exports;
+    export default exports;
+  `),
   "display-anything"                  : "./node_modules/display-anything/src/index.js",
   "worker-with-import-map"            : "./node_modules/worker-with-import-map/src/index.js",
   "test-import-validation-b"          : "../test/typechecking/import-validation/b.js",
   //"@babel/helper-plugin-utils"      : "./babel-helper-plugin-utils.js",
   //"@babel/plugin-syntax-typescript" : "./babel-plugin-syntax-typescript.js",
   "fs"                                : importFile("export default {};"),
-  "typescript"                        : importFile("export default ts;"), // UMD import
+  "typescript"                        : importFile(`
+    globalThis.module = {exports: {}};
+    await import("${nodeModules}typescript/lib/typescript.js");
+    export default globalThis.module.exports;
+  `),
+  "ace-builds": importFile(`
+    await import("${nodeModules}ace-builds/src/ace.js");
+    window.ace.config.set('basePath', "${nodeModules}ace-builds/src");
+    const {ace} = window;
+    export {ace};
+  `),
   ...reactMin,
 };
 if (location.host.includes('runtimetypeinspector.org') || location.port === '7000') {
