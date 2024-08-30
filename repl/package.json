@@ -9,6 +9,7 @@
     "access": "public"
   },
   "dependencies": {
+    "@babel/parser": "^8.0.0-alpha.12",
     "@runtime-type-inspector/transpiler": "^4.0.0",
     "ace-builds": "^1.35.2",
     "display-anything": "^1.1.0",
