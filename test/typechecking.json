@@ -72,6 +72,22 @@
     "output": "./test/typechecking/good-old-es5-output.mjs"
   },
   {
+    "input": "./test/typechecking/import-as-input.mjs",
+    "output": "./test/typechecking/import-as-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/import-both-input.mjs",
+    "output": "./test/typechecking/import-both-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/import-runtime-input.mjs",
+    "output": "./test/typechecking/import-runtime-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/import-runtime-with-options-input.mjs",
+    "output": "./test/typechecking/import-runtime-with-options-output.mjs"
+  },
+  {
     "input": "./test/typechecking/jsdoc-param-end-detection-input.mjs",
     "output": "./test/typechecking/jsdoc-param-end-detection-output.mjs"
   },
