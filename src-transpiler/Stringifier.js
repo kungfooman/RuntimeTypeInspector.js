@@ -1549,6 +1549,19 @@ class Stringifier {
     return 'import';
   }
   /**
+   * @param {import("@babel/types").ImportExpression} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  ImportExpression(node) {
+    const {source, options} = node;
+    let out = "import(" + this.toSource(source);
+    if (options) {
+      out += ', ' + this.toSource(options);
+    }
+    out += ')';
+    return out;
+  }
+  /**
    * @param {import("@babel/types").ImportDeclaration} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
