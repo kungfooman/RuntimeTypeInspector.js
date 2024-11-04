@@ -1549,6 +1549,19 @@ class Stringifier {
     return 'import';
   }
   /**
+   * @param {import("@babel/types").ImportExpression} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  ImportExpression(node) {
+    const {source, options} = node;
+    let out = "import(" + this.toSource(source);
+    if (options) {
+      out += ', ' + this.toSource(options);
+    }
+    out += ')';
+    return out;
+  }
+  /**
    * @param {import("@babel/types").ImportDeclaration} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
@@ -1557,15 +1570,30 @@ class Stringifier {
     // ImportNamespaceSpecifier: import * as a   from "b";
     // ImportDefaultSpecifier  : import      a   from "b";
     // ImportSpecifier         : import {    a } from "b";
-    const a = this.mapToSource(specifiers).join(', ');
-    const b = this.toSource(source);
+    const from = this.toSource(source);
     if (specifiers.length === 0) {
-      return `import ${b}`;
+      return `import ${from}`;
     }
-    if (specifiers[0].type !== 'ImportSpecifier') {
-      return `import ${a} from ${b};`;
+    let out = 'import ';
+    const n = specifiers.length;
+    let inImportSpecifier = false;
+    let i = 0;
+    for (const specifier of specifiers) {
+      if (specifier.type === 'ImportSpecifier' && !inImportSpecifier) {
+        out += "{";
+        inImportSpecifier = true;
+      }
+      out += this.toSource(specifier);
+      if (i !== n - 1) {
+        out += ', ';
+      }
+      i++;
     }
-    return `import {${a}} from ${b};`;
+    if (inImportSpecifier) {
+      out += '}';
+    }
+    out += ` from ${from};`;
+    return out;
   }
   /**
    * @param {import("@babel/types").ImportSpecifier} node - The Babel AST node.
