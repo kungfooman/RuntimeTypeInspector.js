@@ -61,11 +61,14 @@ export const requiredTypeofs = {};
  * This function handles various TypeScript AST node types and converts them into a string
  * or an object representing the type.
  *
- * @param {ts.TypeNode|ts.Identifier|ts.QualifiedName} node - The TypeScript AST node to convert.
+ * @param {ts.TypeNode|ts.Identifier|ts.QualifiedName|undefined} node - The TypeScript AST node to convert.
  * @returns {string | number | boolean | {type: string, [key: string]: any} | undefined} The source string/number,
  * or an object with type information based on the node, or `undefined` if the node kind is not handled.
  */
 function toSourceTS(node) {
+  if (!node) {
+    return 'undefined';
+  }
   const {typeArguments, typeName} = node;
   const kind_ = ts.SyntaxKind[node.kind];
   const {
@@ -73,6 +76,7 @@ function toSourceTS(node) {
     ArrayType,           // parseType('number[]'                       ).kind                 === ts.SyntaxKind.ArrayType // todo toSourceTS(parseType('number[]')) === {type: 'array etc.
     BooleanKeyword,      // parseType("boolean"                        ).kind                 === ts.SyntaxKind.BooleanKeyword
     FunctionType,        // parseType("() => void"                     ).kind                 === ts.SyntaxKind.FunctionType
+    JSDocFunctionType,   // parseType("function (number, number): number").kind               === ts.SyntaxKind.JSDocFunctionType
     Identifier,          // parseType("{a: 1, b: 2}"                   ).members[0].name.kind === ts.SyntaxKind.Identifier
     IntersectionType,    // parseType("1 & 2"                          ).kind                 === ts.SyntaxKind.IntersectionType
     JSDocAllType,        // parseType("*"                              ).kind                 === ts.SyntaxKind.JSDocAllType
@@ -144,12 +148,20 @@ function toSourceTS(node) {
       const ret = toSourceTS(node.type);
       return {type: 'new', parameters, ret};
     }
-    case FunctionType:
+    case FunctionType: {
       if (!ts.isFunctionTypeNode(node)) {
         throw Error("Impossible");
       }
       const parameters = node.parameters.map(toSourceTS);
       return {type: 'function', parameters};
+    }
+    case JSDocFunctionType: {
+      if (!ts.isJSDocFunctionType(node)) {
+        throw Error("Impossible");
+      }
+      const parameters = node.parameters.map(toSourceTS);
+      return {type: 'function', parameters};
+    }
     case IndexedAccessType:
       if (!ts.isIndexedAccessTypeNode(node)) {
         throw Error("Impossible");
