@@ -1,6 +1,6 @@
 {
   "name": "@runtime-type-inspector/repl",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "REPL of RuntimeTypeInspector.js",
   "main": "index.html",
   "author": "Hermann Rolfes (kungfooman)",
@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@babel/parser": "^8.0.0-alpha.12",
-    "@runtime-type-inspector/transpiler": "^4.0.0",
+    "@runtime-type-inspector/transpiler": "^4.0.1",
     "ace-builds": "^1.35.2",
     "display-anything": "^1.1.0",
     "express": "^4.18.2",
