@@ -61,7 +61,7 @@ export const requiredTypeofs = {};
  * This function handles various TypeScript AST node types and converts them into a string
  * or an object representing the type.
  *
- * @param {ts.TypeNode|ts.Identifier} node - The TypeScript AST node to convert.
+ * @param {ts.TypeNode|ts.Identifier|ts.QualifiedName} node - The TypeScript AST node to convert.
  * @returns {string | number | boolean | {type: string, [key: string]: any} | undefined} The source string/number,
  * or an object with type information based on the node, or `undefined` if the node kind is not handled.
  */
@@ -112,6 +112,7 @@ function toSourceTS(node) {
     NamedTupleMember,    // parseType('[a: 1]'                         ).elements[0].kind     === ts.SyntaxKind.NamedTupleMember
     MappedType,          // parseType('{[K in TaskType]: 123}'         ).kind                 === ts.SyntaxKind.MappedType
     TypeParameter,       // parseType('{[K in TaskType]: 123}'         ).typeParameter.kind   ===  ts.SyntaxKind.TypeParameter
+    QualifiedName,       // parseType("import('abc').x.y"              ).qualifier.kind       === ts.SyntaxKind.QualifiedName
   } = ts.SyntaxKind;
   // console.log({typeArguments, typeName, kind_, node});
   switch (node.kind) {
@@ -369,6 +370,14 @@ function toSourceTS(node) {
       }
       // fall-through for parentheses
       return toSourceTS(node.type);
+    // toSourceTS(parseType("import('abc').x.y.z"))
+    case QualifiedName:
+      if (!ts.isQualifiedName(node)) {
+        throw Error("Impossible");
+      }
+      const l = toSourceTS(node.left);
+      const r = toSourceTS(node.right);
+      return `${l}.${r}`;
     case ImportType:
       if (!ts.isImportTypeNode(node)) {
         throw Error("Impossible");
