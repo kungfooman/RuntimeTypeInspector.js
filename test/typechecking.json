@@ -36,6 +36,10 @@
     "output": "./test/typechecking/JSDoc-FunctionExpression-ExpressionStatement-output.mjs"
   },
   {
+    "input": "./test/typechecking/JSDocFunctionType-input.mjs",
+    "output": "./test/typechecking/JSDocFunctionType-output.mjs"
+  },
+  {
     "input": "./test/typechecking/ParenthesizedExpression-multiline-input.mjs",
     "output": "./test/typechecking/ParenthesizedExpression-multiline-output.mjs"
   },
