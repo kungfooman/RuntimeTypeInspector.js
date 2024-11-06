@@ -371,7 +371,7 @@ function toSourceTS(node) {
       // fall-through for parentheses
       return toSourceTS(node.type);
     // toSourceTS(parseType("import('abc').x.y.z"))
-    case QualifiedName + 10000:
+    case QualifiedName:
       if (!ts.isQualifiedName(node)) {
         throw Error("Impossible");
       }
