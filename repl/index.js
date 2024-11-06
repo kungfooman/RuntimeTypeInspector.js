@@ -1,5 +1,6 @@
 import {parse} from '@babel/parser';
 import {ace} from 'ace-builds';
+import ts from 'typescript';
 import {
   parseJSDoc,
   addTypeChecks,
@@ -171,6 +172,7 @@ function activateREPLRuntime() {
 buttonREPL.onclick = activateREPL;
 Object.assign(window, {
   parse,
+  ts,
   ti, ...ti,
   rti, ...rti,
 });
