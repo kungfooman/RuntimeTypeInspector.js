@@ -75,6 +75,7 @@ class TypePanel {
     divAll.style.bottom = "0px";
     divAll.style.right = "0px";
     divAll.style.zIndex = "10";
+    divAll.classList.add('rti-all');
     niceDiv(div);
     inputEnable.checked = isEnabled();
     inputEnable.type = "checkbox";
