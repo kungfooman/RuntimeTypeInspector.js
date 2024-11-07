@@ -5,7 +5,8 @@
 function importFile(content) {
   return "data:text/javascript;base64," + btoa(content);
 }
-const nodeModules = location.href + './node_modules/';
+const dir = location.origin + location.pathname.replace(/[a-z]+.html/, '');
+const nodeModules = dir + 'node_modules/';
 // For React ESM importmap to work you need React ESM: npm i react-es6
 const react = {
   'prop-types'               : nodeModules + 'react-es6/prop-types/index.js',
