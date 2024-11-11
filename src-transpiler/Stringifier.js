@@ -566,7 +566,10 @@ class Stringifier {
     const {body, directives} = node;
     const spaces = this.spaces;
     let out = '';
-    out += ' {';
+    if (this.parentType !== 'Program') {
+      out += ' ';
+    }
+    out += '{';
     this.numSpaces++;
     // Handle Directive/DirectiveLiteral like 'use strict';
     if (directives && directives.length) {
@@ -575,7 +578,7 @@ class Stringifier {
     }
     out += this.generateTypeChecks(node);
     if (body.length) {
-      if (out.length === 2) { // 2 is ' {'
+      if (out[out.length-1] === '{') {
         out += '\n';
       }
       // out += '/*'+out.length+'*/';
