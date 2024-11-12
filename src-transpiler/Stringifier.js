@@ -224,7 +224,7 @@ class Stringifier {
     out += this.toSource(node);
     if (needCurly) {
       out += '\n';
-      out += spaces;
+      out += spaces.slice(0, -2);
       out += '}';
     }
     return out;
@@ -566,7 +566,10 @@ class Stringifier {
     const {body, directives} = node;
     const spaces = this.spaces;
     let out = '';
-    out += ' {';
+    if (this.parentType !== 'Program') {
+      out += ' ';
+    }
+    out += '{';
     this.numSpaces++;
     // Handle Directive/DirectiveLiteral like 'use strict';
     if (directives && directives.length) {
@@ -575,7 +578,7 @@ class Stringifier {
     }
     out += this.generateTypeChecks(node);
     if (body.length) {
-      if (out.length === 2) { // 2 is ' {'
+      if (out[out.length-1] === '{') {
         out += '\n';
       }
       // out += '/*'+out.length+'*/';
@@ -632,16 +635,26 @@ class Stringifier {
    */
   IfStatement(node) {
     const {alternate, consequent, test} = node;
-    const spaces = this.spaces;
     let out = '';
-    //if (this.parentType !== "IfStatement")
-    //{
-    out += spaces;
-    //}
+    if (this.forceCurly) {
+      out += this.spaces;
+    } else {
+      if (this.parentType === 'BlockStatement') {
+        out += this.spaces;
+      } else if (this.parentType === 'IfStatement') {
+        out += ' ';
+      }
+    }
     out += `if (${this.toSource(test)})`;
     out += this.toSourceCurly(consequent);
     if (alternate) {
+      if (this.forceCurly) {
+        this.numSpaces++;
+      }
       out += ` else${this.toSourceCurly(alternate)}`;
+      if (this.forceCurly) {
+        this.numSpaces--;
+      }
     }
     return out;
   }
