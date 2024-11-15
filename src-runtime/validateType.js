@@ -12,6 +12,7 @@ import {validateObject      } from "./validateObject.js";
 import {validateRecord      } from "./validateRecord.js";
 import {validateSet         } from "./validateSet.js";
 import {validateTuple       } from "./validateTuple.js";
+import {validateTypeof      } from "./validateTypeof.js";
 import {validateTypedef     } from "./validateTypedef.js";
 import {validateUnion       } from "./validateUnion.js";
 /**
@@ -125,6 +126,8 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
     case 'tuple':
       // Trigger: pc.app.scene.setSkybox([1, 2, 3]);
       return validateTuple(value, expect, loc, name, critical, warn, depth + 1);
+    case 'typeof':
+      return validateTypeof(value, expect, loc, name, critical, warn, depth + 1);
     case '*':
     case 'any':
       return true;
