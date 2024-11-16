@@ -19,7 +19,11 @@ class TestClass2 {
 function callNew(someClass, ...args) {
   return new someClass(...args);
 }
+options.count = 0;
 const testClass1 = callNew(TestClass1, "hoi1");
 console.assert(options.count === 0, "Should have 0 errors here");
 const testClass2 = callNew(TestClass2, "hoi2");
 console.assert(options.count === 1, "Should have 1 error here");
+if (options.count === 1) {
+  console.log("SUCCESS!");
+}
