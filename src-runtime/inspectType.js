@@ -106,6 +106,11 @@ function inspectType(value, expect, loc, name, critical = true) {
       crossContextPostMessage({type: 'rti', action: 'deleteBreakpoint', destination: 'ui', key});
     }
     // Nytaralyxe: options.warns where each warn callback supports one system (node, div/dom etc.)
+    // Don't post something that can't be transmitted cross-context, so we just stringify it.
+    // See https://github.com/kungfooman/RuntimeTypeInspector.js/issues/223
+    if (value instanceof Function) {
+      value += "";
+    }
     crossContextPostMessage({type: 'rti', action: 'addError', destination: 'ui', value, expect, loc, name, valueToString, strings, extras, key});
   }
   return ret;
