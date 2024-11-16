@@ -1,12 +1,12 @@
 {
   "name": "@runtime-type-inspector/plugin-webpack4",
-  "version": "4.0.2",
+  "version": "4.0.3",
   "description": "Webpack 4 plugin for https://runtimetypeinspector.org/",
   "main": "index.cjs",
   "author": "Hermann Rolfes (kungfooman)",
   "license": "MIT",
   "dependencies": {
-    "@runtime-type-inspector/transpiler": "^4.0.2",
+    "@runtime-type-inspector/transpiler": "^4.0.3",
     "loader-utils": "^2.0.4",
     "webpack": "^4.47.0"
   }
