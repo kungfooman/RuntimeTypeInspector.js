@@ -3,6 +3,7 @@ import {options                  } from './options.js';
 import {validateType             } from './validateType.js';
 import {partition                } from './partition.js';
 import {importNamespaceSpecifiers} from './registerImportNamespaceSpecifier.js';
+import {isClonable               } from './isClonable.js';
 const breakpoints = new Set();
 // In the simplest case we are attaching to `window` here, but it's designed to handle
 // more complex scenarious like running RTI inside a `Worker` or `<iframe>` aswell.
@@ -106,10 +107,9 @@ function inspectType(value, expect, loc, name, critical = true) {
       crossContextPostMessage({type: 'rti', action: 'deleteBreakpoint', destination: 'ui', key});
     }
     // Nytaralyxe: options.warns where each warn callback supports one system (node, div/dom etc.)
-    // Don't post something that can't be transmitted cross-context, so we just stringify it.
-    // See https://github.com/kungfooman/RuntimeTypeInspector.js/issues/223
-    if (value instanceof Function) {
-      value += "";
+    // Don't post `value` when it can't be transmitted cross-context (just stringify it instead).
+    if (!isClonable(value)) {
+      value = valueToString;
     }
     crossContextPostMessage({type: 'rti', action: 'addError', destination: 'ui', value, expect, loc, name, valueToString, strings, extras, key});
   }
