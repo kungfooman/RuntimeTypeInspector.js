@@ -111,7 +111,17 @@ function inspectType(value, expect, loc, name, critical = true) {
     if (!isClonable(value)) {
       value = valueToString;
     }
-    crossContextPostMessage({type: 'rti', action: 'addError', destination: 'ui', value, expect, loc, name, valueToString, strings, extras, key});
+    for (const extra of extras) {
+      if (!isClonable(extra)) {
+        extra.value = extra.value?.toString();
+      }
+    }
+    const msg = {type: 'rti', action: 'addError', destination: 'ui', value, expect, loc, name, valueToString, strings, extras, key};
+    try {
+      crossContextPostMessage(msg);
+    } catch (e) {
+      console.error(e, msg);
+    }
   }
   return ret;
 }
