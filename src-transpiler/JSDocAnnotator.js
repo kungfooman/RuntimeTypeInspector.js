@@ -143,7 +143,10 @@ class JSDocAnnotator {
       if (jsdoc) {
         node.jsdoc = jsdoc;
         if (nodeIsFunction(node)) {
-          this.annotateFunctionParams(node);
+          const paramTypes = this.collectParamTypes(node);
+          if (Object.keys(paramTypes).length > 0) {
+            node.paramTypes = paramTypes;
+          }
         }
       }
     }
@@ -162,64 +165,59 @@ class JSDocAnnotator {
     this.parents.pop();
   }
   /**
-   * Propagates JSDoc types to function parameter nodes.
+   * Collects the parameter types into a map of binding names to types.
    * @param {import('@babel/types').ArrowFunctionExpression | import('@babel/types').FunctionDeclaration | import('@babel/types').FunctionExpression | import('@babel/types').ObjectMethod | import('@babel/types').ClassMethod | import('@babel/types').ClassPrivateMethod} node - The function-like node.
+   * @returns {Record<string, string | object>} The map of parameter names to types.
    */
-  annotateFunctionParams(node) {
+  collectParamTypes(node) {
     const jsdocParams = node.jsdoc?.params || {};
     const paramNames = Object.keys(jsdocParams);
+    const paramTypes = {};
     node.params.forEach((paramNode, index) => {
       const paramName = paramNames[index];
       if (paramName) {
         const typeInfo = jsdocParams[paramName];
-        this.annotateParamNode(paramNode, typeInfo);
+        this.collectBindings(paramNode, typeInfo, paramTypes);
       }
     });
+    return paramTypes;
   }
   /**
-   * Annotates a parameter node with type information, recursing into patterns.
+   * Recursively collects bindings from a pattern with their types.
    * @param {import('@babel/types').PatternLike} paramNode - The parameter node.
-   * @param {string | object} typeInfo - The type information from JSDoc.
-   * @param {boolean} [skipSet=false] - Whether to skip setting jsdocType on this node.
+   * @param {string | object} typeInfo - The type information.
+   * @param {Record<string, string | object>} map - The map to collect into.
    */
-  annotateParamNode(paramNode, typeInfo, skipSet = false) {
+  collectBindings(paramNode, typeInfo, map) {
     if (!typeInfo) return;
-    if (!skipSet) {
-      paramNode.jsdocType = typeInfo;
-    }
     const {type} = paramNode;
-    if (type === 'ObjectPattern') {
-      if (typeof typeInfo !== 'object' || typeInfo.type !== 'object' || !typeInfo.properties) return;
-      const propTypes = typeInfo.properties;
+    if (type === 'Identifier') {
+      map[paramNode.name] = typeInfo;
+    } else if (type === 'ObjectPattern') {
+      if (typeof typeInfo !== 'object' || !typeInfo.properties) return;
       paramNode.properties.forEach(prop => {
-        if (prop.type !== 'ObjectProperty') {
-          // e.g. RestElement
-          return;
+        if (prop.type !== 'ObjectProperty') return;
+        const key = prop.key;
+        if (key.type !== 'Identifier') return;
+        const propName = key.name;
+        const subType = typeInfo.properties[propName];
+        if (subType !== undefined) {
+          this.collectBindings(prop.value, subType, map);
         }
-        if (prop.key.type !== 'Identifier') return;
-        const keyName = prop.key.name;
-        const subType = propTypes[keyName];
-        if (!subType) return;
-        prop.jsdocType = subType;
-        this.annotateParamNode(prop.value, subType, prop.shorthand);
       });
     } else if (type === 'ArrayPattern') {
       if (typeof typeInfo !== 'object' || typeInfo.type !== 'array') return;
       const elementType = typeInfo.elementType;
-      paramNode.elements.forEach(element => {
-        if (!element) return;
-        if (element.type === 'RestElement') {
-          this.annotateParamNode(element, {type: 'array', elementType});
-          return;
+      paramNode.elements.forEach(el => {
+        if (el) {
+          this.collectBindings(el, elementType, map);
         }
-        this.annotateParamNode(element, elementType);
       });
     } else if (type === 'AssignmentPattern') {
-      this.annotateParamNode(paramNode.left, typeInfo);
+      this.collectBindings(paramNode.left, typeInfo, map);
     } else if (type === 'RestElement') {
-      this.annotateParamNode(paramNode.argument, typeInfo);
+      this.collectBindings(paramNode.argument, typeInfo, map);
     }
-    // For Identifier, nothing further
   }
   /**
    * Determines if a node should be annotated with JSDoc.
