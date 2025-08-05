@@ -6,6 +6,7 @@ import {parseJSDocTemplates} from './parseJSDocTemplates.js';
 import {parseJSDocTypedef} from './parseJSDocTypedef.js';
 /**
  * Map of Babel node types to their child keys that contain traversable AST nodes.
+ * @type {Record<string, string[]>}
  */
 const nodeChildren = {
   'ArrayExpression': ['elements'],
@@ -96,15 +97,16 @@ const nodeChildren = {
   'YieldExpression': ['argument'],
 };
 class JSDocAnnotator {
-  /** @type {Node[]} */
+  /** @type {import('@babel/types').Node[]} */
   parents = [];
   /** @type {Record<string, object>} */
   typedefs = {};
   /**
-   * @param {object} [options] - Options for the annotator.
+   * @param {Object} [options] - Options for the annotator.
    * @param {import('./parseJSDoc.js').ExpandType} [options.expandType] - Function to expand types.
    */
   constructor(options = {}) {
+    /** @type {import('./parseJSDoc.js').ExpandType} */
     this.expandType = options.expandType || expandTypeDepFree;
   }
   /**
