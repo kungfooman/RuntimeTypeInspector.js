@@ -165,7 +165,7 @@ class JSDocAnnotator {
     this.parents.pop();
   }
   /**
-   * Collects the parameter types into a map of binding names to types.
+   * Collects the parameter names into a map of names to types.
    * @param {import('@babel/types').ArrowFunctionExpression | import('@babel/types').FunctionDeclaration | import('@babel/types').FunctionExpression | import('@babel/types').ObjectMethod | import('@babel/types').ClassMethod | import('@babel/types').ClassPrivateMethod} node - The function-like node.
    * @returns {Record<string, string | object>} The map of parameter names to types.
    */
@@ -177,46 +177,46 @@ class JSDocAnnotator {
       const paramName = paramNames[index];
       if (paramName) {
         const typeInfo = jsdocParams[paramName];
-        this.collectBindings(paramNode, typeInfo, paramTypes);
+        this.collectParamNames(paramNode, typeInfo, paramTypes);
       }
     });
     return paramTypes;
   }
   /**
-   * Recursively collects bindings from a pattern with their types.
+   * Recursively collects parameter names from a pattern with their types.
    * @param {import('@babel/types').PatternLike} paramNode - The parameter node.
    * @param {string | object} typeInfo - The type information.
    * @param {Record<string, string | object>} map - The map to collect into.
    */
-  collectBindings(paramNode, typeInfo, map) {
+  collectParamNames(paramNode, typeInfo, map) {
     if (!typeInfo) return;
     const {type} = paramNode;
     if (type === 'Identifier') {
       map[paramNode.name] = typeInfo;
     } else if (type === 'ObjectPattern') {
-      if (typeof typeInfo !== 'object' || !typeInfo.properties) return;
+      if (typeof typeInfo !== 'object' || typeInfo.type !== 'object' || !typeInfo.properties) return;
+      const propTypes = typeInfo.properties;
       paramNode.properties.forEach(prop => {
         if (prop.type !== 'ObjectProperty') return;
-        const key = prop.key;
-        if (key.type !== 'Identifier') return;
-        const propName = key.name;
-        const subType = typeInfo.properties[propName];
-        if (subType !== undefined) {
-          this.collectBindings(prop.value, subType, map);
-        }
+        if (prop.key.type !== 'Identifier') return;
+        const keyName = prop.key.name;
+        const subType = propTypes[keyName];
+        if (!subType) return;
+        this.collectParamNames(prop.value, subType, map);
       });
     } else if (type === 'ArrayPattern') {
-      if (typeof typeInfo !== 'object' || typeInfo.type !== 'array') return;
-      const elementType = typeInfo.elementType;
-      paramNode.elements.forEach(el => {
-        if (el) {
-          this.collectBindings(el, elementType, map);
-        }
+      console.log("typeInfo", typeInfo);
+      if (typeof typeInfo !== 'object' || typeInfo.type !== 'tuple' || !typeInfo.elements) return;
+      const elements = typeInfo.elements;
+      paramNode.elements.forEach((el, i) => {
+        if (!el) return;
+        const elType = elements[i];
+        this.collectParamNames(el, elType, map);
       });
     } else if (type === 'AssignmentPattern') {
-      this.collectBindings(paramNode.left, typeInfo, map);
+      this.collectParamNames(paramNode.left, typeInfo, map);
     } else if (type === 'RestElement') {
-      this.collectBindings(paramNode.argument, typeInfo, map);
+      this.collectParamNames(paramNode.argument, typeInfo, map);
     }
   }
   /**
