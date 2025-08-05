@@ -142,6 +142,9 @@ class JSDocAnnotator {
       const jsdoc = this.getJSDoc(node);
       if (jsdoc) {
         node.jsdoc = jsdoc;
+        if (nodeIsFunction(node)) {
+          this.annotateFunctionParams(node);
+        }
       }
     }
     const type = node.type;
@@ -157,6 +160,66 @@ class JSDocAnnotator {
       }
     }
     this.parents.pop();
+  }
+  /**
+   * Propagates JSDoc types to function parameter nodes.
+   * @param {import('@babel/types').ArrowFunctionExpression | import('@babel/types').FunctionDeclaration | import('@babel/types').FunctionExpression | import('@babel/types').ObjectMethod | import('@babel/types').ClassMethod | import('@babel/types').ClassPrivateMethod} node - The function-like node.
+   */
+  annotateFunctionParams(node) {
+    const jsdocParams = node.jsdoc?.params || {};
+    const paramNames = Object.keys(jsdocParams);
+    node.params.forEach((paramNode, index) => {
+      const paramName = paramNames[index];
+      if (paramName) {
+        const typeInfo = jsdocParams[paramName];
+        this.annotateParamNode(paramNode, typeInfo);
+      }
+    });
+  }
+  /**
+   * Annotates a parameter node with type information, recursing into patterns.
+   * @param {import('@babel/types').PatternLike} paramNode - The parameter node.
+   * @param {string | object} typeInfo - The type information from JSDoc.
+   * @param {boolean} [skipSet=false] - Whether to skip setting jsdocType on this node.
+   */
+  annotateParamNode(paramNode, typeInfo, skipSet = false) {
+    if (!typeInfo) return;
+    if (!skipSet) {
+      paramNode.jsdocType = typeInfo;
+    }
+    const {type} = paramNode;
+    if (type === 'ObjectPattern') {
+      if (typeof typeInfo !== 'object' || typeInfo.type !== 'object' || !typeInfo.properties) return;
+      const propTypes = typeInfo.properties;
+      paramNode.properties.forEach(prop => {
+        if (prop.type !== 'ObjectProperty') {
+          // e.g. RestElement
+          return;
+        }
+        if (prop.key.type !== 'Identifier') return;
+        const keyName = prop.key.name;
+        const subType = propTypes[keyName];
+        if (!subType) return;
+        prop.jsdocType = subType;
+        this.annotateParamNode(prop.value, subType, prop.shorthand);
+      });
+    } else if (type === 'ArrayPattern') {
+      if (typeof typeInfo !== 'object' || typeInfo.type !== 'array') return;
+      const elementType = typeInfo.elementType;
+      paramNode.elements.forEach(element => {
+        if (!element) return;
+        if (element.type === 'RestElement') {
+          this.annotateParamNode(element, {type: 'array', elementType});
+          return;
+        }
+        this.annotateParamNode(element, elementType);
+      });
+    } else if (type === 'AssignmentPattern') {
+      this.annotateParamNode(paramNode.left, typeInfo);
+    } else if (type === 'RestElement') {
+      this.annotateParamNode(paramNode.argument, typeInfo);
+    }
+    // For Identifier, nothing further
   }
   /**
    * Determines if a node should be annotated with JSDoc.
