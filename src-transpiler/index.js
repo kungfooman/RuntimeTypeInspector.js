@@ -15,6 +15,7 @@ export * from './expandType.js';
 export * from './expandTypeBabelTS.js';
 export * from './expandTypeDepFree.js';
 export * from './extractNameAndOptionality.js';
+export * from './JSDocAnnotator.js';
 export * from './nodeIsFunction.js';
 export * from './parseJSDoc.js';
 export * from './parseJSDocSetter.js';
