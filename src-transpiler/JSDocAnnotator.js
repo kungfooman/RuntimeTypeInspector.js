@@ -189,30 +189,78 @@ class JSDocAnnotator {
    * @param {Record<string, string | object>} map - The map to collect into.
    */
   collectParamNames(paramNode, typeInfo, map) {
-    if (!typeInfo) return;
+    if (!typeInfo) {
+      console.warn("!typeInfo", {paramNode, typeInfo});
+      return;
+    }
     const {type} = paramNode;
     if (type === 'Identifier') {
       map[paramNode.name] = typeInfo;
     } else if (type === 'ObjectPattern') {
-      if (typeof typeInfo !== 'object' || typeInfo.type !== 'object' || !typeInfo.properties) return;
+      if (typeof typeInfo !== 'object' || typeInfo.type !== 'object' || !typeInfo.properties) {
+        console.warn("typeof typeInfo !== 'object' || typeInfo.type !== 'object' || !typeInfo.properties", {paramNode, typeInfo});
+        return;
+      }
       const propTypes = typeInfo.properties;
       paramNode.properties.forEach(prop => {
-        if (prop.type !== 'ObjectProperty') return;
-        if (prop.key.type !== 'Identifier') return;
+        if (prop.type !== 'ObjectProperty') {
+          console.warn("prop.type !== 'ObjectProperty'", {paramNode, typeInfo});
+          return;
+        }
+        if (prop.key.type !== 'Identifier') {
+          console.warn("prop.key.type !== 'Identifier'", {paramNode, typeInfo});
+          return;
+        }
         const keyName = prop.key.name;
         const subType = propTypes[keyName];
-        if (!subType) return;
+        if (!subType) {
+          console.warn("!subType", {paramNode, typeInfo});
+          return;
+        }
         this.collectParamNames(prop.value, subType, map);
       });
     } else if (type === 'ArrayPattern') {
-      console.log("typeInfo", typeInfo);
-      if (typeof typeInfo !== 'object' || typeInfo.type !== 'tuple' || !typeInfo.elements) return;
-      const elements = typeInfo.elements;
-      paramNode.elements.forEach((el, i) => {
-        if (!el) return;
-        const elType = elements[i];
-        this.collectParamNames(el, elType, map);
-      });
+      // console.log("ARRAY PATTERN", {type, typeInfo});
+      if (typeof typeInfo !== 'object') {
+        console.warn("typeof typeInfo !== 'object'", {paramNode, typeInfo});
+        return;
+      }
+      switch (typeInfo.type) {
+        case 'array':
+          if (!typeInfo.elementType) {
+            console.warn("Expected array type, but missing 'elementType' property.", {paramNode, typeInfo});
+            return;
+          }
+          const elementType = typeInfo.elementType;
+          paramNode.elements.forEach(el => {
+            if (!el) {
+              console.warn("!el", {paramNode, typeInfo});
+              return;
+            }
+            this.collectParamNames(el, elementType, map);
+          });
+          break;
+        case 'tuple':
+          // console.log("TUPLE PATTERN", {type, typeInfo});
+          if (!typeInfo.elements) {
+            console.warn("Expected tuple type, but missing 'elements' property.", {paramNode, typeInfo});
+            return;
+          }
+          const elements = typeInfo.elements;
+          paramNode.elements.forEach((el, i) => {
+            const elType = elements[i];
+            if (el === null) {
+              // Example missing 'd' param: function addStr(a, {b}, [c], [, e])
+              return;
+            }
+            // console.log(`paramNode.elements[${i}]`, el, "elType", elType);
+            this.collectParamNames(el, elType, map);
+          });
+          break;
+        default:
+          console.warn('Unsupported type for ArrayPattern:', typeInfo.type, {paramNode, typeInfo});
+          break;
+      }
     } else if (type === 'AssignmentPattern') {
       this.collectParamNames(paramNode.left, typeInfo, map);
     } else if (type === 'RestElement') {
