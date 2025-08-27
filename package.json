@@ -11,7 +11,7 @@
     "docs": "jsdoc -c jsdoc.json",
     "lint": "eslint --ext .js,.mjs,.cjs src-transpiler src-runtime",
     "watch": "rollup -c -w",
-    "test": "npm run test:update && node test.js && node test_runtime.js",
+    "test": "npm run test:update && node test.js && node test_runtime.js && node test/jsdoc-annotation/run.js",
     "test:update": "node gen_tests.js > test/typechecking.json"
   },
   "repository": {

@@ -10,6 +10,7 @@ import {
   code2ast2code,
   ast2jsonForComparison,
   parserOptions,
+  JSDocAnnotator,
 } from '@runtime-type-inspector/transpiler';
 import * as ti  from '@runtime-type-inspector/transpiler';
 import * as rti from '@runtime-type-inspector/runtime';
@@ -218,6 +219,17 @@ function actionAST() {
   }, 2);
   setRight(out);
 }
+function actionAST_Annotator() {
+  const ast = parse(getLeft(), parserOptions);
+  new JSDocAnnotator().annotate(ast);
+  const out = JSON.stringify(ast, function (name, val) {
+    if (name === "loc" || name === "start" || name === "end") {
+      return undefined; // remove
+    }
+    return val; // keep
+  }, 2);
+  setRight(out);
+}
 function actionAST_TS() {
   const str = getLeft();
   const ast = ts.createSourceFile('repl.ts', str, ts.ScriptTarget.Latest, false /*setParentNodes*/);
@@ -318,6 +330,9 @@ async function runAction() {
     case 'ast':
       await actionAST();
       break;
+    case 'ast-annotator':
+      await actionAST_Annotator();
+      break;
     case 'ast-ts':
       await actionAST_TS();
       break;
@@ -363,7 +378,7 @@ async function insertTypes() {
   aceEditorRight.clearSelection(); // setValue() selects everything, so unselect it now
 }
 /**
- * @typedef {'typechecking'|'code2ast2code'|'ast'|'ast-ts'|'jsdoc'|'eval'|'expand-type'} Action
+ * @typedef {'typechecking'|'code2ast2code'|'ast'|'ast-annotator'|'ast-ts'|'jsdoc'|'eval'|'expand-type'} Action
  */
 /** @returns {Action} */
 const getAction = () => selectAction.value;
