@@ -215,12 +215,70 @@ export function greet(name, greeting = 'hello', times = 2) {
   },
   {
     input: `
-namespace MyLib {
-  export const version = '1.0';
+namespace Validation {
+  export interface StringValidator {
+    isAcceptable(s: string): boolean;
+  }
+  const lettersRegexp = /^[A-Za-z]+$/;
+  const numberRegexp = /^[0-9]+$/;
+  export const version = 1;
+  export class LettersOnlyValidator implements StringValidator {
+    isAcceptable(s: string) {
+      return lettersRegexp.test(s);
+    }
+  }
+  export class ZipCodeValidator implements StringValidator {
+    isAcceptable(s: string) {
+      return s.length === 5 && numberRegexp.test(s);
+    }
+  }
 }
+let strings = ["Hello", "98052", "101"];
+let validators: { [s: string]: Validation.StringValidator } = {};
+validators["ZIP code"] = new Validation.ZipCodeValidator();
 `,
     output: `
-// ts2js: namespace 'MyLib' is dropped (not supported yet)
+var Validation;
+(function (Validation) {
+  /**
+   * @typedef {Object} StringValidator
+   * @property {(s: string) => boolean} isAcceptable
+   */
+  const lettersRegexp = /^[A-Za-z]+$/;
+  const numberRegexp = /^[0-9]+$/;
+  const version = 1;
+  /**
+   * @implements {StringValidator}
+   */
+  class LettersOnlyValidator {
+    /**
+     * @param {string} s
+     */
+    isAcceptable(s) {
+      return lettersRegexp.test(s);
+    }
+  }
+  /**
+   * @implements {StringValidator}
+   */
+  class ZipCodeValidator {
+    /**
+     * @param {string} s
+     */
+    isAcceptable(s) {
+      return s.length === 5 && numberRegexp.test(s);
+    }
+  }
+  Validation.version = version;
+  Validation.LettersOnlyValidator = LettersOnlyValidator;
+  Validation.ZipCodeValidator = ZipCodeValidator;
+})(Validation || (Validation = {}));
+let strings = ["Hello", "98052", "101"];
+/**
+ * @type {{[key: string]: StringValidator}}
+ */
+let validators = {};
+validators["ZIP code"] = new Validation.ZipCodeValidator();
 `,
   },
   {

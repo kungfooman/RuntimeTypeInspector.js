@@ -50,7 +50,7 @@ function tsTypeToJSDoc(node) {
     case 'TSNamedTupleMember':
       return tsTypeToJSDoc(node.elementType);
     case 'TSTypeReference': {
-      const name = tsTypeToJSDoc(node.typeName);
+      const name = simplifyReference(node.typeName);
       const params = node.typeParameters?.params;
       if (params?.length) {
         return `${name}<${params.map(tsTypeToJSDoc).join(', ')}>`;
@@ -59,6 +59,8 @@ function tsTypeToJSDoc(node) {
     }
     case 'TSQualifiedName':
       return `${tsTypeToJSDoc(node.left)}.${tsTypeToJSDoc(node.right)}`;
+    case 'TSExpressionWithTypeArguments':
+      return simplifyReference(node.expression);
     case 'Identifier':
       return node.name;
     case 'TSTypeAnnotation':
@@ -116,6 +118,19 @@ function tsTypeToJSDoc(node) {
       console.warn('ts2js> tsTypeToJSDoc unhandled type', node.type, node);
       return 'any';
   }
+}
+/**
+ * Reduces a possibly namespace-qualified type name to its local identifier,
+ * e.g. `Validation.StringValidator` becomes `StringValidator`, since flattened
+ * namespaces hoist their interfaces/classes to plain identifiers.
+ * @param {Node} node - The referenced name node.
+ * @returns {string} The simplified JSDoc type string.
+ */
+function simplifyReference(node) {
+  if (node?.type === 'TSQualifiedName') {
+    return simplifyReference(node.right);
+  }
+  return tsTypeToJSDoc(node);
 }
 /**
  * Converts a literal type node to its JSDoc representation.
@@ -437,12 +452,98 @@ class ToJS extends Stringifier {
     return '';
   }
   /**
-   * Drop namespaces, they cannot be represented in plain JavaScript.
+   * Converts a namespace (`namespace X { ... }`) into the classic IIFE
+   * pattern, exporting members via `X.member = member` assignments.
    * @param {import('@babel/types').TSModuleDeclaration} node - The namespace declaration.
-   * @returns {string} A comment explaining the drop.
+   * @returns {string} The IIFE source.
    */
   TSModuleDeclaration(node) {
-    return `// ts2js: namespace '${node.id?.name ?? '?'}' is dropped (not supported yet)`;
+    const {id, body} = node;
+    const name = id?.type === 'Identifier' ? id.name : '';
+    if (!name || node.declare || node.global || !body || body.type !== 'TSModuleBlock') {
+      return '';
+    }
+    const saved = this.numSpaces;
+    const level = this.namespaceLevel ?? 0;
+    this.namespaceLevel = level + 1;
+    this.numSpaces = 0;
+    const memberSource = this.namespaceMembers(body, name);
+    this.numSpaces = saved;
+    this.namespaceLevel = level;
+    const spaces = this.spaces;
+    const outer = '  '.repeat(level + 1);
+    const inner = memberSource
+      .replace(/ \*\/ +(?=[a-zA-Z_$])/g, '*/\n')
+      .split('\n')
+      .map(line => (line.trim() ? outer + line.trimEnd() : line))
+      .join('\n');
+    let out = spaces + `var ${name};\n`;
+    out += spaces + `(function (${name}) {\n`;
+    out += inner;
+    out += '\n' + spaces + `})(${name} || (${name} = {}));`;
+    return out;
+  }
+  /**
+   * Renders the statements of a namespace body at base indentation, emitting
+   * the local members and the trailing `Name.member = member;` assignments
+   * for exported value members.
+   * @param {import('@babel/types').TSModuleBlock} block - The namespace body.
+   * @param {string} name - The namespace identifier.
+   * @returns {string} The body source (joinable lines).
+   */
+  namespaceMembers(block, name) {
+    const lines = [];
+    const assignments = [];
+    for (const statement of block.body) {
+      if (statement.type === 'ExportNamedDeclaration') {
+        const {code, names} = this.namespaceExport(statement);
+        if (code) {
+          lines.push(code.trimEnd());
+        }
+        for (const member of names) {
+          assignments.push(`${name}.${member} = ${member};`);
+        }
+      } else {
+        lines.push(this.toSource(statement).trimEnd());
+      }
+    }
+    return lines.concat(assignments).join('\n');
+  }
+  /**
+   * Renders an `export` statement inside a namespace: the declaration without
+   * the `export` keyword and the list of exported value names.
+   * @param {import('@babel/types').ExportNamedDeclaration} statement - The export statement.
+   * @returns {{code: string, names: string[]}} The declaration source and exported names.
+   */
+  namespaceExport(statement) {
+    const {declaration} = statement;
+    if (!declaration) {
+      return {code: '', names: []};
+    }
+    let names = [];
+    switch (declaration.type) {
+      case 'ClassDeclaration':
+      case 'FunctionDeclaration':
+      case 'TSEnumDeclaration':
+        if (declaration.id) {
+          names = [declaration.id.name];
+        }
+        break;
+      case 'VariableDeclaration':
+        names = declaration.declarations
+          .map(declarator => declarator.id)
+          .filter(id => id && id.type === 'Identifier')
+          .map(id => id.name);
+        break;
+      case 'TSModuleDeclaration':
+        if (declaration.id?.name) {
+          names = [declaration.id.name];
+        }
+        break;
+      default:
+        break;
+    }
+    return {code: this.toSource(declaration), names};
   }
   /**
    * Converts `enum` into a plain `const` object.
@@ -669,6 +770,12 @@ function annotate(node, parents) {
     if (node.typeAnnotation?.typeAnnotation && !node.declare) {
       attachComment(node, [`@type {${tsTypeToJSDoc(node.typeAnnotation.typeAnnotation)}}`], parents);
     }
+  } else if (type === 'ClassDeclaration' || type === 'ClassExpression') {
+    const interfaces = node.implements || [];
+    if (interfaces?.length) {
+      const lines = interfaces.map(imp => `@implements {${simplifyReference(imp.expression)}}`);
+      attachComment(node, lines, parents);
+    }
   } else if (type === 'VariableDeclaration' && !node.declare) {
     collectVariableTypeComments(node, parents);
   }
@@ -697,7 +804,7 @@ function attachComment(node, lines, parents) {
   if (!host) {
     host = node;
   }
-  const comment = makeComment(node, lines);
+  const comment = makeComment(node, lines, parents);
   host.leadingComments = [...(host.leadingComments || []), comment];
 }
 /**
@@ -712,6 +819,11 @@ function findCommentHost(node, parents) {
   const index = parents.findLastIndex(_ => _ === node);
   const parent = parents[index - 1];
   if (parent?.type === 'ExportNamedDeclaration') {
+    // Inside namespaces the export wrapper is consumed by the namespace
+    // emitter, so the comment has to live on the declaration itself.
+    if (parents[index - 2]?.type === 'TSModuleBlock') {
+      return node;
+    }
     return parent;
   }
   if (parent?.type === 'VariableDeclarator') {
@@ -731,14 +843,19 @@ function findCommentHost(node, parents) {
 }
 /**
  * Creates a Babel CommentBlock node with a fabricated `loc`.
- * @param {Node} node - The annotated node (its position is used for the comment position).
+ * The column is derived from the renderer indentation depth of the annotated
+ * node (2 spaces per indenting ancestor) so that the comment aligns with the
+ * `spaces` of the node's rendered position, independent of the original
+ * (namespace-shifted) source column.
+ * @param {Node} node - The annotated node.
  * @param {string[]} lines - The JSDoc lines.
+ * @param {Node[]} parents - The parent stack.
  * @returns {import('@babel/types').CommentBlock} The comment node.
  */
-function makeComment(node, lines) {
+function makeComment(node, lines, parents) {
   const value = '*\n * ' + lines.join('\n * ');
   const start = node.start ?? node.loc?.start?.index ?? 0;
-  const startColumn = node.loc?.start?.column ?? 0;
+  const startColumn = 2 * renderIndentDepth(node, parents);
   return {
     type: 'CommentBlock',
     value,
@@ -747,6 +864,34 @@ function makeComment(node, lines) {
       end: {index: start, line: node.loc?.start?.line ?? 1, column: startColumn},
     },
   };
+}
+/**
+ * Node types whose renderer increases the indentation level by one (`this.numSpaces++`).
+ * @type {Set<string>}
+ */
+const indentingNodeTypes = new Set([
+  'ClassDeclaration', 'ClassExpression', 'FunctionDeclaration', 'FunctionExpression',
+  'ArrowFunctionExpression', 'ObjectMethod', 'ClassMethod', 'ClassPrivateMethod',
+  'BlockStatement', 'IfStatement', 'ObjectExpression', 'ArrayExpression',
+  'ObjectPattern', 'ParenthesizedExpression', 'JSXElement', 'JSXFragment',
+  'TSEnumDeclaration',
+]);
+/**
+ * Counts the renderer indentation levels that nest `node`, so comments can be
+ * placed at the column the stringifier will use (`2` spaces per level).
+ * @param {Node} node - The annotated node.
+ * @param {Node[]} parents - The parent stack.
+ * @returns {number} The indentation depth of the node.
+ */
+function renderIndentDepth(node, parents) {
+  const index = parents.findLastIndex(_ => _ === node);
+  let depth = 0;
+  for (let i = index - 1; i >= 0; i--) {
+    if (indentingNodeTypes.has(parents[i].type)) {
+      depth++;
+    }
+  }
+  return depth;
 }
 /**
  * Attaches `@type` comments for typed variable declarations.
@@ -804,5 +949,6 @@ export {ts2js, tsTypeToJSDoc, ToJS};
 
 /**
  * @file
- * @todo Consider converting `TSModuleDeclaration` into an object literal.
+ * @todo Consider rendering nested namespaces leading flat, so their member
+ * columns align with the source indentation.
  */
