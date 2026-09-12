@@ -68,12 +68,12 @@ export function permute_data(array, dims, axes) {
   const stride = new Array(axes.length);
   for (let i = axes.length - 1, s = 1; i >= 0; --i) {
     stride[i] = s;
-    shape[i] = dims[axes[i]];
-    s *= shape[i];
+    shape[i] = inspectIndexedAccess(dims, inspectIndexedAccess(axes, i, "permute_data"), "permute_data");
+    s *= inspectIndexedAccess(shape, i, "permute_data");
   }
   // Precompute inverse mapping of stride
   const invStride = axes.map((_, i) => {
-    return stride[axes.indexOf(i)];
+    return inspectIndexedAccess(stride, axes.indexOf(i), "permute_data");
   });
   // Create the permuted array with the new shape
   // @ts-ignore
@@ -84,10 +84,10 @@ export function permute_data(array, dims, axes) {
   for (let i = 0; i < array.length; ++i) {
     let newIndex = 0;
     for (let j = dims.length - 1, k = i; j >= 0; --j) {
-      newIndex += (k % dims[j]) * invStride[j];
-      k = Math.floor(validateDivision(k, dims[j], "permute_data"));
+      newIndex += (k % inspectIndexedAccess(dims, j, "permute_data")) * inspectIndexedAccess(invStride, j, "permute_data");
+      k = Math.floor(validateDivision(k, inspectIndexedAccess(dims, j, "permute_data"), "permute_data"));
     }
-    permutedData[newIndex] = array[i];
+    permutedData[newIndex] = inspectIndexedAccess(array, i, "permute_data");
   }
   return [permutedData, shape];
 }

@@ -4,6 +4,11 @@ import {validateType         } from './src-runtime/validateType.js';
 import {validateUnion        } from './src-runtime/validateUnion.js';
 import {validateTuple        } from './src-runtime/validateTuple.js';
 import {typedefs             } from './src-runtime/registerTypedef.js';
+// inspectType.js uses addEventListener/postMessage on import, bootstrapping them
+// here allows running inspectIndexedAccess in the Node.js test environment.
+globalThis.self = globalThis;
+globalThis.postMessage = () => {};
+globalThis.addEventListener = () => {};
 /**
  * @param {Object<string, any>} obj - The object to clear.
  */
@@ -44,6 +49,7 @@ const tests = [
   ...(await import('./src-runtime/createTypeFromKeyof.spec.js')).tests,
   ...(await import('./src-runtime/resolveType.spec.js'        )).tests,
   ...(await import('./src-runtime/validateTemplateLiteral.spec.js')).tests,
+  ...(await import('./src-runtime/inspectIndexedAccess.spec.js'   )).tests,
   //() => validateUnion(null,      {type: 'union', members: ['a', 2, null]       }, 'loc', 'name', true, warn),
   //() => validateUnion(undefined, {type: 'union', members: ['str', 1, false]    }, 'loc', 'name', true, warn) === false,
 ];
