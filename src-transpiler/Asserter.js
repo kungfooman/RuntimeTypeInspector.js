@@ -129,7 +129,7 @@ class Asserter extends Stringifier {
       return '';
     }
     let header = super.getHeader();
-    header += "import {inspectType, inspectTypeWithTemplates, youCanAddABreakpointHere, registerVariable";
+    header += "import {inspectIndexedAccess, inspectType, inspectTypeWithTemplates, youCanAddABreakpointHere, registerVariable";
     if (this.validateDivision) {
       header += ", validateDivision";
     }
@@ -660,10 +660,49 @@ class Asserter extends Stringifier {
         }
         // top scope
         return `${this.filename}:${node?.loc?.start?.line}`;
+      case 'MemberExpression':
+        if (node.computed) {
+          const memberGoodNames = ['FunctionDeclaration', 'ClassMethod', 'ClassPrivateMethod'];
+          const memberGoodParent = this.parents.findLast(_ => memberGoodNames.includes(_.type));
+          if (memberGoodParent) {
+            return this.getName(memberGoodParent);
+          }
+        }
+        // top scope
+        return `${this.filename}:${node?.loc?.start?.line}`;
     }
     this.warn('getName> unhandled type', type, 'for', node, this.path);
     //debugger;
     return `${this.filename}:${node?.loc?.start?.line}`;
+  }
+  /**
+   * @override
+   * @param {import("@babel/types").MemberExpression} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  MemberExpression(node) {
+    const {computed, object, property} = node;
+    if (!computed || object.type === 'Super') {
+      return super.MemberExpression(node);
+    }
+    const parent = this.parent;
+    if (parent) {
+      // `a[i] = ...`, `a[i]++`/`--` and `delete a[i]` are handled by the statement
+      // itself, wrapping them here would produce invalid assignment to a call.
+      if (parent.type === 'AssignmentExpression' && parent.left === node) {
+        return super.MemberExpression(node);
+      }
+      if (parent.type === 'UpdateExpression' && parent.argument === node) {
+        return super.MemberExpression(node);
+      }
+      if (parent.type === 'UnaryExpression' && parent.operator === 'delete' && parent.argument === node) {
+        return super.MemberExpression(node);
+      }
+    }
+    const object_ = this.toSource(object);
+    const property_ = this.toSource(property);
+    const loc = this.getName(node);
+    return `inspectIndexedAccess(${object_}, ${property_}, ${JSON.stringify(loc)})`;
   }
   /**
    * @override

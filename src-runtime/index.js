@@ -7,6 +7,7 @@ export * from './crossContextPostMessage.js';
 export * from './customTypes.js';
 export * from './customValidations.js';
 export * from './getTypeKeys.js';
+export * from './inspectIndexedAccess.js';
 export * from './inspectType.js';
 export * from './inspectTypeWithTemplates.js';
 export * from './isObject.js';

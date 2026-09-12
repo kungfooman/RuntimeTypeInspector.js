@@ -92,6 +92,10 @@
     "output": "./test/typechecking/import-runtime-with-options-output.mjs"
   },
   {
+    "input": "./test/typechecking/indexed-access-input.mjs",
+    "output": "./test/typechecking/indexed-access-output.mjs"
+  },
+  {
     "input": "./test/typechecking/jsdoc-param-end-detection-input.mjs",
     "output": "./test/typechecking/jsdoc-param-end-detection-output.mjs"
   },

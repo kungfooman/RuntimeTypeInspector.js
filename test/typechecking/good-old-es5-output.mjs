@@ -33,6 +33,6 @@ Object.assign(ScopeSpace.prototype, {
       this.variables[name] = new pc.ScopeId(name);
     }
     // Now return the ScopeId instance
-    return this.variables[name];
+    return inspectIndexedAccess(this.variables, name, "repl.js:30");
   }
 });
