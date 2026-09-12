@@ -117,6 +117,8 @@ function toSourceTS(node) {
     MappedType,          // parseType('{[K in TaskType]: 123}'         ).kind                 === ts.SyntaxKind.MappedType
     TypeParameter,       // parseType('{[K in TaskType]: 123}'         ).typeParameter.kind   ===  ts.SyntaxKind.TypeParameter
     QualifiedName,       // parseType("import('abc').x.y"              ).qualifier.kind       === ts.SyntaxKind.QualifiedName
+    TemplateLiteralType, // parseType('`${A}_id`'                      ).kind                 === ts.SyntaxKind.TemplateLiteralType
+    NoSubstitutionTemplateLiteral, // parseType('`id`'                  ).literal.kind         === ts.SyntaxKind.NoSubstitutionTemplateLiteral
   } = ts.SyntaxKind;
   // console.log({typeArguments, typeName, kind_, node});
   switch (node.kind) {
@@ -282,6 +284,25 @@ function toSourceTS(node) {
       }
       const elements = node.elements.map(toSourceTS);
       return {type: 'tuple', elements};
+    case TemplateLiteralType: {
+      if (!ts.isTemplateLiteralTypeNode(node)) {
+        throw Error("Impossible");
+      }
+      // A template literal type is a sequence of literal chunks (quasis) with
+      // type expressions (types) in between, e.g. `${A}_${B}` becomes:
+      //   {quasis: ['', '_', ''], types: [<A>, <B>]}
+      const quasis = [node.head.text];
+      /** @type {any[]} */
+      const types = [];
+      for (const span of node.templateSpans) {
+        types.push(toSourceTS(span.type));
+        quasis.push(span.literal.text);
+      }
+      return {type: 'templateLiteral', quasis, types};
+    }
+    case NoSubstitutionTemplateLiteral:
+      // A template literal type without interpolations, e.g. `id`
+      return {type: 'templateLiteral', quasis: [node.text], types: []};
     case UnionType:
       if (!ts.isUnionTypeNode(node)) {
         throw Error("Impossible");

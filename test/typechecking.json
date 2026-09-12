@@ -216,6 +216,10 @@
     "output": "./test/typechecking/typedef-promise-output.mjs"
   },
   {
+    "input": "./test/typechecking/typedef-template-strings-input.mjs",
+    "output": "./test/typechecking/typedef-template-strings-output.mjs"
+  },
+  {
     "input": "./test/typechecking/validateDivision-class-input.mjs",
     "output": "./test/typechecking/validateDivision-class-output.mjs"
   },

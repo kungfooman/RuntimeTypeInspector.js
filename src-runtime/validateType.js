@@ -11,6 +11,7 @@ import {validateNumber      } from "./validateNumber.js";
 import {validateObject      } from "./validateObject.js";
 import {validateRecord      } from "./validateRecord.js";
 import {validateSet         } from "./validateSet.js";
+import {validateTemplateLiteral} from "./validateTemplateLiteral.js";
 import {validateTuple       } from "./validateTuple.js";
 import {validateTypeof      } from "./validateTypeof.js";
 import {validateTypedef     } from "./validateTypedef.js";
@@ -123,6 +124,8 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
       return validateUnion(value, expect, loc, name, critical, warn, depth + 1);
     case 'set':
       return validateSet(value, expect, loc, name, critical, warn, depth + 1);
+    case 'templateLiteral':
+      return validateTemplateLiteral(value, expect, loc, name, critical, warn, depth + 1);
     case 'tuple':
       // Trigger: pc.app.scene.setSkybox([1, 2, 3]);
       return validateTuple(value, expect, loc, name, critical, warn, depth + 1);
