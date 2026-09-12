@@ -844,6 +844,412 @@ function setx(v) {
   (data (i32.const 0) "\\00\\00\\80\\3f\\00\\00\\00\\40")
 )`,
   },
+  {
+    input: `class Vec3 {
+  constructor(x, y, z) {
+    this.x = x;
+    this.y = y;
+    this.z = z;
+  }
+  length() {
+    return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
+  }
+}
+export function test(a, b, c) {
+  let v = new Vec3(a, b, c);
+  return v.length();
+}`,
+    output: `(module
+  (func $Vec3_new (param $x f32) (param $y f32) (param $z f32) (result f32)
+    (local $this f32)
+    (local.set $this
+      (f32.convert_i32_u
+        (call $alloc
+          (i32.const 12)
+        )
+      )
+    )
+    (f32.store
+      (i32.add
+        (i32.trunc_f32_s
+          (local.get $this)
+        )
+        (i32.const 0)
+      )
+      (local.get $x)
+    )
+    (f32.store
+      (i32.add
+        (i32.trunc_f32_s
+          (local.get $this)
+        )
+        (i32.const 4)
+      )
+      (local.get $y)
+    )
+    (f32.store
+      (i32.add
+        (i32.trunc_f32_s
+          (local.get $this)
+        )
+        (i32.const 8)
+      )
+      (local.get $z)
+    )
+    (local.get $this)
+  )
+  (func $Vec3_length (param $this f32) (result f32)
+    (block $exit (result f32)
+      (return
+        (f32.sqrt
+          (f32.add
+            (f32.add
+              (f32.mul
+                (f32.load
+                  (i32.add
+                    (i32.trunc_f32_s
+                      (local.get $this)
+                    )
+                    (i32.const 0)
+                  )
+                )
+                (f32.load
+                  (i32.add
+                    (i32.trunc_f32_s
+                      (local.get $this)
+                    )
+                    (i32.const 0)
+                  )
+                )
+              )
+              (f32.mul
+                (f32.load
+                  (i32.add
+                    (i32.trunc_f32_s
+                      (local.get $this)
+                    )
+                    (i32.const 4)
+                  )
+                )
+                (f32.load
+                  (i32.add
+                    (i32.trunc_f32_s
+                      (local.get $this)
+                    )
+                    (i32.const 4)
+                  )
+                )
+              )
+            )
+            (f32.mul
+              (f32.load
+                (i32.add
+                  (i32.trunc_f32_s
+                    (local.get $this)
+                  )
+                  (i32.const 8)
+                )
+              )
+              (f32.load
+                (i32.add
+                  (i32.trunc_f32_s
+                    (local.get $this)
+                  )
+                  (i32.const 8)
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+  (func $test (param $a f32) (param $b f32) (param $c f32) (result f32)
+    (local $v f32)
+    (block $exit (result f32)
+      (local.set $v
+        (call $Vec3_new
+          (local.get $a)
+          (local.get $b)
+          (local.get $c)
+        )
+      )
+      (return
+        (call $Vec3_length
+          (local.get $v)
+        )
+      )
+    )
+  )
+  (export "test" (func $test))
+  (memory (export "m") 512)
+  (global $heapPtr (mut i32) (i32.const 0))
+  (func $alloc (param $size i32) (result i32)
+    (local $result i32)
+    (local.set $result (global.get $heapPtr))
+    (global.set $heapPtr (i32.add (global.get $heapPtr) (local.get $size)))
+    (local.get $result)
+  )
+)`,
+  },
+  {
+    input: `class Counter {
+  count = 42.0;
+  inc() {
+    this.count = this.count + 1.0;
+    return this.count;
+  }
+}
+export function use(b) {
+  let c = new Counter();
+  let d = new Counter();
+  c.inc();
+  d.count = c.count + b;
+  return d.count;
+}`,
+    output: `(module
+  (func $Counter_new (result f32)
+    (local $this f32)
+    (local.set $this
+      (f32.convert_i32_u
+        (call $alloc
+          (i32.const 4)
+        )
+      )
+    )
+    (f32.store
+      (i32.add
+        (i32.trunc_f32_s
+          (local.get $this)
+        )
+        (i32.const 0)
+      )
+      (f32.const 42)
+    )
+    (local.get $this)
+  )
+  (func $Counter_inc (param $this f32) (result f32)
+    (block $exit (result f32)
+      (f32.store
+        (i32.add
+          (i32.trunc_f32_s
+            (local.get $this)
+          )
+          (i32.const 0)
+        )
+        (f32.add
+          (f32.load
+            (i32.add
+              (i32.trunc_f32_s
+                (local.get $this)
+              )
+              (i32.const 0)
+            )
+          )
+          (f32.const 1)
+        )
+      )
+      (return
+        (f32.load
+          (i32.add
+            (i32.trunc_f32_s
+              (local.get $this)
+            )
+            (i32.const 0)
+          )
+        )
+      )
+    )
+  )
+  (func $use (param $b f32) (result f32)
+    (local $c f32)
+    (local $d f32)
+    (block $exit (result f32)
+      (local.set $c
+        (call $Counter_new
+        )
+      )
+      (local.set $d
+        (call $Counter_new
+        )
+      )
+      (drop
+        (call $Counter_inc
+          (local.get $c)
+        )
+      )
+      (f32.store
+        (i32.add
+          (i32.trunc_f32_s
+            (local.get $d)
+          )
+          (i32.const 0)
+        )
+        (f32.add
+          (f32.load
+            (i32.add
+              (i32.trunc_f32_s
+                (local.get $c)
+              )
+              (i32.const 0)
+            )
+          )
+          (local.get $b)
+        )
+      )
+      (return
+        (f32.load
+          (i32.add
+            (i32.trunc_f32_s
+              (local.get $d)
+            )
+            (i32.const 0)
+          )
+        )
+      )
+    )
+  )
+  (export "use" (func $use))
+  (memory (export "m") 512)
+  (global $heapPtr (mut i32) (i32.const 0))
+  (func $alloc (param $size i32) (result i32)
+    (local $result i32)
+    (local.set $result (global.get $heapPtr))
+    (global.set $heapPtr (i32.add (global.get $heapPtr) (local.get $size)))
+    (local.get $result)
+  )
+)`,
+  },
+  {
+    input: `class Pos {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+  setXY(a, b) {
+    this.x = a;
+    this.y = b;
+  }
+  sum() {
+    return this.x + this.y;
+  }
+}
+export function makeAndUse(a, b) {
+  let p = new Pos(a, b);
+  p.setXY(b, a);
+  return p.sum();
+}`,
+    output: `(module
+  (func $Pos_new (param $x f32) (param $y f32) (result f32)
+    (local $this f32)
+    (local.set $this
+      (f32.convert_i32_u
+        (call $alloc
+          (i32.const 8)
+        )
+      )
+    )
+    (f32.store
+      (i32.add
+        (i32.trunc_f32_s
+          (local.get $this)
+        )
+        (i32.const 0)
+      )
+      (local.get $x)
+    )
+    (f32.store
+      (i32.add
+        (i32.trunc_f32_s
+          (local.get $this)
+        )
+        (i32.const 4)
+      )
+      (local.get $y)
+    )
+    (local.get $this)
+  )
+  (func $Pos_setXY (param $this f32) (param $a f32) (param $b f32) (result f32)
+    (block $exit (result f32)
+      (f32.store
+        (i32.add
+          (i32.trunc_f32_s
+            (local.get $this)
+          )
+          (i32.const 0)
+        )
+        (local.get $a)
+      )
+      (f32.store
+        (i32.add
+          (i32.trunc_f32_s
+            (local.get $this)
+          )
+          (i32.const 4)
+        )
+        (local.get $b)
+      )
+      (f32.const 0)
+    )
+  )
+  (func $Pos_sum (param $this f32) (result f32)
+    (block $exit (result f32)
+      (return
+        (f32.add
+          (f32.load
+            (i32.add
+              (i32.trunc_f32_s
+                (local.get $this)
+              )
+              (i32.const 0)
+            )
+          )
+          (f32.load
+            (i32.add
+              (i32.trunc_f32_s
+                (local.get $this)
+              )
+              (i32.const 4)
+            )
+          )
+        )
+      )
+    )
+  )
+  (func $makeAndUse (param $a f32) (param $b f32) (result f32)
+    (local $p f32)
+    (block $exit (result f32)
+      (local.set $p
+        (call $Pos_new
+          (local.get $a)
+          (local.get $b)
+        )
+      )
+      (drop
+        (call $Pos_setXY
+          (local.get $p)
+          (local.get $b)
+          (local.get $a)
+        )
+      )
+      (return
+        (call $Pos_sum
+          (local.get $p)
+        )
+      )
+    )
+  )
+  (export "makeAndUse" (func $makeAndUse))
+  (memory (export "m") 512)
+  (global $heapPtr (mut i32) (i32.const 0))
+  (func $alloc (param $size i32) (result i32)
+    (local $result i32)
+    (local.set $result (global.get $heapPtr))
+    (global.set $heapPtr (i32.add (global.get $heapPtr) (local.get $size)))
+    (local.get $result)
+  )
+)`,
+  },
 ];
 /**
  * @param {string} a - Expected output.

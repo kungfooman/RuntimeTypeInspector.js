@@ -50,6 +50,12 @@ class WATConverter extends Stringifier {
   loopCounter = 0;
   /** @type {Object<string, {offset: number, values: number[], isObject: boolean, keys?: Map<string, number>}>} */
   arrays = {};
+  /** @type {Object<string, {fields: string[], offsets: Object<string, number>, defaults: Object<string, Node>, methods: Set<string>, size: number}>} */
+  classes = {};
+  /** @type {Object<string, string>} */
+  instances = {};
+  /** @type {string|null} */
+  currentClass = null;
   /**
    * Converts a Babel AST node to WAT source.
    * @param {Node} node - The Babel AST node.
@@ -186,13 +192,22 @@ class WATConverter extends Stringifier {
   Program(node) {
     const {body} = node;
     this.registerModuleData(body);
+    this.registerClasses(body);
+    const classNames = Object.keys(this.classes);
     const {spaces} = this;
     let out = `(module\n`;
     this.numSpaces++;
     const rest = body.filter(stmt => (this.isModuleDataDeclaration(stmt) === false));
     out += this.mapToSource(rest).join('');
     const names = Object.keys(this.arrays);
-    if (names.length) {
+    if (classNames.length) {
+      out += `${this.spaces}(memory (export "m") 512)\n`;
+      names.forEach(name => {
+        const arr = this.arrays[name];
+        out += `${this.spaces}(data (i32.const ${arr.offset}) ${this.f32DataBytes(arr.values)})\n`;
+      });
+      out += this.allocatorSource();
+    } else if (names.length) {
       out += `${this.spaces}(memory (export "m") 1)\n`;
       names.forEach(name => {
         const arr = this.arrays[name];
@@ -269,6 +284,149 @@ class WATConverter extends Stringifier {
     return out + '"';
   }
   /**
+   * Registers top-level class declarations and their instance memory layout.
+   * @param {import("@babel/types").Statement[]} body - Top-level statements.
+   */
+  registerClasses(body) {
+    body.forEach(stmt => {
+      let decl = stmt;
+      if (stmt.type === 'ExportNamedDeclaration' && stmt.declaration) {
+        decl = stmt.declaration;
+      }
+      if (decl.type === 'ClassDeclaration') {
+        this.registerClass(decl);
+      }
+    });
+  }
+  /**
+   * Registers a single class declaration (fields, offsets, defaults, methods).
+   * @param {import("@babel/types").ClassDeclaration} node - The class declaration.
+   */
+  registerClass(node) {
+    const {id, body} = node;
+    const cls = {
+      fields: [],
+      offsets: {},
+      defaults: {},
+      methods: new Set(),
+      size: 0,
+    };
+    body.body.forEach(member => {
+      if (member.static) {
+        return;
+      }
+      if (member.type === 'ClassMethod' || member.type === 'MethodDefinition') {
+        const name = member.key.type === 'Identifier' ? member.key.name : member.key.value;
+        if (member.kind === 'constructor') {
+          const methodBody = member.value?.body || member.body;
+          if (methodBody) {
+            this.collectConstructorFields(methodBody, cls);
+          }
+        } else {
+          cls.methods.add(name);
+        }
+      } else if (member.type === 'ClassProperty' || member.type === 'PropertyDefinition') {
+        const name = member.key.type === 'Identifier' ? member.key.name : member.key.value;
+        this.addClassField(cls, name);
+        if (member.value) {
+          cls.defaults[name] = member.value;
+        }
+      }
+    });
+    if (cls.size || cls.methods.size) {
+      this.classes[id.name] = cls;
+    }
+  }
+  /**
+   * Adds a class field at the next available byte offset.
+   * @param {Object} cls - The class layout.
+   * @param {string} name - The field name.
+   */
+  addClassField(cls, name) {
+    if (name in cls.offsets) {
+      return;
+    }
+    const index = cls.fields.length;
+    cls.offsets[name] = index * 4;
+    cls.fields.push(name);
+    cls.size = (index + 1) * 4;
+  }
+  /**
+   * Collects class fields assigned in a constructor from `this.name = ...` stores.
+   * @param {import("@babel/types").BlockStatement} body - The constructor body.
+   * @param {Object} cls - The class layout.
+   */
+  collectConstructorFields(body, cls) {
+    this.walk(body, node => {
+      const target = node.type === 'AssignmentExpression' ? node.left :
+        node.type === 'UpdateExpression' ? node.argument : null;
+      if (!target || target.type !== 'MemberExpression') {
+        return;
+      }
+      const isThis = target.object.type === 'ThisExpression' ||
+        (target.object.type === 'Identifier' && target.object.name === 'this');
+      if (!isThis) {
+        return;
+      }
+      const name = target.property.type === 'Identifier' ? target.property.name : target.property.value;
+      this.addClassField(cls, name);
+    });
+  }
+  /**
+   * Walks a Babel node tree, invoking a callback for every node.
+   * @param {Node} node - The node to walk.
+   * @param {(node: Node) => void} fn - The callback.
+   */
+  walk(node, fn) {
+    if (!node) {
+      return;
+    }
+    fn(node);
+    for (const key of Object.keys(node)) {
+      if (key === 'leadingComments' || key === 'trailingComments' || key === 'loc' ||
+          key === 'start' || key === 'end') {
+        continue;
+      }
+      const child = node[key];
+      if (Array.isArray(child)) {
+        child.forEach(c => this.walk(c, fn));
+      } else if (child && typeof child.type === 'string') {
+        this.walk(child, fn);
+      }
+    }
+  }
+  /**
+   * Computes the first unused byte, after all module-level array/object data.
+   * @returns {number} The heap start offset.
+   */
+  heapStart() {
+    let max = 0;
+    Object.values(this.arrays).forEach(arr => {
+      const end = arr.offset + arr.values.length * 4;
+      if (end > max) {
+        max = end;
+      }
+    });
+    return max;
+  }
+  /**
+   * Emits the bump allocator: a heap pointer global and an `$alloc` function.
+   * @returns {string} WAT source of the heap global and allocator.
+   */
+  allocatorSource() {
+    const {spaces} = this;
+    let out = `${spaces}(global $heapPtr (mut i32) (i32.const ${this.heapStart()}))\n`;
+    out += `${spaces}(func $alloc (param $size i32) (result i32)\n`;
+    this.numSpaces++;
+    out += `${this.spaces}(local $result i32)\n`;
+    out += `${this.spaces}(local.set $result (global.get $heapPtr))\n`;
+    out += `${this.spaces}(global.set $heapPtr (i32.add (global.get $heapPtr) (local.get $size)))\n`;
+    out += `${this.spaces}(local.get $result)\n`;
+    this.numSpaces--;
+    out += `${spaces})\n`;
+    return out;
+  }
+  /**
    * Converts an ExportNamedDeclaration node to WAT.
    * @param {import("@babel/types").ExportNamedDeclaration} node - The Babel AST node.
    * @returns {string} WAT representation of the node.
@@ -280,6 +438,8 @@ class WATConverter extends Stringifier {
       out += this.toSource(declaration);
       const funcName = declaration.id.name;
       out += `${this.spaces}(export "${funcName}" (func $${funcName}))\n`;
+    } else if (declaration && declaration.type === 'ClassDeclaration') {
+      out += this.toSource(declaration);
     } else {
       out += `;; Unsupported ExportNamedDeclaration: ${JSON.stringify(node)}\n`;
     }
@@ -362,6 +522,124 @@ class WATConverter extends Stringifier {
     this.numSpaces--;
     out += `${this.spaces})\n`;
     this.currentType = savedType;
+    return out;
+  }
+  /**
+   * Converts a class constructor to a `$<Name>_new` factory that allocates a slot
+   * in the bump heap and returns the instance pointer (as f32).
+   * @param {import("@babel/types").ClassDeclaration} node - The class declaration.
+   * @param {Object} cls - The registered class layout.
+   * @returns {string} WAT source of the factory function.
+   */
+  classConstructorSource(node, cls) {
+    const {spaces} = this;
+    const {id, body} = node;
+    const clsName = id.name;
+    const ctor = body.body.find(m => (m.type === 'ClassMethod' || m.type === 'MethodDefinition') &&
+    m.kind === 'constructor' && !m.static);
+    const savedType = this.currentType;
+    this.currentType = 'f32';
+    const savedClass = this.currentClass;
+    this.currentClass = clsName;
+    const ctorParams = ctor ? (ctor.value?.params || ctor.params) : [];
+    const paramList = ctorParams.map(p => `(param $${p.name} f32)`).join(' ');
+    let out = `${spaces}(func $${clsName}_new${paramList ? ' ' + paramList : ''} (result f32)\n`;
+    this.numSpaces++;
+    out += `${this.spaces}(local $this f32)\n`;
+    if (ctor) {
+      const ctorBody = ctor.value?.body || ctor.body;
+      const localNames = this.collectLocalNames(ctorBody);
+      localNames.forEach(name => {
+        out += `${this.spaces}(local $${name} f32)\n`;
+      });
+    }
+    out += `${this.spaces}(local.set $this\n`;
+    this.numSpaces++;
+    out += `${this.spaces}(f32.convert_i32_u\n`;
+    this.numSpaces++;
+    out += `${this.spaces}(call $alloc\n`;
+    this.numSpaces++;
+    out += `${this.spaces}(i32.const ${cls.size})\n`;
+    this.numSpaces--;
+    out += `${this.spaces})\n`;
+    this.numSpaces--;
+    out += `${this.spaces})\n`;
+    this.numSpaces--;
+    out += `${this.spaces})\n`;
+    cls.fields.forEach(name => {
+      if (cls.defaults[name]) {
+        out += this.classFieldStoreSource('this', cls.defaults[name], name, cls);
+      }
+    });
+    if (ctor) {
+      const ctorBody = ctor.value?.body || ctor.body;
+      out += this.mapToSource(ctorBody.body).join('');
+    }
+    out += `${this.spaces}(local.get $this)\n`;
+    this.numSpaces--;
+    out += `${spaces})\n`;
+    this.currentType = savedType;
+    this.currentClass = savedClass;
+    return out;
+  }
+  /**
+   * Converts a class method to a `$<Name>_<method>` function taking `$this` first.
+   * @param {string} clsName - The class name.
+   * @param {import("@babel/types").ClassMethod} method - The method definition.
+   * @returns {string} WAT source of the method function.
+   */
+  classMethodSource(clsName, method) {
+    const {spaces} = this;
+    const methodName = method.key.type === 'Identifier' ? method.key.name : method.key.value;
+    const fnParams = method.value?.params || method.params;
+    const fnBody = method.value?.body || method.body;
+    const savedType = this.currentType;
+    this.currentType = 'f32';
+    const paramNames = ['this', ...fnParams.map(p => p.name)];
+    const paramList = paramNames.map(name => `(param $${name} f32)`).join(' ');
+    let out = `${spaces}(func $${clsName}_${methodName} ${paramList} (result f32)\n`;
+    this.numSpaces++;
+    const localNames = this.collectLocalNames(fnBody);
+    localNames.forEach(name => {
+      out += `${this.spaces}(local $${name} f32)\n`;
+    });
+    out += `${this.spaces}(block $exit (result f32)\n`;
+    this.numSpaces++;
+    out += this.mapToSource(fnBody.body).join('');
+    const last = fnBody.body[fnBody.body.length - 1];
+    if (!(last && last.type === 'ReturnStatement')) {
+      out += `${this.spaces}(f32.const 0)\n`;
+    }
+    this.numSpaces--;
+    out += `${this.spaces})\n`;
+    this.numSpaces--;
+    out += `${this.spaces})\n`;
+    this.currentType = savedType;
+    return out;
+  }
+  /**
+   * Converts a ClassDeclaration node to its factory and method functions.
+   * @param {import("@babel/types").ClassDeclaration} node - The class declaration.
+   * @returns {string} WAT representation of the class.
+   */
+  ClassDeclaration(node) {
+    const clsName = node.id.name;
+    const cls = this.classes[clsName];
+    const {spaces} = this;
+    if (!cls) {
+      return `${spaces};; Unsupported class declaration: ${JSON.stringify(node)}\n`;
+    }
+    let out = this.classConstructorSource(node, cls);
+    node.body.body.forEach(member => {
+      if ((member.type !== 'ClassMethod' && member.type !== 'MethodDefinition') ||
+          member.kind === 'constructor' || member.static) {
+        return;
+      }
+      const savedClass = this.currentClass;
+      this.currentClass = clsName;
+      out += this.classMethodSource(clsName, member);
+      this.currentClass = savedClass;
+    });
     return out;
   }
   /**
@@ -769,6 +1047,10 @@ class WATConverter extends Stringifier {
   VariableDeclarator(node) {
     const {id, init} = node;
     const {spaces} = this;
+    if (id.type === 'Identifier' && init && init.type === 'NewExpression' &&
+        init.callee.type === 'Identifier' && this.classes[init.callee.name]) {
+      this.instances[id.name] = init.callee.name;
+    }
     let out = `${spaces}(local.set $${id.name}\n`;
     this.numSpaces++;
     if (init) {
@@ -826,18 +1108,27 @@ class WATConverter extends Stringifier {
     }
     if (left.type === 'MemberExpression') {
       const member = left;
-      const arr = member.object.type === 'Identifier' ? this.arrays[member.object.name] : null;
-      if (!arr) {
-        return `${spaces}(${CONST_TYPE[this.currentType]} 0.0) ;; Unsupported store target ${member.object.type}\n`;
+      const pointerName = this.instancePointerName(member.object);
+      const fieldName = member.property.type === 'Identifier' ? member.property.name : member.property.value;
+      if (pointerName) {
+        const clsName = this.resolveInstanceClass(member.object, fieldName);
+        if (clsName && fieldName in this.classes[clsName].offsets) {
+          return this.classFieldStoreSource(pointerName, right, fieldName, this.classes[clsName]);
+        }
       }
-      const indexSrc = this.arrayIndexSource(arr, member);
-      let out = `${spaces}(f32.store\n`;
-      this.numSpaces++;
-      out += this.arrayAddressSource(arr, indexSrc);
-      out += this.toSource(right);
-      this.numSpaces--;
-      out += `${spaces})\n`;
-      return out;
+      const arr = member.object.type === 'Identifier' ? this.arrays[member.object.name] : null;
+      if (arr) {
+        const indexSrc = this.arrayIndexSource(arr, member);
+        let out = `${spaces}(f32.store\n`;
+        this.numSpaces++;
+        out += this.arrayAddressSource(arr, indexSrc);
+        out += this.toSource(right);
+        this.numSpaces--;
+        out += `${spaces})\n`;
+        return out;
+      }
+      const objectName = member.object.type === 'Identifier' ? member.object.name : member.object.type;
+      return `${spaces}(${CONST_TYPE[this.currentType]} 0.0) ;; Unsupported store target ${objectName}\n`;
     }
     return `${spaces}(${CONST_TYPE[this.currentType]} 0.0) ;; Unsupported assignment target ${left.type}\n`;
   }
@@ -907,6 +1198,118 @@ class WATConverter extends Stringifier {
     return out;
   }
   /**
+   * Returns the WAT local name holding an instance pointer.
+   * @param {Node} objectNode - The object expression.
+   * @returns {string|null} The local name.
+   */
+  instancePointerName(objectNode) {
+    const isThis = objectNode.type === 'ThisExpression' ||
+      (objectNode.type === 'Identifier' && objectNode.name === 'this');
+    return isThis ? 'this' : (objectNode.type === 'Identifier' ? objectNode.name : null);
+  }
+  /**
+   * Resolves the class of an instance object from source info.
+   * @param {Node} objectNode - The member/call object expression.
+   * @param {string} propertyName - The accessed field or method name.
+   * @returns {string|null} The class name.
+   */
+  resolveInstanceClass(objectNode, propertyName) {
+    const pointerName = this.instancePointerName(objectNode);
+    if (pointerName === 'this') {
+      return this.currentClass;
+    }
+    if (pointerName === null) {
+      return null;
+    }
+    if (this.instances[pointerName]) {
+      return this.instances[pointerName];
+    }
+    if (pointerName in this.arrays) {
+      return null;
+    }
+    const clsNames = Object.keys(this.classes).filter(n => propertyName in this.classes[n].offsets);
+    return clsNames.length === 1 ? clsNames[0] : null;
+  }
+  /**
+   * Resolves the class of an instance on whose method a call is dispatched.
+   * @param {Node} objectNode - The call object expression.
+   * @param {string} methodName - The called method name.
+   * @returns {string|null} The class name.
+   */
+  resolveInstanceMethodClass(objectNode, methodName) {
+    const pointerName = this.instancePointerName(objectNode);
+    if (pointerName === 'this') {
+      return (this.currentClass && this.classes[this.currentClass].methods.has(methodName)) ?
+        this.currentClass : null;
+    }
+    if (pointerName === null) {
+      return null;
+    }
+    if (this.instances[pointerName]) {
+      return this.instances[pointerName];
+    }
+    if (pointerName in this.arrays) {
+      return null;
+    }
+    const clsNames = Object.keys(this.classes).filter(n => this.classes[n].methods.has(methodName));
+    return clsNames.length === 1 ? clsNames[0] : null;
+  }
+  /**
+   * Produces the WAT source for the heap byte address of a class field.
+   * @param {string} pointerName - The local holding the instance pointer.
+   * @param {string} fieldName - The field name.
+   * @param {Object} cls - The class layout.
+   * @returns {string} WAT source that pushes the byte address.
+   */
+  classFieldAddressSource(pointerName, fieldName, cls) {
+    const {spaces} = this;
+    let out = `${spaces}(i32.add\n`;
+    this.numSpaces++;
+    out += `${this.spaces}(i32.trunc_f32_s\n`;
+    this.numSpaces++;
+    out += `${this.spaces}(local.get $${pointerName})\n`;
+    this.numSpaces--;
+    out += `${this.spaces})\n`;
+    out += `${this.spaces}(i32.const ${cls.offsets[fieldName]})\n`;
+    this.numSpaces--;
+    out += `${spaces})\n`;
+    return out;
+  }
+  /**
+   * Produces the WAT source for loading a class field from the heap.
+   * @param {string} pointerName - The local holding the instance pointer.
+   * @param {string} fieldName - The field name.
+   * @param {Object} cls - The class layout.
+   * @returns {string} WAT source that pushes the field value.
+   */
+  classFieldLoadSource(pointerName, fieldName, cls) {
+    const {spaces} = this;
+    let out = `${spaces}(f32.load\n`;
+    this.numSpaces++;
+    out += this.classFieldAddressSource(pointerName, fieldName, cls);
+    this.numSpaces--;
+    out += `${spaces})\n`;
+    return out;
+  }
+  /**
+   * Produces the WAT source for storing a value into a class field.
+   * @param {string} pointerName - The local holding the instance pointer.
+   * @param {Node} valueNode - The value expression.
+   * @param {string} fieldName - The field name.
+   * @param {Object} cls - The class layout.
+   * @returns {string} WAT source that performs the store.
+   */
+  classFieldStoreSource(pointerName, valueNode, fieldName, cls) {
+    const {spaces} = this;
+    let out = `${spaces}(f32.store\n`;
+    this.numSpaces++;
+    out += this.classFieldAddressSource(pointerName, fieldName, cls);
+    out += this.toSource(valueNode);
+    this.numSpaces--;
+    out += `${spaces})\n`;
+    return out;
+  }
+  /**
    * Converts a MemberExpression node (array/object element read) to WAT.
    * @param {import("@babel/types").MemberExpression} node - The Babel AST node.
    * @returns {string} WAT representation of the node.
@@ -914,20 +1317,32 @@ class WATConverter extends Stringifier {
   MemberExpression(node) {
     const {object, property} = node;
     const {spaces} = this;
+    const pointerName = this.instancePointerName(object);
+    const fieldName = property.type === 'Identifier' ? property.name : property.value;
+    if (pointerName === 'this') {
+      const clsName = this.resolveInstanceClass(object, fieldName);
+      if (clsName && fieldName in this.classes[clsName].offsets) {
+        return this.classFieldLoadSource('this', fieldName, this.classes[clsName]);
+      }
+    }
     if (object.type !== 'Identifier') {
       return `${spaces}(f32.const 0.0) ;; Unsupported member access on ${object.type}\n`;
     }
     const arr = this.arrays[object.name];
-    if (!arr) {
-      return `${spaces}(f32.const 0.0) ;; Unsupported member access on unknown "${object.name}"\n`;
+    if (arr) {
+      const indexSrc = this.arrayIndexSource(arr, node);
+      let out = `${spaces}(f32.load\n`;
+      this.numSpaces++;
+      out += this.arrayAddressSource(arr, indexSrc);
+      this.numSpaces--;
+      out += `${spaces})\n`;
+      return out;
     }
-    const indexSrc = this.arrayIndexSource(arr, node);
-    let out = `${spaces}(f32.load\n`;
-    this.numSpaces++;
-    out += this.arrayAddressSource(arr, indexSrc);
-    this.numSpaces--;
-    out += `${spaces})\n`;
-    return out;
+    const clsName = this.resolveInstanceClass(object, fieldName);
+    if (clsName && fieldName in this.classes[clsName].offsets) {
+      return this.classFieldLoadSource(object.name, fieldName, this.classes[clsName]);
+    }
+    return `${spaces}(f32.const 0.0) ;; Unsupported member access on unknown "${object.name}"\n`;
   }
   /**
    * Converts a ConditionalExpression (ternary) node to WAT.
@@ -1009,6 +1424,9 @@ class WATConverter extends Stringifier {
   Identifier(node) {
     const {spaces} = this;
     const t = this.currentType;
+    if (node.name === 'this') {
+      return `${spaces}(local.get $this)\n`;
+    }
     if (t === 'f32' || t === 'f64') {
       if (node.name === 'Infinity') {
         return `${spaces}(${CONST_TYPE[t]} inf)\n`;
@@ -1045,21 +1463,55 @@ class WATConverter extends Stringifier {
   CallExpression(node) {
     const {callee, arguments: args} = node;
     const {spaces} = this;
-    if (callee.type === 'MemberExpression' && callee.object.type === 'Identifier' &&
-        callee.object.name === 'Math') {
-      const mathOp = MATH_OP[this.currentType]?.[callee.property.name];
-      if (!mathOp) {
-        return `${spaces}(f32.const 0.0) ;; Unsupported Math.${callee.property.name} for ${this.currentType}\n`;
+    if (callee.type === 'MemberExpression') {
+      const methodName = callee.property.type === 'Identifier' ? callee.property.name : callee.property.value;
+      if (callee.object.type === 'Identifier' && callee.object.name === 'Math') {
+        const mathOp = MATH_OP[this.currentType]?.[methodName];
+        if (!mathOp) {
+          return `${spaces}(f32.const 0.0) ;; Unsupported Math.${methodName} for ${this.currentType}\n`;
+        }
+        let out = `${spaces}(${mathOp}\n`;
+        this.numSpaces++;
+        out += args.map(arg => this.toSource(arg)).join('');
+        this.numSpaces--;
+        out += `${spaces})\n`;
+        return out;
       }
-      let out = `${spaces}(${mathOp}\n`;
-      this.numSpaces++;
-      out += args.map(arg => this.toSource(arg)).join('');
-      this.numSpaces--;
-      out += `${spaces})\n`;
-      return out;
+      const clsName = this.resolveInstanceMethodClass(callee.object, methodName);
+      if (clsName) {
+        const pointerName = this.instancePointerName(callee.object);
+        if (pointerName) {
+          let out = `${spaces}(call $${clsName}_${methodName}\n`;
+          this.numSpaces++;
+          out += `${this.spaces}(local.get $${pointerName})\n`;
+          out += args.map(arg => this.toSource(arg)).join('');
+          this.numSpaces--;
+          out += `${spaces})\n`;
+          return out;
+        }
+      }
     }
     const funcName = callee.name;
     let out = `${spaces}(call $${funcName}\n`;
+    this.numSpaces++;
+    const argsCode = args.map(arg => this.toSource(arg)).join('');
+    this.numSpaces--;
+    out += argsCode;
+    out += `${spaces})\n`;
+    return out;
+  }
+  /**
+   * Converts a NewExpression node to a $<ClassName>_new factory call.
+   * @param {import("@babel/types").NewExpression} node - The Babel AST node.
+   * @returns {string} WAT representation of the node.
+   */
+  NewExpression(node) {
+    const {callee, arguments: args} = node;
+    const {spaces} = this;
+    if (!this.classes[callee.name]) {
+      return `${spaces}(f32.const 0.0) ;; Unsupported new ${callee.name}\n`;
+    }
+    let out = `${spaces}(call $${callee.name}_new\n`;
     this.numSpaces++;
     const argsCode = args.map(arg => this.toSource(arg)).join('');
     this.numSpaces--;
