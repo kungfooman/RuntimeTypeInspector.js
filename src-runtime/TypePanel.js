@@ -1,4 +1,6 @@
 import {assertMode } from "./assertMode.js";
+import {decodeBase64 } from "./base64.js";
+import {encodeBase64 } from "./base64.js";
 import {options    } from "./options.js";
 import {createTable} from "./warnedTable.js";
 import {Warning    } from "./Warning.js";
@@ -212,7 +214,7 @@ class TypePanel {
       return undefined; // ESLint bs
     }
     const base64 = arr[0].slice(10); // 'typepanel='.length === 10
-    const text = atob(base64);
+    const text = decodeBase64(base64);
     const json = JSON.parse(text);
     return json;
   }
@@ -244,7 +246,7 @@ class TypePanel {
     return true;
   }
   saveState() {
-    const str = btoa(JSON.stringify(this.state));
+    const str = encodeBase64(JSON.stringify(this.state));
     const map = new Map(location.hash.slice(1).split('&').map(_ => _.split('=')));
     map.set('typepanel', str);
     const hash = [...map].map(_ => _.join('=')).join('&');
