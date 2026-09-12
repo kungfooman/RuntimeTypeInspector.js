@@ -165,6 +165,10 @@ class WATConverter extends Stringifier {
     const returnType = '(result f32)';
     let out = `${this.spaces}(func $${funcName} ${paramList} ${returnType}\n`;
     this.numSpaces++;
+    const localNames = this.collectLocalNames(body);
+    localNames.forEach(localName => {
+      out += `${this.spaces}(local $${localName} f32)\n`;
+    });
     this.parents.push({ type: 'BlockStatement' });
     out += `${this.spaces}(block $exit (result f32)\n`;
     this.numSpaces++;
@@ -175,6 +179,43 @@ class WATConverter extends Stringifier {
     this.numSpaces--;
     out += `${this.spaces})\n`;
     return out;
+  }
+  /**
+   * Collects the names of all `let`-declared locals inside a function body.
+   * @param {import("@babel/types").BlockStatement} body - The function body.
+   * @returns {string[]} Names of the declared locals.
+   */
+  collectLocalNames(body) {
+    /** @type {string[]} */
+    const localNames = [];
+    const visit = (node) => {
+      if (!node) {
+        return;
+      }
+      const {type} = node;
+      if (type === 'VariableDeclaration') {
+        node.declarations.forEach(decl => {
+          if (decl.id.type === 'Identifier' && !localNames.includes(decl.id.name)) {
+            localNames.push(decl.id.name);
+          }
+        });
+        return;
+      }
+      for (const key of Object.keys(node)) {
+        if (key === 'leadingComments' || key === 'trailingComments' || key === 'loc' ||
+            key === 'start' || key === 'end') {
+          continue;
+        }
+        const child = node[key];
+        if (Array.isArray(child)) {
+          child.forEach(visit);
+        } else if (child && typeof child.type === 'string') {
+          visit(child);
+        }
+      }
+    };
+    visit(body);
+    return localNames;
   }
   /**
    * Converts a BlockStatement node to WAT.
@@ -265,6 +306,21 @@ class WATConverter extends Stringifier {
       case '<=':
         opCode = 'f32.le';
         break;
+      case '<':
+        opCode = 'f32.lt';
+        break;
+      case '>':
+        opCode = 'f32.gt';
+        break;
+      case '>=':
+        opCode = 'f32.ge';
+        break;
+      case '==':
+        opCode = 'f32.eq';
+        break;
+      case '!=':
+        opCode = 'f32.ne';
+        break;
       default:
         return `${spaces}(f32.const 0.0) ;; Unsupported operator: ${operator}\n`;
     }
@@ -298,6 +354,80 @@ class WATConverter extends Stringifier {
       return `${spaces}(f32.const 0.0) ;; Invalid literal value: ${node.value}\n`;
     }
     return `${spaces}(f32.const ${value})\n`;
+  }
+  /**
+   * Converts an ExpressionStatement node to WAT.
+   * @param {import("@babel/types").ExpressionStatement} node - The Babel AST node.
+   * @returns {string} WAT representation of the node.
+   */
+  ExpressionStatement(node) {
+    return this.toSource(node.expression);
+  }
+  /**
+   * Converts an UnaryExpression node to WAT.
+   * @param {import("@babel/types").UnaryExpression} node - The Babel AST node.
+   * @returns {string} WAT representation of the node.
+   */
+  UnaryExpression(node) {
+    const {argument, operator} = node;
+    const spaces = this.spaces;
+    const opCode = operator === '-' ? 'f32.neg' : operator === '!' ? 'f32.eqz' : null;
+    if (!opCode) {
+      return `${spaces}(f32.const 0.0) ;; Unsupported unary operator: ${operator}\n`;
+    }
+    let out = `${spaces}(${opCode}\n`;
+    this.numSpaces++;
+    const argCode = this.toSource(argument);
+    this.numSpaces--;
+    out += argCode;
+    out += `${spaces})\n`;
+    return out;
+  }
+  /**
+   * Converts a VariableDeclaration node to WAT.
+   * @param {import("@babel/types").VariableDeclaration} node - The Babel AST node.
+   * @returns {string} WAT representation of the node.
+   */
+  VariableDeclaration(node) {
+    const {declarations} = node;
+    return declarations.map(decl => this.toSource(decl)).join('');
+  }
+  /**
+   * Converts a VariableDeclarator node to WAT.
+   * @param {import("@babel/types").VariableDeclarator} node - The Babel AST node.
+   * @returns {string} WAT representation of the node.
+   */
+  VariableDeclarator(node) {
+    const {id, init} = node;
+    const spaces = this.spaces;
+    let out = `${spaces}(local.set $${id.name}\n`;
+    this.numSpaces++;
+    if (init) {
+      out += this.toSource(init);
+    } else {
+      out += `${this.spaces}(f32.const 0.0) ;; Initialized as zero.\n`;
+    }
+    this.numSpaces--;
+    out += `${spaces})\n`;
+    return out;
+  }
+  /**
+   * Converts an AssignmentExpression node to WAT.
+   * @param {import("@babel/types").AssignmentExpression} node - The Babel AST node.
+   * @returns {string} WAT representation of the node.
+   */
+  AssignmentExpression(node) {
+    const {left, operator, right} = node;
+    const spaces = this.spaces;
+    if (left.type !== 'Identifier' || operator !== '=') {
+      return `${spaces}(f32.const 0.0) ;; Unsupported assignment: ${operator} ${left.type}\n`;
+    }
+    let out = `${spaces}(local.set $${left.name}\n`;
+    this.numSpaces++;
+    out += this.toSource(right);
+    this.numSpaces--;
+    out += `${spaces})\n`;
+    return out;
   }
   /**
    * Converts a CallExpression node to WAT.
