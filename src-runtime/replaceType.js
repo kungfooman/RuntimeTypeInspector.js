@@ -49,6 +49,15 @@ function replaceType(type, search, replace, warn) {
       }
       return type;
     }
+    case 'templateLiteral': {
+      const {types} = type;
+      const {length} = types;
+      for (let i = 0; i < length; i++) {
+        const member = types[i];
+        types[i] = replaceType(member, search, replace, warn);
+      }
+      return type;
+    }
     case 'indexedAccess':
     case 'record':
     case 'map':
