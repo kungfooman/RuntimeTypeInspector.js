@@ -69,3 +69,14 @@ function mapStuff(numbers) {
     }
   );
 }
+// 7. Shorthand object method syntax: { add(a, b) { ... } }
+var x = {
+  /**
+   * @param {number} a - First number.
+   * @param {number} b - Second number.
+   * @returns {number} Sum.
+   */
+  add(a, b) {
+    return a + b;
+  }
+};
