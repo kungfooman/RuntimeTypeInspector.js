@@ -1,101 +1,10 @@
 import {expandTypeDepFree} from './expandTypeDepFree.js';
-import {nodeIsFunction} from './nodeIsFunction.js';
+import {nodeChildren} from './nodeChildren.js';
+import {nodeIsFunctionLike} from './nodeIsFunctionLike.js';
 import {parseJSDoc} from './parseJSDoc.js';
 import {parseJSDocSetter} from './parseJSDocSetter.js';
 import {parseJSDocTemplates} from './parseJSDocTemplates.js';
 import {parseJSDocTypedef} from './parseJSDocTypedef.js';
-/**
- * Map of Babel node types to their child keys that contain traversable AST nodes.
- * @type {Record<string, string[]>}
- */
-const nodeChildren = {
-  'ArrayExpression': ['elements'],
-  'ArrayPattern': ['elements'],
-  'ArrowFunctionExpression': ['params', 'body'],
-  'AssignmentExpression': ['left', 'right'],
-  'AssignmentPattern': ['left', 'right'],
-  'AwaitExpression': ['argument'],
-  'BinaryExpression': ['left', 'right'],
-  'BlockStatement': ['directives', 'body'],
-  'BreakStatement': ['label'],
-  'CallExpression': ['callee', 'arguments'],
-  'CatchClause': ['param', 'body'],
-  'ClassBody': ['body'],
-  'ClassDeclaration': ['id', 'superClass', 'body'],
-  'ClassExpression': ['id', 'superClass', 'body'],
-  'ClassMethod': ['key', 'params', 'body'],
-  'ClassPrivateMethod': ['key', 'params', 'body'],
-  'ClassPrivateProperty': ['key', 'value'],
-  'ClassProperty': ['key', 'value'],
-  'ConditionalExpression': ['test', 'consequent', 'alternate'],
-  'ContinueStatement': ['label'],
-  'DebuggerStatement': [],
-  'Directive': ['value'],
-  'DirectiveLiteral': [],
-  'DoWhileStatement': ['body', 'test'],
-  'EmptyStatement': [],
-  'ExportAllDeclaration': ['source'],
-  'ExportDefaultDeclaration': ['declaration'],
-  'ExportNamedDeclaration': ['declaration', 'specifiers', 'source'],
-  'ExportNamespaceSpecifier': ['exported'],
-  'ExportSpecifier': ['local', 'exported'],
-  'ExpressionStatement': ['expression'],
-  'File': ['program'],
-  'ForInStatement': ['left', 'right', 'body'],
-  'ForOfStatement': ['left', 'right', 'body'],
-  'ForStatement': ['init', 'test', 'update', 'body'],
-  'FunctionDeclaration': ['id', 'params', 'body'],
-  'FunctionExpression': ['id', 'params', 'body'],
-  'IfStatement': ['test', 'consequent', 'alternate'],
-  'Import': [],
-  'ImportDeclaration': ['specifiers', 'source'],
-  'ImportDefaultSpecifier': ['local'],
-  'ImportExpression': ['source'],
-  'ImportNamespaceSpecifier': ['local'],
-  'ImportSpecifier': ['imported', 'local'],
-  'JSXAttribute': ['name', 'value'],
-  'JSXElement': ['openingElement', 'children', 'closingElement'],
-  'JSXExpressionContainer': ['expression'],
-  'JSXFragment': ['openingFragment', 'children', 'closingFragment'],
-  'JSXIdentifier': [],
-  'JSXMemberExpression': ['object', 'property'],
-  'JSXNamespacedName': ['namespace', 'name'],
-  'JSXText': [],
-  'LabeledStatement': ['label', 'body'],
-  'LogicalExpression': ['left', 'right'],
-  'MemberExpression': ['object', 'property'],
-  'MetaProperty': ['meta', 'property'],
-  'NewExpression': ['callee', 'arguments'],
-  'ObjectExpression': ['properties'],
-  'ObjectMethod': ['key', 'params', 'body'],
-  'ObjectPattern': ['properties'],
-  'ObjectProperty': ['key', 'value'],
-  'OptionalCallExpression': ['callee', 'arguments'],
-  'OptionalMemberExpression': ['object', 'property'],
-  'ParenthesizedExpression': ['expression'],
-  'PrivateName': ['id'],
-  'Program': ['directives', 'body'],
-  'RegExpLiteral': [],
-  'RestElement': ['argument'],
-  'ReturnStatement': ['argument'],
-  'SequenceExpression': ['expressions'],
-  'SpreadElement': ['argument'],
-  'Super': [],
-  'SwitchCase': ['test', 'consequent'],
-  'SwitchStatement': ['discriminant', 'cases'],
-  'TaggedTemplateExpression': ['tag', 'quasi'],
-  'TemplateElement': [],
-  'TemplateLiteral': ['quasis', 'expressions'],
-  'ThisExpression': [],
-  'ThrowStatement': ['argument'],
-  'TryStatement': ['block', 'handler', 'finalizer'],
-  'UnaryExpression': ['argument'],
-  'UpdateExpression': ['argument'],
-  'VariableDeclaration': ['declarations'],
-  'VariableDeclarator': ['id', 'init'],
-  'WhileStatement': ['test', 'body'],
-  'YieldExpression': ['argument'],
-};
 class JSDocAnnotator {
   /** @type {import('@babel/types').Node[]} */
   parents = [];
@@ -138,15 +47,13 @@ class JSDocAnnotator {
   traverse(node) {
     if (!node) return;
     this.parents.push(node);
-    if (this.isAnnotatableNode(node)) {
+    if (nodeIsFunctionLike(node)) {
       const jsdoc = this.getJSDoc(node);
       if (jsdoc) {
         node.jsdoc = jsdoc;
-        if (nodeIsFunction(node)) {
-          const paramTypes = this.collectParamTypes(node);
-          if (Object.keys(paramTypes).length > 0) {
-            node.paramTypes = paramTypes;
-          }
+        const paramTypes = this.collectParamTypes(node);
+        if (Object.keys(paramTypes).length > 0) {
+          node.paramTypes = paramTypes;
         }
       }
     }
@@ -268,22 +175,6 @@ class JSDocAnnotator {
     }
   }
   /**
-   * Determines if a node should be annotated with JSDoc.
-   * @param {import('@babel/types').Node} node - The node to check.
-   * @returns {boolean} True if the node is annotatable.
-   */
-  isAnnotatableNode(node) {
-    const {type} = node;
-    return (
-      type === 'ArrowFunctionExpression' ||
-      type === 'ClassMethod' ||
-      type === 'ClassPrivateMethod' ||
-      type === 'FunctionDeclaration' ||
-      type === 'FunctionExpression' ||
-      type === 'ObjectMethod'
-    );
-  }
-  /**
    * Finds the closest ancestor of the given node that matches the specified type.
    * @param {import('@babel/types').Node} node - The starting node.
    * @param {string} type - The type to search for.
@@ -307,7 +198,7 @@ class JSDocAnnotator {
     i--;
     while (i >= 0) {
       parent = this.parents[i];
-      if (nodeIsFunction(parent)) {
+      if (nodeIsFunctionLike(parent)) {
         break;
       }
       if (parent.leadingComments) {
@@ -330,7 +221,7 @@ class JSDocAnnotator {
     i--;
     while (i >= 0) {
       parent = this.parents[i];
-      if (nodeIsFunction(parent)) {
+      if (nodeIsFunctionLike(parent)) {
         break;
       }
       if (parent.leadingComments) {

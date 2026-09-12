@@ -1,6 +1,6 @@
 import {requiredTypeofs    } from './expandType.js';
 import {expandTypeDepFree  } from './expandTypeDepFree.js';
-import {nodeIsFunction     } from './nodeIsFunction.js';
+import {nodeIsFunctionLike } from './nodeIsFunctionLike.js';
 import {parseJSDoc         } from './parseJSDoc.js';
 import {parseJSDocSetter   } from './parseJSDocSetter.js';
 import {parseJSDocTemplates} from './parseJSDocTemplates.js';
@@ -164,7 +164,7 @@ class Asserter extends Stringifier {
       //if (parent.type === 'CallExpression') {
       //  break;
       //}
-      if (nodeIsFunction(parent)) {
+      if (nodeIsFunctionLike(parent)) {
         break;
       }
       if (parent.leadingComments) {
@@ -200,7 +200,7 @@ class Asserter extends Stringifier {
       //if (parent.type === 'CallExpression') {
       //  break;
       //}
-      if (nodeIsFunction(parent)) {
+      if (nodeIsFunctionLike(parent)) {
         break;
       }
       if (parent.leadingComments) {
@@ -339,7 +339,7 @@ class Asserter extends Stringifier {
    */
   getStatsForNode(node) {
     const {stats} = this;
-    const type = nodeIsFunction(node) ? node.type : this.parentType;
+    const type = nodeIsFunctionLike(node) ? node.type : this.parentType;
     if (type === 'ClassMethod') {
       const parent = /** @type {ClassMethod} */(
         this.parent
@@ -417,7 +417,7 @@ class Asserter extends Stringifier {
    */
   generateTypeChecks(node) {
     const {parent} = this;
-    if (node.type === 'BlockStatement' && !nodeIsFunction(parent)) {
+    if (node.type === 'BlockStatement' && !nodeIsFunctionLike(parent)) {
       return '';
     }
     const jsdoc = this.getJSDoc(node);
