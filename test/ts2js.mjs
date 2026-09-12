@@ -16,7 +16,8 @@ export function sum(nums: number[], opts?: {start?: number}): number {
  * @param {number[]} nums
  * @param {{start?: number}} [opts]
  * @returns {number}
- */ export function sum(nums, opts) {
+ */
+export function sum(nums, opts) {
   return nums.reduce((a, b) => a + b, opts?.start ?? 0);
 }`,
   },
@@ -163,7 +164,8 @@ export function mapValues<K, V>(map: Map<K, V>): V[] {
  * @template {V} V
  * @param {Map<K, V>} map
  * @returns {V[]}
- */ export function mapValues(map) {
+ */
+export function mapValues(map) {
   return Array.from(map.values());
 }`,
   },
@@ -178,7 +180,8 @@ export function regress(x: number | null, ys?: [number, number], ...rest: string
  * @param {[number, number]} [ys]
  * @param {...string} rest
  * @returns {string}
- */ export function regress(x, ys, ...rest) {
+ */
+export function regress(x, ys, ...rest) {
   return JSON.stringify([x, ys, rest]);
 }`,
   },
@@ -190,7 +193,8 @@ export function loadFrom(fn: (a: string) => number) {
     output: `
 /**
  * @param {(a: string) => number} fn
- */ export function loadFrom(fn) {
+ */
+export function loadFrom(fn) {
   return fn('x');
 }`,
   },
@@ -204,7 +208,8 @@ export function greet(name: string, greeting = 'hello', times = 2) {
  * @param {string} name
  * @param {string} [greeting = 'hello']
  * @param {number} [times = 2]
- */ export function greet(name, greeting = 'hello', times = 2) {
+ */
+export function greet(name, greeting = 'hello', times = 2) {
   return name + greeting.repeat(times);
 }`,
   },
@@ -257,6 +262,61 @@ export class Foo {
     console.log('constructed');
   }
 }`,
+  },
+  {
+    input: `
+import {Foo} from './foo';
+let a: import('./foo').Foo;
+let b: import('./foo.js').Foo.Bar;
+let c: import('lodash').Lodash;
+`,
+    output: `
+import {Foo} from './foo';
+/**
+ * @type {import('./foo.js').Foo}
+ */
+let a;
+/**
+ * @type {import('./foo.js').Foo.Bar}
+ */
+let b;
+/**
+ * @type {import('lodash').Lodash}
+ */
+let c;
+`,
+  },
+  {
+    input: `
+import x = require('./legacy');
+import type T = require('./types');
+const v: typeof x = x.create();
+`,
+    output: `
+import * as x from './legacy.js';
+/** @import * as T from './types.js' */
+/**
+ * @type {typeof x}
+ */
+const v = x.create();
+`,
+  },
+  {
+    input: `
+export interface Greeter {
+  name: string;
+  greet(name: string): string;
+  log?(msg: string): void;
+}
+`,
+    output: `
+/**
+ * @typedef {Object} Greeter
+ * @property {string} name
+ * @property {(name: string) => string} greet
+ * @property {(msg: string) => void} [log]
+ */
+`,
   },
 ];
 /**

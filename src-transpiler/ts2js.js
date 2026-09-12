@@ -90,7 +90,8 @@ function tsTypeToJSDoc(node) {
       return `${tsTypeToJSDoc(node.parameterName)} is ${tsTypeToJSDoc(node.typeAnnotation)}`;
     case 'TSImportType': {
       const {argument, qualifier, typeArguments} = node;
-      let out = 'import(' + tsTypeToJSDoc(argument) + ')';
+      const arg = argument.type === 'StringLiteral' ? `'${jsImportSource(argument)}'` : tsTypeToJSDoc(argument);
+      let out = 'import(' + arg + ')';
       if (qualifier) {
         out += '.' + tsTypeToJSDoc(qualifier);
       }
@@ -396,8 +397,16 @@ class ToJS extends Stringifier {
   TSExpressionWithTypeArguments(node) {
     return this.toSource(node.expression);
   }
-  TSImportEqualsDeclaration() {
-    return '';
+  TSImportEqualsDeclaration(node) {
+    if (node.moduleReference?.type !== 'TSExternalModuleReference') {
+      return '';
+    }
+    const name = this.toSource(node.id);
+    const raw = jsImportSource(node.moduleReference.expression);
+    if (node.importKind === 'type') {
+      return `/** @import * as ${name} from '${raw}' */`;
+    }
+    return `import * as ${name} from '${raw}';`;
   }
   TSExportAssignment() {
     return '';
@@ -498,6 +507,11 @@ class ToJS extends Stringifier {
         const optional = member.optional;
         const type = member.typeAnnotation ? tsTypeToJSDoc(member.typeAnnotation.typeAnnotation) : 'any';
         lines.push(`@property {${type}} ${optional ? '[' + propName + ']' : propName}`);
+      } else if (member.type === 'TSMethodSignature') {
+        const methodName = tsTypeToJSDoc(member.key);
+        const optional = member.optional;
+        const type = functionSignatureToJSDoc(member);
+        lines.push(`@property {${type}} ${optional ? '[' + methodName + ']' : methodName}`);
       }
     }
     return lines;
@@ -761,7 +775,17 @@ function ts2js(code, options = {}) {
   annotate(ast.program, []);
   const stringifier = new ToJS();
   const source = stringifier.toSource(ast);
-  return stringifier.getHeader() + source;
+  return formatCommentBreaks(stringifier.getHeader() + source);
+}
+/**
+ * Moves a statement that follows a generated JSDoc block onto its own line,
+ * e.g. a closing comment marker directly followed by `export function f() {}`
+ * becomes the closing marker, a newline, then `export function f() {}`.
+ * @param {string} source - The generated source code.
+ * @returns {string} The source with fixed comment/statement breaks.
+ */
+function formatCommentBreaks(source) {
+  return source.replace(/ \*\/ +(?=[a-zA-Z_$])/g, '*/\n');
 }
 /**
  * Parses TypeScript code, automatically falling back to TSX (JSX) mode
@@ -781,5 +805,4 @@ export {ts2js, tsTypeToJSDoc, ToJS};
 /**
  * @file
  * @todo Consider converting `TSModuleDeclaration` into an object literal.
- * @todo Handle `TSImportEqualsDeclaration` (`import x = require('y')`).
  */

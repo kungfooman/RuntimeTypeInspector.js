@@ -1,5 +1,8 @@
 {
-  "bin": "bin.js",
+  "bin": {
+    "transpiler": "transpiler.js",
+    "ts2js": "ts2js.js"
+  },
   "name": "@runtime-type-inspector/transpiler",
   "version": "4.0.6",
   "description": "Validating JSDoc types at runtime for high-quality types - Trust is good, control is better.",
