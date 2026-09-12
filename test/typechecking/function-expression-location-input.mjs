@@ -35,11 +35,11 @@ const named = function label(x) {
   return x * 2;
 };
 // 4. Object property value reports the property name, not the object variable
-/**
- * @param {number} y - Number.
- * @returns {number} Y plus one.
- */
 const object = {
+  /**
+   * @param {number} y - Number.
+   * @returns {number} Y plus one.
+   */
   method: function (y) {
     return y + 1;
   }

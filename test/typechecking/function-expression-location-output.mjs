@@ -24,12 +24,6 @@ let add = function (a, b) {
   return a - b;
 }, obj = {
   mul: function (a, b) {
-    if (!inspectType(a, "number", 'mul', 'a')) {
-      youCanAddABreakpointHere();
-    }
-    if (!inspectType(b, "number", 'mul', 'b')) {
-      youCanAddABreakpointHere();
-    }
     return a * b;
   }
 };
@@ -74,13 +68,12 @@ const named = function label(x) {
 };
 // 4. Object property value reports the property name, not the object variable
 
-
-/**
- * @param {number} y - Number.
- * @returns {number} Y plus one.
- */
-
 const object = {
+  
+  /**
+   * @param {number} y - Number.
+   * @returns {number} Y plus one.
+   */
   method: function (y) {
     if (!inspectType(y, "number", 'method', 'y')) {
       youCanAddABreakpointHere();
