@@ -6,7 +6,7 @@
  * @param {Node} node - The Babel AST node to be tested.
  * @returns {node is Function} - `true` if the node is a function-like structure, otherwise `false`.
  */
-function nodeIsFunction(node) {
+function nodeIsFunctionLike(node) {
   switch (node.type) {
     case 'ArrowFunctionExpression':
     case 'ClassMethod':
@@ -18,4 +18,4 @@ function nodeIsFunction(node) {
   }
   return false;
 }
-export {nodeIsFunction};
+export {nodeIsFunctionLike};

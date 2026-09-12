@@ -11,6 +11,7 @@ import {
   ast2jsonForComparison,
   parserOptions,
   JSDocAnnotator,
+  ts2js,
 } from '@runtime-type-inspector/transpiler';
 import * as ti  from '@runtime-type-inspector/transpiler';
 import * as rti from '@runtime-type-inspector/runtime';
@@ -99,6 +100,8 @@ function getCodeForAction() {
       return "const ret = parseJSDoc(jsdoc);\nsetRight(JSON.stringify(ret, null, 2));";
     case 'code2ast2code':
       return "const ret = code2ast2code(jsdoc);\nsetRight(ret);";
+    case 'ts2js':
+      return "const ret = ts2js(jsdoc);\nsetRight(ret);";
     case 'expand-type':
       return 'setRight(expandTypeAll(jsdoc));';
   }
@@ -324,6 +327,9 @@ function actionCode2Ast2Code() {
   setRight(out);
   // compareAST(content, out);
 }
+function actionTS2JS() {
+  setRight(ts2js(getLeft()));
+}
 async function runAction() {
   const action = getAction();
   switch (action) {
@@ -347,6 +353,9 @@ async function runAction() {
       break;
     case 'code2ast2code':
       await actionCode2Ast2Code();
+      break;
+    case 'ts2js':
+      await actionTS2JS();
       break;
     case 'eval':
       eval(aceEditorLeft.getValue());
