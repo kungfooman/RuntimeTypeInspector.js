@@ -168,6 +168,18 @@ class Asserter extends Stringifier {
         break;
       }
       if (parent.leadingComments) {
+        if (parent.type === 'VariableDeclaration') {
+          const comments = parent.leadingComments;
+          const lastComment = comments[comments.length - 1];
+          const isStatementDoc = Boolean(parent.loc && lastComment?.loc &&
+            lastComment.loc.end.line + 1 === parent.loc.start.line);
+          if (isStatementDoc) {
+            const declarator = parents[i + 1];
+            if (!declarator || declarator.type !== 'VariableDeclarator' || declarator.init !== node) {
+              break;
+            }
+          }
+        }
         return parent;
       }
       i--;
@@ -204,6 +216,21 @@ class Asserter extends Stringifier {
         break;
       }
       if (parent.leadingComments) {
+        if (parent.type === 'VariableDeclaration') {
+          const comments = parent.leadingComments;
+          const lastComment = comments[comments.length - 1];
+          const isStatementDoc = Boolean(parent.loc && lastComment?.loc &&
+            lastComment.loc.end.line + 1 === parent.loc.start.line);
+          if (isStatementDoc) {
+            // Docblock directly above the statement: TypeScript-like cascade,
+            // only direct declarator initializers inherit it. Functions nested
+            // deeper (e.g. inside object literals) do not.
+            const declarator = parents[i + 1];
+            if (!declarator || declarator.type !== 'VariableDeclarator' || declarator.init !== node) {
+              break;
+            }
+          }
+        }
         return parent;
       }
       i--;
@@ -614,6 +641,11 @@ class Asserter extends Stringifier {
         return this.toSource(left);
       }
       console.warn("Asserter#getNameForFunctionExpression> expression without left");
+    }
+    const variableDeclarator = this.findParentOfType(node, 'VariableDeclarator');
+    if (variableDeclarator) {
+      // e.g. `var ScopeSpace = function (name) {...}` (issue #82)
+      return this.toSource(variableDeclarator.id);
     }
     return 'unnamed function expression';
   }
