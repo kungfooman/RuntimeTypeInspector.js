@@ -615,6 +615,11 @@ class Asserter extends Stringifier {
       }
       console.warn("Asserter#getNameForFunctionExpression> expression without left");
     }
+    const variableDeclarator = this.findParentOfType(node, 'VariableDeclarator');
+    if (variableDeclarator) {
+      // e.g. `var ScopeSpace = function (name) {...}` (issue #82)
+      return this.toSource(variableDeclarator.id);
+    }
     return 'unnamed function expression';
   }
   /**

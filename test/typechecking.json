@@ -36,6 +36,10 @@
     "output": "./test/typechecking/JSDoc-FunctionExpression-ExpressionStatement-output.mjs"
   },
   {
+    "input": "./test/typechecking/JSDoc-FunctionExpression-VariableDeclarator-input.mjs",
+    "output": "./test/typechecking/JSDoc-FunctionExpression-VariableDeclarator-output.mjs"
+  },
+  {
     "input": "./test/typechecking/JSDocFunctionType-input.mjs",
     "output": "./test/typechecking/JSDocFunctionType-output.mjs"
   },
@@ -66,6 +70,10 @@
   {
     "input": "./test/typechecking/export-input.mjs",
     "output": "./test/typechecking/export-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/function-expression-location-input.mjs",
+    "output": "./test/typechecking/function-expression-location-output.mjs"
   },
   {
     "input": "./test/typechecking/functions-input.mjs",

@@ -6,7 +6,7 @@
  * @property {string} name The scope name.
  */
 var ScopeSpace = function (name) {
-  if (!inspectType(name, "string", 'unnamed function expression', 'name')) {
+  if (!inspectType(name, "string", 'ScopeSpace', 'name')) {
     youCanAddABreakpointHere();
   }
   // Store the name
