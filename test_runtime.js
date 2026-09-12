@@ -45,6 +45,7 @@ const tests = [
     const ret = keys[0] === 1 && keys[1] === 2 && keys[2] === 3;
     return ret;
   },
+  ...(await import('./src-runtime/base64.spec.js'                  )).tests,
   ...(await import('./src-runtime/createType.spec.js'         )).tests,
   ...(await import('./src-runtime/createTypeFromKeyof.spec.js')).tests,
   ...(await import('./src-runtime/resolveType.spec.js'        )).tests,

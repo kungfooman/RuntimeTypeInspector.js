@@ -1,4 +1,5 @@
 export * from './assertMode.js';
+export * from './base64.js';
 export * from './createType.js';
 export * from './createTypeFromIndexedAccess.js';
 export * from './createTypeFromKeyof.js';

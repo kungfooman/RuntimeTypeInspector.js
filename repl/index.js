@@ -15,6 +15,7 @@ import {
 } from '@runtime-type-inspector/transpiler';
 import * as ti  from '@runtime-type-inspector/transpiler';
 import * as rti from '@runtime-type-inspector/runtime';
+import {decodeBase64, encodeBase64} from '@runtime-type-inspector/runtime';
 import {ast2wat} from './ast2wat.js';
 const hashvars = new Map(location.hash.slice(1).split('&').map(_ => _.split('=')));
 if (!hashvars.get('action')) {
@@ -30,8 +31,8 @@ if (!(selectPreferredExpandType instanceof HTMLSelectElement)) {
   throw new Error('This module requires a <select id="action" ...');
 }
 function setHash() {
-  const left = btoa(getLeft());
-  const right = btoa(getRight());
+  const left = encodeBase64(getLeft());
+  const right = encodeBase64(getRight());
   location.hash = `action=${selectAction.value}&left=${left}&right=${right}`;
 }
 // selectPreferredExpandType.value;
@@ -516,10 +517,10 @@ function runRightEditor() {
   eval(src);
 }
 if (hashvars.get('left')) {
-  setLeft(atob(hashvars.get('left')));
+  setLeft(decodeBase64(hashvars.get('left')));
 }
 if (hashvars.get('right')) {
-  setRight(atob(hashvars.get('right')));
+  setRight(decodeBase64(hashvars.get('right')));
 }
 export {
   setHash,
