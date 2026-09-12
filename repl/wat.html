@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WAT Code Runner</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    textarea {
+      width: 100%;
+      height: 200px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 14px;
+      resize: vertical;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #output {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      min-height: 100px;
+      font-family: 'Courier New', Courier, monospace;
+      white-space: pre-wrap;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>WAT Code Runner</h1>
+  <label for="watCode">WAT Code:</label>
+  <textarea id="watCode" placeholder="Paste your WAT code here...">
+(module
+  (func $add (param $a i32) (param $b i32) (result i32)
+    local.get $a
+    local.get $b
+    i32.add)
+  (export "add" (func $add)))
+    </textarea>
+  <label for="jsCode">JavaScript Test Code:</label>
+  <textarea id="jsCode" placeholder="Write JavaScript to test the WebAssembly exports...">
+const {add} = instance.exports;
+const result = instance.exports.add(552, 3);
+output.textContent = `Result: ${result}`;
+    </textarea>
+  <br>
+  <button onclick="runWAT()">Run WAT Code</button>
+  <div id="output"></div>
+  <script src="https://unpkg.com/wabt@1.0.24/index.js"></script>
+  <script>
+    async function runWAT() {
+      const output = document.getElementById('output');
+      output.textContent = 'Running...';
+      try {
+        const watCode = document.getElementById('watCode').value;
+        const jsCode = document.getElementById('jsCode').value;
+        // Initialize WABT
+        const wabt = await WabtModule();
+        // Parse WAT and compile to WASM binary
+        const module = wabt.parseWat('inline', watCode);
+        const binary = module.toBinary({write_debug_names: false}).buffer;
+        // Compile WASM binary to WebAssembly module
+        const wasmModule = await WebAssembly.compile(binary);
+        const instance = await WebAssembly.instantiate(wasmModule, {});
+        // Create a function from the user-provided JS code
+        const testExports = new Function('instance', 'output', jsCode);
+        // Execute the user-provided JS code
+        testExports(instance, output);
+        // Clean up
+        module.destroy();
+      } catch (error) {
+        output.textContent = `Error: ${error.message}`;
+      }
+    }
+  </script>
+</body>
+</html>

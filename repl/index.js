@@ -15,6 +15,7 @@ import {
 } from '@runtime-type-inspector/transpiler';
 import * as ti  from '@runtime-type-inspector/transpiler';
 import * as rti from '@runtime-type-inspector/runtime';
+import {ast2wat} from './ast2wat.js';
 const hashvars = new Map(location.hash.slice(1).split('&').map(_ => _.split('=')));
 if (!hashvars.get('action')) {
   hashvars.set('action', 'typechecking');
@@ -102,6 +103,8 @@ function getCodeForAction() {
       return "const ret = code2ast2code(jsdoc);\nsetRight(ret);";
     case 'ts2js':
       return "const ret = ts2js(jsdoc);\nsetRight(ret);";
+    case 'ast2wat':
+      return 'setRight(ast2wat(parse(getLeft())));';
     case 'expand-type':
       return 'setRight(expandTypeAll(jsdoc));';
   }
@@ -330,6 +333,12 @@ function actionCode2Ast2Code() {
 function actionTS2JS() {
   setRight(ts2js(getLeft()));
 }
+function actionAST2WAT() {
+  const content = getLeft();
+  const ast = parse(content, {sourceType: 'module'});
+  const out = ast2wat(ast);
+  setRight(out);
+}
 async function runAction() {
   const action = getAction();
   switch (action) {
@@ -356,6 +365,9 @@ async function runAction() {
       break;
     case 'ts2js':
       await actionTS2JS();
+      break;
+    case 'ast2wat':
+      await actionAST2WAT();
       break;
     case 'eval':
       eval(aceEditorLeft.getValue());
@@ -387,7 +399,7 @@ async function insertTypes() {
   aceEditorRight.clearSelection(); // setValue() selects everything, so unselect it now
 }
 /**
- * @typedef {'typechecking'|'code2ast2code'|'ast'|'ast-annotator'|'ast-ts'|'jsdoc'|'eval'|'expand-type'} Action
+ * @typedef {'typechecking'|'code2ast2code'|'ast'|'ast-annotator'|'ast-ts'|'jsdoc'|'eval'|'expand-type'|'ast2wat'} Action
  */
 /** @returns {Action} */
 const getAction = () => selectAction.value;

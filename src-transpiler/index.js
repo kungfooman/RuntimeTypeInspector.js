@@ -26,4 +26,5 @@ export * from './parserOptions.js';
 export * from './simplifyType.js';
 export * from './Stringifier.js';
 export * from './trimEndSpaces.js';
+export * from './WATConverter.js';
 export * from './ts2js.js';
