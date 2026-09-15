@@ -58,6 +58,10 @@ function replaceType(type, search, replace, warn) {
       }
       return type;
     }
+    case 'rest': {
+      type.annotation = replaceType(type.annotation, search, replace, warn);
+      return type;
+    }
     case 'indexedAccess':
     case 'record':
     case 'map':

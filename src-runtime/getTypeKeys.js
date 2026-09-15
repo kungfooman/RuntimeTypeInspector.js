@@ -46,9 +46,22 @@ function getTypeKeys(expect, warn) {
       object = typedefs[object];
     }
     const indexKeys = getTypeKeys(index, warn);
+    if (!indexKeys) {
+      warn(`Couldn't get keys for index type`, index);
+      return;
+    }
+    if (!object || !object.properties) {
+      warn(`Couldn't get keys for type - missing object properties`, expect);
+      return;
+    }
     const arr = [];
     for (const indexKey of indexKeys) {
-      arr.push(object.properties[indexKey]);
+      const prop = object.properties[indexKey];
+      if (prop === undefined) {
+        warn(`Property '${indexKey}' does not exist on type`, object);
+        continue;
+      }
+      arr.push(prop);
     }
     // console.log({object, index, indexKeys, arr});
     return arr;
