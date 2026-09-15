@@ -1,0 +1,585 @@
+@font-face {
+  font-family: "ui-font-solid";
+  src: url("https://playcanvas.com/static-assets/fonts/uifont-solid.eot");
+  src: url("https://playcanvas.com/static-assets/fonts/uifont-solid.eot?#iefix") format("embedded-opentype"), url("https://playcanvas.com/static-assets/fonts/uifont-solid.ttf") format("truetype"), url("https://playcanvas.com/static-assets/fonts/uifont-solid.svg") format("svg");
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Proxima Nova Regular";
+  src: url("https://playcanvas.com/static-assets/fonts/proxima_nova_regular.eot");
+  src: url("https://playcanvas.com/static-assets/fonts/proxima_nova_regular.eot?#iefix") format("embedded-opentype"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_regular.woff2") format("woff2"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_regular.woff") format("woff"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Proxima Nova Light";
+  src: url("https://playcanvas.com/static-assets/fonts/proxima_nova_light.eot");
+  src: url("https://playcanvas.com/static-assets/fonts/proxima_nova_light.eot?#iefix") format("embedded-opentype"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_light.woff2") format("woff2"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_light.woff") format("woff"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_light.ttf") format("truetype");
+  font-weight: 200;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Proxima Nova Bold";
+  src: url("https://playcanvas.com/static-assets/fonts/proxima_nova_bold.eot");
+  src: url("https://playcanvas.com/static-assets/fonts/proxima_nova_bold.eot?#iefix") format("embedded-opentype"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_bold.woff2") format("woff2"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_bold.woff") format("woff"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_bold.ttf") format("truetype");
+  font-weight: bold;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Proxima Nova Thin";
+  src: url("https://playcanvas.com/static-assets/fonts/proxima_nova_thin_t.eot");
+  src: url("https://playcanvas.com/static-assets/fonts/proxima_nova_thin_t.eot?#iefix") format("embedded-opentype"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_thin_t.woff2") format("woff2"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_thin_t.woff") format("woff"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_thin_t.ttf") format("truetype");
+  font-weight: 100;
+  font-style: normal;
+}
+.font-thin {
+  font-family: "Proxima Nova Thin", "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-weight: 100;
+  font-style: normal;
+}
+
+.font-light {
+  font-family: "Proxima Nova Light", "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-weight: 200;
+  font-style: normal;
+}
+
+.font-regular {
+  font-family: "Proxima Nova Regular", "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-weight: normal;
+  font-style: normal;
+}
+
+.font-bold {
+  font-family: "Proxima Nova Bold", "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-weight: bold;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-icon {
+  font-family: "ui-font-solid";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-smoothing: antialiased;
+}
+
+a {
+  color: #324447;
+  text-decoration: none;
+}
+
+body {
+  font-family: "Proxima Nova Regular", "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  padding: 0;
+  margin: 0;
+  color: #324447;
+}
+body > header {
+  height: 168px;
+  background-image: url(../images/playcanvas-header-background.png);
+  background-position: center;
+  background-color: #F16524;
+  color: rgba(255, 255, 255, 0.75);
+}
+body > header > .header-width {
+  width: 1070px;
+  margin: 0 auto;
+}
+body > header > nav {
+  overflow: hidden;
+  font-family: "Proxima Nova Regular", "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 16px;
+}
+body > header > nav > .header-title {
+  float: left;
+  display: block;
+}
+body > header > nav > .header-title > img {
+  padding: 24px 0px;
+  vertical-align: middle;
+}
+body > header > nav > ul {
+  float: right;
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+}
+body > header > nav > ul > li {
+  float: left;
+  margin: 0;
+  padding: 0;
+  border-bottom: 2px solid transparent;
+}
+body > header > nav > ul > li.active, body > header > nav > ul > li:hover {
+  border-bottom-color: rgba(255, 255, 255, 0.75);
+}
+body > header > nav > ul > li.active > a, body > header > nav > ul > li:hover > a {
+  font-weight: bold;
+  color: #fff;
+}
+body > header > nav > ul > li > a {
+  line-height: 48px;
+  float: left;
+  padding: 0 10px;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.75);
+}
+body > header > .header-content {
+  overflow: hidden;
+  padding: 20px 0px;
+}
+body > header > .header-content > h1 {
+  color: rgb(255, 255, 255);
+  font-size: 24px;
+  float: left;
+}
+body > header > .header-content > h1 > .font-icon {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 50px;
+  font-weight: normal;
+  vertical-align: text-top;
+  line-height: 18px;
+  margin-right: 10px;
+}
+body > header > .header-content > .search {
+  float: right;
+  margin: 10px 0 0 0;
+  height: 24px;
+  width: 30%;
+  padding: 5px 20px;
+  background-color: rgba(0, 0, 0, 0);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 14px;
+}
+body > header > .header-content > .search::-webkit-input-placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+body > header > .header-content > .search::-moz-input-placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+body > header > .header-content > .search::-ms-input-placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+body > header > .header-content > .search::input-placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+body > header > .header-content > .search:focus, body > header > .header-content > .search:hover {
+  outline: 0;
+  border-color: rgb(255, 255, 255);
+}
+body > header > .header-content > .search:focus {
+  color: #fff;
+}
+
+code {
+  overflow: auto;
+}
+
+@media (max-width: 1200px) {
+  body > header > .header-width {
+    width: auto;
+    margin: 0 16px;
+  }
+}
+@media (max-width: 900px) {
+  body > header > nav.header-width > ul > li > a {
+    padding: 0 16px;
+  }
+}
+@media (max-width: 768px) {
+  body > header > nav.header-width > .header-title {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  body > header {
+    height: 128px;
+  }
+  body > header > nav.header-width {
+    white-space: nowrap;
+    float: none;
+    margin: 0;
+  }
+  body > header > nav.header-width > ul {
+    float: none;
+    margin: 0;
+    text-align: center;
+    font-size: 0;
+  }
+  body > header > nav.header-width > ul > li {
+    width: auto;
+    float: none;
+    display: inline-block;
+  }
+  body > header > nav.header-width > ul > li > a {
+    width: auto;
+    padding: 0 8px;
+    font-size: 14px;
+  }
+  body > header > .header-content {
+    margin: 0;
+  }
+  body > header > .header-content > h1 {
+    display: none;
+  }
+  body > header > .header-content > .search {
+    display: block;
+    float: none;
+    width: 50%;
+    min-width: 252px;
+    margin: 0 auto;
+  }
+}
+@media (max-width: 480px) {
+  body > header > nav.header-width > ul > li > a {
+    padding: 0 6px;
+  }
+}
+body > .container {
+  margin: 0 auto;
+  width: 1070px;
+  overflow: hidden;
+}
+body > .container > .sidebarToggle {
+  display: none;
+}
+body > .container > nav.sidebar {
+  position: fixed;
+  top: 168px;
+  left: 24px;
+  bottom: 0px;
+  width: 240px;
+  box-shadow: rgba(0, 0, 0, 0.2) 10px 0px 10px -10px;
+}
+body > .container > nav.sidebar > .sidebarFilter {
+  position: relative;
+  margin-top: 8px;
+  background-color: #fff;
+}
+body > .container > nav.sidebar > .sidebarFilter > #filter-input {
+  width: calc(100% - 20px);
+  font-size: 14px;
+  padding: 8px;
+  margin: 0;
+}
+body > .container > nav.sidebar > .sidebarFilter > .clear {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 36px;
+  line-height: 36px;
+  text-align: center;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+  display: none;
+}
+body > .container > nav.sidebar > .sidebarFilter > .clear.active {
+  display: block;
+}
+body > .container > nav.sidebar > ul {
+  position: absolute;
+  top: 52px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: auto;
+  height: auto;
+  list-style: none;
+  padding: 0 0 16px 16px;
+  margin: 0 0 0 -16px;
+  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+body > .container > nav.sidebar > ul > li {
+  position: relative;
+  padding: 0;
+}
+body > .container > nav.sidebar > ul > li:hover:before, body > .container > nav.sidebar > ul > li.active:before {
+  content: "\e113";
+  position: absolute;
+  left: -20px;
+  width: 16px;
+  line-height: 32px;
+  text-align: center;
+  font-family: "ui-font-solid";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-smoothing: antialiased;
+}
+body > .container > nav.sidebar > ul > li:hover > a {
+  color: #324447;
+}
+body > .container > nav.sidebar > ul > li.active:before {
+  color: #F16524;
+}
+body > .container > nav.sidebar > ul > li.active > a {
+  color: #324447;
+  font-weight: bold;
+}
+body > .container > nav.sidebar > ul > li > a {
+  color: #5b7073;
+  display: block;
+  line-height: 32px;
+  font-size: 14px;
+}
+body > .container > nav.sidebar .hidden {
+  display: none;
+}
+body > .container > main {
+  margin: 0 0 0 240px;
+  padding: 16px 0 16px 16px;
+  line-height: 24px;
+  color: #324447;
+}
+@media (max-width: 1200px) {
+  body > .container > main {
+    margin: 0 0 0 264px;
+  }
+}
+body > .container > main.full-width {
+  width: 100%;
+}
+body > .container > main > h1:first-child {
+  margin-top: 0;
+  padding-top: 38px;
+  padding-bottom: 16px;
+}
+body > .container > main > h1 {
+  margin-top: 58px;
+}
+body > .container > main h1, body > .container > main h2, body > .container > main h3, body > .container > main h4, body > .container > main h5 {
+  font-family: "Proxima Nova Bold", "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-weight: bold;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin-bottom: 0px;
+}
+body > .container > main h1 {
+  font-size: 36px;
+}
+body > .container > main h2 {
+  font-size: 28px;
+  border-bottom: 1px solid lightgrey;
+  margin-bottom: 24px;
+  margin-top: 38px;
+  padding-bottom: 16px;
+}
+body > .container > main h3 {
+  font-size: 22px;
+}
+body > .container > main h4 {
+  font-size: 12px;
+}
+body > .container > main h5 {
+  font-size: 10px;
+}
+body > .container > main a {
+  font-size: 14px;
+  color: #0099EC;
+}
+body > .container > main a:hover {
+  text-decoration: underline;
+}
+body > .container > main p {
+  font-size: 14px;
+  margin: 0;
+}
+body > .container > main ul {
+  font-size: 14px;
+}
+body > .container > main hr {
+  border: 1px solid #F0F0F0;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+body > .container > main img {
+  display: block;
+  margin: 0 auto;
+  max-width: 640px;
+}
+body > .container > main table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0px;
+}
+body > .container > main table.properties td:first-child {
+  width: 25%;
+}
+body > .container > main table th {
+  font-family: "Proxima Nova Bold", "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-weight: bold;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  border-top: 1px solid #F0F0F0;
+  border-bottom: 1px solid #F0F0F0;
+  font-size: 14px;
+}
+body > .container > main table td {
+  border-top: 1px solid #F0F0F0;
+  border-bottom: 1px solid #F0F0F0;
+  font-size: 14px;
+  padding: 8px 0;
+  vertical-align: text-top;
+  max-width: 500px;
+}
+body > .container > main pre {
+  font-size: 12px;
+  line-height: 1.5em;
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+  overflow: hidden;
+}
+body > .container > main iframe {
+  width: 640px;
+  height: 480px;
+  max-width: 100%;
+  border: none;
+}
+body > .container > main .alert-info {
+  border: 1px solid #eee;
+  background-color: #ddd;
+  color: #ccc;
+}
+body > .container > main .readonly {
+  font-family: "Proxima Nova Bold", "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-weight: bold;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin-left: 5px;
+  font-size: 14px;
+}
+body > .container > main .extends {
+  font-style: italic;
+  font-size: 12px;
+  margin-top: -10px;
+  margin-bottom: 16px;
+}
+body > .container > main .methodname {
+  font-size: 22px;
+}
+body > .container > main .property {
+  font-family: "Proxima Nova Bold", "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-weight: bold;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 14px;
+  padding-right: 8px;
+}
+
+/* Large devices (large desktops, 1200px and up) */
+@media (max-width: 1200px) {
+  body > .container {
+    width: auto;
+    margin: 0 8px;
+  }
+}
+@media (max-width: 768px) {
+  body > .container {
+    margin: 0;
+  }
+  body > .container > .sidebarToggle {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 148px;
+    height: 48px;
+    line-height: 52px;
+    color: #fff;
+    background-color: #F16524;
+    text-transform: uppercase;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: left 200ms;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  body > .container > .sidebarToggle.active {
+    left: -148px;
+  }
+  body > .container > .sidebarToggle > span {
+    float: left;
+    width: 48px;
+    line-height: 46px;
+    font-family: "ui-font-solid";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-smoothing: antialiased;
+    font-size: 32px;
+    font-weight: normal;
+    text-align: center;
+  }
+  body > .container > .sidebarToggle > span:before {
+    content: "\e186";
+  }
+  body > .container > nav.sidebar {
+    left: -240px;
+    background-color: #fff;
+    transition: left 200ms;
+  }
+  body > .container > nav.sidebar.active {
+    left: 0;
+  }
+  body > .container > nav.sidebar > .sidebarFilter {
+    margin-left: 8px;
+    margin-right: 8px;
+  }
+  body > .container > nav.sidebar > ul {
+    margin-left: -8px;
+  }
+  body > .container > main {
+    margin: 0;
+    padding: 16px 16px 64px;
+  }
+}
+@media (max-width: 480px) {
+  body > .container > .sidebarToggle {
+    left: 0;
+    right: 0;
+    width: auto;
+    transition: none;
+  }
+  body > .container > .sidebarToggle.active {
+    left: 0;
+  }
+  body > .container > .sidebarToggle.active > span:before {
+    content: "\e436";
+  }
+  body > .container > nav.sidebar.active {
+    width: calc(100% - 16px);
+    left: 0;
+    padding: 0 8px;
+  }
+  body > .container > nav.sidebar.active > ul {
+    left: 8px;
+    right: 8px;
+    bottom: 56px;
+    padding-bottom: 0;
+  }
+  body > .container > nav.sidebar > .sidebarFilter {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  body > .container > nav.sidebar > ul {
+    margin-left: -16px;
+  }
+}

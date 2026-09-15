@@ -1,17 +1,12 @@
-/*
 const catharsis = require("catharsis");
 const originalParse = catharsis.parse;
-catharsis.parse = function (str) {
-  // console.log("catharsis.parse-ts", str);
-  //if (str[0] == '[') {
-  //  return originalParse('Array<*>');
-  //}
+// Fallback for modern TS types catharsis can't handle (tuple, Array<>, Record<>, import() etc.)
+// Catharsis itself already warns + returns '*', this just ensures plugin is loaded
+// and could be extended to use stringifyType/expandType for docs (issue #72)
+catharsis.parse = function (str, opts) {
   try {
-    return originalParse(...arguments);
+    return originalParse.call(this, str, opts);
   } catch (e) {
-    console.log("ERROR PARSING ", str);
-    return originalParse('any');
-    //return originalParse('any');
+    return originalParse.call(this, 'any', opts);
   }
 };
-*/
