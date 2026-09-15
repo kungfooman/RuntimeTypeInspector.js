@@ -1,5 +1,6 @@
-import {WATConverter} from "../src-transpiler/WATConverter.js";
+import {WATConverter} from "@runtime-type-inspector/transpiler";
 export function ast2wat(ast) {
   const converter = new WATConverter();
   return converter.toSource(ast);
 }
+

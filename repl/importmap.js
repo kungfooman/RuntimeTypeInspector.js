@@ -49,8 +49,10 @@ const imports = {
   ...reactMin,
 };
 if (location.host.includes('runtimetypeinspector.org') || location.port === '7000') {
-  imports['@runtime-type-inspector/runtime'   ] = './node_modules/@runtime-type-inspector/runtime/index.mjs';
-  imports['@runtime-type-inspector/transpiler'] = './node_modules/@runtime-type-inspector/transpiler/index.mjs';
+  //imports['@runtime-type-inspector/runtime'   ] = './node_modules/@runtime-type-inspector/runtime/index.mjs';
+  //imports['@runtime-type-inspector/transpiler'] = './node_modules/@runtime-type-inspector/transpiler/index.mjs';
+  imports['@runtime-type-inspector/runtime'   ] = '//repo.runtimetypeinspector.org/src-runtime/index.js';
+  imports['@runtime-type-inspector/transpiler'] = '//repo.runtimetypeinspector.org/src-transpiler/index.js';
 }
 const importmap = document.createElement("script");
 importmap.type = "importmap";
