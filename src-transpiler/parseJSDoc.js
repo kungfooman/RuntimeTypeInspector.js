@@ -49,16 +49,16 @@ function parseJSDoc(src, expandType = expandTypeDepFree) {
     }
     // Strip the rest (either leftover of optional value or description)
     name = name.split(' ')[0].split('=')[0].trim();
-    const simplifiedType = annotateOptional(type, optional);
+    const annotatedType = annotateOptional(type, optional);
     // Turn "options.stats[].unitsName" into ['options', 'stats', 'unitsName'].
     const parts = name.split(/[\[\]]*\./);
     let properties = params;
     for (const part of parts) {
       const toptype = properties[part];
       if (!toptype) {
-        // No toptype means we resolved as far as possible, now we can add `simplifiedType`.
+        // No toptype means we resolved as far as possible, now we can add `annotatedType`.
         console.assert(part === parts.at(-1), 'Current part and last part should be the same.');
-        properties[part] = simplifiedType;
+        properties[part] = annotatedType;
       } else if (toptype.type === "union") {
         const typeObject = toptype.members.find(_ => _?.type === 'object');
         properties = typeObject.properties;
@@ -70,7 +70,7 @@ function parseJSDoc(src, expandType = expandTypeDepFree) {
       } else {
         console.warn(
           "parseJSDoc> Skipping @param, unseen syntax detected. Please check if your JSDoc is valid or open an issue about this!",
-          {src, toptype, parts, simplifiedType}
+          {src, toptype, parts, annotatedType}
         );
       }
     }

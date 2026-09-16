@@ -12,8 +12,8 @@ function parseJSDocSetter(src, expandType = expandTypeDepFree) {
   if (matches.length === 1) {
     const match = matches[0];
     const type = expandType(match[1]);
-    const simplifiedType = annotateOptional(type, /* optional */ false);
-    return simplifiedType;
+    const annotatedType = annotateOptional(type, /* optional */ false);
+    return annotatedType;
   }
 }
 export {parseJSDocSetter};
