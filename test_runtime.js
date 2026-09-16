@@ -52,7 +52,7 @@ const tests = [
   ...(await import('./src-runtime/validateTemplateLiteral.spec.js')).tests,
   ...(await import('./src-runtime/inspectIndexedAccess.spec.js'   )).tests,
   ...(await import('./src-runtime/stringifyType.spec.js'        )).tests,
-  ...(await import('./src-transpiler/simplifySource.spec.js')  ).tests,
+  ...(await import('./src-transpiler/simplifyType.spec.js')  ).tests,
   //() => validateUnion(null,      {type: 'union', members: ['a', 2, null]       }, 'loc', 'name', true, warn),
   //() => validateUnion(undefined, {type: 'union', members: ['str', 1, false]    }, 'loc', 'name', true, warn) === false,
 ];

@@ -5,7 +5,7 @@ import {parseJSDoc         } from './parseJSDoc.js';
 import {parseJSDocSetter   } from './parseJSDocSetter.js';
 import {parseJSDocTemplates} from './parseJSDocTemplates.js';
 import {parseJSDocTypedef  } from './parseJSDocTypedef.js';
-import {simplifySource     } from './simplifySource.js';
+import {simplifyTypeToSource} from './simplifyTypeToSource.js';
 import {statReset          } from './stat.js';
 import {Stringifier        } from './Stringifier.js';
 /** @typedef {import('@babel/types').Node              } Node               */
@@ -527,7 +527,7 @@ class Asserter extends Stringifier {
                   this.warn('Only Identifier case handled right now');
                   continue;
                 }
-                const t = JSON.stringify(simplifySource(type.elementType), null, 2).replaceAll('\n', '\n' + spaces);
+                const t = simplifyTypeToSource(type.elementType).replaceAll('\n', '\n' + spaces);
                 newlineBeforeFirst();
                 if (templates) {
                   out += `${spaces}if (!inspectTypeWithTemplates(${element.name}, ${t}, '${loc}', '${nameFancy}', rtiTemplates)) {\n`;
@@ -565,7 +565,7 @@ class Asserter extends Stringifier {
                     this.warn("missing subtype information in JSDoc");
                     continue;
                   }
-                  const t = JSON.stringify(simplifySource(subType), null, 2).replaceAll('\n', '\n' + spaces);
+                  const t = simplifyTypeToSource(subType).replaceAll('\n', '\n' + spaces);
                   newlineBeforeFirst();
                   if (templates) {
                     out += `${spaces}if (!inspectTypeWithTemplates(${keyName}, ${t}, '${loc}', '${nameFancy}', rtiTemplates)) {\n`;
@@ -591,7 +591,7 @@ class Asserter extends Stringifier {
           continue;
         }
       }
-      let t = JSON.stringify(simplifySource(type), null, 2).replaceAll('\n', '\n' + spaces);
+      let t = simplifyTypeToSource(type).replaceAll('\n', '\n' + spaces);
       if (type === 'this') {
         const classDecl = this.findParentOfType(node, 'ClassDeclaration');
         if (!classDecl?.id) {
@@ -775,7 +775,7 @@ class Asserter extends Stringifier {
     let out = '';
     for (const name in this.typedefs) {
       const typedef = this.typedefs[name];
-      const json = JSON.stringify(simplifySource(typedef), null, 2);
+      const json = simplifyTypeToSource(typedef);
       out += `registerTypedef('${name}', ${json});\n`;
     }
     const code = this.toSource(program) + '\n';

@@ -10,44 +10,44 @@
  * @param {string | DocType | number | boolean} type - The type.
  * @returns {string | DocType | number | boolean} The simplified type.
  */
-function simplifySource(type) {
+function simplifyType(type) {
   if (!(type instanceof Object)) {
     return type;
   }
   const out = {...type};
   if (out.properties && Object.keys(out.properties).length) {
     out.properties = Object.fromEntries(
-      Object.entries(out.properties).map(([k, v]) => [k, simplifySource(v)])
+      Object.entries(out.properties).map(([k, v]) => [k, simplifyType(v)])
     );
   }
   if (out.indexSignatures && Array.isArray(out.indexSignatures)) {
-    out.indexSignatures = out.indexSignatures.map(simplifySource);
+    out.indexSignatures = out.indexSignatures.map(simplifyType);
   }
   if (out.type === 'object' && out.properties && Object.keys(out.properties).length === 0) {
     delete out.properties;
   }
   if (out.type === 'union' && out.members) {
-    out.members = out.members.map(simplifySource);
+    out.members = out.members.map(simplifyType);
   }
   if (out.type === 'array' && out.elementType) {
-    out.elementType = simplifySource(out.elementType);
+    out.elementType = simplifyType(out.elementType);
   }
   if (out.type === 'tuple' && out.elements) {
-    out.elements = out.elements.map(simplifySource);
+    out.elements = out.elements.map(simplifyType);
   }
   if (out.type === 'promise' && out.elementType) {
-    out.elementType = simplifySource(out.elementType);
+    out.elementType = simplifyType(out.elementType);
   }
   if (out.type === 'record') {
-    if (out.key) out.key = simplifySource(out.key);
-    if (out.val) out.val = simplifySource(out.val);
+    if (out.key) out.key = simplifyType(out.key);
+    if (out.val) out.val = simplifyType(out.val);
   }
   if (out.type === 'typeof' && out.argument) {
-    out.argument = simplifySource(out.argument);
+    out.argument = simplifyType(out.argument);
   }
   if (out.type === 'object' && !out.properties && !out.indexSignatures && !out.optional) {
     return 'object';
   }
   return out;
 }
-export {simplifySource};
+export {simplifyType};
