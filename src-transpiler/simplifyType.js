@@ -1,31 +1,52 @@
+import {mapValues} from './mapValues.js';
 /**
  * @typedef DocType
  * @property {boolean} optional - Type is optional.
  */
 /**
- * @param {string | DocType} type - The type.
- * @param {boolean} optional - Optionality
- * @returns {string | DocType} The simplified type.
+ * Recursively clones and simplifies a type for emission into source code.
+ * Strips empty `properties` and collapses empty `object` types to the bare
+ * string `'object'`.  Numbers/booleans (literal types) pass through.
+ * Non-destructive — the original type tree is never mutated.
+ * @param {string | DocType | number | boolean} type - The type.
+ * @returns {string | DocType | number | boolean} The simplified type.
  */
-function simplifyType(type, optional) {
-  // If it's already an object, just set optionality.
-  if (type instanceof Object) {
-    type.optional = optional;
-  } else if (typeof type === 'string') {
-    type = type.trim();
-    if (type !== 'object' && type !== 'object[]' && type !== 'union' && !optional) {
-      // console.log("simplify", type);
-      return type;
+function simplifyType(type) {
+  if (!(type instanceof Object)) {
+    return type;
+  }
+  const out = {...type};
+  if (out.properties) {
+    out.properties = mapValues(out.properties, simplifyType);
+    if (out.type === 'object' && !Object.keys(out.properties).length) {
+      delete out.properties;
     }
-    type = {type, optional};
-  } else {
-    debugger;
-    console.warn("simplifyType> neither object nor string for type", type);
   }
-  if (type.type === 'object' && type.properties && Object.keys(type.properties).length === 0) {
-    delete type.properties;
-    // console.log("delete empty", type);
+  if (out.indexSignatures && Array.isArray(out.indexSignatures)) {
+    out.indexSignatures = out.indexSignatures.map(simplifyType);
   }
-  return type;
+  if (out.type === 'union' && out.members) {
+    out.members = out.members.map(simplifyType);
+  }
+  if (out.type === 'array' && out.elementType) {
+    out.elementType = simplifyType(out.elementType);
+  }
+  if (out.type === 'tuple' && out.elements) {
+    out.elements = out.elements.map(simplifyType);
+  }
+  if (out.type === 'promise' && out.elementType) {
+    out.elementType = simplifyType(out.elementType);
+  }
+  if (out.type === 'record') {
+    if (out.key) out.key = simplifyType(out.key);
+    if (out.val) out.val = simplifyType(out.val);
+  }
+  if (out.type === 'typeof' && out.argument) {
+    out.argument = simplifyType(out.argument);
+  }
+  if (out.type === 'object' && !out.properties && !out.indexSignatures && !out.optional) {
+    return 'object';
+  }
+  return out;
 }
 export {simplifyType};

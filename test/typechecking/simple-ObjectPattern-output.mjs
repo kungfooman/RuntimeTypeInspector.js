@@ -15,7 +15,6 @@ function fetchSomething(url, {
   }
   if (!inspectType(arguments[1], {
     "type": "object",
-    "optional": false,
     "properties": {
       "maxRetries": {
         "type": "number",
@@ -28,15 +27,13 @@ function fetchSomething(url, {
       "headers": {
         "type": "union",
         "members": [
-          {
-            "type": "object",
-            "properties": {}
-          },
+          "object",
           "null"
         ],
         "optional": true
       }
-    }
+    },
+    "optional": false
   }, 'fetchSomething', 'options')) {
     youCanAddABreakpointHere();
   }
