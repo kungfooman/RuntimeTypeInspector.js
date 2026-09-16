@@ -1,5 +1,5 @@
 import {extractNameAndOptionality} from './extractNameAndOptionality.js';
-import {simplifyType             } from './simplifyType.js';
+import {annotateOptional     } from './annotateOptional.js';
 /**
  * Extracts the content of a string that is delimited by curly braces.
  * @example
@@ -69,7 +69,7 @@ function parseJSDocTypedef(typedefs, warn, comment, expandType) {
       const propType = expandType(content);
       const [name, optional] = extractNameAndOptionality(rest);
       // console.log({name, optional, propType});
-      const finalType = simplifyType(propType, optional);
+      const finalType = annotateOptional(propType, optional);
       if (lastTypedef?.type === 'object') {
         lastTypedef.properties[name] = finalType;
       } else {

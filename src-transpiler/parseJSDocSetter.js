@@ -1,5 +1,5 @@
 import {expandTypeDepFree} from "./expandTypeDepFree.js";
-import {simplifyType} from "./simplifyType.js";
+import {annotateOptional} from "./annotateOptional.js";
 /**
  * @param {string} src - JSDoc comment of the setter.
  * @param {Function} expandType - The expandType function.
@@ -12,7 +12,7 @@ function parseJSDocSetter(src, expandType = expandTypeDepFree) {
   if (matches.length === 1) {
     const match = matches[0];
     const type = expandType(match[1]);
-    const simplifiedType = simplifyType(type, /* optional */ false);
+    const simplifiedType = annotateOptional(type, /* optional */ false);
     return simplifiedType;
   }
 }

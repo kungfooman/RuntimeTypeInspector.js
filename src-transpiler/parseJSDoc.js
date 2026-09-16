@@ -1,5 +1,5 @@
 import {expandTypeDepFree} from "./expandTypeDepFree.js";
-import {simplifyType} from "./simplifyType.js";
+import {annotateOptional} from "./annotateOptional.js";
 /**
  * @typedef {ReturnType<typeof parseJSDoc>} ParseJSDocReturnType
  */
@@ -49,7 +49,7 @@ function parseJSDoc(src, expandType = expandTypeDepFree) {
     }
     // Strip the rest (either leftover of optional value or description)
     name = name.split(' ')[0].split('=')[0].trim();
-    const simplifiedType = simplifyType(type, optional);
+    const simplifiedType = annotateOptional(type, optional);
     // Turn "options.stats[].unitsName" into ['options', 'stats', 'unitsName'].
     const parts = name.split(/[\[\]]*\./);
     let properties = params;
