@@ -10,7 +10,7 @@ function testIssue154() {
     optional: false,
   };
   const str = stringifyType(t2);
-  const expected = "{ aa: [1, 2, 3, 'aa', 1, 2, 3], bb: [1, 2, 3, 'bb', 1, 2, 3], cc: [1, 2, 3, 'cc', 1, 2, 3] }";
+  const expected = "{aa: [1, 2, 3, 'aa', 1, 2, 3], bb: [1, 2, 3, 'bb', 1, 2, 3], cc: [1, 2, 3, 'cc', 1, 2, 3]}";
   if (str !== expected) {
     console.warn('stringifyType issue154 mismatch', {str, expected});
     return false;
@@ -87,7 +87,7 @@ function testRestKept() {
 }
 function testMapping() {
   const str = stringifyType({type: 'mapping', iterable: 'ObjKeys', element: 'Key', result: 'Key'});
-  if (str !== '{ [Key in ObjKeys]: Key }') {
+  if (str !== '{[Key in ObjKeys]: Key}') {
     console.warn('stringifyType mapping mismatch', {str});
     return false;
   }

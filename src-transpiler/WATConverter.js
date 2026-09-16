@@ -43,18 +43,40 @@ const CMP_OPERATORS = ['<', '<=', '>', '>=', '==', '!='];
  * Class for converting a JavaScript AST into WebAssembly Text (WAT).
  */
 class WATConverter extends Stringifier {
-  /** @type {'f32'|'f64'|'i32'|'i64'} */
+  /**
+   * Current numeric WAT type for emitted operations.
+   * @type {'f32'|'f64'|'i32'|'i64'}
+   */
   currentType = 'f32';
-  /** @type {number[]} */
+  /**
+   * Stack of enclosing loop labels used as break/continue targets.
+   * @type {Array<{exit: string, top: string, updateSrc: string}>}
+   */
   loops = [];
+  /**
+   * Counter for unique loop label names.
+   * @type {number}
+   */
   loopCounter = 0;
-  /** @type {Object<string, {offset: number, values: number[], isObject: boolean, keys?: Map<string, number>}>} */
+  /**
+   * Linear-memory array allocations by variable name.
+   * @type {Object<string, {offset: number, values: number[], isObject: boolean, keys?: Map<string, number>}>}
+   */
   arrays = {};
-  /** @type {Object<string, {fields: string[], offsets: Object<string, number>, defaults: Object<string, Node>, methods: Set<string>, size: number}>} */
+  /**
+   * Declared classes by name, each with its instance fields, per-field byte offsets, methods and total size.
+   * @type {Object<string, {fields: string[], offsets: Object<string, number>, defaults: Object<string, Node>, methods: Set<string>, size: number}>}
+   */
   classes = {};
-  /** @type {Object<string, string>} */
+  /**
+   * Instance variable names mapped to their class names.
+   * @type {Object<string, string>}
+   */
   instances = {};
-  /** @type {string|null} */
+  /**
+   * Name of the class currently being converted, if any.
+   * @type {string|null}
+   */
   currentClass = null;
   /**
    * Converts a Babel AST node to WAT source.
@@ -82,7 +104,7 @@ class WATConverter extends Stringifier {
     return out;
   }
   /**
-   * Internal method to convert a node to WAT.
+   * Dispatches a node to its handler method, emitting a warning comment for unhandled types.
    * @param {Node} node - The Babel AST node.
    * @returns {string} WAT representation of the node.
    */
@@ -299,7 +321,7 @@ class WATConverter extends Stringifier {
     });
   }
   /**
-   * Registers a single class declaration (fields, offsets, defaults, methods).
+   * Scans one class for instance fields, defaults and methods and stores its memory layout.
    * @param {import("@babel/types").ClassDeclaration} node - The class declaration.
    */
   registerClass(node) {
@@ -643,7 +665,7 @@ class WATConverter extends Stringifier {
     return out;
   }
   /**
-   * Collects the names of all `let`-declared locals inside a function body.
+   * Collects the names of all variables declared inside a function body.
    * @param {import("@babel/types").BlockStatement} body - The function body.
    * @returns {string[]} Names of the declared locals.
    */
@@ -726,7 +748,7 @@ class WATConverter extends Stringifier {
     return out;
   }
   /**
-   * Converts body statements shared by loops and conditionals.
+   * Converts a loop/conditional body, accepting either a block or a single statement.
    * @param {Node} body - The body (BlockStatement or single statement).
    * @returns {string} WAT source of the body.
    */
@@ -781,7 +803,7 @@ class WATConverter extends Stringifier {
   }
   /**
    * Removes the innermost loop from the stack.
-   * @returns {{exit: string, top: string, cont: string}|undefined} The popped loop labels.
+   * @returns {{exit: string, top: string, updateSrc: string}|undefined} The popped loop labels.
    */
   popLoop() {
     return this.loops.pop();
@@ -1155,7 +1177,7 @@ class WATConverter extends Stringifier {
     return `${this.spaces}(i32.const ${index})\n`;
   }
   /**
-   * Converts an arbitrary index expression to an i32 address offset.
+   * Truncates a numeric index expression to i32, passing i32 values through.
    * @param {Node} expr - The index expression.
    * @returns {string} WAT source that pushes an i32 index.
    */
@@ -1208,7 +1230,7 @@ class WATConverter extends Stringifier {
     return isThis ? 'this' : (objectNode.type === 'Identifier' ? objectNode.name : null);
   }
   /**
-   * Resolves the class of an instance object from source info.
+   * Finds the class of an instance via `this`, a tracked `new` variable, or a unique field-name match.
    * @param {Node} objectNode - The member/call object expression.
    * @param {string} propertyName - The accessed field or method name.
    * @returns {string|null} The class name.
@@ -1231,7 +1253,7 @@ class WATConverter extends Stringifier {
     return clsNames.length === 1 ? clsNames[0] : null;
   }
   /**
-   * Resolves the class of an instance on whose method a call is dispatched.
+   * Finds the class of the object a method call is dispatched on.
    * @param {Node} objectNode - The call object expression.
    * @param {string} methodName - The called method name.
    * @returns {string|null} The class name.
@@ -1371,7 +1393,7 @@ class WATConverter extends Stringifier {
     return out;
   }
   /**
-   * Converts a LogicalExpression node to WAT.
+   * Lowers `&&`/`||` to an if/then/else that short-circuits on the left operand.
    * @param {import("@babel/types").LogicalExpression} node - The Babel AST node.
    * @returns {string} WAT representation of the node.
    */
@@ -1399,7 +1421,7 @@ class WATConverter extends Stringifier {
     return out;
   }
   /**
-   * Converts an ExpressionStatement node to WAT.
+   * Converts an ExpressionStatement node to WAT, dropping unused values.
    * @param {import("@babel/types").ExpressionStatement} node - The Babel AST node.
    * @returns {string} WAT representation of the node.
    */
