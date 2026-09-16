@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>catharsis vs RTI comparison</title>
+<style>
+body{font-family:system-ui,sans-serif;margin:20px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;vertical-align:top}
+th{background:#0f172a;color:#fff}
+td.ok{background:#dcfce7}
+td.bad{background:hotpink;color:#000}
+code{font-family:ui-monospace,monospace}
+.small{font-size:11px;word-break:break-all;max-width:340px;display:inline-block}
+</style>
+</head>
+<body>
+<h1>catharsis (raw parser) vs RTI (expandType + stringifyType)</h1>
+<p>Green = stringification exactly equals input. Hotpink = differs (needs attention).</p>
+<table><tr><th>INPUT</th><th>catharsis TYPE</th><th>catharsis STRINGIFY</th><th>RTI expandType</th><th>RTI stringifyType</th></tr>
+<tr><td><code>string</code></td><td>NameExpression</td><td class="ok"><code>string</code></td><td><code class="small">string</code></td><td class="ok"><code>string</code></td></tr>
+<tr><td><code>number</code></td><td>NameExpression</td><td class="ok"><code>number</code></td><td><code class="small">number</code></td><td class="ok"><code>number</code></td></tr>
+<tr><td><code>boolean</code></td><td>NameExpression</td><td class="ok"><code>boolean</code></td><td><code class="small">boolean</code></td><td class="ok"><code>boolean</code></td></tr>
+<tr><td><code>any</code></td><td>NameExpression</td><td class="ok"><code>any</code></td><td><code class="small">any</code></td><td class="ok"><code>any</code></td></tr>
+<tr><td><code>*</code></td><td>AllLiteral</td><td class="ok"><code>*</code></td><td><code class="small">*</code></td><td class="ok"><code>*</code></td></tr>
+<tr><td><code>Array.&lt;Node&gt;</code></td><td>TypeApplication</td><td class="bad"><code>Array&lt;Node&gt;</code></td><td><code class="small">{"type":"array","elementType":"Node"}</code></td><td class="bad"><code>Node[]</code></td></tr>
+<tr><td><code>Array&lt;Node&gt;</code></td><td>TypeApplication</td><td class="ok"><code>Array&lt;Node&gt;</code></td><td><code class="small">{"type":"array","elementType":"Node"}</code></td><td class="bad"><code>Node[]</code></td></tr>
+<tr><td><code>Node[]</code></td><td>TypeApplication</td><td class="bad"><code>Array&lt;Node&gt;</code></td><td><code class="small">{"type":"array","elementType":"Node"}</code></td><td class="ok"><code>Node[]</code></td></tr>
+<tr><td><code>import('@babel/types').Node</code></td><td>THROW</td><td class="bad"><code>—</code></td><td><code class="small">Node</code></td><td class="bad"><code>Node</code></td></tr>
+<tr><td><code>import('./x').Foo</code></td><td>THROW</td><td class="bad"><code>—</code></td><td><code class="small">Foo</code></td><td class="bad"><code>Foo</code></td></tr>
+<tr><td><code>Node['type']</code></td><td>THROW</td><td class="bad"><code>—</code></td><td><code class="small">{"type":"indexedAccess","index":"'type'","object":"Node"}</code></td><td class="ok"><code>Node['type']</code></td></tr>
+<tr><td><code>keyof Obj</code></td><td>THROW</td><td class="bad"><code>—</code></td><td><code class="small">{"type":"keyof","argument":"Obj"}</code></td><td class="ok"><code>keyof Obj</code></td></tr>
+<tr><td><code>typeof foo</code></td><td>THROW</td><td class="bad"><code>—</code></td><td><code class="small">{"type":"typeof","argument":"foo"}</code></td><td class="ok"><code>typeof foo</code></td></tr>
+<tr><td><code>{a: number, b?: string}</code></td><td>THROW</td><td class="bad"><code>—</code></td><td><code class="small">{"type":"object","properties":{"a":"number","b":{"type":"string","optional":true}}}</code></td><td class="bad"><code>{a:number,b?:string}</code></td></tr>
+<tr><td><code>[string, number]</code></td><td>THROW</td><td class="bad"><code>—</code></td><td><code class="small">{"type":"tuple","elements":["string","number"]}</code></td><td class="bad"><code>[string,number]</code></td></tr>
+<tr><td><code>[a: string, b: number]</code></td><td>THROW</td><td class="bad"><code>—</code></td><td><code class="small">{"type":"tuple","elements":[{"type":"tupleMember","name":"a","elementType":"string"},{"type":"tupleMember","name":"b","elementType":"number"}]}</code></td><td class="bad"><code>[a:string,b:number]</code></td></tr>
+<tr><td><code>string|number</code></td><td>TypeUnion</td><td class="bad"><code>(string|number)</code></td><td><code class="small">{"type":"union","members":["string","number"]}</code></td><td class="ok"><code>string|number</code></td></tr>
+<tr><td><code>A &amp; B</code></td><td>THROW</td><td class="bad"><code>—</code></td><td><code class="small">{"type":"intersection","members":["A","B"]}</code></td><td class="bad"><code>A&amp;B</code></td></tr>
+<tr><td><code>Record&lt;string, number&gt;</code></td><td>TypeApplication</td><td class="ok"><code>Record&lt;string, number&gt;</code></td><td><code class="small">{"type":"record","key":"string","val":"number"}</code></td><td class="bad"><code>Record&lt;string,number&gt;</code></td></tr>
+<tr><td><code>Object.&lt;string, number&gt;</code></td><td>TypeApplication</td><td class="bad"><code>Object&lt;string, number&gt;</code></td><td><code class="small">{"type":"record","key":"string","val":"number"}</code></td><td class="bad"><code>Record&lt;string,number&gt;</code></td></tr>
+<tr><td><code>Map&lt;string, any&gt;</code></td><td>TypeApplication</td><td class="ok"><code>Map&lt;string, any&gt;</code></td><td><code class="small">{"type":"map","key":"string","val":"any"}</code></td><td class="bad"><code>Map&lt;string,any&gt;</code></td></tr>
+<tr><td><code>Promise&lt;number&gt;</code></td><td>TypeApplication</td><td class="ok"><code>Promise&lt;number&gt;</code></td><td><code class="small">{"type":"promise","elementType":"number"}</code></td><td class="ok"><code>Promise&lt;number&gt;</code></td></tr>
+<tr><td><code>Set&lt;string&gt;</code></td><td>TypeApplication</td><td class="ok"><code>Set&lt;string&gt;</code></td><td><code class="small">{"type":"set","elementType":"string"}</code></td><td class="ok"><code>Set&lt;string&gt;</code></td></tr>
+<tr><td><code>MyEnum</code></td><td>NameExpression</td><td class="ok"><code>MyEnum</code></td><td><code class="small">MyEnum</code></td><td class="ok"><code>MyEnum</code></td></tr>
+<tr><td><code>MyEnum.FOO</code></td><td>NameExpression</td><td class="ok"><code>MyEnum.FOO</code></td><td><code class="small">MyEnum.FOO</code></td><td class="ok"><code>MyEnum.FOO</code></td></tr>
+<tr><td><code>`prefix-${string}`</code></td><td>THROW</td><td class="bad"><code>—</code></td><td><code class="small">{"type":"templateLiteral","quasis":["prefix-",""],"types":["string"]}</code></td><td class="ok"><code>`prefix-${string}`</code></td></tr>
+<tr><td><code>1|2|3</code></td><td>TypeUnion</td><td class="bad"><code>(1|2|3)</code></td><td><code class="small">{"type":"union","members":[1,2,3]}</code></td><td class="ok"><code>1|2|3</code></td></tr>
+<tr><td><code>function(string, number)</code></td><td>FunctionType</td><td class="ok"><code>function(string, number)</code></td><td><code class="small">{"type":"function","parameters":[{"type":"string","name":"undefined"},{"type":"number","name":"undefined"}]}</code></td><td class="bad"><code>(string,number)=&gt;any</code></td></tr>
+<tr><td><code>...number</code></td><td>NameExpression</td><td class="ok"><code>...number</code></td><td><code class="small">{"type":"array","elementType":"number"}</code></td><td class="bad"><code>number[]</code></td></tr>
+<tr><td><code>number?</code></td><td>NameExpression</td><td class="bad"><code>?number</code></td><td><code class="small">{"type":"union","members":["number","null"]}</code></td><td class="bad"><code>number|null</code></td></tr>
+<tr><td><code>Object</code></td><td>NameExpression</td><td class="ok"><code>Object</code></td><td><code class="small">{"type":"object","properties":{}}</code></td><td class="bad"><code>object</code></td></tr>
+<tr><td><code>Function</code></td><td>FunctionType</td><td class="bad"><code>function()</code></td><td><code class="small">Function</code></td><td class="ok"><code>Function</code></td></tr>
+<tr><td><code>Array&lt;string|{x: number}&gt;</code></td><td>TypeApplication</td><td class="bad"><code>Array&lt;(string|{x: number})&gt;</code></td><td><code class="small">{"type":"array","elementType":{"type":"union","members":["string",{"type":"object","properties":{"x":"number"}}]}}</code></td><td class="bad"><code>(string|{x:number})[]</code></td></tr>
+<tr><td><code>{[Key in ObjKeys]: Key}</code></td><td>THROW</td><td class="bad"><code>—</code></td><td><code class="small">{"type":"mapping","iterable":"ObjKeys","element":"Key","result":"Key"}</code></td><td class="bad"><code>{[Key in ObjKeys]:Key}</code></td></tr>
+</table>
+</body>
+</html>

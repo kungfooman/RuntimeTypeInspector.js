@@ -44,11 +44,24 @@ function stringifyType(type, space = 0, depth = 0) {
       const {properties, indexSignatures} = type;
       const pad = space ? ' '.repeat(space * (depth + 1)) : '';
       const padEnd = space ? ' '.repeat(space * depth) : '';
-      const sep = space ? ',\n' + pad : ', ';
+      const sep = space ? ',\n' + pad : ',';
       const parts = [];
       if (properties) {
         for (const key of Object.keys(properties)) {
-          parts.push(`${stringifyKey(key)}: ${stringifyType(properties[key], space, depth + 1)}`);
+          const val = properties[key];
+          const isOpt = !!(val && typeof val === 'object' && val.optional);
+          if (isOpt) {
+            const inner = { ...val, optional: false };
+            let innerStr;
+            if (Object.keys(inner).length === 2 && 'type' in inner && 'optional' in inner && typeof inner.type === 'string') {
+              innerStr = stringifyType(inner.type, space, depth + 1);
+            } else {
+              innerStr = stringifyType(inner, space, depth + 1);
+            }
+            parts.push(`${stringifyKey(key)}?:${innerStr}`);
+          } else {
+            parts.push(`${stringifyKey(key)}:${stringifyType(val, space, depth + 1)}`);
+          }
         }
       }
       if (Array.isArray(indexSignatures)) {
@@ -61,35 +74,53 @@ function stringifyType(type, space = 0, depth = 0) {
       } else if (space) {
         out = `{\n${pad}${parts.join(sep)}\n${padEnd}}`;
       } else {
-        out = `{ ${parts.join(sep)} }`;
+        out = `{${parts.join(sep)}}`;
       }
       break;
     }
-    case 'array':
-      out = `Array<${stringifyType(type.elementType, space, depth + 1)}>`;
+    case 'array': {
+      const inner = stringifyType(type.elementType, space, depth + 1);
+      const el = type.elementType;
+      const needsParens = (typeof el === 'object' && el !== null && ['union', 'intersection', 'function', 'new', 'condition'].includes(el.type)) ||
+        (typeof el === 'string' && /(\||&|=>|extends)/.test(el));
+      out = needsParens ? `(${inner})[]` : `${inner}[]`;
       break;
+    }
     case 'tuple': {
       const {elements} = type;
+      const stringifyEl = (el) => {
+        if (el && typeof el === 'object' && el.type === 'tupleMember') {
+          const inner = stringifyType(el.elementType, space, depth + 1);
+          if (el.dotDot) return `...${el.name}:${inner}`;
+          return `${el.name}${el.optional ? '?' : ''}:${inner}`;
+        }
+        return stringifyType(el, space, depth + 1);
+      };
       if (space && elements.length > 3) {
         const pad = ' '.repeat(space * (depth + 1));
         const padEnd = ' '.repeat(space * depth);
-        out = `[\n${pad}${elements.map((_) => stringifyType(_, space, depth + 1)).join(',\n' + pad)}\n${padEnd}]`;
+        out = `[\n${pad}${elements.map(stringifyEl).join(',\n' + pad)}\n${padEnd}]`;
       } else {
-        out = `[${elements.map((_) => stringifyType(_, space, depth + 1)).join(', ')}]`;
+        out = `[${elements.map(stringifyEl).join(',')}]`;
       }
       break;
     }
+    case 'tupleMember': {
+      const inner = stringifyType(type.elementType, space, depth + 1);
+      if (type.dotDot) return `...${type.name}:${inner}`;
+      return `${type.name}${type.optional ? '?' : ''}:${inner}`;
+    }
     case 'union':
-      out = type.members.map((_) => stringifyType(_, space, depth + 1)).join(' | ');
+      out = type.members.map((_) => stringifyType(_, space, depth + 1)).join('|');
       break;
     case 'intersection':
-      out = type.members.map((_) => stringifyType(_, space, depth + 1)).join(' & ');
+      out = type.members.map((_) => stringifyType(_, space, depth + 1)).join('&');
       break;
     case 'record':
-      out = `Record<${stringifyType(type.key, space, depth + 1)}, ${stringifyType(type.val, space, depth + 1)}>`;
+      out = `Record<${stringifyType(type.key, space, depth + 1)},${stringifyType(type.val, space, depth + 1)}>`;
       break;
     case 'map':
-      out = `Map<${stringifyType(type.key, space, depth + 1)}, ${stringifyType(type.val, space, depth + 1)}>`;
+      out = `Map<${stringifyType(type.key, space, depth + 1)},${stringifyType(type.val, space, depth + 1)}>`;
       break;
     case 'set':
       out = `Set<${stringifyType(type.elementType, space, depth + 1)}>`;
@@ -113,24 +144,24 @@ function stringifyType(type, space = 0, depth = 0) {
       out = `${stringifyType(type.object, space, depth + 1)}[${stringifyType(type.index, space, depth + 1)}]`;
       break;
     case 'mapping':
-      out = `{ [${stringifyType(type.element, space, depth + 1)} in ${stringifyType(type.iterable, space, depth + 1)}]: ${stringifyType(type.result, space, depth + 1)} }`;
+      out = `{[${stringifyType(type.element, space, depth + 1)} in ${stringifyType(type.iterable, space, depth + 1)}]:${stringifyType(type.result, space, depth + 1)}}`;
       break;
     case 'function': {
-      const params = (type.parameters || []).map((_) => stringifyType(_, space, depth + 1)).join(', ');
-      out = `(${params}) => any`;
+      const params = (type.parameters || []).map((_) => stringifyType(_, space, depth + 1)).join(',');
+      out = `(${params})=>any`;
       break;
     }
     case 'new': {
-      const params = (type.parameters || []).map((_) => stringifyType(_, space, depth + 1)).join(', ');
+      const params = (type.parameters || []).map((_) => stringifyType(_, space, depth + 1)).join(',');
       const ret = type.ret ? stringifyType(type.ret, space, depth + 1) : 'any';
-      out = `new (${params}) => ${ret}`;
+      out = `new(${params})=>${ret}`;
       break;
     }
     case 'condition':
-      out = `${stringifyType(type.checkType, space, depth + 1)} extends ${stringifyType(type.extendsType, space, depth + 1)} ? ${stringifyType(type.trueType, space, depth + 1)} : ${stringifyType(type.falseType, space, depth + 1)}`;
+      out = `${stringifyType(type.checkType, space, depth + 1)}extends${stringifyType(type.extendsType, space, depth + 1)}?${stringifyType(type.trueType, space, depth + 1)}:${stringifyType(type.falseType, space, depth + 1)}`;
       break;
     case 'reference': {
-      const args = (type.args || []).map((_) => stringifyType(_, space, depth + 1)).join(', ');
+      const args = (type.args || []).map((_) => stringifyType(_, space, depth + 1)).join(',');
       out = args ? `${type.name}<${args}>` : type.name;
       break;
     }
@@ -146,22 +177,19 @@ function stringifyType(type, space = 0, depth = 0) {
       break;
     }
     case 'indexSignature': {
-      // {type: 'indexSignature', indexType, indexParameters: [{type, name}]}
       const params = (type.indexParameters || []).map((_) => {
         if (typeof _ === 'object' && _.name !== undefined) {
-          return `${stringifyType(_.name, space, depth + 1)}: ${stringifyType(_.type, space, depth + 1)}`;
+          return `${stringifyType(_.name, space, depth + 1)}:${stringifyType(_.type, space, depth + 1)}`;
         }
         return stringifyType(_, space, depth + 1);
-      }).join(', ');
-      out = `[${params}]: ${stringifyType(type.indexType, space, depth + 1)}`;
+      }).join(',');
+      out = `[${params}]:${stringifyType(type.indexType, space, depth + 1)}`;
       break;
     }
     case 'bigint':
       out = type.literal !== undefined ? `${type.literal}n` : 'bigint';
       break;
     default:
-      // Plain named type like 'string', 'number', "'aa'", 'MyClass', or
-      // TypeObject wrappers like {type: 'string', optional: true}.
       if (typeof kind === 'number' || typeof kind === 'boolean') {
         out = String(kind);
       } else if (typeof kind === 'string') {
@@ -172,7 +200,7 @@ function stringifyType(type, space = 0, depth = 0) {
       break;
   }
   if (type.optional) {
-    out = `(${out}) | undefined`;
+    out = `(${out})|undefined`;
   }
   return out;
 }

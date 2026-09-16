@@ -266,11 +266,21 @@ function toSourceTS(node) {
       const args = typeArguments.map(toSourceTS);
       return {type: 'reference', name, args};
     }
-    case NamedTupleMember:
+    case NamedTupleMember: {
       if (!ts.isNamedTupleMember(node)) {
         throw Error("Impossible");
       }
-      return toSourceTS(node.type);
+      const nName = toSourceTS(node.name);
+      const nType = toSourceTS(node.type);
+      const opt = !!node.questionToken;
+      const dot = !!node.dotDotDotToken;
+      // Preserve label for docs: [a: string, b: number] -> keep name
+      // Use tupleMember shape so stringify can round-trip
+      const mem = { type: 'tupleMember', name: nName, elementType: nType };
+      if (opt) mem.optional = true;
+      if (dot) mem.dotDot = true;
+      return mem;
+    }
     case IntersectionType: {
       if (!ts.isIntersectionTypeNode(node)) {
         throw Error("Impossible");
@@ -325,7 +335,11 @@ function toSourceTS(node) {
             throw Error("Impossible");
           }
           const name = toSourceTS(member.name);
-          const type = toSourceTS(member.type);
+          let type = toSourceTS(member.type);
+          if (member.questionToken) {
+            if (type && typeof type === 'object') type.optional = true;
+            else type = { type, optional: true };
+          }
           properties[name] = type;
         } else {
           console.warn('TypeLiteral: unhandled member', member);
