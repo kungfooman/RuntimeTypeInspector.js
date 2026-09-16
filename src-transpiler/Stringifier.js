@@ -276,7 +276,8 @@ class Stringifier {
   }
   numSpaces = 0;
   /**
-   * @type {string} A string of two spaces per indentation.
+   * A string of two spaces per indentation.
+   * @type {string}
    */
   get spaces() {
     return '  '.repeat(this.numSpaces);

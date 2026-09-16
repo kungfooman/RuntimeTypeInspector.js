@@ -1,58 +1,25 @@
-@font-face {
-  font-family: "ui-font-solid";
-  src: url("https://playcanvas.com/static-assets/fonts/uifont-solid.eot");
-  src: url("https://playcanvas.com/static-assets/fonts/uifont-solid.eot?#iefix") format("embedded-opentype"), url("https://playcanvas.com/static-assets/fonts/uifont-solid.ttf") format("truetype"), url("https://playcanvas.com/static-assets/fonts/uifont-solid.svg") format("svg");
-  font-weight: normal;
-  font-style: normal;
-}
-@font-face {
-  font-family: "Proxima Nova Regular";
-  src: url("https://playcanvas.com/static-assets/fonts/proxima_nova_regular.eot");
-  src: url("https://playcanvas.com/static-assets/fonts/proxima_nova_regular.eot?#iefix") format("embedded-opentype"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_regular.woff2") format("woff2"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_regular.woff") format("woff"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_regular.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-}
-@font-face {
-  font-family: "Proxima Nova Light";
-  src: url("https://playcanvas.com/static-assets/fonts/proxima_nova_light.eot");
-  src: url("https://playcanvas.com/static-assets/fonts/proxima_nova_light.eot?#iefix") format("embedded-opentype"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_light.woff2") format("woff2"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_light.woff") format("woff"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_light.ttf") format("truetype");
-  font-weight: 200;
-  font-style: normal;
-}
-@font-face {
-  font-family: "Proxima Nova Bold";
-  src: url("https://playcanvas.com/static-assets/fonts/proxima_nova_bold.eot");
-  src: url("https://playcanvas.com/static-assets/fonts/proxima_nova_bold.eot?#iefix") format("embedded-opentype"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_bold.woff2") format("woff2"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_bold.woff") format("woff"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_bold.ttf") format("truetype");
-  font-weight: bold;
-  font-style: normal;
-}
-@font-face {
-  font-family: "Proxima Nova Thin";
-  src: url("https://playcanvas.com/static-assets/fonts/proxima_nova_thin_t.eot");
-  src: url("https://playcanvas.com/static-assets/fonts/proxima_nova_thin_t.eot?#iefix") format("embedded-opentype"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_thin_t.woff2") format("woff2"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_thin_t.woff") format("woff"), url("https://playcanvas.com/static-assets/fonts/proxima_nova_thin_t.ttf") format("truetype");
-  font-weight: 100;
-  font-style: normal;
-}
+/* RTI: remote @font-face deps removed (ui-font-solid + proprietary Proxima Nova
+ * hotlinked from playcanvas.com). System stack: faster, offline, no licensing issues. */
 .font-thin {
-  font-family: "Proxima Nova Thin", "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-weight: 100;
   font-style: normal;
 }
 
 .font-light {
-  font-family: "Proxima Nova Light", "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-weight: 200;
   font-style: normal;
 }
 
 .font-regular {
-  font-family: "Proxima Nova Regular", "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-weight: normal;
   font-style: normal;
 }
 
 .font-bold {
-  font-family: "Proxima Nova Bold", "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-weight: bold;
   font-style: normal;
   -webkit-font-smoothing: antialiased;
@@ -60,7 +27,7 @@
 }
 
 .font-icon {
-  font-family: "ui-font-solid";
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-smoothing: antialiased;
@@ -72,7 +39,7 @@ a {
 }
 
 body {
-  font-family: "Proxima Nova Regular", "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-weight: normal;
   font-style: normal;
   padding: 0;
@@ -81,7 +48,7 @@ body {
 }
 body > header {
   height: 168px;
-  background-image: url(../images/playcanvas-header-background.png);
+  background-image: url(../images/rti-header-background.png);
   background-position: center;
   background-color: #F16524;
   color: rgba(255, 255, 255, 0.75);
@@ -92,7 +59,7 @@ body > header > .header-width {
 }
 body > header > nav {
   overflow: hidden;
-  font-family: "Proxima Nova Regular", "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-weight: normal;
   font-style: normal;
   font-size: 16px;
@@ -306,13 +273,13 @@ body > .container > nav.sidebar > ul > li {
   padding: 0;
 }
 body > .container > nav.sidebar > ul > li:hover:before, body > .container > nav.sidebar > ul > li.active:before {
-  content: "\e113";
+  content: "▸";
   position: absolute;
   left: -20px;
   width: 16px;
   line-height: 32px;
   text-align: center;
-  font-family: "ui-font-solid";
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-smoothing: antialiased;
@@ -359,7 +326,7 @@ body > .container > main > h1 {
   margin-top: 58px;
 }
 body > .container > main h1, body > .container > main h2, body > .container > main h3, body > .container > main h4, body > .container > main h5 {
-  font-family: "Proxima Nova Bold", "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-weight: bold;
   font-style: normal;
   -webkit-font-smoothing: antialiased;
@@ -418,7 +385,7 @@ body > .container > main table.properties td:first-child {
   width: 25%;
 }
 body > .container > main table th {
-  font-family: "Proxima Nova Bold", "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-weight: bold;
   font-style: normal;
   -webkit-font-smoothing: antialiased;
@@ -453,7 +420,7 @@ body > .container > main .alert-info {
   color: #ccc;
 }
 body > .container > main .readonly {
-  font-family: "Proxima Nova Bold", "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-weight: bold;
   font-style: normal;
   -webkit-font-smoothing: antialiased;
@@ -471,7 +438,7 @@ body > .container > main .methodname {
   font-size: 22px;
 }
 body > .container > main .property {
-  font-family: "Proxima Nova Bold", "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-weight: bold;
   font-style: normal;
   -webkit-font-smoothing: antialiased;
@@ -520,7 +487,7 @@ body > .container > main .property {
     float: left;
     width: 48px;
     line-height: 46px;
-    font-family: "ui-font-solid";
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-smoothing: antialiased;
@@ -529,7 +496,7 @@ body > .container > main .property {
     text-align: center;
   }
   body > .container > .sidebarToggle > span:before {
-    content: "\e186";
+    content: "☰";
   }
   body > .container > nav.sidebar {
     left: -240px;
@@ -562,7 +529,7 @@ body > .container > main .property {
     left: 0;
   }
   body > .container > .sidebarToggle.active > span:before {
-    content: "\e436";
+    content: "✕";
   }
   body > .container > nav.sidebar.active {
     width: calc(100% - 16px);

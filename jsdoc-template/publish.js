@@ -238,7 +238,7 @@ const renderExample = (content) => `<pre class="prettyprint"><code>${content.exa
 /** @returns {string} */
 const renderAnalytics = () => '';
 /**
- * @param {{'header-icon': string, 'header-title': string}} data
+ * @param {{'header-title': string}} data
  * @returns {string}
  */
 const renderHeader = (data) => `<header>
@@ -250,7 +250,7 @@ const renderHeader = (data) => `<header>
         </ul>
     </nav>
     <div class="header-content header-page header-width">
-        <h1><span class="font-icon">${data['header-icon']}</span>${data['header-title']}</h1>
+        <h1>${data['header-title']}</h1>
         <input id="search" class="search" type="text" placeholder="Search RTI…">
     </div>
 </header>`;
@@ -270,13 +270,13 @@ const renderMethod = (obj) => {
   const params = obj.params ? `<h4>Parameters</h4><table>${obj.params.map((p) => `<tr><td>${p.name}</td><td>${p.type ? typeLink(p.type) : ''}</td><td>${parse(p.description || '')}</td></tr>`).join('')}</table>` : '';
   const returns = obj.returns ? `<h4>Returns</h4>${obj.returns.map((r) => `${r.type ? typeLink(r.type) : ''} ${parse(r.description || '')}`).join('')}` : '';
   const examples = (obj.examples || []).map(renderExample).join('');
-  return `<div id="${obj.name}"><h3 class="methodname">${obj.name}${methodsig(obj)} <a class="font-icon" href="#${obj.name}">&#58216;</a></h3><p>${parse(obj.description || '')}</p>${examples}${params}${returns}</div>`;
+  return `<div id="${obj.name}"><h3 class="methodname">${obj.name}${methodsig(obj)} <a class="anchor" href="#${obj.name}">#</a></h3><p>${parse(obj.description || '')}</p>${examples}${params}${returns}</div>`;
 };
 /**
  * @param {Doclet} obj
  * @returns {string}
  */
-const renderProperty = (obj) => `<div id="${obj.name}"><span class="property">${obj.type ? typeLink(obj.type) : ''}</span><span class="property">${obj.name} <a class="font-icon" href="#${obj.name}">&#58216;</a></span><p>${parse(obj.description || '')}${readonly(obj)}</p>${(obj.examples || []).map(renderExample).join('')}</div>`;
+const renderProperty = (obj) => `<div id="${obj.name}"><span class="property">${obj.type ? typeLink(obj.type) : ''}</span><span class="property">${obj.name} <a class="anchor" href="#${obj.name}">#</a></span><p>${parse(obj.description || '')}${readonly(obj)}</p>${(obj.examples || []).map(renderExample).join('')}</div>`;
 /**
  * @param {Doclet} obj
  * @returns {string}
@@ -284,7 +284,7 @@ const renderProperty = (obj) => `<div id="${obj.name}"><span class="property">${
 const renderTypedef = (obj) => {
   const params = obj.params ? `<h4>Parameters</h4><table>${obj.params.map((p) => `<tr><td>${p.name}</td><td>${p.type ? typeLink(p.type) : ''}</td><td>${parse(p.description || '')}</td></tr>`).join('')}</table>` : '';
   const examples = (obj.examples || []).map(renderExample).join('');
-  return `<div id="${obj.name}"><h3 class="methodname">${obj.name} <a class="font-icon" href="#${obj.name}">&#58216;</a></h3><p>${parse(obj.description || '')}</p>${examples}${params}</div>`;
+  return `<div id="${obj.name}"><h3 class="methodname">${obj.name} <a class="anchor" href="#${obj.name}">#</a></h3><p>${parse(obj.description || '')}</p>${examples}${params}</div>`;
 };
 /**
  * @param {Doclet} obj
@@ -324,14 +324,14 @@ const renderClass = (info) => {
  */
 const renderPage = (data) => `<!doctype html>
 <html lang="en">
-    <head><title>${data.title} | RTI API Reference</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" type="image/png" href="images/playcanvas-favicon.png"><link href="styles/styles.css" rel="stylesheet"><link href="styles/rti-theme.css" rel="stylesheet"><script src="scripts/site/search.js"></script><script src="scripts/site/sidebar.js"></script><script src="scripts/site/sidebar-filter.js"></script><script src="scripts/highlight.min.js"></script><script>hljs.initHighlightingOnLoad();</script></head>
-    <body>${renderHeader({ 'header-icon': '&#58195;', 'header-title': 'RTI API Reference' })}<div class="container content-width">${renderNavigation(data)}${renderClass(data.cls)}</div>${renderAnalytics()}</body>
+    <head><title>${data.title} | RTI API Reference</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" type="image/png" href="images/rti-favicon.png"><link href="styles/styles.css" rel="stylesheet"><link href="styles/rti-theme.css" rel="stylesheet"><script src="scripts/site/search.js"></script><script src="scripts/site/sidebar.js"></script><script src="scripts/site/sidebar-filter.js"></script><script src="scripts/highlight.min.js"></script><script>hljs.initHighlightingOnLoad();</script></head>
+    <body>${renderHeader({ 'header-title': 'RTI API Reference' })}<div class="container content-width">${renderNavigation(data)}${renderClass(data.cls)}</div>${renderAnalytics()}</body>
 </html>`;
 
 const renderFrontpage = (data) => `<!doctype html>
 <html lang="en">
-    <head><title>RTI API Reference</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" type="image/png" href="images/playcanvas-favicon.png"><link href="styles/styles.css" rel="stylesheet"><link href="styles/rti-theme.css" rel="stylesheet"></head>
-    <body>${renderHeader({ 'header-icon': '&#58195;', 'header-title': 'RTI — Runtime Type Inspector' })}<div class="container content-width">${renderNavigation(data)}<main><h1>RuntimeTypeInspector.js</h1><p>Trust is good, control is better — validating JSDoc types at runtime.</p><p><a href="https://github.com/kungfooman/RuntimeTypeInspector.js">GitHub</a> • Vendored template from @playcanvas/jsdoc-template, redesigned for RTI (no catharsis, handlebars → typed string templates).</p></main></div></body>
+    <head><title>RTI API Reference</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" type="image/png" href="images/rti-favicon.png"><link href="styles/styles.css" rel="stylesheet"><link href="styles/rti-theme.css" rel="stylesheet"></head>
+    <body>${renderHeader({ 'header-title': 'RTI — Runtime Type Inspector' })}<div class="container content-width">${renderNavigation(data)}<main><h1>RuntimeTypeInspector.js</h1><p>Trust is good, control is better — validating JSDoc types at runtime.</p><p><a href="https://github.com/kungfooman/RuntimeTypeInspector.js">GitHub</a> • Vendored template from @playcanvas/jsdoc-template, redesigned for RTI (no catharsis, handlebars → typed string templates).</p></main></div></body>
 </html>`;
 
 // ---------- publish plumbing (kept compatible with JSDoc) ----------

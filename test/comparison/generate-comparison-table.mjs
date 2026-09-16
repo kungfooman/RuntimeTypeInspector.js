@@ -5,12 +5,15 @@
  * Green = stringification exactly equals INPUT, hotpink = differs.
  */
 import fs from 'fs';
-import { expandType } from './src-transpiler/expandType.js';
-import { stringifyType } from './src-runtime/stringifyType.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { expandType } from '../../src-transpiler/expandType.js';
+import { stringifyType } from '../../src-runtime/stringifyType.js';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const catharsis = require('catharsis');
 const rawParser = require('catharsis/lib/parser');
+const outPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'comparison-table.html');
 
 const cases = [
   'string', 'number', 'boolean', 'any', '*',
@@ -18,12 +21,12 @@ const cases = [
   "import('@babel/types').Node", "import('./x').Foo",
   "Node['type']", 'keyof Obj', 'typeof foo',
   '{a: number, b?: string}', '[string, number]', '[a: string, b: number]',
-  'string|number', 'A & B', 'Record<string, number>', 'Object.<string, number>',
+  'string | number', 'A & B', 'Record<string, number>', 'Object.<string, number>',
   'Map<string, any>', 'Promise<number>', 'Set<string>',
   'MyEnum', 'MyEnum.FOO',
-  '`prefix-${string}`', '1|2|3',
+  '`prefix-${string}`', '1 | 2 | 3',
   'function(string, number)', '...number', 'number?', 'Object', 'Function',
-  'Array<string|{x: number}>', '{[Key in ObjKeys]: Key}',
+  'Array<string | {x: number}>', '{[Key in ObjKeys]: Key}',
 ];
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -70,5 +73,5 @@ ${rows}</table>
 </body>
 </html>`;
 
-fs.writeFileSync('comparison-table.html', html);
-console.log(`wrote comparison-table.html with ${cases.length} rows`);
+fs.writeFileSync(outPath, html);
+console.log(`wrote ${outPath} with ${cases.length} rows`);
