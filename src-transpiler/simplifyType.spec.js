@@ -1,154 +1,253 @@
 import {simplifyType} from './simplifyType.js';
+import {simplifyTypeToSource} from './simplifyTypeToSource.js';
+
+function assertSimplify(label, input, expected) {
+  const actual = simplifyTypeToSource(input);
+  const expectedJson = JSON.stringify(expected, null, 2);
+  if (actual !== expectedJson) {
+    console.warn(`${label} mismatch`, {actual, expectedJson});
+    return false;
+  }
+  return true;
+}
+
 function testUnionEmptyObjectMember() {
-  const t = {type: 'union', members: ['1', {type: 'object', properties: {}}], optional: false};
-  const out = simplifyType(t);
-  const expected = {type: 'union', members: ['1', 'object'], optional: false};
-  if (JSON.stringify(out) !== JSON.stringify(expected)) {
-    console.warn('union empty object member mismatch', {out, expected});
-    return false;
-  }
-  return true;
+  const input = {
+    type: 'union',
+    members: ['1', {type: 'object', properties: {}}],
+    optional: false
+  };
+  const expected = {
+    type: 'union',
+    members: ['1', 'object'],
+    optional: false
+  };
+  return assertSimplify('union empty object member', input, expected);
 }
+
 function testUnionOptionalEmptyObjectMember() {
-  const t = {type: 'union', members: [{type: 'object', properties: {}, optional: true}, 'null'], optional: false};
-  const out = simplifyType(t);
-  const expected = {type: 'union', members: [{type: 'object', optional: true}, 'null'], optional: false};
-  if (JSON.stringify(out) !== JSON.stringify(expected)) {
-    console.warn('union optional empty object mismatch', {out, expected});
-    return false;
-  }
-  return true;
+  const input = {
+    type: 'union',
+    members: [{type: 'object', properties: {}, optional: true}, 'null'],
+    optional: false
+  };
+  const expected = {
+    type: 'union',
+    members: [{type: 'object', optional: true}, 'null'],
+    optional: false
+  };
+  return assertSimplify('union optional empty object', input, expected);
 }
+
 function testArrayEmptyObjectElementType() {
-  const t = {type: 'array', elementType: {type: 'object', properties: {}}, optional: false};
-  const out = simplifyType(t);
-  const expected = {type: 'array', elementType: 'object', optional: false};
-  if (JSON.stringify(out) !== JSON.stringify(expected)) {
-    console.warn('array empty object elementType mismatch', {out, expected});
-    return false;
-  }
-  return true;
+  const input = {
+    type: 'array',
+    elementType: {type: 'object', properties: {}},
+    optional: false
+  };
+  const expected = {
+    type: 'array',
+    elementType: 'object',
+    optional: false
+  };
+  return assertSimplify('array empty object elementType', input, expected);
 }
+
 function testArrayNestedUnion() {
-  const t = {type: 'array', elementType: {type: 'union', members: [{type: 'object', properties: {}}, 'null']}, optional: false};
-  const out = simplifyType(t);
-  const expected = {type: 'array', elementType: {type: 'union', members: ['object', 'null']}, optional: false};
-  if (JSON.stringify(out) !== JSON.stringify(expected)) {
-    console.warn('array nested union mismatch', {out, expected});
-    return false;
-  }
-  return true;
+  const input = {
+    type: 'array',
+    elementType: {
+      type: 'union',
+      members: [{type: 'object', properties: {}}, 'null']
+    },
+    optional: false
+  };
+  const expected = {
+    type: 'array',
+    elementType: {
+      type: 'union',
+      members: ['object', 'null']
+    },
+    optional: false
+  };
+  return assertSimplify('array nested union', input, expected);
 }
+
 function testTupleEmptyObjectElement() {
-  const t = {type: 'tuple', elements: ['null', {type: 'object', properties: {}}], optional: false};
-  const out = simplifyType(t);
-  const expected = {type: 'tuple', elements: ['null', 'object'], optional: false};
-  if (JSON.stringify(out) !== JSON.stringify(expected)) {
-    console.warn('tuple empty object element mismatch', {out, expected});
-    return false;
-  }
-  return true;
+  const input = {
+    type: 'tuple',
+    elements: ['null', {type: 'object', properties: {}}],
+    optional: false
+  };
+  const expected = {
+    type: 'tuple',
+    elements: ['null', 'object'],
+    optional: false
+  };
+  return assertSimplify('tuple empty object element', input, expected);
 }
+
 function testTupleMixedEmptyAndNonEmptyObject() {
-  const t = {type: 'tuple', elements: [{type: 'object', properties: {}}, {type: 'object', properties: {a: 'number'}}], optional: false};
-  const out = simplifyType(t);
-  const expected = {type: 'tuple', elements: ['object', {type: 'object', properties: {a: 'number'}}], optional: false};
-  if (JSON.stringify(out) !== JSON.stringify(expected)) {
-    console.warn('tuple mixed object mismatch', {out, expected});
-    return false;
-  }
-  return true;
+  const input = {
+    type: 'tuple',
+    elements: [
+      {type: 'object', properties: {}},
+      {type: 'object', properties: {a: 'number'}}
+    ],
+    optional: false
+  };
+  const expected = {
+    type: 'tuple',
+    elements: [
+      'object',
+      {type: 'object', properties: {a: 'number'}}
+    ],
+    optional: false
+  };
+  return assertSimplify('tuple mixed object', input, expected);
 }
+
 function testPromiseEmptyObjectElementType() {
-  const t = {type: 'promise', elementType: {type: 'object', properties: {}}, optional: false};
-  const out = simplifyType(t);
-  const expected = {type: 'promise', elementType: 'object', optional: false};
-  if (JSON.stringify(out) !== JSON.stringify(expected)) {
-    console.warn('promise empty object elementType mismatch', {out, expected});
-    return false;
-  }
-  return true;
+  const input = {
+    type: 'promise',
+    elementType: {type: 'object', properties: {}},
+    optional: false
+  };
+  const expected = {
+    type: 'promise',
+    elementType: 'object',
+    optional: false
+  };
+  return assertSimplify('promise empty object elementType', input, expected);
 }
+
 function testPromiseNestedRecord() {
-  const t = {type: 'promise', elementType: {type: 'record', key: 'string', val: {type: 'object', properties: {}}}, optional: false};
-  const out = simplifyType(t);
-  const expected = {type: 'promise', elementType: {type: 'record', key: 'string', val: 'object'}, optional: false};
-  if (JSON.stringify(out) !== JSON.stringify(expected)) {
-    console.warn('promise nested record mismatch', {out, expected});
-    return false;
-  }
-  return true;
+  const input = {
+    type: 'promise',
+    elementType: {
+      type: 'record',
+      key: 'string',
+      val: {type: 'object', properties: {}}
+    },
+    optional: false
+  };
+  const expected = {
+    type: 'promise',
+    elementType: {
+      type: 'record',
+      key: 'string',
+      val: 'object'
+    },
+    optional: false
+  };
+  return assertSimplify('promise nested record', input, expected);
 }
+
 function testRecordEmptyObjectVal() {
-  const t = {type: 'record', key: 'string', val: {type: 'object', properties: {}}, optional: false};
-  const out = simplifyType(t);
-  const expected = {type: 'record', key: 'string', val: 'object', optional: false};
-  if (JSON.stringify(out) !== JSON.stringify(expected)) {
-    console.warn('record empty object val mismatch', {out, expected});
-    return false;
-  }
-  return true;
+  const input = {
+    type: 'record',
+    key: 'string',
+    val: {type: 'object', properties: {}},
+    optional: false
+  };
+  const expected = {
+    type: 'record',
+    key: 'string',
+    val: 'object',
+    optional: false
+  };
+  return assertSimplify('record empty object val', input, expected);
 }
+
 function testRecordEmptyObjectKey() {
-  const t = {type: 'record', key: {type: 'object', properties: {}}, val: 'number', optional: false};
-  const out = simplifyType(t);
-  const expected = {type: 'record', key: 'object', val: 'number', optional: false};
-  if (JSON.stringify(out) !== JSON.stringify(expected)) {
-    console.warn('record empty object key mismatch', {out, expected});
-    return false;
-  }
-  return true;
+  const input = {
+    type: 'record',
+    key: {type: 'object', properties: {}},
+    val: 'number',
+    optional: false
+  };
+  const expected = {
+    type: 'record',
+    key: 'object',
+    val: 'number',
+    optional: false
+  };
+  return assertSimplify('record empty object key', input, expected);
 }
+
 function testTypeofEmptyObjectArgument() {
-  const t = {type: 'typeof', argument: {type: 'object', properties: {}}, optional: false};
-  const out = simplifyType(t);
-  const expected = {type: 'typeof', argument: 'object', optional: false};
-  if (JSON.stringify(out) !== JSON.stringify(expected)) {
-    console.warn('typeof empty object argument mismatch', {out, expected});
-    return false;
-  }
-  return true;
+  const input = {
+    type: 'typeof',
+    argument: {type: 'object', properties: {}},
+    optional: false
+  };
+  const expected = {
+    type: 'typeof',
+    argument: 'object',
+    optional: false
+  };
+  return assertSimplify('typeof empty object argument', input, expected);
 }
+
 function testTypeofNestedUnion() {
-  const t = {type: 'typeof', argument: {type: 'union', members: [{type: 'object', properties: {}}, 'string']}, optional: false};
-  const out = simplifyType(t);
-  const expected = {type: 'typeof', argument: {type: 'union', members: ['object', 'string']}, optional: false};
-  if (JSON.stringify(out) !== JSON.stringify(expected)) {
-    console.warn('typeof nested union mismatch', {out, expected});
-    return false;
-  }
-  return true;
+  const input = {
+    type: 'typeof',
+    argument: {
+      type: 'union',
+      members: [{type: 'object', properties: {}}, 'string']
+    },
+    optional: false
+  };
+  const expected = {
+    type: 'typeof',
+    argument: {
+      type: 'union',
+      members: ['object', 'string']
+    },
+    optional: false
+  };
+  return assertSimplify('typeof nested union', input, expected);
 }
+
 function testTopLevelEmptyObject() {
-  const t = {type: 'object', properties: {}, optional: false};
-  const out = simplifyType(t);
+  const input = {
+    type: 'object',
+    properties: {},
+    optional: false
+  };
   const expected = 'object';
-  if (out !== expected) {
-    console.warn('top level empty object mismatch', {out, expected});
-    return false;
-  }
-  return true;
+  return assertSimplify('top level empty object', input, expected);
 }
+
 function testTopLevelObjectWithProperties() {
-  const t = {type: 'object', properties: {a: 'number'}, optional: false};
-  const out = simplifyType(t);
-  const expected = {type: 'object', properties: {a: 'number'}, optional: false};
-  if (JSON.stringify(out) !== JSON.stringify(expected)) {
-    console.warn('top level object with properties mismatch', {out, expected});
-    return false;
-  }
-  return true;
+  const input = {
+    type: 'object',
+    properties: {a: 'number'},
+    optional: false
+  };
+  const expected = {
+    type: 'object',
+    properties: {a: 'number'},
+    optional: false
+  };
+  return assertSimplify('top level object with properties', input, expected);
 }
+
 function testInputNotMutated() {
-  const t = {type: 'union', members: [{type: 'object', properties: {}}], optional: false};
-  simplifyType(t);
-  const expected = {type: 'union', members: [{type: 'object', properties: {}}], optional: false};
-  if (JSON.stringify(t) !== JSON.stringify(expected)) {
-    console.warn('input was mutated', {t, expected});
+  const input = {
+    type: 'union',
+    members: [{type: 'object', properties: {}}],
+    optional: false
+  };
+  const before = JSON.stringify(input);
+  simplifyType(input);
+  if (JSON.stringify(input) !== before) {
+    console.warn('input was mutated');
     return false;
   }
   return true;
 }
+
 export const tests = [
   testUnionEmptyObjectMember,
   testUnionOptionalEmptyObjectMember,
