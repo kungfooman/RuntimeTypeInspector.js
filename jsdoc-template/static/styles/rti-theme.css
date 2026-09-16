@@ -23,3 +23,5 @@ table.properties td:first-child { font-weight: 600; }
 .readonly { color: var(--rti-muted); font-size: 0.85em; margin-left: 6px; }
 a.anchor { color: var(--rti-muted); text-decoration: none; margin-left: 6px; font-size: 0.85em; }
 a.anchor:hover { color: var(--rti-accent); }
+pre.example { background: #0f172a; color: #e2e8f0; padding: 12px 16px; border-radius: 6px; overflow-x: auto; }
+pre.example code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; }

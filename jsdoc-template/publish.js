@@ -234,7 +234,7 @@ const methodsig = (method) => {
 };
 
 /** @param {string} content @returns {string} */
-const renderExample = (content) => `<pre class="prettyprint"><code>${content.example || content}</code></pre>`;
+const renderExample = (content) => `<pre class="example"><code>${content.example || content}</code></pre>`;
 /** @returns {string} */
 const renderAnalytics = () => '';
 /**
@@ -324,7 +324,7 @@ const renderClass = (info) => {
  */
 const renderPage = (data) => `<!doctype html>
 <html lang="en">
-    <head><title>${data.title} | RTI API Reference</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" type="image/png" href="images/rti-favicon.png"><link href="styles/styles.css" rel="stylesheet"><link href="styles/rti-theme.css" rel="stylesheet"><script src="scripts/site/search.js"></script><script src="scripts/site/sidebar.js"></script><script src="scripts/site/sidebar-filter.js"></script><script src="scripts/highlight.min.js"></script><script>hljs.initHighlightingOnLoad();</script></head>
+    <head><title>${data.title} | RTI API Reference</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" type="image/png" href="images/rti-favicon.png"><link href="styles/styles.css" rel="stylesheet"><link href="styles/rti-theme.css" rel="stylesheet"><script src="scripts/site/search.js"></script><script src="scripts/site/sidebar.js"></script><script src="scripts/site/sidebar-filter.js"></script></head>
     <body>${renderHeader({ 'header-title': 'RTI API Reference' })}<div class="container content-width">${renderNavigation(data)}${renderClass(data.cls)}</div>${renderAnalytics()}</body>
 </html>`;
 

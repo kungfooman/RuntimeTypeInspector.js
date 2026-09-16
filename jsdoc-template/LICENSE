@@ -1,6 +1,9 @@
 MIT License
 
 Copyright (c) 2011-2020 PlayCanvas Ltd.
+Copyright (c) 2024-2026 Hermann Rolfes (kungfooman) — RTI redesign:
+typed string templates replacing Handlebars, catharsis-free type links,
+RTI theme, favicon and assets (see https://github.com/kungfooman/RuntimeTypeInspector.js/issues/72).
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
