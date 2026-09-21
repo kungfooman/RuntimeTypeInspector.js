@@ -193,11 +193,11 @@ class Warning {
     }
     switch (mode) {
       case 'spam':
-        console.error(msg, ...extra);
+        this.logWarning(msg, ...extra);
         break;
       case 'once':
         if (this.hits === 1) {
-          console.error(msg, ...extra);
+          this.logWarning(msg, ...extra);
         }
         break;
       case 'never':
@@ -205,6 +205,17 @@ class Warning {
       default:
         console.error("warn> unsupported mode:", mode);
     }
+  }
+  /**
+   * Log the warning as one collapsible stack-trace-like row, keeping
+   * the message and all extra data objects together.
+   * @param {string} msg - The main message.
+   * @param {...any} extra - Extra strings or objects etc.
+   */
+  logWarning(msg, ...extra) {
+    console.groupCollapsed(msg);
+    console.error(...extra);
+    console.groupEnd();
   }
 }
 export {Warning};
