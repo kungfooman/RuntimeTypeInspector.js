@@ -51,6 +51,7 @@ const tests = [
   ...(await import('./src-runtime/resolveType.spec.js'        )).tests,
   ...(await import('./src-runtime/validateTemplateLiteral.spec.js')).tests,
   ...(await import('./src-runtime/validateReference.spec.js'       )).tests,
+  ...(await import('./src-runtime/strictNullChecks.spec.js'        )).tests,
   ...(await import('./src-runtime/stringifyValue.spec.js'          )).tests,
   ...(await import('./src-runtime/validators.spec.js'              )).tests,
   ...(await import('./src-runtime/validatePromise.spec.js'         )).tests,

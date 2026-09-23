@@ -44,6 +44,10 @@ const breakpoints = new Set();
       options.enabled = false;
       return;
     }
+    if (action === 'strictNullChecks') {
+      options.strictNullChecks = data.value !== false;
+      return;
+    }
   }
   console.log('Unhandled action destination combo', {action, destination, e, data});
 });
