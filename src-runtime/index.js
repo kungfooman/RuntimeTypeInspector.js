@@ -39,6 +39,7 @@ export * from './validateTuple.js';
 export * from './validateType.js';
 export * from './validateTypedef.js';
 export * from './validateUnion.js';
+export * from './validators.js';
 export * from './warnedTable.js';
 export * from './Warning.js';
 export * from './youCanAddABreakpointHere.js';

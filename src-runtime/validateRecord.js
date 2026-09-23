@@ -1,4 +1,4 @@
-import {validateType} from "./validateType.js";
+import {recurse} from "./validators.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -22,7 +22,7 @@ function validateRecord(value, expect, loc, name, critical, warn, depth) {
   for (const key of Object.keys(value)) {
     const valueKey = value[key];
     const nameKey = `${name}['${key}']`;
-    const ret = validateType(valueKey, val, loc, nameKey, critical, warn, depth + 1);
+    const ret = recurse(valueKey, val, loc, nameKey, critical, warn, depth + 1);
     if (!ret) {
       const info = {
         expect: val,

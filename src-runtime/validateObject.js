@@ -1,4 +1,4 @@
-import {validateType} from "./validateType.js";
+import {recurse} from "./validators.js";
 import {options     } from "./options.js";
 import {isObject    } from "./isObject.js";
 /**
@@ -33,7 +33,7 @@ function validateObject(value, properties, loc, name, critical, warn, depth) {
       const innerValue = value[key];
       const innerType = properties[key];
       const nameKey = `${name}.${key}`;
-      const ret = validateType(innerValue, innerType, loc, nameKey, critical, warn, depth + 1);
+      const ret = recurse(innerValue, innerType, loc, nameKey, critical, warn, depth + 1);
       if (!ret) {
         const info = {expect: innerType, value: innerValue};
         warn(`Element ${nameKey} has wrong type.`, info);

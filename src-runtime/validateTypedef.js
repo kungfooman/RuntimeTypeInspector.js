@@ -1,5 +1,5 @@
 import {typedefs    } from "./registerTypedef.js";
-import {validateType} from "./validateType.js";
+import {recurse} from "./validators.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {import('./validateType.js').TypeObject} expect - The supposed type information of said value.
@@ -19,6 +19,6 @@ function validateTypedef(value, expect, loc, name, critical, warn, depth) {
   // if (typeof typedef === 'string' && typedef !== 'Function') {
   //   return false;
   // }
-  return validateType(value, typedef, loc, name, critical, warn, depth + 1);
+  return recurse(value, typedef, loc, name, critical, warn, depth + 1);
 }
 export {validateTypedef};

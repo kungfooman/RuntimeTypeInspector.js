@@ -1,4 +1,4 @@
-import {validateType} from "./validateType.js";
+import {recurse} from "./validators.js";
 /**
  * @typedef {object} Union
  * @property {'union'} type - The type.
@@ -15,7 +15,7 @@ import {validateType} from "./validateType.js";
  * @returns {boolean} Boolean indicating if a type is correct.
  */
 function validateUnion(value, expect, loc, name, critical, warn, depth) {
-  const ret = expect.members.some(member => validateType(
+  const ret = expect.members.some(member => recurse(
     value,
     member,
     loc,

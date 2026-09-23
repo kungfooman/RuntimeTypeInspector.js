@@ -1,4 +1,4 @@
-import {validateType} from "./validateType.js";
+import {recurse} from "./validators.js";
 /**
  * @todo Implement checking all possible key/val types
  * @param {*} value - The actual value that we need to validate.
@@ -26,7 +26,7 @@ function validateMap(value, expect, loc, name, critical, warn, depth) {
   // }
   for (const [k, v] of value) {
     const nameKey = `${name}.get('${k}')`;
-    const good = validateType(v, val, loc, nameKey, critical, warn, depth + 1);
+    const good = recurse(v, val, loc, nameKey, critical, warn, depth + 1);
     if (!good) {
       const info = {expect: val, value: v};
       warn(`Element ${nameKey} has wrong type.`, info);

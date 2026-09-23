@@ -1,8 +1,6 @@
 import {typedefs} from "./registerTypedef.js";
 import {classes} from "./registerClass.js";
-import {validateType} from "./validateType.js";
-import {validateArray} from "./validateArray.js";
-import {validateArrayLike} from "./validateArrayLike.js";
+import {validators, recurse} from "./validators.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} elementType - The element type each indexed entry must satisfy.
@@ -33,14 +31,14 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
     case 'NodeList':
     case 'HTMLCollection':
       // Bare `ArrayLike` / DOM list types without <T>: shape-only check.
-      return validateArrayLike(value, firstArg ?? 'any', loc, name, critical, warn, depth + 1);
+      return validators.arrayLike(value, firstArg ?? 'any', loc, name, critical, warn, depth + 1);
     case 'ReadonlyArray':
       // Readonly-ness is erased at runtime, same shape as Array.
       if (!firstArg) {
         warn('ReadonlyArray requires one type argument.', {expect});
         return false;
       }
-      return validateArray(value, {type: 'array', elementType: firstArg}, loc, name, critical, warn, depth + 1);
+      return validators.array(value, {type: 'array', elementType: firstArg}, loc, name, critical, warn, depth + 1);
     case 'ConcatArray':
       // ConcatArray<T> is array-like (length + indexed access) plus join/slice.
       // Accept anything array-like here; arrays trivially satisfy it.
@@ -48,14 +46,14 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         warn('ConcatArray requires one type argument.', {expect});
         return false;
       }
-      return validateArrayLike(value, firstArg, loc, name, critical, warn, depth + 1);
+      return validators.arrayLike(value, firstArg, loc, name, critical, warn, depth + 1);
     case 'Readonly':
       // Readonly<T> doesn't change the runtime shape.
       if (!firstArg) {
         warn('Readonly requires one type argument.', {expect});
         return false;
       }
-      return validateType(value, firstArg, loc, name, critical, warn, depth + 1);
+      return recurse(value, firstArg, loc, name, critical, warn, depth + 1);
     case 'NonNullable':
       if (!firstArg) {
         warn('NonNullable requires one type argument.', {expect});
@@ -65,7 +63,7 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         warn('Expected NonNullable, got null/undefined.', {value});
         return false;
       }
-      return validateType(value, firstArg, loc, name, critical, warn, depth + 1);
+      return recurse(value, firstArg, loc, name, critical, warn, depth + 1);
     case 'Iterable':
     case 'IterableIterator':
       if (value === null || value === undefined) {
@@ -77,7 +75,7 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         return false;
       }
       if (firstArg && value instanceof Array) {
-        return validateArrayLike(value, firstArg, loc, name, critical, warn, depth + 1);
+        return validators.arrayLike(value, firstArg, loc, name, critical, warn, depth + 1);
       }
       return true;
     case 'AsyncIterable':
@@ -96,7 +94,7 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
     if (args?.length) {
       warn(`Generic typedef '${refName}' with type arguments isn't supported yet, validating against raw typedef.`, {expect});
     }
-    return validateType(value, typedefs[refName], loc, name, critical, warn, depth + 1);
+    return recurse(value, typedefs[refName], loc, name, critical, warn, depth + 1);
   }
   if (classes[refName]) {
     return value instanceof classes[refName];
