@@ -40,6 +40,20 @@ function replaceType(type, search, replace, warn) {
     case 'array':
       type.elementType = replaceType(type.elementType, search, replace, warn);
       return type;
+    case 'reference': {
+      const {args} = type;
+      if (Array.isArray(args)) {
+        for (let i = 0; i < args.length; i++) {
+          args[i] = replaceType(args[i], search, replace, warn);
+        }
+      }
+      return type;
+    }
+    case 'promise':
+    case 'set':
+    case 'class':
+      type.elementType = replaceType(type.elementType, search, replace, warn);
+      return type;
     case 'union': {
       const {members} = type;
       const {length } = members;
@@ -68,7 +82,6 @@ function replaceType(type, search, replace, warn) {
     case 'mapping':
     case 'intersection':
     case 'keyof':
-    case 'set':
     case 'new':
       warn('replaceType: @todo unhandled', {type, search, replace});
       break;

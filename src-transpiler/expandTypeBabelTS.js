@@ -112,8 +112,10 @@ function toSourceBabelTS(node) {
         const elementType = toSourceBabelTS(typeArguments[0]);
         return {type: 'class', elementType};
       }
-      console.warn('unhandled TypeReference', node);
-      return {type: 'unhandled TypeReference'};
+      // Parity with expandType(): generic references like ArrayLike<T>,
+      // ReadonlyArray<T>, NodeListOf<T> or user typedefs like MyBox<T>.
+      const args = typeArguments.map(toSourceBabelTS);
+      return {type: 'reference', name, args};
     }
     case 'TSStringKeyword':
       return 'string';
