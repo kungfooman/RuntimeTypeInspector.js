@@ -9,7 +9,9 @@ import {validateMap         } from "./validateMap.js";
 import {validateMapping     } from "./validateMapping.js";
 import {validateNumber      } from "./validateNumber.js";
 import {validateObject      } from "./validateObject.js";
+import {validatePromise     } from "./validatePromise.js";
 import {validateRecord      } from "./validateRecord.js";
+import {validateReference   } from "./validateReference.js";
 import {validateSet         } from "./validateSet.js";
 import {validateTemplateLiteral} from "./validateTemplateLiteral.js";
 import {validateTuple       } from "./validateTuple.js";
@@ -108,8 +110,12 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
       return value === undefined;
     case 'object':
       return validateObject(value, properties, loc, name, critical, warn, depth + 1);
+    case 'promise':
+      return validatePromise(value, expect, loc, name, critical, warn, depth + 1);
     case 'record':
       return validateRecord(value, expect, loc, name, critical, warn, depth + 1);
+    case 'reference':
+      return validateReference(value, expect, loc, name, critical, warn, depth + 1);
     case 'map':
       return validateMap(value, expect, loc, name, critical, warn, depth + 1);
     case 'mapping':

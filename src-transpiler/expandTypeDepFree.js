@@ -20,6 +20,76 @@
  * @property {object | string} [argument] - For typeof.
  */
 /**
+ * Splits a string by a delimiter, ignoring delimiters nested inside <>, {}, [], ().
+ * @param {string} str - The string to split.
+ * @param {string} delimiter - Single character delimiter.
+ * @returns {string[]} Top-level split parts.
+ */
+function splitTopLevel(str, delimiter) {
+  const parts = [];
+  let depthAngle = 0;
+  let depthCurly = 0;
+  let depthSquare = 0;
+  let depthParen = 0;
+  let current = '';
+  for (const c of str) {
+    if (c === '<') depthAngle++;
+    else if (c === '>') depthAngle--;
+    else if (c === '{') depthCurly++;
+    else if (c === '}') depthCurly--;
+    else if (c === '[') depthSquare++;
+    else if (c === ']') depthSquare--;
+    else if (c === '(') depthParen++;
+    else if (c === ')') depthParen--;
+    if (c === delimiter && depthAngle === 0 && depthCurly === 0 && depthSquare === 0 && depthParen === 0) {
+      parts.push(current);
+      current = '';
+    } else {
+      current += c;
+    }
+  }
+  parts.push(current);
+  return parts;
+}
+/**
+ * Parses `Name<A, B>` into name + raw arg strings, respecting nested brackets.
+ * Returns undefined when input isn't a generic reference.
+ * @param {string} type - Trimmed type string.
+ * @returns {{name: string, args: string[]}|undefined} Parsed generic reference.
+ */
+function parseGenericReference(type) {
+  const openIndex = type.indexOf('<');
+  if (openIndex === -1 || !type.endsWith('>')) {
+    return;
+  }
+  const name = type.slice(0, openIndex).trim();
+  if (!/^[A-Za-z_$][A-Za-z0-9_$.]*$/.test(name)) {
+    return;
+  }
+  // Find matching '>' for the first '<' to ensure outermost brackets wrap the whole type.
+  let depth = 0;
+  let closeIndex = -1;
+  for (let i = openIndex; i < type.length; i++) {
+    if (type[i] === '<') depth++;
+    else if (type[i] === '>') {
+      depth--;
+      if (depth === 0) {
+        closeIndex = i;
+        break;
+      }
+    }
+  }
+  if (closeIndex !== type.length - 1) {
+    return;
+  }
+  const inner = type.slice(openIndex + 1, closeIndex);
+  const args = splitTopLevel(inner, ',').map((_) => _.trim()).filter((_) => _.length);
+  if (!args.length) {
+    return;
+  }
+  return {name, args};
+}
+/**
  * 'DepFree' refers to the fact that this function has no dependencies,
  * while `expandType` depends on TypeScript itself for maximum compatibility.
  * @example
@@ -75,6 +145,32 @@ function expandTypeDepFree(type) {
       val: expandTypeDepFree(val),
     };
   }
+  // (3b) Map<...> / Set<...' for dep-free parity with expandType()
+  if (type.startsWith("Map<") && type.endsWith('>')) {
+    const inner = type.slice(4, -1);
+    const parts = splitTopLevel(inner, ',');
+    if (parts.length === 2) {
+      return {
+        type: "map",
+        key: expandTypeDepFree(parts[0].trim()),
+        val: expandTypeDepFree(parts[1].trim()),
+      };
+    }
+  }
+  if (type.startsWith("Set<") && type.endsWith('>')) {
+    const inner = type.slice(4, -1);
+    return {
+      type: "set",
+      elementType: expandTypeDepFree(inner.trim()),
+    };
+  }
+  // (3c) Generic reference types like ArrayLike<T>, ReadonlyArray<T> etc.
+  // Keep structured so the runtime can validate them instead of warning 'unchecked'.
+  const genericRef = parseGenericReference(type);
+  if (genericRef) {
+    const {name, args} = genericRef;
+    return {type: 'reference', name, args: args.map(expandTypeDepFree)};
+  }
   // (4) {...}
   if (type[0] === '{' && type[type.length - 1] === '}') {
     const propertiesArray = type.slice(1, -1).split(','); // ['entity: Entity', ' app: AppBase']
@@ -125,6 +221,17 @@ function expandTypeDepFree(type) {
       type: 'object',
       properties: {},
     };
+  }
+  // Literal normalization for parity with expandType():
+  // numeric literals become numbers, true/false become booleans.
+  if (type === 'true') {
+    return true;
+  }
+  if (type === 'false') {
+    return false;
+  }
+  if (/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(type)) {
+    return Number(type);
   }
   return type;
 }

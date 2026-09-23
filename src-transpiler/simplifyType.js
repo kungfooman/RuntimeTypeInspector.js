@@ -37,6 +37,9 @@ function simplifyType(type) {
   if (out.type === 'promise' && out.elementType) {
     out.elementType = simplifyType(out.elementType);
   }
+  if (out.type === 'reference' && Array.isArray(out.args)) {
+    out.args = out.args.map(simplifyType);
+  }
   if (out.type === 'record') {
     if (out.key) out.key = simplifyType(out.key);
     if (out.val) out.val = simplifyType(out.val);

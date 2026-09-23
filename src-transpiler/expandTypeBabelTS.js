@@ -112,8 +112,10 @@ function toSourceBabelTS(node) {
         const elementType = toSourceBabelTS(typeArguments[0]);
         return {type: 'class', elementType};
       }
-      console.warn('unhandled TypeReference', node);
-      return {type: 'unhandled TypeReference'};
+      // Parity with expandType(): generic references like ArrayLike<T>,
+      // ReadonlyArray<T>, NodeListOf<T> or user typedefs like MyBox<T>.
+      const args = typeArguments.map(toSourceBabelTS);
+      return {type: 'reference', name, args};
     }
     case 'TSStringKeyword':
       return 'string';
@@ -165,7 +167,7 @@ function toSourceBabelTS(node) {
       return 'boolean';
     // expandTypeBabelTS('true | false');
     case 'BooleanLiteral':
-      return node.value.toString();
+      return node.value;
     // ts.SyntaxKind[parseType("*").kind] === 'JSDocAllType'
     // But Babel-TS doesn't parse it atm
     //case 'JSDocAllType':
@@ -174,6 +176,7 @@ function toSourceBabelTS(node) {
       return 'null';
     // expandTypeBabelTS('123')
     case 'NumericLiteral':
+      return typeof node.value === 'number' ? node.value : Number(node.extra.raw);
     case 'StringLiteral':
       return node.extra.raw;
     // expandTypeBabelTS('undefined')
