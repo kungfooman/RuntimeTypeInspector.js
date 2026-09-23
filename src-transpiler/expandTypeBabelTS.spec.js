@@ -1,12 +1,15 @@
 import {expandType} from './expandType.js';
 import {expandTypeBabelTS} from './expandTypeBabelTS.js';
+import {expandTypeDepFree} from './expandTypeDepFree.js';
 import {validateType} from '../src-runtime/validateType.js';
 const warn = () => undefined;
 function assertParity(type) {
   const fromTS = expandType(type);
   const fromBabel = expandTypeBabelTS(type);
-  if (JSON.stringify(fromBabel) !== JSON.stringify(fromTS)) {
-    console.warn(`Babel parity mismatch for '${type}'`, {fromTS, fromBabel});
+  const fromDepFree = expandTypeDepFree(type);
+  const jsonTS = JSON.stringify(fromTS);
+  if (JSON.stringify(fromBabel) !== jsonTS || JSON.stringify(fromDepFree) !== jsonTS) {
+    console.warn(`Parity mismatch for '${type}'`, {fromTS, fromBabel, fromDepFree});
     return false;
   }
   return true;
@@ -41,6 +44,15 @@ function testExistingGenericsUnchanged() {
   }
   return true;
 }
+function testTupleLiteralParity() {
+  // Numeric/boolean literals must be numbers/booleans (not strings) on all three parsers.
+  for (const type of ['[1, 2, 3]', "['a', 'b']", '[true, false]', '123', 'true']) {
+    if (!assertParity(type)) {
+      return false;
+    }
+  }
+  return true;
+}
 function testBabelReferenceValidates() {
   // End-to-end: Babel-parsed ArrayLike<number> must validate like the TS-parsed one.
   const expect = expandTypeBabelTS('ArrayLike<number>');
@@ -61,5 +73,6 @@ export const tests = [
   testCustomReferenceParity,
   testNestedReferenceParity,
   testExistingGenericsUnchanged,
+  testTupleLiteralParity,
   testBabelReferenceValidates,
 ];

@@ -222,6 +222,17 @@ function expandTypeDepFree(type) {
       properties: {},
     };
   }
+  // Literal normalization for parity with expandType():
+  // numeric literals become numbers, true/false become booleans.
+  if (type === 'true') {
+    return true;
+  }
+  if (type === 'false') {
+    return false;
+  }
+  if (/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(type)) {
+    return Number(type);
+  }
   return type;
 }
 export {expandTypeDepFree};
