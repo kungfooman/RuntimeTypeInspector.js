@@ -23,26 +23,28 @@ import {validators          } from "./validators.js";
 /**
  * Populates the dispatch table: every edge points outward from here, so the
  * module graph stays acyclic. Importing this module (or the package index)
- * guarantees a full table.
+ * guarantees a full table. Shorthand keys mirror the export names.
  */
-validators.validate = validateType;
-validators.object = validateObject;
-validators.record = validateRecord;
-validators.reference = validateReference;
-validators.map = validateMap;
-validators.mapping = validateMapping;
-validators.array = validateArray;
-validators.intersection = validateIntersection;
-validators.keyof = validateKeyof;
-validators.union = validateUnion;
-validators.set = validateSet;
-validators.templateLiteral = validateTemplateLiteral;
-validators.tuple = validateTuple;
-validators.typeof = validateTypeof;
-validators.number = validateNumber;
-validators.promise = validatePromise;
-validators.arrayLike = validateArrayLike;
-validators.typedef = validateTypedef;
+Object.assign(validators, {
+  validateType,
+  validateObject,
+  validateRecord,
+  validateReference,
+  validateMap,
+  validateMapping,
+  validateArray,
+  validateIntersection,
+  validateKeyof,
+  validateUnion,
+  validateSet,
+  validateTemplateLiteral,
+  validateTuple,
+  validateTypeof,
+  validateNumber,
+  validatePromise,
+  validateArrayLike,
+  validateTypedef,
+});
 /**
  * @typedef {object} TypeObject
  * @property {string} type - Something like 'string', 'number', 'object', 'MeshInstance' etc.
@@ -128,40 +130,40 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
   }
   if (typedefs[type] && !classes[type]) {
     // If a typedef is also a class, it's just a shorthand-typedef-class
-    return validators.typedef(value, expect, loc, name, critical, warn, depth + 1);
+    return validators.validateTypedef(value, expect, loc, name, critical, warn, depth + 1);
   }
   switch (type) {
     case 'undefined':
       return value === undefined;
     case 'object':
-      return validators.object(value, properties, loc, name, critical, warn, depth + 1);
+      return validators.validateObject(value, properties, loc, name, critical, warn, depth + 1);
     case 'promise':
-      return validators.promise(value, expect, loc, name, critical, warn, depth + 1);
+      return validators.validatePromise(value, expect, loc, name, critical, warn, depth + 1);
     case 'record':
-      return validators.record(value, expect, loc, name, critical, warn, depth + 1);
+      return validators.validateRecord(value, expect, loc, name, critical, warn, depth + 1);
     case 'reference':
-      return validators.reference(value, expect, loc, name, critical, warn, depth + 1);
+      return validators.validateReference(value, expect, loc, name, critical, warn, depth + 1);
     case 'map':
-      return validators.map(value, expect, loc, name, critical, warn, depth + 1);
+      return validators.validateMap(value, expect, loc, name, critical, warn, depth + 1);
     case 'mapping':
-      return validators.mapping(value, expect, loc, name, critical, warn, depth + 1);
+      return validators.validateMapping(value, expect, loc, name, critical, warn, depth + 1);
     case 'array':
-      return validators.array(value, expect, loc, name, critical, warn, depth + 1);
+      return validators.validateArray(value, expect, loc, name, critical, warn, depth + 1);
     case 'intersection':
-      return validators.intersection(value, expect, loc, name, critical, warn, depth + 1);
+      return validators.validateIntersection(value, expect, loc, name, critical, warn, depth + 1);
     case 'keyof':
-      return validators.keyof(value, expect, loc, name, critical, warn, depth + 1);
+      return validators.validateKeyof(value, expect, loc, name, critical, warn, depth + 1);
     case 'union':
-      return validators.union(value, expect, loc, name, critical, warn, depth + 1);
+      return validators.validateUnion(value, expect, loc, name, critical, warn, depth + 1);
     case 'set':
-      return validators.set(value, expect, loc, name, critical, warn, depth + 1);
+      return validators.validateSet(value, expect, loc, name, critical, warn, depth + 1);
     case 'templateLiteral':
-      return validators.templateLiteral(value, expect, loc, name, critical, warn, depth + 1);
+      return validators.validateTemplateLiteral(value, expect, loc, name, critical, warn, depth + 1);
     case 'tuple':
       // Trigger: pc.app.scene.setSkybox([1, 2, 3]);
-      return validators.tuple(value, expect, loc, name, critical, warn, depth + 1);
+      return validators.validateTuple(value, expect, loc, name, critical, warn, depth + 1);
     case 'typeof':
-      return validators.typeof(value, expect, loc, name, critical, warn, depth + 1);
+      return validators.validateTypeof(value, expect, loc, name, critical, warn, depth + 1);
     case '*':
     case 'any':
       return true;
@@ -169,7 +171,7 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
       /** @todo allow strict/non-strict null/undefined with checkbox in <div> */
       return value === null;
     case 'number':
-      return validators.number(value, expect, loc, name, critical, warn, depth + 1);
+      return validators.validateNumber(value, expect, loc, name, critical, warn, depth + 1);
     case 'string':
     case 'boolean':
       return typeof value === type;

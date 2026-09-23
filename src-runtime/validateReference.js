@@ -31,14 +31,14 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
     case 'NodeList':
     case 'HTMLCollection':
       // Bare `ArrayLike` / DOM list types without <T>: shape-only check.
-      return validators.arrayLike(value, firstArg ?? 'any', loc, name, critical, warn, depth + 1);
+      return validators.validateArrayLike(value, firstArg ?? 'any', loc, name, critical, warn, depth + 1);
     case 'ReadonlyArray':
       // Readonly-ness is erased at runtime, same shape as Array.
       if (!firstArg) {
         warn('ReadonlyArray requires one type argument.', {expect});
         return false;
       }
-      return validators.array(value, {type: 'array', elementType: firstArg}, loc, name, critical, warn, depth + 1);
+      return validators.validateArray(value, {type: 'array', elementType: firstArg}, loc, name, critical, warn, depth + 1);
     case 'ConcatArray':
       // ConcatArray<T> is array-like (length + indexed access) plus join/slice.
       // Accept anything array-like here; arrays trivially satisfy it.
@@ -46,7 +46,7 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         warn('ConcatArray requires one type argument.', {expect});
         return false;
       }
-      return validators.arrayLike(value, firstArg, loc, name, critical, warn, depth + 1);
+      return validators.validateArrayLike(value, firstArg, loc, name, critical, warn, depth + 1);
     case 'Readonly':
       // Readonly<T> doesn't change the runtime shape.
       if (!firstArg) {
@@ -75,7 +75,7 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         return false;
       }
       if (firstArg && value instanceof Array) {
-        return validators.arrayLike(value, firstArg, loc, name, critical, warn, depth + 1);
+        return validators.validateArrayLike(value, firstArg, loc, name, critical, warn, depth + 1);
       }
       return true;
     case 'AsyncIterable':

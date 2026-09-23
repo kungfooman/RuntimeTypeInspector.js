@@ -5,11 +5,10 @@
  * `validateType.js` populates the table at module scope, so importing it
  * (or the package index, or the published bundle) guarantees a full table.
  * The table stays writable on purpose: overriding entries from userland
- * (e.g. a custom `reference` validator) takes effect immediately, without
+ * (e.g. a custom `validateReference`) takes effect immediately, without
  * forking RTI or waiting for a release.
- * Apart from `validate` (the recursion entry, same contract as
- * `validateType`), `arrayLike` and `typedef` (helpers with their own
- * shapes), keys are the `expect.type` strings dispatched on in `validateType`.
+ * Keys mirror the export names (`validators.validateArray === validateArray`),
+ * so dispatch and recursion read plainly with no invented vocabulary.
  * @type {Record<string, Function>}
  */
 const validators = {};
@@ -27,9 +26,9 @@ const validators = {};
  * @returns {boolean} Returns wether `value` is in the shape of `expect`.
  */
 function recurse(value, expect, loc, name, critical, warn, depth) {
-  const validate = validators.validate;
+  const validate = validators.validateType;
   if (!validate) {
-    throw new Error('validators.validate is not registered: import validateType.js (or the runtime index) first.');
+    throw new Error('validators.validateType is not registered: import validateType.js (or the runtime index) first.');
   }
   return validate(value, expect, loc, name, critical, warn, depth);
 }
