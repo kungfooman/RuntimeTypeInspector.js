@@ -1,4 +1,4 @@
-import {validateType} from "./validateType.js";
+import {recurse} from "./validators.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -17,7 +17,7 @@ function validateSet(value, expect, loc, name, critical, warn, depth) {
   const {elementType} = expect;
   let i = 0;
   for (const innerValue of value) {
-    const test = validateType(innerValue, elementType, loc, name, critical, warn, depth + 1);
+    const test = recurse(innerValue, elementType, loc, name, critical, warn, depth + 1);
     if (!test) {
       const info = {expect: elementType, got: innerValue};
       warn(`validateSet> invalid set member at [...${name}.values()][${i}]`, info);

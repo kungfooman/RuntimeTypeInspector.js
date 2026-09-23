@@ -1,4 +1,4 @@
-import {validateType} from "./validateType.js";
+import {recurse} from "./validators.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -13,7 +13,7 @@ function validateIntersection(value, expect, loc, name, critical, warn, depth) {
   const {members} = expect;
   // console.log('validateIntersection', {value, expect, loc, name, critical, warn});
   for (const member of members) {
-    const good = validateType(value, member, loc, name, critical, warn, depth + 1);
+    const good = recurse(value, member, loc, name, critical, warn, depth + 1);
     if (!good) {
       warn(`Doesn't match intersection member.`, {member});
       return false;

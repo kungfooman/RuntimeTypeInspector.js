@@ -1,4 +1,4 @@
-import {validateType} from "./validateType.js";
+import {recurse} from "./validators.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -61,7 +61,7 @@ function validateTuple(value, expect, loc, name, critical, warn, depth) {
     // Validate before part
     for (let i = 0; i < before.length; i++) {
       if (value[i] === undefined && isOptional(before[i])) continue;
-      if (!validateType(value[i], getEffective(before[i]), loc, `${name}[${i}]`, critical, warn, depth + 1)) {
+      if (!recurse(value[i], getEffective(before[i]), loc, `${name}[${i}]`, critical, warn, depth + 1)) {
         warn('Tuple validation failed.');
         return false;
       }
@@ -70,7 +70,7 @@ function validateTuple(value, expect, loc, name, critical, warn, depth) {
     const middleCount = value.length - before.length - after.length;
     for (let i = 0; i < middleCount; i++) {
       const idx = before.length + i;
-      if (!validateType(value[idx], variadic.elementType, loc, `${name}[${idx}]`, critical, warn, depth + 1)) {
+      if (!recurse(value[idx], variadic.elementType, loc, `${name}[${idx}]`, critical, warn, depth + 1)) {
         warn('Tuple validation failed.');
         return false;
       }
@@ -79,7 +79,7 @@ function validateTuple(value, expect, loc, name, critical, warn, depth) {
     for (let i = 0; i < after.length; i++) {
       const idx = before.length + middleCount + i;
       if (value[idx] === undefined && isOptional(after[i])) continue;
-      if (!validateType(value[idx], getEffective(after[i]), loc, `${name}[${idx}]`, critical, warn, depth + 1)) {
+      if (!recurse(value[idx], getEffective(after[i]), loc, `${name}[${idx}]`, critical, warn, depth + 1)) {
         warn('Tuple validation failed.');
         return false;
       }
@@ -95,7 +95,7 @@ function validateTuple(value, expect, loc, name, critical, warn, depth) {
   }
   const ret = expanded.every((element, i) => {
     if (i >= value.length) return isOptional(element); // missing optional is ok
-    return validateType(
+    return recurse(
       value[i],
       getEffective(element),
       loc,

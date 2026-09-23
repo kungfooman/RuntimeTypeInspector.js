@@ -1,5 +1,5 @@
 import {createTypeFromMapping} from "./createTypeFromMapping.js";
-import {validateType         } from "./validateType.js";
+import {recurse             } from "./validators.js";
 /**
  * @typedef {object} Mapping
  * @property {import('./validateType.js').Type} iterable - The iterable.
@@ -25,7 +25,7 @@ function validateMapping(value, expect, loc, name, critical, warn, depth) {
     warn('validateMapping: missing tempTypeObject');
     return false;
   }
-  const good = validateType(value, tempTypeObject, loc, name, critical, warn, depth + 1);
+  const good = recurse(value, tempTypeObject, loc, name, critical, warn, depth + 1);
   if (!good) {
     const info = {tempTypeObject};
     warn(`validateMapping failed`, info);
