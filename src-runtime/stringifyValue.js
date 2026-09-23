@@ -10,11 +10,11 @@
  * - useful shapes survive: class tag via `$type`, `Map`/`Set`/typed arrays
  *   as bounded content, `ArrayBuffer`/`Promise`/DOM as tags.
  * @param {*} value - The value to serialize.
- * @param {object} [options] - Budgets.
- * @param {number} [options.maxDepth=5] - Max nesting depth.
- * @param {number} [options.maxBreadth=20] - Max keys/items per level.
- * @param {number} [options.maxString=200] - Max string length.
- * @param {number} [options.maxNodes=1000] - Max total visited nodes.
+ * @param {object} options - Budgets.
+ * @param {number} options.maxDepth - Max nesting depth, defaults to 5.
+ * @param {number} options.maxBreadth - Max keys/items per level, defaults to 20.
+ * @param {number} options.maxString - Max string length, defaults to 200.
+ * @param {number} options.maxNodes - Max total visited nodes, defaults to 1000.
  * @returns {*} JSON-safe structured data.
  */
 function stringifyValue(value, options = {}) {
@@ -164,7 +164,7 @@ function stringifyValue(value, options = {}) {
       seen.push({obj: val, path});
       const stringKeys = Object.keys(val);
       const symbolKeys = Object.getOwnPropertySymbols(val);
-      const labels = [...stringKeys, ...symbolKeys.map((sym) => sym.description === undefined ? '[Symbol]' : `[Symbol ${sym.description}]`)];
+      const labels = [...stringKeys, ...symbolKeys.map((sym) => (sym.description === undefined ? '[Symbol]' : `[Symbol ${sym.description}]`))];
       const count = Math.min(labels.length, maxBreadth);
       for (let i = 0; i < count; i++) {
         const key = labels[i];

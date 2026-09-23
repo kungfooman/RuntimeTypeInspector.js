@@ -66,14 +66,18 @@ function testExoticTypes() {
   if (stringifyValue(Symbol('desc')) !== '[Symbol desc]') {
     return false;
   }
+  // eslint-disable-next-line symbol-description -- undescribed symbols need coverage too
   if (stringifyValue(Symbol()) !== '[Symbol]') {
     return false;
   }
   return true;
 }
+function throwGetter() {
+  throw new Error('getter');
+}
 function testThrowingGetter() {
   const obj = {ok: 1};
-  Object.defineProperty(obj, 'boom', {enumerable: true, get() { throw new Error('getter'); }});
+  Object.defineProperty(obj, 'boom', {enumerable: true, get: throwGetter});
   const out = stringifyValue(obj);
   if (out.ok !== 1 || out.boom !== '[Getter threw]') {
     return false;
@@ -135,7 +139,7 @@ function testNeverThrowsNeverMegabytes() {
     str: 'y'.repeat(100000),
     bigarr: new Float64Array(100000),
     map: new Map(Array.from({length: 1000}, (_, i) => [`k${i}`, i])),
-    fn: function f() {},
+    fn: function fn() {},
     sym: Symbol('s'),
     undef: undefined,
     bigi: 999n,
@@ -143,7 +147,7 @@ function testNeverThrowsNeverMegabytes() {
     proxy,
   };
   sink.self = sink;
-  Object.defineProperty(sink, 'getter', {enumerable: true, get() { throw new Error('g'); }});
+  Object.defineProperty(sink, 'getter', {enumerable: true, get: throwGetter});
   let json;
   try {
     json = JSON.stringify(stringifyValue(sink));
