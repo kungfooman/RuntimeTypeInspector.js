@@ -82,7 +82,8 @@ function toSourceBabelTS(node) {
     case 'TSTypeReference': {
       const name = toSourceBabelTS(node.typeName);
       if (!node.typeParameters) {
-        // Bare reference: Identifier → name, TSQualifiedName → dotted path.
+        // console.log(`node.typeName.name=${node.typeName.name} name=${name}`, node);
+        // Bare reference: Identifier gives name, TSQualifiedName gives dotted path.
         return name;
       }
       console.assert(node.typeParameters.type === 'TSTypeParameterInstantiation');
