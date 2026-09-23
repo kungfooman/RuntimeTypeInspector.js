@@ -236,8 +236,6 @@ function toSourceTS(node) {
         return toSourceTS(node.type);
       }
       console.warn("unimplemented TypeOperator", node);
-      // Recover instead of falling through into TypeReference and throwing:
-      // one crash would kill the whole file transpile.
       return 'any';
     case TypeReference: {
       if (!ts.isTypeReferenceNode(node)) {
