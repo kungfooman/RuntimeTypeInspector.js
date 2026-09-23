@@ -215,6 +215,13 @@ function toSourceBabelTS(node) {
     case 'TSTypeQuery':
       const argument = toSourceBabelTS(node.exprName);
       return {type: 'typeof', argument};
+    case 'TSTypeOperator':
+      if (node.operator === 'readonly') {
+        // readonly erased at runtime, same shape as the inner type.
+        return toSourceBabelTS(node.typeAnnotation);
+      }
+      console.warn('unimplemented TSTypeOperator', node.operator);
+      return 'any';
     case 'TSQualifiedName':
       return `${toSourceBabelTS(node.left)}.${toSourceBabelTS(node.right)}`;
     default:
