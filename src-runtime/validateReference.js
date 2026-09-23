@@ -2,6 +2,7 @@ import {typedefs} from "./registerTypedef.js";
 import {classes} from "./registerClass.js";
 import {validateType} from "./validateType.js";
 import {validateArray} from "./validateArray.js";
+import {validateArrayLike} from "./validateArrayLike.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} elementType - The element type each indexed entry must satisfy.
@@ -12,33 +13,6 @@ import {validateArray} from "./validateArray.js";
  * @param {number} depth - The depth to detect recursion.
  * @returns {boolean} Boolean indicating if a type is correct.
  */
-function validateArrayLike(value, elementType, loc, name, critical, warn, depth) {
-  if (value === null || value === undefined) {
-    warn(`Expected ArrayLike, got ${value}.`, {value, expect: elementType});
-    return false;
-  }
-  const valueType = typeof value;
-  if (valueType !== 'object' && valueType !== 'function' && valueType !== 'string') {
-    warn('Expected ArrayLike (object with numeric length).', {value});
-    return false;
-  }
-  const {length} = value;
-  if (typeof length !== 'number' || !Number.isInteger(length) || length < 0) {
-    warn('Expected ArrayLike to have an integer length >= 0.', {value});
-    return false;
-  }
-  for (let i = 0; i < length; i++) {
-    const valueIndex = value[i];
-    const nameIndex = `${name}[${i}]`;
-    const ret = validateType(valueIndex, elementType, loc, nameIndex, critical, warn, depth + 1);
-    if (!ret) {
-      const info = {expect: elementType, value: valueIndex};
-      warn(`Element at index ${i} has a wrong type.`, info);
-      return false;
-    }
-  }
-  return true;
-}
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {import('./validateType.js').TypeObject} expect - The supposed type information of said value.
@@ -139,4 +113,4 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
   warn('unchecked', {value, type: 'reference', loc, name, expect});
   return false;
 }
-export {validateReference, validateArrayLike};
+export {validateReference};
