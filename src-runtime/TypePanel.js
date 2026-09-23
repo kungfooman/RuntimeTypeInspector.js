@@ -3,6 +3,7 @@ import {decodeBase64 } from "./base64.js";
 import {encodeBase64 } from "./base64.js";
 import {options    } from "./options.js";
 import {createTable} from "./warnedTable.js";
+import {stringifyValue} from "./stringifyValue.js";
 import {Warning    } from "./Warning.js";
 /**
  * @typedef {MessageEvent<{action: string}>} MessageEventRTI
@@ -63,13 +64,18 @@ class TypePanel {
   buttonLoadState = document.createElement('button');
   buttonSaveState = document.createElement('button');
   buttonClear     = document.createElement('button');
+  buttonDownloadLog = document.createElement('button');
   warnedTable     = createTable();
   /** @type {Record<string, import('./Warning.js').Warning>} */
   warnings = {};
+  /** @type {object[]} */
+  eventLog = [];
+  maxEventLogSize = 1000;
+  maxStackFrames = 20;
   constructor() {
     const {
       div, inputEnable, spanErrors, span, select, option_spam, option_once, option_never,
-      buttonHide, buttonLoadState, buttonSaveState, buttonClear, warnedTable,
+      buttonHide, buttonLoadState, buttonSaveState, buttonClear, buttonDownloadLog, warnedTable,
     } = this;
     TypePanel.divAll ??= document.createElement('div');
     const {divAll} = TypePanel;
@@ -117,7 +123,9 @@ class TypePanel {
     buttonSaveState.onclick = () => this.saveState();
     buttonClear.textContent = 'Clear';
     buttonClear.onclick = () => this.clear();
-    div.append(inputEnable, spanErrors, span, select, buttonHide, buttonLoadState, buttonSaveState, buttonClear, warnedTable);
+    buttonDownloadLog.textContent = 'Download log';
+    buttonDownloadLog.onclick = () => this.downloadLog();
+    div.append(inputEnable, spanErrors, span, select, buttonHide, buttonLoadState, buttonSaveState, buttonClear, buttonDownloadLog, warnedTable);
     div.style.maxHeight = '200px';
     div.style.overflow = 'scroll';
     divAll.append(div);
@@ -190,6 +198,34 @@ class TypePanel {
       warning.tr.remove();
       delete warnings[key];
     }
+    this.eventLog.length = 0;
+  }
+  /**
+   * Captures the current stack like the console shows it for warnings,
+   * bounded so deep stacks can't bloat the log.
+   * @returns {string[]} Stack lines, oldest dropped past the cap.
+   */
+  captureStack() {
+    const lines = (new Error().stack ?? '').split('\n');
+    if (lines.length > this.maxStackFrames + 1) {
+      return [...lines.slice(0, this.maxStackFrames + 1), `... (+${lines.length - this.maxStackFrames - 1} more frames)`];
+    }
+    return lines;
+  }
+  /**
+   * @returns {string} JSON log of recorded type errors, e.g. for AI debugging context.
+   */
+  exportLog() {
+    return JSON.stringify(this.eventLog, null, 2);
+  }
+  downloadLog() {
+    const blob = new Blob([this.exportLog()], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'rti-errors.json';
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
   get state() {
     /** @type {object[]} */
@@ -274,6 +310,14 @@ class TypePanel {
     const {value, expect, loc, name, valueToString, strings, extras = [], key} = event.data;
     const msg = `${loc}> The '${name}' argument has an invalid type. ${strings.join(' ')}`.trim();
     this.updateErrorCount();
+    // Keep a capped, serializable log for download/AI context. Recorded
+    // first so a UI rendering failure below can't lose the error. Values
+    // are snapshotted bounded instead of referenced, so later mutation and
+    // unserializable shapes can't corrupt the log.
+    this.eventLog.push({timestamp: Date.now(), loc, name, key, expect, value: stringifyValue(value), valueToString, messages: [...strings], stack: this.captureStack()});
+    if (this.eventLog.length > this.maxEventLogSize) {
+      this.eventLog.splice(0, this.eventLog.length - this.maxEventLogSize);
+    }
     let warnObj = this.warnings[key];
     if (!warnObj) {
       warnObj = new Warning(msg, value, expect, loc, name);
