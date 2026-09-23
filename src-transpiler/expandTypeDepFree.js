@@ -111,6 +111,13 @@ function expandTypeDepFree(type) {
   if (type.startsWith('?') && type.length > 1) {
     return {type: 'union', members: [expandTypeDepFree(type.slice(1).trim()), 'null']};
   }
+  // `readonly T` erased at runtime, same shape as the inner type.
+  if (type.startsWith('readonly ') && type.length > 9) {
+    return expandTypeDepFree(type.slice(9).trim());
+  }
+  if (type === 'unique symbol') {
+    return 'any';
+  }
   // '(123)' -> '123'
   while (!type.includes('|') && type[0] === '(' && type[type.length - 1] === ')') {
     type = type.slice(1, -1).trim();

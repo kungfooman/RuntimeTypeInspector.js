@@ -71,6 +71,15 @@ function testJSDocNullableParity() {
   }
   return true;
 }
+function testReadonlyUniqueParity() {
+  // Stresstest: readonly erased, unknown operators recover as any, no throws.
+  for (const type of ['readonly number[]', 'readonly [1, 2]', 'unique symbol']) {
+    if (!assertParity(type)) {
+      return false;
+    }
+  }
+  return true;
+}
 function testJSDocNullableValidates() {
   // End-to-end: Babel-parsed `number?` accepts numbers and null, rejects strings.
   const expect = expandTypeBabelTS('number?');
@@ -109,5 +118,6 @@ export const tests = [
   testTSQualifiedNameParity,
   testJSDocNullableParity,
   testJSDocNullableValidates,
+  testReadonlyUniqueParity,
   testBabelReferenceValidates,
 ];

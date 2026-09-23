@@ -112,6 +112,8 @@ function toSourceTS(node) {
     TypeQuery,           // parseType('typeof Number'                  ).kind                 === ts.SyntaxKind.TypeQuery
     TypeOperator,        // parseType('keyof typeof obj'               ).kind                 === ts.SyntaxKind.TypeOperator
     KeyOfKeyword,        // parseType('keyof typeof obj'               ).operator             === ts.SyntaxKind.KeyOfKeyword
+    ReadonlyKeyword,     // parseType('readonly number[]'              ).operator             === ts.SyntaxKind.ReadonlyKeyword
+    UniqueKeyword,       // parseType('unique symbol'                  ).operator             === ts.SyntaxKind.UniqueKeyword
     ConstructorType,     // parseType('new (...args: any[]) => any'    ).kind                 === ts.SyntaxKind.ConstructorType
     NamedTupleMember,    // parseType('[a: 1]'                         ).elements[0].kind     === ts.SyntaxKind.NamedTupleMember
     MappedType,          // parseType('{[K in TaskType]: 123}'         ).kind                 === ts.SyntaxKind.MappedType
@@ -229,7 +231,14 @@ function toSourceTS(node) {
         const argument = toSourceTS(node.type);
         return {type: 'keyof', argument};
       }
+      if (node.operator === ReadonlyKeyword) {
+        // readonly erased at runtime, same shape as the inner type.
+        return toSourceTS(node.type);
+      }
       console.warn("unimplemented TypeOperator", node);
+      // Recover instead of falling through into TypeReference and throwing:
+      // one crash would kill the whole file transpile.
+      return 'any';
     case TypeReference: {
       if (!ts.isTypeReferenceNode(node)) {
         throw Error("Impossible");
