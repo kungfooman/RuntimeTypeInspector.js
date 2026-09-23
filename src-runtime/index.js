@@ -22,6 +22,7 @@ export * from './registerVariable.js';
 export * from './replaceType.js';
 export * from './resolveType.js';
 export * from './stringifyType.js';
+export * from './stringifyValue.js';
 export * from './TypePanel.js';
 export * from './validateArray.js';
 export * from './validateArrayLike.js';
