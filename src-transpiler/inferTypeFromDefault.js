@@ -58,7 +58,7 @@ function inferTypeFromDefault(node) {
     default:
       // NullLiteral, identifiers, calls, member access, conditionals etc.:
       // nothing precise to infer, skip instead of emitting an `any` no-op.
-      return;
+      break;
   }
 }
 export {inferTypeFromDefault};
