@@ -19,6 +19,15 @@ import {parse} from '@babel/parser';
  * @returns {string|object|undefined} - See `toSourceBabelTS`.
  */
 function expandTypeBabelTS(type) {
+  type = type.trim();
+  // JSDocNullableType (`T?` / `?T`): Babel has no support (babel/babel#16073),
+  // handle at string level to match expandType() union-with-null.
+  if (type.endsWith('?') && type.length > 1) {
+    return {type: 'union', members: [expandTypeBabelTS(type.slice(0, -1).trim()), 'null']};
+  }
+  if (type.startsWith('?') && type.length > 1) {
+    return {type: 'union', members: [expandTypeBabelTS(type.slice(1).trim()), 'null']};
+  }
   const ast = parseTypeBabelTS(type);
   return toSourceBabelTS(ast);
 }

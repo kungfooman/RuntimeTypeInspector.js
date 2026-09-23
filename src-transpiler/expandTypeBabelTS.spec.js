@@ -62,6 +62,29 @@ function testTSQualifiedNameParity() {
   }
   return true;
 }
+function testJSDocNullableParity() {
+  // Issue #10: nullable suffix/prefix on all three parsers.
+  for (const type of ['number?', '?number', 'Array<number>?', 'string?', 'ArrayLike<number>?']) {
+    if (!assertParity(type)) {
+      return false;
+    }
+  }
+  return true;
+}
+function testJSDocNullableValidates() {
+  // End-to-end: Babel-parsed `number?` accepts numbers and null, rejects strings.
+  const expect = expandTypeBabelTS('number?');
+  if (!validateType(1, expect, 'test', 'a', true, warn, 0)) {
+    return false;
+  }
+  if (!validateType(null, expect, 'test', 'a', true, warn, 0)) {
+    return false;
+  }
+  if (validateType('1', expect, 'test', 'a', true, warn, 0)) {
+    return false;
+  }
+  return true;
+}
 function testBabelReferenceValidates() {
   // End-to-end: Babel-parsed ArrayLike<number> must validate like the TS-parsed one.
   const expect = expandTypeBabelTS('ArrayLike<number>');
@@ -84,5 +107,7 @@ export const tests = [
   testExistingGenericsUnchanged,
   testTupleLiteralParity,
   testTSQualifiedNameParity,
+  testJSDocNullableParity,
+  testJSDocNullableValidates,
   testBabelReferenceValidates,
 ];

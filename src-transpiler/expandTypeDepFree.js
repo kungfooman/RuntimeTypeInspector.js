@@ -104,6 +104,13 @@ function parseGenericReference(type) {
  */
 function expandTypeDepFree(type) {
   type = type.trim();
+  // JSDocNullableType (`T?` / `?T`): union with null, matching expandType().
+  if (type.endsWith('?') && type.length > 1) {
+    return {type: 'union', members: [expandTypeDepFree(type.slice(0, -1).trim()), 'null']};
+  }
+  if (type.startsWith('?') && type.length > 1) {
+    return {type: 'union', members: [expandTypeDepFree(type.slice(1).trim()), 'null']};
+  }
   // '(123)' -> '123'
   while (!type.includes('|') && type[0] === '(' && type[type.length - 1] === ')') {
     type = type.slice(1, -1).trim();
