@@ -54,7 +54,7 @@ function testTupleLiteralParity() {
   return true;
 }
 function testTSQualifiedNameParity() {
-  // Issue #12: qualified names on all three parsers.
+  // Qualified names on all three parsers.
   for (const type of ['some.name.space.Array', 'some.name.space.Array<number>', 'typeof some.name']) {
     if (!assertParity(type)) {
       return false;
@@ -63,7 +63,7 @@ function testTSQualifiedNameParity() {
   return true;
 }
 function testJSDocNullableParity() {
-  // Issue #10: nullable suffix/prefix on all three parsers.
+  // Nullable suffix/prefix on all three parsers.
   for (const type of ['number?', '?number', 'Array<number>?', 'string?', 'ArrayLike<number>?']) {
     if (!assertParity(type)) {
       return false;

@@ -1,7 +1,7 @@
 import {extractCurlyContent} from './parseJSDocTypedef.js';
 /**
- * Extracts an inline `/** @type {X} *\/` annotation from parameter comments
- * (issue #41), e.g. `function add(/** @type {number} *\/ a) {...}`.
+ * Extracts an inline `/** @type {X} *\/` annotation from parameter comments,
+ * e.g. `function add(/** @type {number} *\/ a) {...}`.
  * @param {Array<{value: string}>|undefined} leadingComments - Leading comments of a param node.
  * @param {Function} expandType - Function expanding a type string.
  * @returns {any} Expanded type or `undefined` when no inline `@type` found.

@@ -455,7 +455,7 @@ class Asserter extends Stringifier {
     // return '// ' + JSON.stringify(jsdoc) + '\n';
     const stat = this.getStatsForNode(node);
     if (!jsdoc) {
-      // No JSDoc at all: default-value inference (issue #65) is the only
+      // No JSDoc at all: default-value inference is the only
       // source of types. Emit nothing when nothing is inferable.
       const inferred = this.collectDefaultChecks(node, new Set());
       if (!inferred.length) {
@@ -633,12 +633,12 @@ class Asserter extends Stringifier {
       out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
     }
     // Params without JSDoc but with inferable defaults get synthesized
-    // optional checks (issue #65); JSDoc types always win on conflict.
+    // optional checks; JSDoc types always win on conflict.
     out += this.emitDefaultChecks(node, this.collectDefaultChecks(node, new Set(Object.keys(params))), out === '');
     return out;
   }
   /**
-   * Collects type checks for undocumented params (issues #41, #65): inline
+   * Collects type checks for undocumented params: inline
    * `/** @type *\/` param comments first, default-value inference second.
    * Only `Identifier` targets missing from `documented` are considered.
    * @param {Node} node - The Babel AST node for which to generate type checks.
@@ -656,7 +656,7 @@ class Asserter extends Stringifier {
     }
     if (fnNode.type === 'ArrowFunctionExpression' && !this.findParentOfType(fnNode, 'VariableDeclarator')) {
       // Bare callbacks (e.g. `.forEach((x = 0) => ...)`) can't be named,
-      // synthesizing checks would reintroduce the issue #11 warnings.
+      // synthesizing checks would spam unnameable-callback warnings.
       return [];
     }
     const checks = [];
@@ -669,8 +669,8 @@ class Asserter extends Stringifier {
       if (!target || target.type !== 'Identifier' || documented.has(target.name)) {
         continue;
       }
-      // Inline `/** @type *\/` wins over default inference (issue #41);
-      // a default still marks the check optional (issue #65).
+      // Inline `/** @type *\/` wins over default inference;
+      // a default still marks the check optional.
       const inline = parseInlineParamType(param.leadingComments, this.expandType) ??
         parseInlineParamType(target.leadingComments, this.expandType);
       if (inline !== undefined) {
@@ -689,7 +689,7 @@ class Asserter extends Stringifier {
     return checks;
   }
   /**
-   * Emits code for checks inferred from default values (issue #65).
+   * Emits code for checks inferred from default values.
    * @param {Node} node - The Babel AST node for which to generate type checks.
    * @param {{name: string, type: any}[]} checks - Checks to emit.
    * @param {boolean} prefixNewline - Separate from preceding code with newline.

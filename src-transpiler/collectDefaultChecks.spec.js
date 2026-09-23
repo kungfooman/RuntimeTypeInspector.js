@@ -90,7 +90,7 @@ function testArrowWithDeclaratorChecked() {
   return true;
 }
 function testBareCallbackSkipped() {
-  // Bare callbacks stay silent (issue #11 guard), even with defaults.
+  // Bare callbacks stay silent even with defaults.
   const {out, warnings} = checksFor('function f(cb) { cb.forEach((item = 0) => item); }');
   if (out.includes('inspectType') || warnings.length) {
     return false;

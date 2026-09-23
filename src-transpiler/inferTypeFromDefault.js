@@ -1,5 +1,5 @@
 /**
- * Infers a parameter type from its default value AST node (issue #65).
+ * Infers a parameter type from its default value AST node.
  * Returns widened types like TypeScript does (`= 0` means `number`, not
  * literal `0`; `= null` widens to `any`).
  * Returns `undefined` when nothing useful can be inferred — the caller then
