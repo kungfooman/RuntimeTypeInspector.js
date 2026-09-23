@@ -11,7 +11,7 @@ function testValidNumbers() {
   return true;
 }
 function testIssueFalsePositive() {
-  // Issue #67: old global isNaN/isFinite coerced, so "1" passed as number.
+  // Old global isNaN/isFinite coerced, so "1" passed as number.
   if (validateNumber('1', expectNumber, 'loc', 'name', true, warn, 0)) {
     return false;
   }
@@ -87,7 +87,7 @@ function testInObjectKeepsKeys() {
   return true;
 }
 function testInObjectIssueExample() {
-  // Issue #67 example shape: string element at index must fail.
+  // String element at index must fail.
   if (validateNumberInObject(['1', 2, 3], 0, warn)) {
     return false;
   }

@@ -11,7 +11,7 @@ function clearTypedefs() {
   Object.keys(typedefs).forEach((_) => delete typedefs[_]);
 }
 function testIssue241ArrayLikeValid() {
-  // Issue #241: ArrayLike<number> with a valid array must pass (no 'unchecked').
+  // ArrayLike<number> with a valid array must pass (no 'unchecked').
   const expect = expandType('ArrayLike<number>');
   let unchecked = false;
   const ret = validateType([1, 2, 3], expect, 'test', 'a', true, (...args) => {
@@ -20,7 +20,7 @@ function testIssue241ArrayLikeValid() {
   return ret === true && unchecked === false;
 }
 function testIssue241ArrayLikeInvalid() {
-  // Issue #241 repro: test([1, 2, "3"]) must fail with an element error, not 'unchecked'.
+  // test([1, 2, "3"]) must fail with an element error, not 'unchecked'.
   const expect = expandType('ArrayLike<number>');
   const warnings = [];
   const ret = validateType([1, 2, '3'], expect, 'test', 'a', true, (...args) => {

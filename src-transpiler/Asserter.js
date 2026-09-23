@@ -2,6 +2,7 @@ import {annotateOptional   } from './annotateOptional.js';
 import {requiredTypeofs    } from './expandType.js';
 import {expandTypeDepFree  } from './expandTypeDepFree.js';
 import {inferTypeFromDefault} from './inferTypeFromDefault.js';
+import {parseInlineParamType} from './parseInlineParamType.js';
 import {nodeIsFunctionLike } from './nodeIsFunctionLike.js';
 import {parseJSDoc         } from './parseJSDoc.js';
 import {parseJSDocSetter   } from './parseJSDocSetter.js';
@@ -454,7 +455,7 @@ class Asserter extends Stringifier {
     // return '// ' + JSON.stringify(jsdoc) + '\n';
     const stat = this.getStatsForNode(node);
     if (!jsdoc) {
-      // No JSDoc at all: default-value inference (issue #65) is the only
+      // No JSDoc at all: default-value inference is the only
       // source of types. Emit nothing when nothing is inferable.
       const inferred = this.collectDefaultChecks(node, new Set());
       if (!inferred.length) {
@@ -632,14 +633,14 @@ class Asserter extends Stringifier {
       out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
     }
     // Params without JSDoc but with inferable defaults get synthesized
-    // optional checks (issue #65); JSDoc types always win on conflict.
+    // optional checks; JSDoc types always win on conflict.
     out += this.emitDefaultChecks(node, this.collectDefaultChecks(node, new Set(Object.keys(params))), out === '');
     return out;
   }
   /**
-   * Collects type checks inferred from default values (issue #65).
-   * Only `AssignmentPattern` params with an `Identifier` target that is not
-   * in `documented` and whose default maps to a type are returned.
+   * Collects type checks for undocumented params: inline
+   * `/** @type *\/` param comments first, default-value inference second.
+   * Only `Identifier` targets missing from `documented` are considered.
    * @param {Node} node - The Babel AST node for which to generate type checks.
    * @param {Set<string>} documented - Parameter names covered by JSDoc.
    * @returns {{name: string, type: any}[]} Checks with optional-annotated types.
@@ -655,28 +656,40 @@ class Asserter extends Stringifier {
     }
     if (fnNode.type === 'ArrowFunctionExpression' && !this.findParentOfType(fnNode, 'VariableDeclarator')) {
       // Bare callbacks (e.g. `.forEach((x = 0) => ...)`) can't be named,
-      // synthesizing checks would reintroduce the issue #11 warnings.
+      // synthesizing checks would spam unnameable-callback warnings.
       return [];
     }
     const checks = [];
     for (const param of params) {
-      if (!param || param.type !== 'AssignmentPattern') {
+      if (!param) {
         continue;
       }
-      const {left, right} = param;
-      if (!left || left.type !== 'Identifier' || documented.has(left.name)) {
+      const isAssignment = param.type === 'AssignmentPattern';
+      const target = isAssignment ? param.left : param;
+      if (!target || target.type !== 'Identifier' || documented.has(target.name)) {
         continue;
       }
-      const inferred = inferTypeFromDefault(right);
+      // Inline `/** @type *\/` wins over default inference;
+      // a default still marks the check optional.
+      const inline = parseInlineParamType(param.leadingComments, this.expandType) ??
+        parseInlineParamType(target.leadingComments, this.expandType);
+      if (inline !== undefined) {
+        checks.push({name: target.name, type: annotateOptional(inline, isAssignment)});
+        continue;
+      }
+      if (!isAssignment) {
+        continue;
+      }
+      const inferred = inferTypeFromDefault(param.right);
       if (inferred === undefined) {
         continue;
       }
-      checks.push({name: left.name, type: annotateOptional(inferred, true)});
+      checks.push({name: target.name, type: annotateOptional(inferred, true)});
     }
     return checks;
   }
   /**
-   * Emits code for checks inferred from default values (issue #65).
+   * Emits code for checks inferred from default values.
    * @param {Node} node - The Babel AST node for which to generate type checks.
    * @param {{name: string, type: any}[]} checks - Checks to emit.
    * @param {boolean} prefixNewline - Separate from preceding code with newline.
