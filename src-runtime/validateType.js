@@ -144,11 +144,7 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
       /** @todo allow strict/non-strict null/undefined with checkbox in <div> */
       return value === null;
     case 'number':
-      /** @todo use validateNumber() */
-      if (Number.isNaN(value)) {
-        return false;
-      }
-      return typeof value === type;
+      return validateNumber(value, expect, loc, name, critical, warn, depth + 1);
     case 'string':
     case 'boolean':
       return typeof value === type;
