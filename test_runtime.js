@@ -52,6 +52,7 @@ const tests = [
   ...(await import('./src-runtime/validateTemplateLiteral.spec.js')).tests,
   ...(await import('./src-runtime/validateReference.spec.js'       )).tests,
   ...(await import('./src-runtime/validatePromise.spec.js'         )).tests,
+  ...(await import('./src-runtime/validateNumber.spec.js'         )).tests,
   ...(await import('./src-transpiler/expandTypeBabelTS.spec.js' )).tests,
   ...(await import('./src-runtime/inspectIndexedAccess.spec.js'   )).tests,
   ...(await import('./src-runtime/stringifyType.spec.js'        )).tests,
