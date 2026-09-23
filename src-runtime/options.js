@@ -12,5 +12,12 @@ const options = {
   mode: 'spam',
   logSuperfluousProperty: false,
   count: 0,
+  /**
+   * Matches TypeScript `strictNullChecks`: when `true` (default), `null` and
+   * `undefined` only pass optional/nullable types. When `false`, they pass
+   * every type, so dammed-up `SomeType`-but-actually-nullable noise stops
+   * hiding the real errors. Toggleable via the TypePanel checkbox.
+   */
+  strictNullChecks: true,
 };
 export {options};

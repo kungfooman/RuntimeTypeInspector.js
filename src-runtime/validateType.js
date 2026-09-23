@@ -1,5 +1,6 @@
 import {customTypes         } from "./customTypes.js";
 import {customValidations   } from "./customValidations.js";
+import {options             } from "./options.js";
 import {classes             } from "./registerClass.js";
 import {typedefs            } from "./registerTypedef.js";
 import {validateArray       } from "./validateArray.js";
@@ -76,6 +77,9 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
   if (depth > 16) {
     warn('Exceeded recursive depth limit.');
     return false;
+  }
+  if (!options.strictNullChecks && (value === null || value === undefined)) {
+    return true;
   }
   if (!(expect instanceof Object)) {
     expect = {
@@ -168,7 +172,6 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
     case 'any':
       return true;
     case 'null':
-      /** @todo allow strict/non-strict null/undefined with checkbox in <div> */
       return value === null;
     case 'number':
       return validators.validateNumber(value, expect, loc, name, critical, warn, depth + 1);

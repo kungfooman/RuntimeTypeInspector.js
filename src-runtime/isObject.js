@@ -11,6 +11,6 @@
  * @returns {boolean} Boolean indicating if value is an object.
  */
 function isObject(value) {
-  return value instanceof Object || typeof value === 'object';
+  return value !== null && (value instanceof Object || typeof value === 'object');
 }
 export {isObject};

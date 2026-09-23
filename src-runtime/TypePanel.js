@@ -49,13 +49,19 @@ function isEnabled() {
   const tmp = localStorage.getItem('rti-enabled');
   return tmp === null || tmp === 'true';
 }
+function isStrictNullChecks() {
+  const tmp = localStorage.getItem('rti-strict-null-checks');
+  return tmp === null || tmp === 'true';
+}
 class TypePanel {
   /** @type {HTMLDivElement | null} */
   static divAll = null;
   div             = document.createElement('div');
   inputEnable     = document.createElement('input');
+  inputStrict     = document.createElement('input');
   spanErrors      = document.createElement('span');
   span            = document.createElement('span');
+  spanStrict      = document.createElement('span');
   select          = document.createElement('select');
   option_spam     = document.createElement('option');
   option_once     = document.createElement('option');
@@ -74,7 +80,7 @@ class TypePanel {
   maxStackFrames = 20;
   constructor() {
     const {
-      div, inputEnable, spanErrors, span, select, option_spam, option_once, option_never,
+      div, inputEnable, inputStrict, spanErrors, span, spanStrict, select, option_spam, option_once, option_never,
       buttonHide, buttonLoadState, buttonSaveState, buttonClear, buttonDownloadLog, warnedTable,
     } = this;
     TypePanel.divAll ??= document.createElement('div');
@@ -95,6 +101,15 @@ class TypePanel {
       }
     };
     inputEnable.onchange();
+    inputStrict.checked = isStrictNullChecks();
+    inputStrict.type = "checkbox";
+    inputStrict.onchange = () => {
+      options.strictNullChecks = inputStrict.checked;
+      localStorage.setItem('rti-strict-null-checks', String(inputStrict.checked));
+      this.sendStrictStateToWorker();
+    };
+    inputStrict.onchange();
+    spanStrict.innerText = " Strict null checks:";
     span.innerText = " Type report mode:";
     option_spam.text = 'spam';
     option_once.text = 'once';
@@ -125,7 +140,7 @@ class TypePanel {
     buttonClear.onclick = () => this.clear();
     buttonDownloadLog.textContent = 'Download log';
     buttonDownloadLog.onclick = () => this.downloadLog();
-    div.append(inputEnable, spanErrors, span, select, buttonHide, buttonLoadState, buttonSaveState, buttonClear, buttonDownloadLog, warnedTable);
+    div.append(inputEnable, spanErrors, span, select, inputStrict, spanStrict, buttonHide, buttonLoadState, buttonSaveState, buttonClear, buttonDownloadLog, warnedTable);
     div.style.maxHeight = '200px';
     div.style.overflow = 'scroll';
     divAll.append(div);
@@ -172,6 +187,17 @@ class TypePanel {
     console.table(this.warnings);
   }
   lastKnownCountWithStatus = '0-true';
+  sendStrictStateToWorker() {
+    const {eventSources} = this;
+    eventSources.forEach(eventSource => {
+      eventSource.postMessage({
+        type: 'rti',
+        action: 'strictNullChecks',
+        value: options.strictNullChecks,
+        destination: 'worker',
+      });
+    });
+  }
   sendEnabledDisabledStateToWorker() {
     // Problem: First time the worker may not even have started and `this.eventSources.size === 0`
     // So we first know a RTI worker started after receiving the first message from it.
