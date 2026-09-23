@@ -1,5 +1,7 @@
+import {annotateOptional   } from './annotateOptional.js';
 import {requiredTypeofs    } from './expandType.js';
 import {expandTypeDepFree  } from './expandTypeDepFree.js';
+import {inferTypeFromDefault} from './inferTypeFromDefault.js';
 import {nodeIsFunctionLike } from './nodeIsFunctionLike.js';
 import {parseJSDoc         } from './parseJSDoc.js';
 import {parseJSDocSetter   } from './parseJSDocSetter.js';
@@ -452,8 +454,19 @@ class Asserter extends Stringifier {
     // return '// ' + JSON.stringify(jsdoc) + '\n';
     const stat = this.getStatsForNode(node);
     if (!jsdoc) {
-      stat.unchecked++;
-      return '';
+      // No JSDoc at all: default-value inference (issue #65) is the only
+      // source of types. Emit nothing when nothing is inferable.
+      const inferred = this.collectDefaultChecks(node, new Set());
+      if (!inferred.length) {
+        stat.unchecked++;
+        return '';
+      }
+      const loc = this.getName(node);
+      if (this.ignoreLocations.includes(loc)) {
+        return '// IGNORE RTI TYPE VALIDATIONS, KNOWN ISSUES\n';
+      }
+      stat.checked++;
+      return this.emitDefaultChecks(node, inferred, true);
     }
     const {templates, params} = jsdoc;
     if (!params) {
@@ -616,6 +629,69 @@ class Asserter extends Stringifier {
       } else {
         out += `${spaces}if (${prevCheck}!inspectType(${name}, ${t}, '${loc}', '${nameFancy}')) {\n`;
       }
+      out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
+    }
+    // Params without JSDoc but with inferable defaults get synthesized
+    // optional checks (issue #65); JSDoc types always win on conflict.
+    out += this.emitDefaultChecks(node, this.collectDefaultChecks(node, new Set(Object.keys(params))), out === '');
+    return out;
+  }
+  /**
+   * Collects type checks inferred from default values (issue #65).
+   * Only `AssignmentPattern` params with an `Identifier` target that is not
+   * in `documented` and whose default maps to a type are returned.
+   * @param {Node} node - The Babel AST node for which to generate type checks.
+   * @param {Set<string>} documented - Parameter names covered by JSDoc.
+   * @returns {{name: string, type: any}[]} Checks with optional-annotated types.
+   */
+  collectDefaultChecks(node, documented) {
+    let fnNode = node;
+    if (fnNode.type === 'BlockStatement') {
+      fnNode = this.parent;
+    }
+    const {params} = fnNode;
+    if (!Array.isArray(params)) {
+      return [];
+    }
+    if (fnNode.type === 'ArrowFunctionExpression' && !this.findParentOfType(fnNode, 'VariableDeclarator')) {
+      // Bare callbacks (e.g. `.forEach((x = 0) => ...)`) can't be named,
+      // synthesizing checks would reintroduce the issue #11 warnings.
+      return [];
+    }
+    const checks = [];
+    for (const param of params) {
+      if (!param || param.type !== 'AssignmentPattern') {
+        continue;
+      }
+      const {left, right} = param;
+      if (!left || left.type !== 'Identifier' || documented.has(left.name)) {
+        continue;
+      }
+      const inferred = inferTypeFromDefault(right);
+      if (inferred === undefined) {
+        continue;
+      }
+      checks.push({name: left.name, type: annotateOptional(inferred, true)});
+    }
+    return checks;
+  }
+  /**
+   * Emits code for checks inferred from default values (issue #65).
+   * @param {Node} node - The Babel AST node for which to generate type checks.
+   * @param {{name: string, type: any}[]} checks - Checks to emit.
+   * @param {boolean} prefixNewline - Separate from preceding code with newline.
+   * @returns {string} A string of code with type check assertions.
+   */
+  emitDefaultChecks(node, checks, prefixNewline) {
+    if (!checks.length) {
+      return '';
+    }
+    const {spaces} = this;
+    const loc = this.getName(node);
+    let out = prefixNewline ? '\n' : '';
+    for (const {name, type} of checks) {
+      const t = simplifyTypeToSource(type).replaceAll('\n', '\n' + spaces);
+      out += `${spaces}if (!inspectType(${name}, ${t}, '${loc}', '${name}')) {\n`;
       out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
     }
     return out;

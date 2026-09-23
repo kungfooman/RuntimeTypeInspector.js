@@ -68,6 +68,10 @@
     "output": "./test/typechecking/computed-ClassMethod-output.mjs"
   },
   {
+    "input": "./test/typechecking/defaults-inference-input.mjs",
+    "output": "./test/typechecking/defaults-inference-output.mjs"
+  },
+  {
     "input": "./test/typechecking/export-input.mjs",
     "output": "./test/typechecking/export-output.mjs"
   },
