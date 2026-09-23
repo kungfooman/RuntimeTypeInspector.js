@@ -262,7 +262,8 @@ function toSourceTS(node) {
       if (!typeArguments) {
         return typeName.getText();
       }
-      const name = typeName.text;
+      // Qualified names (e.g. `some.name.space.Array<T>`) have no `.text`.
+      const name = typeName.text ?? typeName.getText();
       const args = typeArguments.map(toSourceTS);
       return {type: 'reference', name, args};
     }

@@ -83,7 +83,8 @@ function toSourceBabelTS(node) {
       const name = toSourceBabelTS(node.typeName);
       if (!node.typeParameters) {
         // console.log(`node.typeName.name=${node.typeName.name} name=${name}`, node);
-        return node.typeName.name;
+        // Bare reference: Identifier gives name, TSQualifiedName gives dotted path.
+        return name;
       }
       console.assert(node.typeParameters.type === 'TSTypeParameterInstantiation');
       const typeArguments = node.typeParameters.params;
@@ -205,6 +206,8 @@ function toSourceBabelTS(node) {
     case 'TSTypeQuery':
       const argument = toSourceBabelTS(node.exprName);
       return {type: 'typeof', argument};
+    case 'TSQualifiedName':
+      return `${toSourceBabelTS(node.left)}.${toSourceBabelTS(node.right)}`;
     default:
       console.warn('toSourceBabelTS> unhandled type', node.type, node);
       debugger;

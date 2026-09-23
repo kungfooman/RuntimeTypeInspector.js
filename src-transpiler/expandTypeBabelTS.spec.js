@@ -53,6 +53,15 @@ function testTupleLiteralParity() {
   }
   return true;
 }
+function testTSQualifiedNameParity() {
+  // Issue #12: qualified names on all three parsers.
+  for (const type of ['some.name.space.Array', 'some.name.space.Array<number>', 'typeof some.name']) {
+    if (!assertParity(type)) {
+      return false;
+    }
+  }
+  return true;
+}
 function testBabelReferenceValidates() {
   // End-to-end: Babel-parsed ArrayLike<number> must validate like the TS-parsed one.
   const expect = expandTypeBabelTS('ArrayLike<number>');
@@ -74,5 +83,6 @@ export const tests = [
   testNestedReferenceParity,
   testExistingGenericsUnchanged,
   testTupleLiteralParity,
+  testTSQualifiedNameParity,
   testBabelReferenceValidates,
 ];
