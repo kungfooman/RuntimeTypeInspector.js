@@ -55,6 +55,8 @@ const tests = [
   ...(await import('./src-runtime/validateNumber.spec.js'         )).tests,
   ...(await import('./src-transpiler/expandTypeParity.spec.js'   )).tests,
   ...(await import('./src-transpiler/inferTypeFromDefault.spec.js')).tests,
+  ...(await import('./src-transpiler/parseInlineParamType.spec.js')).tests,
+  ...(await import('./src-transpiler/collectDefaultChecks.spec.js')).tests,
   ...(await import('./src-runtime/inspectIndexedAccess.spec.js'   )).tests,
   ...(await import('./src-runtime/stringifyType.spec.js'        )).tests,
   ...(await import('./src-transpiler/simplifyType.spec.js')  ).tests,

@@ -108,6 +108,10 @@
     "output": "./test/typechecking/indexed-access-output.mjs"
   },
   {
+    "input": "./test/typechecking/inline-param-types-input.mjs",
+    "output": "./test/typechecking/inline-param-types-output.mjs"
+  },
+  {
     "input": "./test/typechecking/jsdoc-param-end-detection-input.mjs",
     "output": "./test/typechecking/jsdoc-param-end-detection-output.mjs"
   },

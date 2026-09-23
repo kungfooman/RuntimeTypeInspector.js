@@ -2,6 +2,7 @@ import {annotateOptional   } from './annotateOptional.js';
 import {requiredTypeofs    } from './expandType.js';
 import {expandTypeDepFree  } from './expandTypeDepFree.js';
 import {inferTypeFromDefault} from './inferTypeFromDefault.js';
+import {parseInlineParamType} from './parseInlineParamType.js';
 import {nodeIsFunctionLike } from './nodeIsFunctionLike.js';
 import {parseJSDoc         } from './parseJSDoc.js';
 import {parseJSDocSetter   } from './parseJSDocSetter.js';
@@ -637,9 +638,9 @@ class Asserter extends Stringifier {
     return out;
   }
   /**
-   * Collects type checks inferred from default values (issue #65).
-   * Only `AssignmentPattern` params with an `Identifier` target that is not
-   * in `documented` and whose default maps to a type are returned.
+   * Collects type checks for undocumented params (issues #41, #65): inline
+   * `/** @type *\/` param comments first, default-value inference second.
+   * Only `Identifier` targets missing from `documented` are considered.
    * @param {Node} node - The Babel AST node for which to generate type checks.
    * @param {Set<string>} documented - Parameter names covered by JSDoc.
    * @returns {{name: string, type: any}[]} Checks with optional-annotated types.
@@ -660,18 +661,30 @@ class Asserter extends Stringifier {
     }
     const checks = [];
     for (const param of params) {
-      if (!param || param.type !== 'AssignmentPattern') {
+      if (!param) {
         continue;
       }
-      const {left, right} = param;
-      if (!left || left.type !== 'Identifier' || documented.has(left.name)) {
+      const isAssignment = param.type === 'AssignmentPattern';
+      const target = isAssignment ? param.left : param;
+      if (!target || target.type !== 'Identifier' || documented.has(target.name)) {
         continue;
       }
-      const inferred = inferTypeFromDefault(right);
+      // Inline `/** @type *\/` wins over default inference (issue #41);
+      // a default still marks the check optional (issue #65).
+      const inline = parseInlineParamType(param.leadingComments, this.expandType) ??
+        parseInlineParamType(target.leadingComments, this.expandType);
+      if (inline !== undefined) {
+        checks.push({name: target.name, type: annotateOptional(inline, isAssignment)});
+        continue;
+      }
+      if (!isAssignment) {
+        continue;
+      }
+      const inferred = inferTypeFromDefault(param.right);
       if (inferred === undefined) {
         continue;
       }
-      checks.push({name: left.name, type: annotateOptional(inferred, true)});
+      checks.push({name: target.name, type: annotateOptional(inferred, true)});
     }
     return checks;
   }
