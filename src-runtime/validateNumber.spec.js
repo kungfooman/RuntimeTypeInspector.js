@@ -1,5 +1,5 @@
 import {validateType} from './validateType.js';
-import {validateNumber} from './validateNumber.js';
+import {validateNumber, validateNumberInObject} from './validateNumber.js';
 const warn = () => undefined;
 const expectNumber = 'number';
 function testValidNumbers() {
@@ -65,6 +65,40 @@ function testFailuresWarn() {
   }
   return true;
 }
+function testInObjectValid() {
+  const warnings = [];
+  const ret = validateNumberInObject({a: 1}, 'a', (...args) => {
+    warnings.push(args);
+  });
+  return ret === true && warnings.length === 0;
+}
+function testInObjectKeepsKeys() {
+  // Old `validateNumber(obj, prop)` generated `type#prop` warning keys.
+  const warnings = [];
+  const ret = validateNumberInObject({b: '1'}, 'b', (...args) => {
+    warnings.push(args);
+  });
+  if (ret !== false) {
+    return false;
+  }
+  if (typeof warnings[0][0] !== 'string' || !warnings[0][0].includes('object#b')) {
+    return false;
+  }
+  return true;
+}
+function testInObjectIssueExample() {
+  // Issue #67 example shape: string element at index must fail.
+  if (validateNumberInObject(['1', 2, 3], 0, warn)) {
+    return false;
+  }
+  if (!validateNumberInObject(['1', 2, 3], 1, warn)) {
+    return false;
+  }
+  if (validateNumberInObject({c: null}, 'c', warn)) {
+    return false;
+  }
+  return true;
+}
 export const tests = [
   testValidNumbers,
   testIssueFalsePositive,
@@ -72,4 +106,7 @@ export const tests = [
   testNullishAndWrongTypes,
   testBoxedNumber,
   testFailuresWarn,
+  testInObjectValid,
+  testInObjectKeepsKeys,
+  testInObjectIssueExample,
 ];
