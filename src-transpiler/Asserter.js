@@ -19,6 +19,9 @@ import {Stringifier        } from './Stringifier.js';
  * @typedef {object} Options
  * @property {boolean} [forceCurly] - Determines whether curly braces are enforced in Stringifier.
  * @property {boolean} [validateDivision] - Indicates whether division operations should be validated.
+ * @property {boolean} [inspectIndexedAccess] - Indicates whether indexed accesses
+ * like `arr[i]` should be wrapped for bounds and integer validation. Disable
+ * to drop indexed access inspection entirely. Defaults to true.
  * @property {import('./parseJSDoc.js').ExpandType} [expandType] - A function that expands shorthand types into full descriptions.
  * @property {string} [filename] - The name of a file to which the instance pertains.
  * @property {boolean} [addHeader] - Whether to add import declarations headers. Defaults to true.
@@ -31,6 +34,7 @@ class Asserter extends Stringifier {
   constructor({
     forceCurly = true,
     validateDivision = true,
+    inspectIndexedAccess = true,
     expandType = expandTypeDepFree,
     filename,
     addHeader = true,
@@ -39,6 +43,7 @@ class Asserter extends Stringifier {
     super();
     this.forceCurly = forceCurly;
     this.validateDivision = validateDivision;
+    this.inspectIndexedAccess = inspectIndexedAccess;
     // @todo collect every type + manually validate as test set
     // + implement expandType using Babel Flow type parser aswell
     this.expandType = expandType;
@@ -804,6 +809,9 @@ class Asserter extends Stringifier {
    */
   MemberExpression(node) {
     const {computed, object, property} = node;
+    if (!this.inspectIndexedAccess) {
+      return super.MemberExpression(node);
+    }
     if (!computed || object.type === 'Super') {
       return super.MemberExpression(node);
     }
@@ -819,6 +827,43 @@ class Asserter extends Stringifier {
       }
       if (parent.type === 'UnaryExpression' && parent.operator === 'delete' && parent.argument === node) {
         return super.MemberExpression(node);
+      }
+      // Destructuring, rest and loop targets are assigned to, never read.
+      if (parent.type === 'ArrayPattern') {
+        return super.MemberExpression(node);
+      }
+      if (parent.type === 'RestElement' && parent.argument === node) {
+        return super.MemberExpression(node);
+      }
+      if (parent.type === 'ObjectProperty' && parent.value === node) {
+        // `({p: a[i]})` reads but `({p: a[i]} = ...)` writes: bypass inside patterns only.
+        const grandparent = this.parents[this.parents.findLastIndex((_) => _ === parent) - 1];
+        if (grandparent?.type === 'ObjectPattern') {
+          return super.MemberExpression(node);
+        }
+      }
+      if (parent.type === 'AssignmentPattern' && parent.left === node) {
+        return super.MemberExpression(node);
+      }
+      if ((parent.type === 'ForOfStatement' || parent.type === 'ForInStatement') && parent.left === node) {
+        return super.MemberExpression(node);
+      }
+      // Method calls and tags carry their base as `this`; wrapping the callee
+      // would silently rebind it to undefined.
+      if ((parent.type === 'CallExpression' || parent.type === 'OptionalCallExpression') && parent.callee === node) {
+        return super.MemberExpression(node);
+      }
+      if (parent.type === 'TaggedTemplateExpression' && parent.tag === node) {
+        return super.MemberExpression(node);
+      }
+      // `new a[i](...)` must stay `new (inspectIndexedAccess(...))(...)`:
+      // without parens it parses as `(new inspectIndexedAccess(...))(...)`,
+      // constructing the wrapper instead of the accessed value.
+      if (parent.type === 'NewExpression' && parent.callee === node) {
+        const object_ = this.toSource(object);
+        const property_ = this.toSource(property);
+        const loc = this.getName(node);
+        return `(inspectIndexedAccess(${object_}, ${property_}, ${JSON.stringify(loc)}))`;
       }
     }
     const object_ = this.toSource(object);

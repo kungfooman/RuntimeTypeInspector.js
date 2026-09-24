@@ -144,6 +144,14 @@
     "output": "./test/typechecking/literal-numbers-output.mjs"
   },
   {
+    "input": "./test/typechecking/member-expression-positions-input.mjs",
+    "output": "./test/typechecking/member-expression-positions-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/new-computed-callee-input.mjs",
+    "output": "./test/typechecking/new-computed-callee-output.mjs"
+  },
+  {
     "input": "./test/typechecking/only-description-input.mjs",
     "output": "./test/typechecking/only-description-output.mjs"
   },
