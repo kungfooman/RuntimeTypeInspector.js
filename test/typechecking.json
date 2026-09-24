@@ -84,6 +84,10 @@
     "output": "./test/typechecking/functions-output.mjs"
   },
   {
+    "input": "./test/typechecking/fundamental-types-input.mjs",
+    "output": "./test/typechecking/fundamental-types-output.mjs"
+  },
+  {
     "input": "./test/typechecking/good-old-es5-input.mjs",
     "output": "./test/typechecking/good-old-es5-output.mjs"
   },

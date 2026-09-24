@@ -42,6 +42,42 @@ function asOptional(prop) {
   return {type: prop, optional: true};
 }
 /**
+ * Applies an intrinsic string mapping to literal text.
+ * @param {string} name - One of Uppercase/Lowercase/Capitalize/Uncapitalize.
+ * @param {string} text - Literal text.
+ * @returns {string} Mapped text.
+ */
+function applyStringIntrinsic(name, text) {
+  switch (name) {
+    case 'Uppercase':
+      return text.toUpperCase();
+    case 'Lowercase':
+      return text.toLowerCase();
+    case 'Capitalize':
+      return text.length ? text[0].toUpperCase() + text.slice(1) : text;
+    default:
+      return text.length ? text[0].toLowerCase() + text.slice(1) : text;
+  }
+}
+/**
+ * Checks a broad string against an intrinsic mapping.
+ * @param {string} name - One of Uppercase/Lowercase/Capitalize/Uncapitalize.
+ * @param {string} value - The value.
+ * @returns {boolean} True when the value already satisfies the mapping.
+ */
+function checkStringIntrinsic(name, value) {
+  switch (name) {
+    case 'Uppercase':
+      return value === value.toUpperCase();
+    case 'Lowercase':
+      return value === value.toLowerCase();
+    case 'Capitalize':
+      return !value.length || value[0] === value[0].toUpperCase();
+    default:
+      return !value.length || value[0] === value[0].toLowerCase();
+  }
+}
+/**
  * Reads a key list from a union of literals (or anything getTypeKeys handles).
  * @param {*} keyType - The key type.
  * @param {console["warn"]} warn - Function to warn with.
@@ -176,6 +212,108 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         return recurse(value, kept[0], loc, name, critical, warn, depth + 1);
       }
       return recurse(value, {type: 'union', members: kept}, loc, name, critical, warn, depth + 1);
+    }
+    case 'Exclude': {
+      const [from, to] = args ?? [];
+      if (from === undefined || to === undefined) {
+        warn('Exclude requires two type arguments.', {expect});
+        return false;
+      }
+      const resolvedTo = resolveForExtends(to, warn);
+      const resolvedFrom = resolveForExtends(from, warn) ?? from;
+      const members = resolvedFrom && resolvedFrom.type === 'union' && Array.isArray(resolvedFrom.members) ? resolvedFrom.members : [resolvedFrom];
+      const kept = members.filter((member) => extendsCheck(resolveForExtends(member, warn), resolvedTo, warn) !== true);
+      if (!kept.length) {
+        warn('Exclude kept no members.', {expect});
+        return false;
+      }
+      if (kept.length === 1) {
+        return recurse(value, kept[0], loc, name, critical, warn, depth + 1);
+      }
+      return recurse(value, {type: 'union', members: kept}, loc, name, critical, warn, depth + 1);
+    }
+    case 'Required': {
+      if (!firstArg) {
+        warn('Required requires one type argument.', {expect});
+        return false;
+      }
+      const object = resolveObjectArg(firstArg, warn);
+      if (!object) {
+        warn('Required requires an object type argument.', {expect});
+        return false;
+      }
+      // Required is shallow: only top-level optionality is stripped.
+      const properties = {};
+      for (const key of Object.keys(object.properties)) {
+        const prop = object.properties[key];
+        properties[key] = prop && typeof prop === 'object' ? {...prop, optional: false} : prop;
+      }
+      return recurse(value, {type: 'object', properties}, loc, name, critical, warn, depth + 1);
+    }
+    case 'Awaited': {
+      if (!firstArg) {
+        warn('Awaited requires one type argument.', {expect});
+        return false;
+      }
+      let inner = firstArg;
+      for (let i = 0; i < 10 && inner && inner.type === 'promise'; i++) {
+        inner = inner.elementType;
+      }
+      if (inner !== firstArg) {
+        // Was (possibly nested) Promise: resolved values are unobservable
+        // synchronously, so only the instanceof check applies.
+        return recurse(value, {type: 'promise', elementType: inner}, loc, name, critical, warn, depth + 1);
+      }
+      return recurse(value, inner, loc, name, critical, warn, depth + 1);
+    }
+    case 'NoInfer': {
+      // Blocks inference in TypeScript; the runtime shape is unchanged.
+      if (!firstArg) {
+        warn('NoInfer requires one type argument.', {expect});
+        return false;
+      }
+      return recurse(value, firstArg, loc, name, critical, warn, depth + 1);
+    }
+    case 'Uppercase':
+    case 'Lowercase':
+    case 'Capitalize':
+    case 'Uncapitalize': {
+      if (firstArg === undefined) {
+        warn(`${refName} requires one type argument.`, {expect});
+        return false;
+      }
+      const resolved = resolveForExtends(firstArg, warn) ?? firstArg;
+      if (resolved && resolved.type === 'union' && Array.isArray(resolved.members)) {
+        // Intrinsics distribute over unions, like TypeScript does.
+        const members = [];
+        for (const member of resolved.members) {
+          if (typeof member !== 'string' || stripLiteral(member) === member) {
+            warn(`${refName} needs string literals or string.`, {expect});
+            return false;
+          }
+          members.push(`"${applyStringIntrinsic(refName, stripLiteral(member))}"`);
+        }
+        return recurse(value, {type: 'union', members}, loc, name, critical, warn, depth + 1);
+      }
+      if (typeof resolved === 'string') {
+        const stripped = stripLiteral(resolved);
+        if (stripped !== resolved) {
+          const expected = applyStringIntrinsic(refName, stripped);
+          if (value !== expected) {
+            warn(`Expected ${expected}.`, {value, expect});
+          }
+          return value === expected;
+        }
+        if (resolved === 'string') {
+          if (typeof value !== 'string' || !checkStringIntrinsic(refName, value)) {
+            warn(`Expected ${refName}<string>.`, {value, expect});
+            return false;
+          }
+          return true;
+        }
+      }
+      warn(`${refName} needs a string literal or string argument.`, {expect});
+      return false;
     }
     case 'Iterable':
     case 'IterableIterator':

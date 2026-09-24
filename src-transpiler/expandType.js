@@ -91,6 +91,7 @@ function toSourceTS(node) {
     PropertySignature,   // parseType("{a: 1, b: 2}"                   ).members[0].kind      === ts.SyntaxKind.PropertySignature
     StringKeyword,       // parseType("string"                         ).kind                 === ts.SyntaxKind.StringKeyword
     StringLiteral,       // parseType("'test'"                         ).literal.kind         === ts.SyntaxKind.StringLiteral
+    SymbolKeyword,       // parseType("symbol"                         ).kind                 === ts.SyntaxKind.SymbolKeyword
     ThisType,            // parseType("this"                           ).kind                 === ts.SyntaxKind.ThisType
     TupleType,           // parseType("[1, 2, 3]"                      ).kind                 === ts.SyntaxKind.TupleType
     TypeLiteral,         // parseType("{a: 1, b: 2}"                   ).kind                 === ts.SyntaxKind.TypeLiteral
@@ -402,6 +403,7 @@ function toSourceTS(node) {
     case       AnyKeyword:
     case   BooleanKeyword:
     case    StringKeyword:
+    case    SymbolKeyword:
     case     NeverKeyword:
     case      NullKeyword:
     case    NumberKeyword:

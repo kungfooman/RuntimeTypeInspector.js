@@ -174,15 +174,34 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
       return validators.validateTypeof(value, expect, loc, name, critical, warn, depth + 1);
     case '*':
     case 'any':
+    case 'unknown':
       return true;
+    case 'never':
+      warn('Expected never: no value validates.', {value});
+      return false;
     case 'null':
       return value === null;
+    case 'void':
+      return value === undefined;
+    case 'symbol':
+      return typeof value === 'symbol';
+    case 'bigint':
+      if (expect && typeof expect === 'object' && expect.literal !== undefined) {
+        try {
+          return value === BigInt(expect.literal);
+        } catch {
+          return false;
+        }
+      }
+      return typeof value === 'bigint';
     case 'number':
       return validators.validateNumber(value, expect, loc, name, critical, warn, depth + 1);
     case 'string':
     case 'boolean':
       return typeof value === type;
     case 'Function':
+    case 'CallableFunction':
+    case 'NewableFunction':
     case 'function':
     case 'new':
       return typeof value === 'function';

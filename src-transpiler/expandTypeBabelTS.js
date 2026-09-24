@@ -129,6 +129,8 @@ function toSourceBabelTS(node) {
     }
     case 'TSStringKeyword':
       return 'string';
+    case 'TSSymbolKeyword':
+      return 'symbol';
     case 'TSNumberKeyword':
       return 'number';
     case 'TSIntersectionType':
