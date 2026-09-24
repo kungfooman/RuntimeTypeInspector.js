@@ -10,6 +10,9 @@ import {
  * @property {string[]} [ignoredFiles] - Ignore certain files which operate in a different
  * context, for example framework/parsers/draco-worker.js operates as WebWorker (without RTI).
  * @property {boolean} [validateDivision] - Whether divisions are validated. Defaults to true.
+ * @property {boolean} [inspectIndexedAccess] - Whether computed member accesses
+ * are wrapped for index validation. Disable to drop indexed access inspection
+ * entirely. Defaults to true.
  */
 /**
  * @typedef {OptionsProps & import('@runtime-type-inspector/transpiler').Options} Options
