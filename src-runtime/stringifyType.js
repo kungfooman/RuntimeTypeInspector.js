@@ -148,10 +148,12 @@ function stringifyType(type, space = 0, depth = 0) {
       const iterable = stringifyType(type.iterable, space, depth + 1);
       const element = stringifyType(type.element, space, depth + 1);
       const result = stringifyType(type.result, space, depth + 1);
+      const readonly = type.readonly === '-' ? '-readonly ' : type.readonly === '+' ? '+readonly ' : type.readonly === 'readonly' ? 'readonly ' : '';
+      const question = type.question === '-' ? '-?' : type.question === '+' ? '+?' : type.question === '?' ? '?' : '';
       if (type.nameType !== undefined) {
-        return `{[${element} in ${iterable} as ${stringifyType(type.nameType, space, depth + 1)}]: ${result}}`;
+        return `{${readonly}[${element} in ${iterable} as ${stringifyType(type.nameType, space, depth + 1)}]${question}: ${result}}`;
       }
-      return `{[${element} in ${iterable}]: ${result}}`;
+      return `{${readonly}[${element} in ${iterable}]${question}: ${result}}`;
     }
     case 'function': {
       const params = (type.parameters || []).map((_) => stringifyType(_, space, depth + 1)).join(', ');

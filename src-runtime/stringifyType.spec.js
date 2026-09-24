@@ -93,9 +93,23 @@ function testMapping() {
   }
   return true;
 }
+function testMappingModifiers() {
+  const str = stringifyType({type: 'mapping', iterable: 'T', element: 'K', result: 'X', question: '-', readonly: '-'});
+  if (str !== '{-readonly [K in T]-?: X}') {
+    console.warn('stringifyType mapping modifiers mismatch', {str});
+    return false;
+  }
+  const cond = stringifyType({type: 'mapping', iterable: 'T', element: 'K', result: 'X', nameType: {type: 'condition', checkType: 'K', extendsType: 'string', trueType: 'K', falseType: 'never'}});
+  if (cond !== '{[K in T as K extends string?K:never]: X}') {
+    console.warn('stringifyType mapping as mismatch', {cond});
+    return false;
+  }
+  return true;
+}
 export const tests = [
   testIssue154,
   testIssue154PrettyNonNormalized,
   testRestKept,
   testMapping,
+  testMappingModifiers,
 ];

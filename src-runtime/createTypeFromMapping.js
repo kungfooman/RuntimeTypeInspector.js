@@ -32,6 +32,36 @@ function branchName(type) {
   }
 }
 /**
+ * Applies a mapping `?` modifier to a materialized property type: `-?`
+ * strips optionality, `+?`/`?` force it, absent preserves the source.
+ * Fresh objects only, never mutates shared typedefs.
+ * @param {*} type - Materialized property type.
+ * @param {string|undefined} question - Normalized modifier or undefined.
+ * @returns {*} Property type, possibly wrapped.
+ */
+function applyQuestionModifier(type, question) {
+  if (question === undefined) {
+    return type;
+  }
+  if (question === '-') {
+    // Stripping needs something to strip: resolve references so the flag
+    // removal lands on a struct. Cloned, the registry is never mutated.
+    let current = type;
+    for (let i = 0; i < 10 && typeof current === 'string' && typedefs[current]; i++) {
+      current = structuredClone(typedefs[current]);
+    }
+    if (current && typeof current === 'object') {
+      delete current.optional;
+    }
+    return current;
+  }
+  if (type && typeof type === 'object') {
+    type.optional = true;
+    return type;
+  }
+  return {type, optional: true};
+}
+/**
  * @param {any} type - Type to flatten.
  * @returns {any} Flattened type.
  */
@@ -86,7 +116,7 @@ function createTypeFromMapping(expect, warn) {
   if (typeof expect === 'string' && typedefs[expect]) {
     expect = typedefs[expect];
   }
-  const {iterable, element, result, nameType} = expect;
+  const {iterable, element, result, nameType, question} = expect;
   const typeKeys = getTypeKeys(iterable, warn);
   if (!typeKeys) {
     warn('validateMapping: missing typeKeys');
@@ -96,9 +126,8 @@ function createTypeFromMapping(expect, warn) {
   const properties = {};
   for (const typeKey of typeKeys) {
     const keyType = literalType(typeKey);
-    const cloneResult = structuredClone(result);
-    replaceType(cloneResult, element, keyType, warn);
-    flattenRest(cloneResult);
+    const substituted = replaceType(structuredClone(result), element, keyType, warn);
+    const propType = applyQuestionModifier(flattenRest(substituted), question);
     let propKey = stripQuotes(typeKey);
     if (nameType !== undefined) {
       // `as` key remapping: evaluate the (substituted) condition per key.
@@ -123,7 +152,7 @@ function createTypeFromMapping(expect, warn) {
         }
       }
     }
-    properties[propKey] = cloneResult;
+    properties[propKey] = propType;
   }
   return {type: 'object', properties, optional: false};
 }

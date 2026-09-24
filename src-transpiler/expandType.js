@@ -117,7 +117,9 @@ function toSourceTS(node) {
     UniqueKeyword,       // parseType('unique symbol'                  ).operator             === ts.SyntaxKind.UniqueKeyword
     ConstructorType,     // parseType('new (...args: any[]) => any'    ).kind                 === ts.SyntaxKind.ConstructorType
     NamedTupleMember,    // parseType('[a: 1]'                         ).elements[0].kind     === ts.SyntaxKind.NamedTupleMember
-    MappedType,          // parseType('{[K in TaskType]: 123}'         ).kind                 === ts.SyntaxKind.MappedType
+    MappedType,          // parseType('{[K in TaskType]: 123}'         ).kind                 ===  ts.SyntaxKind.MappedType
+    MinusToken,          // parseType('{[K in TaskType]-?: 123}'        ).questionToken.kind  === ts.SyntaxKind.MinusToken
+    PlusToken,           // parseType('{[K in TaskType]+?: 123}'        ).questionToken.kind  === ts.SyntaxKind.PlusToken
     TypeParameter,       // parseType('{[K in TaskType]: 123}'         ).typeParameter.kind   ===  ts.SyntaxKind.TypeParameter
     QualifiedName,       // parseType("import('abc').x.y"              ).qualifier.kind       === ts.SyntaxKind.QualifiedName
     TemplateLiteralType, // parseType('`${A}_id`'                      ).kind                 === ts.SyntaxKind.TemplateLiteralType
@@ -200,6 +202,15 @@ function toSourceTS(node) {
         if (node.nameType) {
           // `as` key remapping, e.g. {[K in keyof T as K extends string ? K : never]: ...}
           out.nameType = toSourceTS(node.nameType);
+        }
+        // Modifiers: `-?` strips optionality, `+?`/`?` force it;
+        // `-readonly` strips readonly, `+readonly`/`readonly` force it.
+        // Absent modifiers preserve the source behavior (see createTypeFromMapping).
+        if (node.questionToken) {
+          out.question = node.questionToken.kind === MinusToken ? '-' : node.questionToken.kind === PlusToken ? '+' : '?';
+        }
+        if (node.readonlyToken) {
+          out.readonly = node.readonlyToken.kind === MinusToken ? '-' : node.readonlyToken.kind === PlusToken ? '+' : 'readonly';
         }
         return out;
       }

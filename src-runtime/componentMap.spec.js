@@ -146,6 +146,63 @@ function testGenericMappedInstantiation() {
   }
   return true;
 }
+function testModifierParsing() {
+  const strip = expandType('{ [K in T]-?: X }');
+  if (strip.question !== '-') {
+    return false;
+  }
+  if (expandType('{ [K in T]+?: X }').question !== '+') {
+    return false;
+  }
+  if (expandType('{ [K in T]?: X }').question !== '?') {
+    return false;
+  }
+  if (expandType('{ -readonly [K in T]: X }').readonly !== '-') {
+    return false;
+  }
+  if (expandType('{ +readonly [K in T]: X }').readonly !== '+') {
+    return false;
+  }
+  if (expandType('{ readonly [K in T]: X }').readonly !== 'readonly') {
+    return false;
+  }
+  const plain = expandType('{ [K in T]: X }');
+  if (plain.question !== undefined || plain.readonly !== undefined) {
+    return false;
+  }
+  return true;
+}
+function testQuestionModifiers() {
+  prepare();
+  registerTypedef('O', {type: 'object', properties: {v: 'number'}, optional: true});
+  registerTypedef('R', {type: 'object', properties: {v: 'number'}});
+  const plain = createType(expandType('{ [K in "x"]: O }'), warn);
+  if (plain.properties.x !== 'O') {
+    return false;
+  }
+  if (!validateType(undefined, plain.properties.x, 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  const stripped = createType(expandType('{ [K in "x"]-?: O }'), warn);
+  if (stripped.properties.x.optional) {
+    return false;
+  }
+  if (validateType(undefined, stripped.properties.x, 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  // Stripping never mutates the registered typedef.
+  if (typedefs.O.optional !== true) {
+    return false;
+  }
+  const forced = createType(expandType('{ [K in "x"]+?: R }'), warn);
+  if (forced.properties.x.optional !== true) {
+    return false;
+  }
+  if (!validateType(undefined, forced.properties.x, 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  return true;
+}
 export const tests = [
   testAsClauseParsed,
   testComponentMapMaterializes,
@@ -153,4 +210,6 @@ export const tests = [
   testComponentNameRejects,
   testComponentInstanceMatches,
   testGenericMappedInstantiation,
+  testModifierParsing,
+  testQuestionModifiers,
 ];
