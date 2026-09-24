@@ -154,7 +154,8 @@ function extendsCheck(check, target) {
     }
     return undefined;
   }
-  // Quoted literals extend their primitive base ('"camera"' extends string).
+  // Quoted literals extend their primitive base ('"camera"' extends string);
+  // mismatched literals and distinct primitives decisively do not.
   if (typeof check === 'string') {
     const stripped = stripLiteral(check);
     if (stripped !== check) {
@@ -162,14 +163,31 @@ function extendsCheck(check, target) {
       if (base !== undefined && target === base) {
         return true;
       }
+      if (typeof target === 'string') {
+        const targetStripped = stripLiteral(target);
+        if (targetStripped !== target) {
+          return stripped === targetStripped;
+        }
+        if (primitives.has(target)) {
+          return false;
+        }
+      }
     } else if (primitives.has(check) && primitives.has(target)) {
       // Distinct primitives never extend each other.
       return false;
     }
   } else {
     const base = baseOf(check);
-    if (base !== undefined && target === base) {
-      return true;
+    if (base !== undefined) {
+      if (target === base) {
+        return true;
+      }
+      if (typeof target === 'string') {
+        const targetStripped = stripLiteral(target);
+        if (targetStripped !== target || primitives.has(target)) {
+          return false;
+        }
+      }
     }
   }
   if (typeof target === 'string' && classes[target]) {

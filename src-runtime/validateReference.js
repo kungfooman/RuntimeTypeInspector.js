@@ -1,6 +1,61 @@
 import {typedefs} from "./registerTypedef.js";
 import {classes} from "./registerClass.js";
 import {validators, recurse} from "./validators.js";
+import {createTypeFromMapping} from "./createTypeFromMapping.js";
+import {getTypeKeys} from "./getTypeKeys.js";
+import {extendsCheck, resolveForExtends, stripLiteral} from "./evaluateCondition.js";
+/**
+ * Follows strings through typedefs (and materializes mappings) to an
+ * object shape. Never mutates the registry: callers build fresh containers.
+ * @param {*} type - The type to resolve.
+ * @param {console["warn"]} warn - Function to warn with.
+ * @returns {object|undefined} Object shape or undefined.
+ */
+function resolveObjectArg(type, warn) {
+  let current = type;
+  for (let i = 0; i < 10; i++) {
+    if (typeof current === 'string') {
+      if (!typedefs[current]) {
+        return;
+      }
+      current = typedefs[current];
+      continue;
+    }
+    if (current && current.type === 'mapping') {
+      current = createTypeFromMapping(current, warn);
+      continue;
+    }
+    break;
+  }
+  if (current && current.type === 'object' && current.properties) {
+    return current;
+  }
+}
+/**
+ * @param {*} prop - A property type.
+ * @returns {object} Same type marked optional, without mutating the input.
+ */
+function asOptional(prop) {
+  if (prop && typeof prop === 'object') {
+    return {...prop, optional: true};
+  }
+  return {type: prop, optional: true};
+}
+/**
+ * Reads a key list from a union of literals (or anything getTypeKeys handles).
+ * @param {*} keyType - The key type.
+ * @param {console["warn"]} warn - Function to warn with.
+ * @returns {string[]|undefined} Stripped key names or undefined.
+ */
+function keyList(keyType, warn) {
+  if (keyType && keyType.type === 'union' && Array.isArray(keyType.members)) {
+    return keyType.members.map((member) => (typeof member === 'string' ? stripLiteral(member) : member)).filter((key) => typeof key === 'string');
+  }
+  const keys = getTypeKeys(keyType, warn);
+  if (Array.isArray(keys)) {
+    return keys.map((key) => (typeof key === 'string' ? stripLiteral(key) : key)).filter((key) => typeof key === 'string');
+  }
+}
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} elementType - The element type each indexed entry must satisfy.
@@ -64,6 +119,62 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         return false;
       }
       return recurse(value, firstArg, loc, name, critical, warn, depth + 1);
+    case 'Partial': {
+      if (!firstArg) {
+        warn('Partial requires one type argument.', {expect});
+        return false;
+      }
+      const object = resolveObjectArg(firstArg, warn);
+      if (!object) {
+        warn('Partial requires an object type argument.', {expect});
+        return false;
+      }
+      const properties = {};
+      for (const key of Object.keys(object.properties)) {
+        properties[key] = asOptional(object.properties[key]);
+      }
+      return recurse(value, {type: 'object', properties}, loc, name, critical, warn, depth + 1);
+    }
+    case 'Pick':
+    case 'Omit': {
+      const [target, keys] = args ?? [];
+      if (!target || keys === undefined) {
+        warn(`${refName} requires two type arguments.`, {expect});
+        return false;
+      }
+      const object = resolveObjectArg(target, warn);
+      const names = keyList(keys, warn);
+      if (!object || !names) {
+        warn(`${refName} requires an object and key names.`, {expect});
+        return false;
+      }
+      const wanted = new Set(names);
+      const properties = {};
+      for (const key of Object.keys(object.properties)) {
+        if (wanted.has(key) === (refName === 'Pick')) {
+          properties[key] = object.properties[key];
+        }
+      }
+      return recurse(value, {type: 'object', properties}, loc, name, critical, warn, depth + 1);
+    }
+    case 'Extract': {
+      const [from, to] = args ?? [];
+      if (from === undefined || to === undefined) {
+        warn('Extract requires two type arguments.', {expect});
+        return false;
+      }
+      const resolvedTo = resolveForExtends(to, warn);
+      const members = from && from.type === 'union' && Array.isArray(from.members) ? from.members : [from];
+      const kept = members.filter((member) => extendsCheck(resolveForExtends(member, warn), resolvedTo, warn) !== false);
+      if (!kept.length) {
+        warn('Extract kept no members.', {expect});
+        return false;
+      }
+      if (kept.length === 1) {
+        return recurse(value, kept[0], loc, name, critical, warn, depth + 1);
+      }
+      return recurse(value, {type: 'union', members: kept}, loc, name, critical, warn, depth + 1);
+    }
     case 'Iterable':
     case 'IterableIterator':
       if (value === null || value === undefined) {
