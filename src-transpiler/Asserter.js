@@ -19,9 +19,9 @@ import {Stringifier        } from './Stringifier.js';
  * @typedef {object} Options
  * @property {boolean} [forceCurly] - Determines whether curly braces are enforced in Stringifier.
  * @property {boolean} [validateDivision] - Indicates whether division operations should be validated.
- * @property {boolean} [inspectIndexedAccess] - Indicates whether computed member
- * accesses should be wrapped for index validation. Disable to drop indexed
- * access inspection entirely. Defaults to true.
+ * @property {boolean} [inspectIndexedAccess] - Indicates whether indexed accesses
+ * like `arr[i]` should be wrapped for bounds and integer validation. Disable
+ * to drop indexed access inspection entirely. Defaults to true.
  * @property {import('./parseJSDoc.js').ExpandType} [expandType] - A function that expands shorthand types into full descriptions.
  * @property {string} [filename] - The name of a file to which the instance pertains.
  * @property {boolean} [addHeader] - Whether to add import declarations headers. Defaults to true.
