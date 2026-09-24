@@ -12,6 +12,12 @@ import {typedefs } from "./registerTypedef.js";
  */
 function getTypeKeys(expect, warn) {
   if (typeof expect === 'string') {
+    // Quoted literal: its own key, e.g. `Entity["camera"]` looks up `camera`.
+    if (expect.length >= 2 &&
+        ((expect[0] === "'" && expect[expect.length - 1] === "'") ||
+         (expect[0] === '"' && expect[expect.length - 1] === '"'))) {
+      return [expect.slice(1, -1)];
+    }
     if (typedefs[expect]) {
       const typedef = typedefs[expect];
       return getTypeKeys(typedef, warn);

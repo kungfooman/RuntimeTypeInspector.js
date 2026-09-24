@@ -2,7 +2,7 @@ import {validateType} from './validateType.js';
 import {validators, recurse} from './validators.js';
 const warn = () => undefined;
 function testTableComplete() {
-  for (const key of ['validateType', 'validateObject', 'validateRecord', 'validateReference', 'validateMap', 'validateMapping', 'validateArray', 'validateIntersection', 'validateKeyof', 'validateUnion', 'validateSet', 'validateTemplateLiteral', 'validateTuple', 'validateTypeof', 'validateNumber', 'validatePromise', 'validateArrayLike', 'validateTypedef']) {
+  for (const key of ['validateType', 'validateObject', 'validateRecord', 'validateReference', 'validateMap', 'validateMapping', 'validateArray', 'validateIntersection', 'validateIndexedAccess', 'validateKeyof', 'validateUnion', 'validateSet', 'validateTemplateLiteral', 'validateTuple', 'validateTypeof', 'validateNumber', 'validatePromise', 'validateArrayLike', 'validateTypedef']) {
     if (typeof validators[key] !== 'function') {
       return false;
     }

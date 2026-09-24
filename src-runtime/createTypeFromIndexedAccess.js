@@ -21,21 +21,13 @@ function createTypeFromIndexedAccess(expect, warn) {
     /** @type {import('./validateType.js').Type[]} */
     const members = [];
     for (const indexKey of indexKeys) {
-      let prop = resolvedObject.properties[indexKey];
-      if (!prop) {
+      const prop = resolvedObject.properties[indexKey];
+      if (prop === undefined) {
         console.warn(`Missing prop for ${indexKey}`, {indexKey});
+        continue;
       }
-      //console.log("asd", indexKey, prop);
-      if (typeof prop === 'string') {
-        // Remove ' from string literal
-        if (prop[0] === "'" && prop[prop.length - 1] === "'") {
-          prop = prop.slice(1, -1);
-        }
-        // Remove " from string literal
-        if (prop[0] === '"' && prop[prop.length - 1] === '"') {
-          prop = prop.slice(1, -1);
-        }
-      }
+      // NB: quoted literals stay quoted, they are types: '"x"' validates
+      // the value 'x', while bare 'x' would warn unchecked and always fail.
       members.push(prop);
       //const cloneResult = structuredClone(result);
       //replaceType(cloneResult, element, typeKey, warn);

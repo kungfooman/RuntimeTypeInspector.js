@@ -77,12 +77,61 @@ function replaceType(type, search, replace, warn) {
       return type;
     }
     case 'indexedAccess':
+      type.index = replaceType(type.index, search, replace, warn);
+      type.object = replaceType(type.object, search, replace, warn);
+      return type;
     case 'record':
     case 'map':
-    case 'mapping':
-    case 'intersection':
+      type.key = replaceType(type.key, search, replace, warn);
+      type.val = replaceType(type.val, search, replace, warn);
+      return type;
+    case 'mapping': {
+      // `element` binds the iteration variable: a matching search is
+      // shadowed inside and must not be substituted.
+      if (type.element === search) {
+        return type;
+      }
+      type.iterable = replaceType(type.iterable, search, replace, warn);
+      type.result = replaceType(type.result, search, replace, warn);
+      if (type.nameType !== undefined) {
+        type.nameType = replaceType(type.nameType, search, replace, warn);
+      }
+      return type;
+    }
+    case 'intersection': {
+      const {members} = type;
+      for (let i = 0; i < members.length; i++) {
+        members[i] = replaceType(members[i], search, replace, warn);
+      }
+      return type;
+    }
     case 'keyof':
-    case 'new':
+      type.argument = replaceType(type.argument, search, replace, warn);
+      return type;
+    case 'condition':
+      type.checkType = replaceType(type.checkType, search, replace, warn);
+      type.extendsType = replaceType(type.extendsType, search, replace, warn);
+      type.trueType = replaceType(type.trueType, search, replace, warn);
+      type.falseType = replaceType(type.falseType, search, replace, warn);
+      return type;
+    case 'tupleMember':
+      type.elementType = replaceType(type.elementType, search, replace, warn);
+      return type;
+    case 'new': {
+      const {parameters} = type;
+      if (Array.isArray(parameters)) {
+        for (const parameter of parameters) {
+          if (parameter && typeof parameter === 'object' && parameter.type !== undefined) {
+            parameter.type = replaceType(parameter.type, search, replace, warn);
+          }
+        }
+      }
+      if (type.ret !== undefined) {
+        type.ret = replaceType(type.ret, search, replace, warn);
+      }
+      return type;
+    }
+    default:
       warn('replaceType: @todo unhandled', {type, search, replace});
       break;
   }

@@ -144,9 +144,15 @@ function stringifyType(type, space = 0, depth = 0) {
     case 'indexedAccess':
       out = `${stringifyType(type.object, space, depth + 1)}[${stringifyType(type.index, space, depth + 1)}]`;
       break;
-    case 'mapping':
-      out = `{[${stringifyType(type.element, space, depth + 1)} in ${stringifyType(type.iterable, space, depth + 1)}]: ${stringifyType(type.result, space, depth + 1)}}`;
-      break;
+    case 'mapping': {
+      const iterable = stringifyType(type.iterable, space, depth + 1);
+      const element = stringifyType(type.element, space, depth + 1);
+      const result = stringifyType(type.result, space, depth + 1);
+      if (type.nameType !== undefined) {
+        return `{[${element} in ${iterable} as ${stringifyType(type.nameType, space, depth + 1)}]: ${result}}`;
+      }
+      return `{[${element} in ${iterable}]: ${result}}`;
+    }
     case 'function': {
       const params = (type.parameters || []).map((_) => stringifyType(_, space, depth + 1)).join(', ');
       out = `(${params})=>any`;

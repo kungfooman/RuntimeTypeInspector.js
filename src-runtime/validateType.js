@@ -6,6 +6,7 @@ import {typedefs            } from "./registerTypedef.js";
 import {validateArray       } from "./validateArray.js";
 import {validateArrayLike   } from "./validateArrayLike.js";
 import {validateIntersection} from "./validateIntersection.js";
+import {validateIndexedAccess} from "./validateIndexedAccess.js";
 import {validateKeyof       } from "./validateKeyof.js";
 import {validateMap         } from "./validateMap.js";
 import {validateMapping     } from "./validateMapping.js";
@@ -35,6 +36,7 @@ Object.assign(validators, {
   validateMapping,
   validateArray,
   validateIntersection,
+  validateIndexedAccess,
   validateKeyof,
   validateUnion,
   validateSet,
@@ -155,6 +157,8 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
       return validators.validateArray(value, expect, loc, name, critical, warn, depth + 1);
     case 'intersection':
       return validators.validateIntersection(value, expect, loc, name, critical, warn, depth + 1);
+    case 'indexedAccess':
+      return validators.validateIndexedAccess(value, expect, loc, name, critical, warn, depth + 1);
     case 'keyof':
       return validators.validateKeyof(value, expect, loc, name, critical, warn, depth + 1);
     case 'union':

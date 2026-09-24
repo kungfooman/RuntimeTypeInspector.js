@@ -195,7 +195,12 @@ function toSourceTS(node) {
         // For example: {[K in TaskType]: InstanceType etc.
         const iterable = toSourceTS(parameter.constraint); // TaskType
         const element = toSourceTS(parameter.name); // K
-        return {type: 'mapping', iterable, element, result};
+        const out = {type: 'mapping', iterable, element, result};
+        if (node.nameType) {
+          // `as` key remapping, e.g. {[K in keyof T as K extends string ? K : never]: ...}
+          out.nameType = toSourceTS(node.nameType);
+        }
+        return out;
       }
       console.warn("MappedType: expected TypeParameter");
       return 'transpiler-error';

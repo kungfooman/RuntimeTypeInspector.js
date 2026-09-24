@@ -1,4 +1,6 @@
 import {getTypeKeys} from "./getTypeKeys.js";
+import {typedefs} from "./registerTypedef.js";
+import {createTypeFromMapping} from "./createTypeFromMapping.js";
 /**
  * @typedef {object} Keyof
  * @property {'keyof'} iterable - The type.
@@ -15,8 +17,20 @@ import {getTypeKeys} from "./getTypeKeys.js";
  * @returns {boolean} Boolean indicating if a type is correct.
  */
 function validateKeyof(value, expect, loc, name, critical, warn, depth) {
-  const {argument} = expect;
-  // console.log("validateKeyof", {value, expect, argument, loc, name, critical, warn});
+  let {argument} = expect;
+  if (typeof argument === 'string' && typedefs[argument]) {
+    argument = typedefs[argument];
+  }
+  if (argument && argument.type === 'mapping') {
+    // Materialize mapped types (e.g. ComponentMap) before reading keys.
+    // A directly self-referential mapping terminates via the missing-keys
+    // fallback instead of looping: materialization needs strictly smaller types.
+    const materialized = createTypeFromMapping(argument, warn);
+    if (!materialized) {
+      return false;
+    }
+    argument = materialized;
+  }
   const keys = getTypeKeys(argument, warn);
   if (!keys) {
     return false;
