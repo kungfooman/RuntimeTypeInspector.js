@@ -31,25 +31,52 @@ function extractCurlyContent(line) {
  *
  * It iterates through the lines of a `CommentBlock` from the Babel AST, looking for `@typedef` and `@property`
  * annotations. When it finds a typedef, it stores it in the `typedefs` record. When it finds a property,
- * it adds it to the last found typedef if it is an object type.
+ * it adds it to the last found typedef if it is an object type. `@template` names preceding a
+ * typedef are recorded in `typedefTemplates` so generic references can instantiate.
  * @param {Record<string, object>} typedefs - An object to store typedefs, mapping type names to their expanded definitions.
+ * @param {Record<string, string[]>} typedefTemplates - An object to store template parameter names per generic typedef.
  * @param {Console["warn"]} warn - A warn function used for emitting warnings about non-extensible types.
  * @param {import("@babel/types").Comment} comment - A comment extracted from Babel's AST, expected to be a CommentBlock containing type definitions.
  * @param {Function} expandType - A function that takes a type expression as a string and returns a structured representation of the type.
  */
-function parseJSDocTypedef(typedefs, warn, comment, expandType) {
+function parseJSDocTypedef(typedefs, typedefTemplates, warn, comment, expandType) {
   const {type, value} = comment;
   if (type !== 'CommentBlock') {
     return;
   }
   const lines = value.split('\n');
   let lastTypedef;
+  let pendingTemplates = [];
+  /**
+   * @param {string} line - The trimmed JSDoc line.
+   * @returns {boolean} True when the line held a template tag.
+   */
+  function harvestTemplate(line) {
+    let match = line.match(/@template \{(.*?)\} ([a-zA-Z0-9_$]+)/);
+    if (match) {
+      pendingTemplates.push(match[2]);
+      return true;
+    }
+    match = line.match(/@template (?:\{.*?\} )?\[([a-zA-Z0-9_$]+)=/);
+    if (match) {
+      pendingTemplates.push(match[1]);
+      return true;
+    }
+    match = line.match(/@template ([a-zA-Z0-9_$]+)(?![a-zA-Z0-9_$])/);
+    if (match) {
+      pendingTemplates.push(match[1]);
+      return true;
+    }
+    return false;
+  }
   for (let line of lines) {
     line = line.trim();
     if (line[0] === '*') {
       line = line.slice(1).trim();
     }
-    if (line.startsWith('@typedef')) {
+    if (line.startsWith('@template')) {
+      harvestTemplate(line);
+    } else if (line.startsWith('@typedef')) {
       const {content: def, nextIndex} = extractCurlyContent(line);
       let name = line.substring(nextIndex).trim();
       // Drop description
@@ -58,7 +85,11 @@ function parseJSDocTypedef(typedefs, warn, comment, expandType) {
       // Ignore @typedef's that only refer to themselves in another file (see typedef-overwrite test)
       if (lastTypedef !== name) {
         typedefs[name] = lastTypedef;
+        if (pendingTemplates.length) {
+          typedefTemplates[name] = [...pendingTemplates];
+        }
       }
+      pendingTemplates = [];
     } else if (line.startsWith('@property')) {
       // class @property
       if (!lastTypedef) {

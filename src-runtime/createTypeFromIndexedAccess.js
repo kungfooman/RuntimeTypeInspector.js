@@ -2,6 +2,8 @@
 import {resolveType } from "./resolveType.js";
 //import {replaceType } from "./replaceType.js";
 import {getTypeKeys } from "./getTypeKeys.js";
+import {typedefs} from "./registerTypedef.js";
+import {createTypeFromMapping} from "./createTypeFromMapping.js";
 /**
  * @param {import('./validateIndexedAccess.js').IndexedAccess} expect - The supposed type information of said value.
  * @param {console["warn"]} warn - Function to warn with.
@@ -9,7 +11,14 @@ import {getTypeKeys } from "./getTypeKeys.js";
  */
 function createTypeFromIndexedAccess(expect, warn) {
   const {object, index} = expect;
-  const resolvedObject = resolveType(object, 'object', warn);
+  let resolvedObject = resolveType(object, 'object', warn);
+  if (!resolvedObject) {
+    // Indexing into a mapped type materializes it first.
+    const target = typeof object === 'string' ? typedefs[object] : object;
+    if (target && target.type === 'mapping') {
+      resolvedObject = createTypeFromMapping(target, warn);
+    }
+  }
   if (resolvedObject) {
     // const indexType = createType(index, warn);
     const indexKeys = getTypeKeys(index, warn);

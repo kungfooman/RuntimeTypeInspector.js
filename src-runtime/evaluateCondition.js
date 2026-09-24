@@ -1,5 +1,6 @@
 import {typedefs} from "./registerTypedef.js";
 import {classes} from "./registerClass.js";
+import {getTypeKeys} from "./getTypeKeys.js";
 /**
  * @param {*} type - A type or literal.
  * @returns {string|number|boolean|undefined} Stripped literal or itself.
@@ -95,9 +96,77 @@ function resolveForExtends(type, warn, depth = 0) {
   if (type.type === 'union' && Array.isArray(type.members)) {
     return {type: 'union', members: type.members.map((member) => resolveForExtends(member, warn, depth + 1))};
   }
+  if (type.type === 'keyof') {
+    const keys = getTypeKeys(type.argument, warn);
+    if (!Array.isArray(keys)) {
+      return;
+    }
+    return {type: 'union', members: keys.map((key) => (typeof key === 'string' ? literalType(key) : key))};
+  }
   return type;
 }
 const primitives = new Set(['string', 'number', 'boolean', 'bigint', 'symbol', 'undefined', 'object', 'function']);
+/**
+ * Canonicalizes a type for structural comparison: sorted keys, `false`
+ * flags normalized to absent (both mean the same in RTI semantics).
+ * @param {*} type - The type.
+ * @returns {*} Canonical form safe for JSON comparison.
+ */
+function canonicalize(type) {
+  if (Array.isArray(type)) {
+    return type.map(canonicalize);
+  }
+  if (type && typeof type === 'object') {
+    const out = {};
+    for (const key of Object.keys(type).sort()) {
+      const value = type[key];
+      if (value === undefined) {
+        continue;
+      }
+      if ((key === 'optional' || key === 'readonly') && value === false) {
+        continue;
+      }
+      out[key] = canonicalize(value);
+    }
+    return out;
+  }
+  return type;
+}
+/**
+ * Structural type identity for IfEquals-style comparisons.
+ * @param {*} a - First type.
+ * @param {*} b - Second type.
+ * @returns {boolean} True when structurally identical.
+ */
+function deepEqualType(a, b) {
+  return JSON.stringify(canonicalize(a)) === JSON.stringify(canonicalize(b));
+}
+/**
+ * Decides a string literal against a template literal type. Only single
+ * interpolation is decided (`_${string}`, `` `${A}_id` `` with literal
+ * members); anything more complex is undecidable.
+ * @param {string} check - Stripped literal text.
+ * @param {object} target - Template literal type.
+ * @returns {boolean|undefined} Decision or undefined when undecidable.
+ */
+function extendsTemplateLiteral(check, target) {
+  const {quasis, types} = target;
+  if (!Array.isArray(quasis) || !Array.isArray(types)) {
+    return undefined;
+  }
+  if (!types.length) {
+    return check === quasis[0];
+  }
+  if (types.length !== 1 || quasis.length !== 2) {
+    return undefined;
+  }
+  const [pre, post] = quasis;
+  if (pre.length + post.length > check.length || !check.startsWith(pre) || !check.endsWith(post)) {
+    return false;
+  }
+  const middle = post ? check.slice(pre.length, -post.length) : check.slice(pre.length);
+  return extendsCheck(`"${middle}"`, types[0]);
+}
 /**
  * Decides `check extends target` over resolved types. Returns `undefined`
  * when undecidable (e.g. structural comparison); callers should fail open.
@@ -127,6 +196,10 @@ function extendsCheck(check, target) {
   if (check === target) {
     return true;
   }
+  if (check && check.type === 'templateLiteral' && Array.isArray(check.types) && !check.types.length) {
+    // Bare template without interpolation is just its literal text.
+    check = `"${check.quasis[0] ?? ''}"`;
+  }
   if (check === 'null' || check === 'undefined') {
     return false;
   }
@@ -148,6 +221,15 @@ function extendsCheck(check, target) {
       for (const member of target.members) {
         if (extendsCheck(check, member) === true) {
           return true;
+        }
+      }
+      return false;
+    }
+    if (target && target.type === 'templateLiteral') {
+      if (typeof check === 'string') {
+        const stripped = stripLiteral(check);
+        if (stripped !== check) {
+          return extendsTemplateLiteral(stripped, target);
         }
       }
       return false;
@@ -190,6 +272,11 @@ function extendsCheck(check, target) {
       }
     }
   }
+  if (typeof target === 'string' && (target === 'Function' || target === 'CallableFunction' || target === 'NewableFunction')) {
+    if (check && (check.type === 'function' || check.type === 'new')) {
+      return true;
+    }
+  }
   if (typeof target === 'string' && classes[target]) {
     // Class target: only subclasses (or itself) extend it. Primitives and
     // literals never do; other objects are undecidable rather than false.
@@ -220,4 +307,4 @@ function extendsCheck(check, target) {
 function evaluateCondition(checkType, extendsType, warn) {
   return extendsCheck(resolveForExtends(checkType, warn), resolveForExtends(extendsType, warn));
 }
-export {evaluateCondition, extendsCheck, resolveForExtends, literalType, stripLiteral};
+export {evaluateCondition, extendsCheck, resolveForExtends, literalType, stripLiteral, deepEqualType};

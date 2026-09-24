@@ -3,7 +3,7 @@ import {expandType           } from './src-transpiler/expandType.js';
 import {validateType         } from './src-runtime/validateType.js';
 import {validateUnion        } from './src-runtime/validateUnion.js';
 import {validateTuple        } from './src-runtime/validateTuple.js';
-import {typedefs             } from './src-runtime/registerTypedef.js';
+import {typedefs, typedefTemplates} from './src-runtime/registerTypedef.js';
 // inspectType.js uses addEventListener/postMessage on import, bootstrapping them
 // here allows running inspectIndexedAccess in the Node.js test environment.
 globalThis.self = globalThis;
@@ -56,6 +56,7 @@ const tests = [
   ...(await import('./src-runtime/strictNullChecks.spec.js'        )).tests,
   ...(await import('./src-runtime/stringifyValue.spec.js'          )).tests,
   ...(await import('./src-runtime/validators.spec.js'              )).tests,
+  ...(await import('./src-runtime/validateCondition.spec.js'       )).tests,
   ...(await import('./src-runtime/validatePromise.spec.js'         )).tests,
   ...(await import('./src-runtime/validateNumber.spec.js'         )).tests,
   ...(await import('./src-transpiler/expandTypeParity.spec.js'   )).tests,
@@ -72,6 +73,7 @@ const tests = [
 let errors = 0;
 for (const test of tests) {
   clearObject(typedefs); // Each test starts with a clean slate of typedefs
+  clearObject(typedefTemplates);
   const ret = test();
   if (!ret) {
     console.error("Test failed: " + test);

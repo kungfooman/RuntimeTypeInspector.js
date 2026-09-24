@@ -27,6 +27,7 @@ export * from './stringifyValue.js';
 export * from './TypePanel.js';
 export * from './validateArray.js';
 export * from './validateArrayLike.js';
+export * from './validateCondition.js';
 export * from './validateDivision.js';
 export * from './validateIntersection.js';
 export * from './validateIndexedAccess.js';

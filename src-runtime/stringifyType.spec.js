@@ -106,10 +106,19 @@ function testMappingModifiers() {
   }
   return true;
 }
+function testReadonlyProps() {
+  const str = stringifyType({type: 'object', properties: {id: {type: 'string', readonly: true}, x: 'number'}});
+  if (str !== '{readonly id: string, x: number}') {
+    console.warn('stringifyType readonly mismatch', {str});
+    return false;
+  }
+  return true;
+}
 export const tests = [
   testIssue154,
   testIssue154PrettyNonNormalized,
   testRestKept,
   testMapping,
   testMappingModifiers,
+  testReadonlyProps,
 ];

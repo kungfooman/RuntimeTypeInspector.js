@@ -365,6 +365,11 @@ function toSourceTS(node) {
             if (type && typeof type === 'object') type.optional = true;
             else type = { type, optional: true };
           }
+          if (Array.isArray(member.modifiers) && member.modifiers.some((modifier) => modifier.kind === ReadonlyKeyword)) {
+            // Tracked for IfEquals-style comparisons; ignored by validation.
+            if (type && typeof type === 'object') type.readonly = true;
+            else type = {type, readonly: true};
+          }
           properties[name] = type;
         } else {
           console.warn('TypeLiteral: unhandled member', member);

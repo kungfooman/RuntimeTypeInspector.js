@@ -266,5 +266,9 @@
   {
     "input": "./test/typechecking/validateDivision-top-input.mjs",
     "output": "./test/typechecking/validateDivision-top-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/writable-keys-input.mjs",
+    "output": "./test/typechecking/writable-keys-output.mjs"
   }
 ]

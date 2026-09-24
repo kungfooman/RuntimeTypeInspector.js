@@ -891,6 +891,8 @@ class Asserter extends Stringifier {
   }
   /** @type {Record<string, object>} */
   typedefs = {};
+  /** @type {Record<string, string[]>} */
+  typedefTemplates = {};
   /**
    * @override
    * @param {import("@babel/types").File} node - The Babel AST node.
@@ -902,7 +904,7 @@ class Asserter extends Stringifier {
     if (comments) {
       for (const comment of comments) {
         const warn = this.warn.bind(this);
-        parseJSDocTypedef(this.typedefs, warn, comment, this.expandType);
+        parseJSDocTypedef(this.typedefs, this.typedefTemplates, warn, comment, this.expandType);
       }
     }
     //console.log("this.typedefs", this.typedefs);
@@ -910,7 +912,8 @@ class Asserter extends Stringifier {
     for (const name in this.typedefs) {
       const typedef = this.typedefs[name];
       const json = simplifyTypeToSource(typedef);
-      out += `registerTypedef('${name}', ${json});\n`;
+      const params = this.typedefTemplates[name];
+      out += params?.length ? `registerTypedef('${name}', ${json}, ${JSON.stringify(params)});\n` : `registerTypedef('${name}', ${json});\n`;
     }
     const code = this.toSource(program) + '\n';
     out += code;

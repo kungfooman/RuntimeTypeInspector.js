@@ -50,6 +50,8 @@ function stringifyType(type, space = 0, depth = 0) {
         for (const key of Object.keys(properties)) {
           const val = properties[key];
           const isOpt = !!(val && typeof val === 'object' && val.optional);
+          const isReadonly = !!(val && typeof val === 'object' && val.readonly);
+          const prefix = isReadonly ? 'readonly ' : '';
           if (isOpt) {
             const inner = { ...val, optional: false };
             let innerStr;
@@ -58,9 +60,9 @@ function stringifyType(type, space = 0, depth = 0) {
             } else {
               innerStr = stringifyType(inner, space, depth + 1);
             }
-            parts.push(`${stringifyKey(key)}?: ${innerStr}`);
+            parts.push(`${prefix}${stringifyKey(key)}?: ${innerStr}`);
           } else {
-            parts.push(`${stringifyKey(key)}: ${stringifyType(val, space, depth + 1)}`);
+            parts.push(`${prefix}${stringifyKey(key)}: ${stringifyType(val, space, depth + 1)}`);
           }
         }
       }

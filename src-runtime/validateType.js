@@ -5,6 +5,7 @@ import {classes             } from "./registerClass.js";
 import {typedefs            } from "./registerTypedef.js";
 import {validateArray       } from "./validateArray.js";
 import {validateArrayLike   } from "./validateArrayLike.js";
+import {validateCondition   } from "./validateCondition.js";
 import {validateIntersection} from "./validateIntersection.js";
 import {validateIndexedAccess} from "./validateIndexedAccess.js";
 import {validateKeyof       } from "./validateKeyof.js";
@@ -29,6 +30,7 @@ import {validators          } from "./validators.js";
  */
 Object.assign(validators, {
   validateType,
+  validateCondition,
   validateObject,
   validateRecord,
   validateReference,
@@ -157,6 +159,8 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
       return validators.validateArray(value, expect, loc, name, critical, warn, depth + 1);
     case 'intersection':
       return validators.validateIntersection(value, expect, loc, name, critical, warn, depth + 1);
+    case 'condition':
+      return validators.validateCondition(value, expect, loc, name, critical, warn, depth + 1);
     case 'indexedAccess':
       return validators.validateIndexedAccess(value, expect, loc, name, critical, warn, depth + 1);
     case 'keyof':

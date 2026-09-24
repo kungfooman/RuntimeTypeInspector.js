@@ -10,6 +10,8 @@ class JSDocAnnotator {
   parents = [];
   /** @type {Record<string, object>} */
   typedefs = {};
+  /** @type {Record<string, string[]>} */
+  typedefTemplates = {};
   /**
    * @param {Object} [options] - Options for the annotator.
    * @param {import('./parseJSDoc.js').ExpandType} [options.expandType] - Function to expand types.
@@ -29,7 +31,7 @@ class JSDocAnnotator {
       if (comments) {
         for (const comment of comments) {
           const warn = console.warn.bind(console);
-          parseJSDocTypedef(this.typedefs, warn, comment, this.expandType);
+          parseJSDocTypedef(this.typedefs, this.typedefTemplates, warn, comment, this.expandType);
         }
       }
       this.traverse(ast.program);

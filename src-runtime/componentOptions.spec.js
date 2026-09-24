@@ -158,6 +158,62 @@ function testExtract() {
   }
   return true;
 }
+function testIfEquals() {
+  prepare();
+  // Equal → A branch ('string' here).
+  if (!validateType('s', expandType('IfEquals<number, number, string, boolean>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  if (validateType(1, expandType('IfEquals<number, number, string, boolean>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  // Unequal → B branch ('boolean' here).
+  if (!validateType(true, expandType('IfEquals<number, string, string, boolean>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  if (validateType('s', expandType('IfEquals<number, string, string, boolean>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  // Defaults: A=X, B=never.
+  if (!validateType(1, expandType('IfEquals<number, number>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  if (validateType('s', expandType('IfEquals<number, string>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  return true;
+}
+function testWritableKeys() {
+  prepare();
+  registerTypedef('CCamera', expandType('{ readonly id: string, clearColor: Array<number>, enabled: boolean, update: () => void }'));
+  registerTypedef('WCCamera', expandType('{ [P in keyof CCamera]-?: IfEquals<{ [Q in P]: CCamera[P] }, { -readonly [Q in P]: CCamera[P] }, P> }[keyof CCamera]'));
+  for (const key of ['clearColor', 'enabled', 'update']) {
+    if (!validateType(key, 'WCCamera', 'loc', 'name', true, warn, 0)) {
+      return false;
+    }
+  }
+  // Readonly props are dropped, unknown keys never matched.
+  if (validateType('id', 'WCCamera', 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  if (validateType('nope', 'WCCamera', 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  return true;
+}
+function testGenericTypedefInstantiation() {
+  // Generic references instantiate by substituting arguments for the
+  // typedef's template parameters (harvested from `@template` lines).
+  prepare();
+  registerTypedef('Box', {type: 'object', properties: {content: 'T'}}, ['T']);
+  if (!validateType({content: 1}, expandType('Box<number>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  if (validateType({content: 'x'}, expandType('Box<number>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  return true;
+}
 export const tests = [
   testNonNullable,
   testKeyofIntersection,
@@ -167,4 +223,7 @@ export const tests = [
   testPick,
   testOmit,
   testExtract,
+  testIfEquals,
+  testWritableKeys,
+  testGenericTypedefInstantiation,
 ];

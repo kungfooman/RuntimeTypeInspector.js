@@ -28,4 +28,4 @@ registerTypedef('NestArray', {
       }
     ]
   }
-});
+}, ["T","Depth","Acc"]);

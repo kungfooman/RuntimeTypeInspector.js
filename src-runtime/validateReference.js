@@ -1,9 +1,10 @@
-import {typedefs} from "./registerTypedef.js";
+import {typedefs, typedefTemplates} from "./registerTypedef.js";
 import {classes} from "./registerClass.js";
 import {validators, recurse} from "./validators.js";
+import {replaceType} from "./replaceType.js";
 import {createTypeFromMapping} from "./createTypeFromMapping.js";
 import {getTypeKeys} from "./getTypeKeys.js";
-import {extendsCheck, resolveForExtends, stripLiteral} from "./evaluateCondition.js";
+import {extendsCheck, resolveForExtends, stripLiteral, deepEqualType} from "./evaluateCondition.js";
 /**
  * Follows strings through typedefs (and materializes mappings) to an
  * object shape. Never mutates the registry: callers build fresh containers.
@@ -193,6 +194,31 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
       }
       return recurse(value, {type: 'object', properties}, loc, name, critical, warn, depth + 1);
     }
+    case 'IfEquals': {
+      // Identity comparison for WritableKeys-style filtering. Missing A/B
+      // fall back to the TypeScript defaults (A=X, B=never).
+      const [X, Y, A, B] = args ?? [];
+      if (X === undefined || Y === undefined) {
+        warn('IfEquals requires two type arguments.', {expect});
+        return false;
+      }
+      const materialize = (side) => {
+        if (side && side.type === 'mapping') {
+          return createTypeFromMapping(side, warn);
+        }
+        return resolveForExtends(side, warn) ?? side;
+      };
+      const resolvedX = materialize(X);
+      const resolvedY = materialize(Y);
+      if (resolvedX === undefined || resolvedY === undefined) {
+        warn('IfEquals: undecidable comparison, failing closed.', {expect});
+        return false;
+      }
+      if (deepEqualType(resolvedX, resolvedY)) {
+        return recurse(value, A ?? X, loc, name, critical, warn, depth + 1);
+      }
+      return recurse(value, B ?? 'never', loc, name, critical, warn, depth + 1);
+    }
     case 'Extract': {
       const [from, to] = args ?? [];
       if (from === undefined || to === undefined) {
@@ -342,6 +368,15 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
       return true;
   }
   if (typedefs[refName] && !classes[refName]) {
+    const params = typedefTemplates[refName];
+    if (args?.length && params?.length) {
+      // Generic typedef: instantiate by substituting arguments for parameters.
+      let instance = structuredClone(typedefs[refName]);
+      params.forEach((param, i) => {
+        instance = replaceType(instance, param, i < args.length ? args[i] : 'any', warn);
+      });
+      return recurse(value, instance, loc, name, critical, warn, depth + 1);
+    }
     if (args?.length) {
       warn(`Generic typedef '${refName}' with type arguments isn't supported yet, validating against raw typedef.`, {expect});
     }
