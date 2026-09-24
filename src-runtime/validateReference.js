@@ -164,7 +164,9 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         return false;
       }
       const resolvedTo = resolveForExtends(to, warn);
-      const members = from && from.type === 'union' && Array.isArray(from.members) ? from.members : [from];
+      // Distribute over named unions too: resolve first, then filter members.
+      const resolvedFrom = resolveForExtends(from, warn) ?? from;
+      const members = resolvedFrom && resolvedFrom.type === 'union' && Array.isArray(resolvedFrom.members) ? resolvedFrom.members : [resolvedFrom];
       const kept = members.filter((member) => extendsCheck(resolveForExtends(member, warn), resolvedTo, warn) !== false);
       if (!kept.length) {
         warn('Extract kept no members.', {expect});

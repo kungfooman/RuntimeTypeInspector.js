@@ -248,6 +248,10 @@
     "output": "./test/typechecking/typedef-template-strings-output.mjs"
   },
   {
+    "input": "./test/typechecking/utility-types-input.mjs",
+    "output": "./test/typechecking/utility-types-output.mjs"
+  },
+  {
     "input": "./test/typechecking/validateDivision-class-input.mjs",
     "output": "./test/typechecking/validateDivision-class-output.mjs"
   },

@@ -106,6 +106,9 @@ function testPartial() {
   if (validateType({a: 'x'}, expect, 'loc', 'name', true, warn, 0)) {
     return false;
   }
+  if (validateType(null, expect, 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
   return true;
 }
 function testPick() {
@@ -116,6 +119,10 @@ function testPick() {
     return false;
   }
   if (validateType({a: 'x'}, expect, 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  // Picked keys stay required.
+  if (validateType({}, expect, 'loc', 'name', true, warn, 0)) {
     return false;
   }
   return true;
@@ -130,6 +137,10 @@ function testOmit() {
   if (validateType({b: 1}, expect, 'loc', 'name', true, warn, 0)) {
     return false;
   }
+  // Remaining keys stay required.
+  if (validateType({}, expect, 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
   return true;
 }
 function testExtract() {
@@ -139,6 +150,10 @@ function testExtract() {
     return false;
   }
   if (validateType(1, expect, 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  // Empty extraction validates nothing.
+  if (validateType('a', expandType('Extract<"a", number>'), 'loc', 'name', true, warn, 0)) {
     return false;
   }
   return true;
