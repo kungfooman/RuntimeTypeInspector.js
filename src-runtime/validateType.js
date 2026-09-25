@@ -141,8 +141,13 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
     return validators.validateTypedef(value, expect, loc, name, critical, warn, depth + 1);
   }
   switch (type) {
-    case 'undefined':
-      return value === undefined;
+    case 'undefined': {
+      const ret = value === undefined;
+      if (!ret) {
+        warn(`Expected undefined.`, {value, expect});
+      }
+      return ret;
+    }
     case 'object':
       return validators.validateObject(value, properties, loc, name, critical, warn, depth + 1);
     case 'promise':
@@ -183,26 +188,55 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
     case 'never':
       warn('Expected never: no value validates.', {value});
       return false;
-    case 'null':
-      return value === null;
-    case 'void':
-      return value === undefined;
-    case 'symbol':
-      return typeof value === 'symbol';
+    case 'null': {
+      const ret = value === null;
+      if (!ret) {
+        warn(`Expected null.`, {value, expect});
+      }
+      return ret;
+    }
+    case 'void': {
+      const ret = value === undefined;
+      if (!ret) {
+        warn(`Expected void.`, {value, expect});
+      }
+      return ret;
+    }
+    case 'symbol': {
+      const ret = typeof value === 'symbol';
+      if (!ret) {
+        warn(`Expected symbol.`, {value, expect});
+      }
+      return ret;
+    }
     case 'bigint':
       if (expect && typeof expect === 'object' && expect.literal !== undefined) {
         try {
-          return value === BigInt(expect.literal);
+          const ret = value === BigInt(expect.literal);
+          if (!ret) {
+            warn(`Expected literal ${expect.literal}.`, {value, expect});
+          }
+          return ret;
         } catch {
+          warn(`Expected bigint.`, {value, expect});
           return false;
         }
       }
-      return typeof value === 'bigint';
+      const bigintRet = typeof value === 'bigint';
+      if (!bigintRet) {
+        warn(`Expected bigint.`, {value, expect});
+      }
+      return bigintRet;
     case 'number':
       return validators.validateNumber(value, expect, loc, name, critical, warn, depth + 1);
     case 'string':
-    case 'boolean':
-      return typeof value === type;
+    case 'boolean': {
+      const ret = typeof value === type;
+      if (!ret) {
+        warn(`Expected ${type}.`, {value, expect});
+      }
+      return ret;
+    }
     case 'Function':
     case 'CallableFunction':
     case 'NewableFunction':
@@ -243,10 +277,18 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
   //} else
   if (type[0] === '"' && type[type.length - 1] === '"') {
     const typeSlice = type.slice(1, -1);
-    return value === typeSlice;
+    const ret = value === typeSlice;
+    if (!ret) {
+      warn(`Expected literal ${type}.`, {value, expect});
+    }
+    return ret;
   } else if (type[0] === "'" && type[type.length - 1] === "'") {
     const typeSlice = type.slice(1, -1);
-    return value === typeSlice;
+    const ret = value === typeSlice;
+    if (!ret) {
+      warn(`Expected literal ${type}.`, {value, expect});
+    }
+    return ret;
   } else if (value && value.constructor && value.constructor.name === type) {
     // Camera, Float32Array etc.
     return true;
