@@ -603,3 +603,76 @@ takeOptions("camera", {
 
 takeOptions("camera", {}); // warns: missing required clearColor
 
+
+/**
+ * Engine-shaped conditional data param (reported bug replay): `K extends
+ * ComponentName ? ComponentOptions<K> : object` used to decide undecidable
+ * and fail every call with data closed, because `extendsCheck` knew unions
+ * but neither intersections (`keyof ComponentMap & string`) nor `keyof`.
+ *
+ * @template {ComponentName | (string & {})} K
+ * @param {K} type
+ * @param {K extends ComponentName ? ComponentOptions<K> : object} [data]
+ */
+
+function addComponentConditional(type, data) {
+  const rtiTemplates = {
+    "K": {
+      "type": "union",
+      "members": [
+        "ComponentName",
+        {
+          "type": "intersection",
+          "members": [
+            "string",
+            {
+              "type": "object"
+            }
+          ]
+        }
+      ]
+    }
+  };
+  if (!inspectTypeWithTemplates(type, "K", 'addComponentConditional', 'type', rtiTemplates)) {
+    youCanAddABreakpointHere();
+  }
+  if (!inspectTypeWithTemplates(data, {
+    "type": "condition",
+    "checkType": "K",
+    "extendsType": "ComponentName",
+    "trueType": {
+      "type": "reference",
+      "name": "ComponentOptions",
+      "args": [
+        "K"
+      ]
+    },
+    "falseType": {
+      "type": "object",
+      "properties": {}
+    },
+    "optional": true
+  }, 'addComponentConditional', 'data', rtiTemplates)) {
+    youCanAddABreakpointHere();
+  }
+  return [type, data];
+}
+addComponentConditional("camera", {
+  clearColor: [0, 0, 0, 1]
+}); // ok (warned before fix)
+
+addComponentConditional("camera", {
+  clearColor: [0, 0, 0, 1],
+  fov: 60
+}); // ok
+
+addComponentConditional("camera", {
+  clearColor: "x"
+}); // warns: clearColor must be array
+
+addComponentConditional("light"); // ok: dataless call skips the condition
+
+addComponentConditional("light", {
+  intensity: 1
+}); // ok
+

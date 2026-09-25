@@ -11,6 +11,9 @@ function assertSimplify(label, input, expected) {
   return true;
 }
 
+// Empty `properties` are preserved (not deleted): `{type: 'object',
+// `properties: {}}` is the `object` keyword and must keep rejecting
+// primitives, unlike the bare `{}` literal below.
 function testUnionEmptyObjectMember() {
   const input = {
     type: 'union',
@@ -19,7 +22,7 @@ function testUnionEmptyObjectMember() {
   };
   const expected = {
     type: 'union',
-    members: ['1', 'object'],
+    members: ['1', {type: 'object', properties: {}}],
     optional: false
   };
   return assertSimplify('union empty object member', input, expected);
@@ -33,7 +36,7 @@ function testUnionOptionalEmptyObjectMember() {
   };
   const expected = {
     type: 'union',
-    members: [{type: 'object', optional: true}, 'null'],
+    members: [{type: 'object', properties: {}, optional: true}, 'null'],
     optional: false
   };
   return assertSimplify('union optional empty object', input, expected);
@@ -47,7 +50,7 @@ function testArrayEmptyObjectElementType() {
   };
   const expected = {
     type: 'array',
-    elementType: 'object',
+    elementType: {type: 'object', properties: {}},
     optional: false
   };
   return assertSimplify('array empty object elementType', input, expected);
@@ -66,7 +69,7 @@ function testArrayNestedUnion() {
     type: 'array',
     elementType: {
       type: 'union',
-      members: ['object', 'null']
+      members: [{type: 'object', properties: {}}, 'null']
     },
     optional: false
   };
@@ -81,7 +84,7 @@ function testTupleEmptyObjectElement() {
   };
   const expected = {
     type: 'tuple',
-    elements: ['null', 'object'],
+    elements: ['null', {type: 'object', properties: {}}],
     optional: false
   };
   return assertSimplify('tuple empty object element', input, expected);
@@ -99,7 +102,7 @@ function testTupleMixedEmptyAndNonEmptyObject() {
   const expected = {
     type: 'tuple',
     elements: [
-      'object',
+      {type: 'object', properties: {}},
       {type: 'object', properties: {a: 'number'}}
     ],
     optional: false
@@ -115,7 +118,7 @@ function testPromiseEmptyObjectElementType() {
   };
   const expected = {
     type: 'promise',
-    elementType: 'object',
+    elementType: {type: 'object', properties: {}},
     optional: false
   };
   return assertSimplify('promise empty object elementType', input, expected);
@@ -136,7 +139,7 @@ function testPromiseNestedRecord() {
     elementType: {
       type: 'record',
       key: 'string',
-      val: 'object'
+      val: {type: 'object', properties: {}}
     },
     optional: false
   };
@@ -153,7 +156,7 @@ function testRecordEmptyObjectVal() {
   const expected = {
     type: 'record',
     key: 'string',
-    val: 'object',
+    val: {type: 'object', properties: {}},
     optional: false
   };
   return assertSimplify('record empty object val', input, expected);
@@ -168,7 +171,7 @@ function testRecordEmptyObjectKey() {
   };
   const expected = {
     type: 'record',
-    key: 'object',
+    key: {type: 'object', properties: {}},
     val: 'number',
     optional: false
   };
@@ -183,7 +186,7 @@ function testTypeofEmptyObjectArgument() {
   };
   const expected = {
     type: 'typeof',
-    argument: 'object',
+    argument: {type: 'object', properties: {}},
     optional: false
   };
   return assertSimplify('typeof empty object argument', input, expected);
@@ -202,7 +205,7 @@ function testTypeofNestedUnion() {
     type: 'typeof',
     argument: {
       type: 'union',
-      members: ['object', 'string']
+      members: [{type: 'object', properties: {}}, 'string']
     },
     optional: false
   };
@@ -215,8 +218,28 @@ function testTopLevelEmptyObject() {
     properties: {},
     optional: false
   };
-  const expected = 'object';
+  const expected = {
+    type: 'object',
+    properties: {},
+    optional: false
+  };
   return assertSimplify('top level empty object', input, expected);
+}
+
+// The bare shape (no `properties` key) is the `{}` literal and must survive
+// emission as a structured object: collapsing it to the `'object'` string
+// would erase the distinction the runtime relies on (`{}` accepts every
+// non-nullish value, `object` rejects primitives).
+function testBareEmptyObjectPreserved() {
+  const input = {
+    type: 'object',
+    optional: false
+  };
+  const expected = {
+    type: 'object',
+    optional: false
+  };
+  return assertSimplify('bare empty object preserved', input, expected);
 }
 
 function testTopLevelObjectWithProperties() {
@@ -262,6 +285,7 @@ export const tests = [
   testTypeofEmptyObjectArgument,
   testTypeofNestedUnion,
   testTopLevelEmptyObject,
+  testBareEmptyObjectPreserved,
   testTopLevelObjectWithProperties,
   testInputNotMutated,
 ];

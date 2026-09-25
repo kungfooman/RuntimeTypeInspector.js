@@ -1,6 +1,8 @@
 import {validateType} from './validateType.js';
+import {evaluateCondition} from './evaluateCondition.js';
 import {inspectTypeWithTemplates} from './inspectTypeWithTemplates.js';
 import {registerTypedef, typedefs} from './registerTypedef.js';
+import {registerClass, classes} from './registerClass.js';
 import {expandType} from '../src-transpiler/expandType.js';
 const warn = () => undefined;
 function clearTypedefs() {
@@ -86,10 +88,100 @@ function testTemplateTarget() {
   }
   return true;
 }
+/**
+ * Intersection targets decide by conjunction: every member must extend it.
+ * Bare `{}` accepts non-nullish checks like TS, so `"a" extends string & {}`
+ * decides true while `1` fails on the `string` member.
+ * @returns {boolean} True when documented behavior holds.
+ */
+function testIntersectionTarget() {
+  clearTypedefs();
+  if (evaluateCondition('"a"', expandType('string & {}'), warn) !== true) {
+    return false;
+  }
+  if (evaluateCondition(1, expandType('string & {}'), warn) !== false) {
+    return false;
+  }
+  const expect = expandType('"a" extends string & ("a" | "b") ? number : boolean');
+  if (!validateType(1, expect, 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  if (validateType(1, expandType('"c" extends string & ("a" | "b") ? number : boolean'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  return true;
+}
+/**
+ * Intersection checks decide by disjunction: either member suffices.
+ * @returns {boolean} True when documented behavior holds.
+ */
+function testIntersectionCheck() {
+  clearTypedefs();
+  if (!validateType(1, expandType('("a" & string) extends string ? number : boolean'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  return true;
+}
+/**
+ * `keyof` targets read key names first: literals match their keys.
+ * @returns {boolean} True when documented behavior holds.
+ */
+function testKeyofTarget() {
+  clearTypedefs();
+  registerTypedef('Box', {type: 'object', properties: {a: 'number', b: 'string'}});
+  if (evaluateCondition('"a"', expandType('keyof Box'), warn) !== true) {
+    return false;
+  }
+  if (evaluateCondition('"z"', expandType('keyof Box'), warn) !== false) {
+    return false;
+  }
+  return true;
+}
+/**
+ * Engine-shaped `ComponentName` condition: `"render" extends
+ * keyof ComponentMap & string` decides true through the remapped mapping,
+ * non-components decide false. Unique class names avoid the shared registry.
+ * @returns {boolean} True when documented behavior holds.
+ */
+function testComponentNameCondition() {
+  clearTypedefs();
+  class CondComponent {}
+  class CondRender extends CondComponent {}
+  class CondLight extends CondComponent {}
+  registerClass(CondComponent);
+  registerClass(CondRender);
+  registerClass(CondLight);
+  registerTypedef('CondEntity', {type: 'object', properties: {render: 'CondRender', light: 'CondLight', name: 'string'}});
+  registerTypedef('CondMap', expandType('{[K in keyof CondEntity as NonNullable<CondEntity[K]> extends CondComponent ? K : never]: NonNullable<CondEntity[K]>}'));
+  registerTypedef('CondName', expandType('keyof CondMap & string'));
+  try {
+    if (evaluateCondition('"render"', 'CondName', warn) !== true) {
+      return false;
+    }
+    if (evaluateCondition('"name"', 'CondName', warn) !== false) {
+      return false;
+    }
+    if (evaluateCondition('"nope"', 'CondName', warn) !== false) {
+      return false;
+    }
+    if (evaluateCondition(42, 'CondName', warn) !== false) {
+      return false;
+    }
+    return true;
+  } finally {
+    delete classes.CondComponent;
+    delete classes.CondRender;
+    delete classes.CondLight;
+  }
+}
 export const tests = [
   testTrueBranch,
   testFalseBranch,
   testUndecidableFailsClosed,
   testTemplateTarget,
   testOverridesOf,
+  testIntersectionTarget,
+  testIntersectionCheck,
+  testKeyofTarget,
+  testComponentNameCondition,
 ];

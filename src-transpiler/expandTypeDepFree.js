@@ -564,6 +564,11 @@ function expandTypeDepFree(type) {
       }
       properties[propName] = expandTypeDepFree(propTypeRaw);
     }
+    // Bare `{}` carries no `properties` key, matching the TS/Babel parsers
+    // (and distinguishing it from the `object` keyword, which does).
+    if (!Object.keys(properties).length) {
+      return {type: 'object'};
+    }
     return {type: 'object', properties};
   }
   // (5) Unions and intersections via top-level splits (`&` binds tighter, so `|` first).

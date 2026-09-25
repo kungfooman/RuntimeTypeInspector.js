@@ -1,3 +1,4 @@
+
 /**
  * @param {string} url
  * @param {object} options Optional parameters.
@@ -27,7 +28,10 @@ function fetchSomething(url, {
       "headers": {
         "type": "union",
         "members": [
-          "object",
+          {
+            "type": "object",
+            "properties": {}
+          },
           "null"
         ],
         "optional": true

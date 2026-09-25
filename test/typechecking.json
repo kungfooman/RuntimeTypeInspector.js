@@ -72,6 +72,10 @@
     "output": "./test/typechecking/defaults-inference-output.mjs"
   },
   {
+    "input": "./test/typechecking/empty-object-input.mjs",
+    "output": "./test/typechecking/empty-object-output.mjs"
+  },
+  {
     "input": "./test/typechecking/export-input.mjs",
     "output": "./test/typechecking/export-output.mjs"
   },
