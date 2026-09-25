@@ -68,21 +68,28 @@ function inspectType(value, expect, loc, name, critical = true) {
     return false;
   }
   if (typeof expect === 'string' && expect.includes('.')) {
+    // Quoted literals (e.g. narrowed `"a.b.c"`) are values, not namespace
+    // paths: rewriting them misfires `unhandled` noise on the next check.
+    const first = expect[0];
+    const last = expect[expect.length - 1];
+    const quoted = expect.length >= 2 && (first === '"' && last === '"' || first === "'" && last === "'");
+    if (!quoted) {
       // E.g. ['MathUtils', 'Quaternion']
-    const parts = expect.split('.');
-    if (parts.length === 2) {
-      const [a, b] = parts;
-      if (importNamespaceSpecifiers[a]) {
-        const ns = importNamespaceSpecifiers[a][b];
-        const expectWhat = typeof ns;
-        // console.log("expectWhat", expectWhat);
-        if (value?.constructor === ns) {
-          return true;
+      const parts = expect.split('.');
+      if (parts.length === 2) {
+        const [a, b] = parts;
+        if (importNamespaceSpecifiers[a]) {
+          const ns = importNamespaceSpecifiers[a][b];
+          const expectWhat = typeof ns;
+          // console.log("expectWhat", expectWhat);
+          if (value?.constructor === ns) {
+            return true;
+          }
+          expect = expectWhat;
         }
-        expect = expectWhat;
+      } else {
+        console.log("import namespace specifier rewrite unhandled", {expect, parts});
       }
-    } else {
-      console.log("import namespace specifier rewrite unhandled", {expect, parts});
     }
   }
   /** @type {any[]} */

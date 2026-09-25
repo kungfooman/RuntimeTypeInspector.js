@@ -1,0 +1,1091 @@
+[1mdiff --git a/src-runtime/createTypeFromMapping.js b/src-runtime/createTypeFromMapping.js[m
+[1mindex 6ce28e0..e197df1 100644[m
+[1m--- a/src-runtime/createTypeFromMapping.js[m
+[1m+++ b/src-runtime/createTypeFromMapping.js[m
+[36m@@ -4,6 +4,12 @@[m [mimport {typedefs   } from "./registerTypedef.js";[m
+ import {evaluateCondition, literalType, resolveForExtends} from "./evaluateCondition.js";[m
+ import {validators} from "./validators.js";[m
+ validators.materializeMapping = createTypeFromMapping;[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Profile (#256, Node 22, dev machine): 500-key mapping materializes in[m
+[32m+[m[32m * ~2ms and validates in ~1ms; 1000x small 3-key mapping validations take[m
+[32m+[m[32m * ~11ms (~11us/call, incl. per-call structuredClone + materialization).[m
+[32m+[m[32m * Dev-time checker only: no large-tower optimization scheduled.[m
+[32m+[m[32m */[m
+ /**[m
+  * @param {any} str - Value to strip quotes from.[m
+  * @returns {any} Stripped value.[m
+[1mdiff --git a/src-runtime/getTypeKeys.js b/src-runtime/getTypeKeys.js[m
+[1mindex 39d7300..8b416ee 100644[m
+[1m--- a/src-runtime/getTypeKeys.js[m
+[1m+++ b/src-runtime/getTypeKeys.js[m
+[36m@@ -4,6 +4,20 @@[m [mimport {classes} from "./registerClass.js";[m
+ import {mergedClassShape} from "./classShape.js";[m
+ import {replaceType} from "./replaceType.js";[m
+ import {validators} from "./validators.js";[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Key-resolution split, documented per #256 (consolidation pass deferred):[m
+[32m+[m[32m * - `resolveKeys(target)` -> string[] names (for `keyof`-style reads; unions[m
+[32m+[m[32m *   concatenate as a superset approximation, fail-open for validation).[m
+[32m+[m[32m * - `resolveObject(type)` -> object shape or undefined (narrower than full[m
+[32m+[m[32m *   materialization; unions/utilities yield undefined, callers fail closed).[m
+[32m+[m[32m * - `resolveObjectSide(object)` (in createTypeFromIndexedAccess.js) -> property[m
+[32m+[m[32m *   map for indexed access (chases typedefs, instantiates generics, merges[m
+[32m+[m[32m *   intersections/unions member-wise, materializes mappings/utilities).[m
+[32m+[m[32m * A single path would conflate names vs shapes vs merged maps and their[m
+[32m+[m[32m * distinct fail-open/closed contracts, so the split stays. Depth budgets[m
+[32m+[m[32m * (25 for names/shapes, 10 for object-side/materialize) reflect that[m
+[32m+[m[32m * materialization fans out per key and needs the tighter guard.[m
+[32m+[m[32m */[m
+ /** Module-local nesting guard: materialize funnels back through here. */[m
+ let mappingDepth = 0;[m
+ function stripKey(key) {[m
+[1mdiff --git a/src-runtime/index.js b/src-runtime/index.js[m
+[1mindex affa4cf..fb748f4 100644[m
+[1m--- a/src-runtime/index.js[m
+[1m+++ b/src-runtime/index.js[m
+[36m@@ -34,11 +34,18 @@[m [mexport * from './validateIndexedAccess.js';[m
+ export * from './validateKeyof.js';[m
+ export * from './validateMap.js';[m
+ export * from './validateMapping.js';[m
+[32m+[m[32mexport * from './validateNull.js';[m
+ export * from './validateNumber.js';[m
+ export * from './validateObject.js';[m
+ export * from './validatePromise.js';[m
+ export * from './validateRecord.js';[m
+ export * from './validateReference.js';[m
+[32m+[m[32mexport * from './validateBigint.js';[m
+[32m+[m[32mexport * from './validateBoolean.js';[m
+[32m+[m[32mexport * from './validateString.js';[m
+[32m+[m[32mexport * from './validateSymbol.js';[m
+[32m+[m[32mexport * from './validateUndefined.js';[m
+[32m+[m[32mexport * from './validateVoid.js';[m
+ export * from './validateTuple.js';[m
+ export * from './validateType.js';[m
+ export * from './validateTypedef.js';[m
+[1mdiff --git a/src-runtime/inspectTypeWithTemplates.js b/src-runtime/inspectTypeWithTemplates.js[m
+[1mindex f132d19..b64235c 100644[m
+[1m--- a/src-runtime/inspectTypeWithTemplates.js[m
+[1m+++ b/src-runtime/inspectTypeWithTemplates.js[m
+[36m@@ -1,4 +1,5 @@[m
+ import {inspectType} from "./inspectType.js";[m
+[32m+[m[32mimport {options} from "./options.js";[m
+ import {replaceType} from "./replaceType.js";[m
+ /**[m
+  * Narrows a bare template parameter from the runtime value, e.g. `K` becomes[m
+[36m@@ -23,7 +24,11 @@[m [mfunction inspectTypeWithTemplates(value, expect, loc, name, templates) {[m
+   }[m
+   // console.log("new expect", expect);[m
+   const ret = inspectType(value, expect, loc, name);[m
+[31m-  if (ret && bare !== undefined && templates[bare] !== undefined) {[m
+[32m+[m[32m  // Greedy narrowing is correct for single-param cases like[m
+[32m+[m[32m  // `addComponent(name, options)` but can false-positive for `(a: T, b: T)`[m
+[32m+[m[32m  // with `("x", 1)` where TS infers jointly. Opt-out via[m
+[32m+[m[32m  // `options.narrowTemplates = false` (see options.js, issue #256).[m
+[32m+[m[32m  if (ret && options.narrowTemplates && bare !== undefined && templates[bare] !== undefined) {[m
+     const literal = literalOf(value);[m
+     if (literal !== undefined) {[m
+       templates[bare] = literal;[m
+[1mdiff --git a/src-runtime/options.js b/src-runtime/options.js[m
+[1mindex ef9dd25..9aecc95 100644[m
+[1m--- a/src-runtime/options.js[m
+[1m+++ b/src-runtime/options.js[m
+[36m@@ -19,5 +19,16 @@[m [mconst options = {[m
+    * hiding the real errors. Toggleable via the TypePanel checkbox.[m
+    */[m
+   strictNullChecks: true,[m
+[32m+[m[32m  /**[m
+[32m+[m[32m   * Template narrowing pins a bare template param (e.g. `T`) to the first[m
+[32m+[m[32m   * validating literal, which is correct for `addComponent(name, options)`[m
+[32m+[m[32m   * but can false-positive for multi-param signatures like `(a: T, b: T)`[m
+[32m+[m[32m   * called with `("x", 1)` where TypeScript infers jointly. Defaults to[m
+[32m+[m[32m   * `true` (existing behavior); set to `false` to disable narrowing if[m
+[32m+[m[32m   * false positives appear. Separate from `inspectIndexedAccess`, which[m
+[32m+[m[32m   * covers a different feature. Decision per #256: flag added as opt-out,[m
+[32m+[m[32m   * no field reports yet requiring a default flip.[m
+[32m+[m[32m   */[m
+[32m+[m[32m  narrowTemplates: true,[m
+ };[m
+ export {options};[m
+[1mdiff --git a/src-runtime/validateType.js b/src-runtime/validateType.js[m
+[1mindex 7dd22f0..a92c12b 100644[m
+[1m--- a/src-runtime/validateType.js[m
+[1m+++ b/src-runtime/validateType.js[m
+[36m@@ -11,8 +11,15 @@[m [mimport {validateIndexedAccess} from "./validateIndexedAccess.js";[m
+ import {validateKeyof       } from "./validateKeyof.js";[m
+ import {validateMap         } from "./validateMap.js";[m
+ import {validateMapping     } from "./validateMapping.js";[m
+[32m+[m[32mimport {validateNull        } from "./validateNull.js";[m
+ import {validateNumber      } from "./validateNumber.js";[m
+ import {validateObject      } from "./validateObject.js";[m
+[32m+[m[32mimport {validateBigint      } from "./validateBigint.js";[m
+[32m+[m[32mimport {validateBoolean     } from "./validateBoolean.js";[m
+[32m+[m[32mimport {validateString      } from "./validateString.js";[m
+[32m+[m[32mimport {validateSymbol      } from "./validateSymbol.js";[m
+[32m+[m[32mimport {validateUndefined   } from "./validateUndefined.js";[m
+[32m+[m[32mimport {validateVoid        } from "./validateVoid.js";[m
+ import {validatePromise     } from "./validatePromise.js";[m
+ import {validateRecord      } from "./validateRecord.js";[m
+ import {validateReference   } from "./validateReference.js";[m
+[36m@@ -49,6 +56,13 @@[m [mObject.assign(validators, {[m
+   validatePromise,[m
+   validateArrayLike,[m
+   validateTypedef,[m
+[32m+[m[32m  validateString,[m
+[32m+[m[32m  validateBoolean,[m
+[32m+[m[32m  validateNull,[m
+[32m+[m[32m  validateUndefined,[m
+[32m+[m[32m  validateSymbol,[m
+[32m+[m[32m  validateBigint,[m
+[32m+[m[32m  validateVoid,[m
+ });[m
+ /**[m
+  * @typedef {object} TypeObject[m
+[36m@@ -142,11 +156,7 @@[m [mfunction validateType(value, expect, loc, name, critical = true, warn, depth) {[m
+   }[m
+   switch (type) {[m
+     case 'undefined': {[m
+[31m-      const ret = value === undefined;[m
+[31m-      if (!ret) {[m
+[31m-        warn(`Expected undefined.`, {value, expect});[m
+[31m-      }[m
+[31m-      return ret;[m
+[32m+[m[32m      return validators.validateUndefined(value, expect, loc, name, critical, warn, depth + 1);[m
+     }[m
+     case 'object':[m
+       return validators.validateObject(value, properties, loc, name, critical, warn, depth + 1);[m
+[36m@@ -189,53 +199,22 @@[m [mfunction validateType(value, expect, loc, name, critical = true, warn, depth) {[m
+       warn('Expected never: no value validates.', {value});[m
+       return false;[m
+     case 'null': {[m
+[31m-      const ret = value === null;[m
+[31m-      if (!ret) {[m
+[31m-        warn(`Expected null.`, {value, expect});[m
+[31m-      }[m
+[31m-      return ret;[m
+[32m+[m[32m      return validators.validateNull(value, expect, loc, name, critical, warn, depth + 1);[m
+     }[m
+     case 'void': {[m
+[31m-      const ret = value === undefined;[m
+[31m-      if (!ret) {[m
+[31m-        warn(`Expected void.`, {value, expect});[m
+[31m-      }[m
+[31m-      return ret;[m
+[32m+[m[32m      return validators.validateVoid(value, expect, loc, name, critical, warn, depth + 1);[m
+     }[m
+     case 'symbol': {[m
+[31m-      const ret = typeof value === 'symbol';[m
+[31m-      if (!ret) {[m
+[31m-        warn(`Expected symbol.`, {value, expect});[m
+[31m-      }[m
+[31m-      return ret;[m
+[32m+[m[32m      return validators.validateSymbol(value, expect, loc, name, critical, warn, depth + 1);[m
+     }[m
+     case 'bigint':[m
+[31m-      if (expect && typeof expect === 'object' && expect.literal !== undefined) {[m
+[31m-        try {[m
+[31m-          const ret = value === BigInt(expect.literal);[m
+[31m-          if (!ret) {[m
+[31m-            warn(`Expected literal ${expect.literal}.`, {value, expect});[m
+[31m-          }[m
+[31m-          return ret;[m
+[31m-        } catch {[m
+[31m-          warn(`Expected bigint.`, {value, expect});[m
+[31m-          return false;[m
+[31m-        }[m
+[31m-      }[m
+[31m-      const bigintRet = typeof value === 'bigint';[m
+[31m-      if (!bigintRet) {[m
+[31m-        warn(`Expected bigint.`, {value, expect});[m
+[31m-      }[m
+[31m-      return bigintRet;[m
+[32m+[m[32m      return validators.validateBigint(value, expect, loc, name, critical, warn, depth + 1);[m
+     case 'number':[m
+       return validators.validateNumber(value, expect, loc, name, critical, warn, depth + 1);[m
+     case 'string':[m
+[32m+[m[32m      return validators.validateString(value, expect, loc, name, critical, warn, depth + 1);[m
+     case 'boolean': {[m
+[31m-      const ret = typeof value === type;[m
+[31m-      if (!ret) {[m
+[31m-        warn(`Expected ${type}.`, {value, expect});[m
+[31m-      }[m
+[31m-      return ret;[m
+[32m+[m[32m      return validators.validateBoolean(value, expect, loc, name, critical, warn, depth + 1);[m
+     }[m
+     case 'Function':[m
+     case 'CallableFunction':[m
+[1mdiff --git a/src-runtime/validators.spec.js b/src-runtime/validators.spec.js[m
+[1mindex 2c98028..3b00c11 100644[m
+[1m--- a/src-runtime/validators.spec.js[m
+[1m+++ b/src-runtime/validators.spec.js[m
+[36m@@ -3,7 +3,7 @@[m [mimport {validators, recurse} from './validators.js';[m
+ const warn = () => undefined;[m
+ // Every validator is registered in the dispatch table.[m
+ function testTableComplete() {[m
+[31m-  for (const key of ['validateType', 'validateCondition', 'validateObject', 'validateRecord', 'validateReference', 'validateMap', 'validateMapping', 'validateArray', 'validateIntersection', 'validateIndexedAccess', 'validateKeyof', 'validateUnion', 'validateSet', 'validateTemplateLiteral', 'validateTuple', 'validateTypeof', 'validateNumber', 'validatePromise', 'validateArrayLike', 'validateTypedef', 'materializeMapping', 'evaluateCondition', 'decideIfEquals']) {[m
+[32m+[m[32m  for (const key of ['validateType', 'validateCondition', 'validateObject', 'validateRecord', 'validateReference', 'validateMap', 'validateMapping', 'validateArray', 'validateIntersection', 'validateIndexedAccess', 'validateKeyof', 'validateUnion', 'validateSet', 'validateTemplateLiteral', 'validateTuple', 'validateTypeof', 'validateNumber', 'validatePromise', 'validateArrayLike', 'validateTypedef', 'validateString', 'validateBoolean', 'validateNull', 'validateUndefined', 'validateSymbol', 'validateBigint', 'validateVoid', 'materializeMapping', 'evaluateCondition', 'decideIfEquals']) {[m
+     if (typeof validators[key] !== 'function') {[m
+       return false;[m
+     }[m
+[36m@@ -59,10 +59,50 @@[m [mfunction testRecurseMatchesValidateType() {[m
+   }[m
+   return true;[m
+ }[m
+[32m+[m[32m// Primitive validators are overridable through the table, like validateNumber.[m
+[32m+[m[32mfunction testPrimitiveOverrideTakesEffect() {[m
+[32m+[m[32m  for (const [type, good, bad] of [[m
+[32m+[m[32m    ['string', 'hi', 1],[m
+[32m+[m[32m    ['boolean', true, 1],[m
+[32m+[m[32m    ['null', null, 0],[m
+[32m+[m[32m    ['undefined', undefined, 0],[m
+[32m+[m[32m    ['symbol', Symbol('s'), 0],[m
+[32m+[m[32m    ['bigint', 1n, 1],[m
+[32m+[m[32m    ['void', undefined, 0],[m
+[32m+[m[32m  ]) {[m
+[32m+[m[32m    const orig = validators[{string: 'validateString', boolean: 'validateBoolean', null: 'validateNull', undefined: 'validateUndefined', symbol: 'validateSymbol', bigint: 'validateBigint', void: 'validateVoid'}[type]];[m
+[32m+[m[32m    if (typeof orig !== 'function') {[m
+[32m+[m[32m      return false;[m
+[32m+[m[32m    }[m
+[32m+[m[32m    let calls = 0;[m
+[32m+[m[32m    validators[{string: 'validateString', boolean: 'validateBoolean', null: 'validateNull', undefined: 'validateUndefined', symbol: 'validateSymbol', bigint: 'validateBigint', void: 'validateVoid'}[type]] = () => {[m
+[32m+[m[32m      calls++;[m
+[32m+[m[32m      return true;[m
+[32m+[m[32m    };[m
+[32m+[m[32m    let ret;[m
+[32m+[m[32m    try {[m
+[32m+[m[32m      ret = validateType(bad, type, 'loc', 'name', true, warn, 0);[m
+[32m+[m[32m    } finally {[m
+[32m+[m[32m      validators[{string: 'validateString', boolean: 'validateBoolean', null: 'validateNull', undefined: 'validateUndefined', symbol: 'validateSymbol', bigint: 'validateBigint', void: 'validateVoid'}[type]] = orig;[m
+[32m+[m[32m    }[m
+[32m+[m[32m    if (ret !== true || calls !== 1) {[m
+[32m+[m[32m      return false;[m
+[32m+[m[32m    }[m
+[32m+[m[32m    // Restored validator still accepts good values and rejects bad ones.[m
+[32m+[m[32m    if (!validateType(good, type, 'loc', 'name', true, warn, 0)) {[m
+[32m+[m[32m      return false;[m
+[32m+[m[32m    }[m
+[32m+[m[32m    if (validateType(bad, type, 'loc', 'name', true, warn, 0)) {[m
+[32m+[m[32m      return false;[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m[32m  return true;[m
+[32m+[m[32m}[m
+ export const tests = [[m
+   testTableComplete,[m
+   testOverrideTakesEffect,[m
+   testOverrideRestored,[m
+   testRecurseGuard,[m
+   testRecurseMatchesValidateType,[m
+[32m+[m[32m  testPrimitiveOverrideTakesEffect,[m
+ ];[m
+[1mdiff --git a/src-transpiler/Asserter.js b/src-transpiler/Asserter.js[m
+[1mindex b7b4f83..1ad38cf 100644[m
+[1m--- a/src-transpiler/Asserter.js[m
+[1m+++ b/src-transpiler/Asserter.js[m
+[36m@@ -109,8 +109,15 @@[m [mclass Asserter extends Stringifier {[m
+     out += `${this.spaces}registerClass(${id_});`;[m
+     const harvested = harvestClassShape(node, {expandType: this.expandType, warn: this.warn.bind(this)});[m
+     if (harvested) {[m
+[31m-      const json = simplifyTypeToSource(harvested.shape);[m
+[31m-      out += `\n${this.spaces}registerTypedef('${harvested.name}', ${json});`;[m
+[32m+[m[32m      // Hand-written typedefs win: emitting a second registerTypedef for the[m
+[32m+[m[32m      // same name would be last-wins deterministic but noisy, so the harvest[m
+[32m+[m[32m      // step skips names already present in this.typedefs (populated in File).[m
+[32m+[m[32m      if (this.typedefs[harvested.name]) {[m
+[32m+[m[32m        this.warn(`harvestClassShape: skipping harvested shape for '${harvested.name}', hand-written typedef wins`);[m
+[32m+[m[32m      } else {[m
+[32m+[m[32m        const json = simplifyTypeToSource(harvested.shape);[m
+[32m+[m[32m        out += `\n${this.spaces}registerTypedef('${harvested.name}', ${json});`;[m
+[32m+[m[32m      }[m
+     }[m
+     return out;[m
+   }[m
+[1mdiff --git a/src-transpiler/expandTypeBabelTS.js b/src-transpiler/expandTypeBabelTS.js[m
+[1mindex ac68fc2..100f5d3 100644[m
+[1m--- a/src-transpiler/expandTypeBabelTS.js[m
+[1m+++ b/src-transpiler/expandTypeBabelTS.js[m
+[36m@@ -91,7 +91,10 @@[m [mfunction toSourceBabelTS(node) {[m
+     case 'TSTypeReference': {[m
+       const name = toSourceBabelTS(node.typeName);[m
+       if (!node.typeParameters) {[m
+[31m-        // console.log(`node.typeName.name=${node.typeName.name} name=${name}`, node);[m
+[32m+[m[32m        // Bare `Object` is the empty object type, matching expandType().[m
+[32m+[m[32m        if (name === 'Object') {[m
+[32m+[m[32m          return {type: 'object', properties: {}};[m
+[32m+[m[32m        }[m
+         // Bare reference: Identifier gives name, TSQualifiedName gives dotted path.[m
+         return name;[m
+       }[m
+[36m@@ -212,16 +215,91 @@[m [mfunction toSourceBabelTS(node) {[m
+     case 'ParenthesizedType':[m
+       // fall-through for parentheses[m
+       return toSourceBabelTS(node.type);[m
+[32m+[m[32m    case 'TSParenthesizedType':[m
+[32m+[m[32m      return toSourceBabelTS(node.typeAnnotation);[m
+     case 'LastTypeNode':[m
+       return toSourceBabelTS(node.qualifier);[m
+     case 'TSTypeQuery':[m
+       const argument = toSourceBabelTS(node.exprName);[m
+       return {type: 'typeof', argument};[m
+[32m+[m[32m    case 'TSConditionalType': {[m
+[32m+[m[32m      const checkType = toSourceBabelTS(node.checkType);[m
+[32m+[m[32m      const extendsType = toSourceBabelTS(node.extendsType);[m
+[32m+[m[32m      const trueType = toSourceBabelTS(node.trueType);[m
+[32m+[m[32m      const falseType = toSourceBabelTS(node.falseType);[m
+[32m+[m[32m      return {type: 'condition', checkType, extendsType, trueType, falseType};[m
+[32m+[m[32m    }[m
+[32m+[m[32m    case 'TSIndexedAccessType': {[m
+[32m+[m[32m      const index = toSourceBabelTS(node.indexType);[m
+[32m+[m[32m      const object = toSourceBabelTS(node.objectType);[m
+[32m+[m[32m      return {type: 'indexedAccess', index, object};[m
+[32m+[m[32m    }[m
+[32m+[m[32m    case 'TSMappedType': {[m
+[32m+[m[32m      const param = node.typeParameter;[m
+[32m+[m[32m      const nameNode = param?.name;[m
+[32m+[m[32m      const element = typeof nameNode === 'string' ? nameNode : toSourceBabelTS(nameNode);[m
+[32m+[m[32m      const iterable = toSourceBabelTS(param?.constraint);[m
+[32m+[m[32m      const result = toSourceBabelTS(node.typeAnnotation);[m
+[32m+[m[32m      const out = {type: 'mapping', iterable, element, result};[m
+[32m+[m[32m      if (node.nameType) {[m
+[32m+[m[32m        out.nameType = toSourceBabelTS(node.nameType);[m
+[32m+[m[32m      }[m
+[32m+[m[32m      if (node.optional !== undefined && node.optional !== false && node.optional !== null) {[m
+[32m+[m[32m        out.question = node.optional === '-' ? '-' : node.optional === '+' ? '+' : '?';[m
+[32m+[m[32m      }[m
+[32m+[m[32m      if (node.readonly !== undefined && node.readonly !== false && node.readonly !== null) {[m
+[32m+[m[32m        out.readonly = node.readonly === '-' ? '-' : node.readonly === '+' ? '+' : 'readonly';[m
+[32m+[m[32m      }[m
+[32m+[m[32m      return out;[m
+[32m+[m[32m    }[m
+[32m+[m[32m    case 'TSTypeAnnotation':[m
+[32m+[m[32m      return toSourceBabelTS(node.typeAnnotation);[m
+[32m+[m[32m    case 'TSTypeLiteral': {[m
+[32m+[m[32m      const properties = {};[m
+[32m+[m[32m      let indexSignatures;[m
+[32m+[m[32m      for (const member of node.members ?? []) {[m
+[32m+[m[32m        if (member.type === 'TSIndexSignature') {[m
+[32m+[m[32m          indexSignatures = indexSignatures ?? [];[m
+[32m+[m[32m          indexSignatures.push(toSourceBabelTS(member));[m
+[32m+[m[32m        } else if (member.type === 'TSPropertySignature') {[m
+[32m+[m[32m          const name = toSourceBabelTS(member.key);[m
+[32m+[m[32m          let type = toSourceBabelTS(member.typeAnnotation);[m
+[32m+[m[32m          if (member.optional) {[m
+[32m+[m[32m            if (type && typeof type === 'object') type.optional = true;[m
+[32m+[m[32m            else type = {type, optional: true};[m
+[32m+[m[32m          }[m
+[32m+[m[32m          if (member.readonly) {[m
+[32m+[m[32m            if (type && typeof type === 'object') type.readonly = true;[m
+[32m+[m[32m            else type = {type, readonly: true};[m
+[32m+[m[32m          }[m
+[32m+[m[32m          properties[name] = type;[m
+[32m+[m[32m        } else {[m
+[32m+[m[32m          console.warn('TSTypeLiteral: unhandled member', member.type);[m
+[32m+[m[32m        }[m
+[32m+[m[32m      }[m
+[32m+[m[32m      const ret = {type: 'object'};[m
+[32m+[m[32m      if (Object.keys(properties).length) {[m
+[32m+[m[32m        ret.properties = properties;[m
+[32m+[m[32m      }[m
+[32m+[m[32m      if (indexSignatures) {[m
+[32m+[m[32m        ret.indexSignatures = indexSignatures;[m
+[32m+[m[32m      }[m
+[32m+[m[32m      return ret;[m
+[32m+[m[32m    }[m
+[32m+[m[32m    case 'TSIndexSignature': {[m
+[32m+[m[32m      const indexType = toSourceBabelTS(node.typeAnnotation);[m
+[32m+[m[32m      const indexParameters = (node.parameters ?? []).map(toSourceBabelTS);[m
+[32m+[m[32m      return {type: 'indexSignature', indexType, indexParameters};[m
+[32m+[m[32m    }[m
+     case 'TSTypeOperator':[m
+       if (node.operator === 'readonly') {[m
+         // readonly erased at runtime, same shape as the inner type.[m
+         return toSourceBabelTS(node.typeAnnotation);[m
+       }[m
+[32m+[m[32m      if (node.operator === 'keyof') {[m
+[32m+[m[32m        const keyofArg = toSourceBabelTS(node.typeAnnotation);[m
+[32m+[m[32m        return {type: 'keyof', argument: keyofArg};[m
+[32m+[m[32m      }[m
+       console.warn('unimplemented TSTypeOperator', node.operator);[m
+       return 'any';[m
+     case 'TSQualifiedName':[m
+[1mdiff --git a/src-transpiler/expandTypeDepFree.js b/src-transpiler/expandTypeDepFree.js[m
+[1mindex 7c8c2a6..9270a9a 100644[m
+[1m--- a/src-transpiler/expandTypeDepFree.js[m
+[1m+++ b/src-transpiler/expandTypeDepFree.js[m
+[36m@@ -21,6 +21,7 @@[m
+  */[m
+ /**[m
+  * Splits a string by a delimiter, ignoring delimiters nested inside <>, {}, [], ().[m
+[32m+[m[32m * Quote-aware: delimiters inside '...', "..." or `...` never split.[m
+  * @param {string} str - The string to split.[m
+  * @param {string} delimiter - Single character delimiter.[m
+  * @returns {string[]} Top-level split parts.[m
+[36m@@ -31,17 +32,28 @@[m [mfunction splitTopLevel(str, delimiter) {[m
+   let depthCurly = 0;[m
+   let depthSquare = 0;[m
+   let depthParen = 0;[m
+[32m+[m[32m  let inSingle = false;[m
+[32m+[m[32m  let inDouble = false;[m
+[32m+[m[32m  let inBacktick = false;[m
+   let current = '';[m
+[31m-  for (const c of str) {[m
+[31m-    if (c === '<') depthAngle++;[m
+[31m-    else if (c === '>') depthAngle--;[m
+[31m-    else if (c === '{') depthCurly++;[m
+[31m-    else if (c === '}') depthCurly--;[m
+[31m-    else if (c === '[') depthSquare++;[m
+[31m-    else if (c === ']') depthSquare--;[m
+[31m-    else if (c === '(') depthParen++;[m
+[31m-    else if (c === ')') depthParen--;[m
+[31m-    if (c === delimiter && depthAngle === 0 && depthCurly === 0 && depthSquare === 0 && depthParen === 0) {[m
+[32m+[m[32m  for (let i = 0; i < str.length; i++) {[m
+[32m+[m[32m    const c = str[i];[m
+[32m+[m[32m    const prev = i > 0 ? str[i - 1] : '';[m
+[32m+[m[32m    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') inSingle = !inSingle;[m
+[32m+[m[32m    else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') inDouble = !inDouble;[m
+[32m+[m[32m    else if (c === '`' && !inSingle && !inDouble && prev !== '\\') inBacktick = !inBacktick;[m
+[32m+[m[32m    const inQuote = inSingle || inDouble || inBacktick;[m
+[32m+[m[32m    if (!inQuote) {[m
+[32m+[m[32m      if (c === '<') depthAngle++;[m
+[32m+[m[32m      else if (c === '>') depthAngle--;[m
+[32m+[m[32m      else if (c === '{') depthCurly++;[m
+[32m+[m[32m      else if (c === '}') depthCurly--;[m
+[32m+[m[32m      else if (c === '[') depthSquare++;[m
+[32m+[m[32m      else if (c === ']') depthSquare--;[m
+[32m+[m[32m      else if (c === '(') depthParen++;[m
+[32m+[m[32m      else if (c === ')') depthParen--;[m
+[32m+[m[32m    }[m
+[32m+[m[32m    if (c === delimiter && !inQuote && depthAngle === 0 && depthCurly === 0 && depthSquare === 0 && depthParen === 0) {[m
+       parts.push(current);[m
+       current = '';[m
+     } else {[m
+[36m@@ -51,6 +63,138 @@[m [mfunction splitTopLevel(str, delimiter) {[m
+   parts.push(current);[m
+   return parts;[m
+ }[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Depth state at a given index, quote-aware.[m
+[32m+[m[32m * @param {string} str - The string to scan.[m
+[32m+[m[32m * @param {number} upto - Exclusive end index.[m
+[32m+[m[32m * @returns {{angle: number, curly: number, square: number, paren: number, quote: boolean}} Depths.[m
+[32m+[m[32m */[m
+[32m+[m[32mfunction depthsAt(str, upto) {[m
+[32m+[m[32m  let angle = 0;[m
+[32m+[m[32m  let curly = 0;[m
+[32m+[m[32m  let square = 0;[m
+[32m+[m[32m  let paren = 0;[m
+[32m+[m[32m  let inSingle = false;[m
+[32m+[m[32m  let inDouble = false;[m
+[32m+[m[32m  let inBacktick = false;[m
+[32m+[m[32m  for (let i = 0; i < upto; i++) {[m
+[32m+[m[32m    const c = str[i];[m
+[32m+[m[32m    const prev = i > 0 ? str[i - 1] : '';[m
+[32m+[m[32m    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') inSingle = !inSingle;[m
+[32m+[m[32m    else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') inDouble = !inDouble;[m
+[32m+[m[32m    else if (c === '`' && !inSingle && !inDouble && prev !== '\\') inBacktick = !inBacktick;[m
+[32m+[m[32m    const inQuote = inSingle || inDouble || inBacktick;[m
+[32m+[m[32m    if (inQuote) continue;[m
+[32m+[m[32m    if (c === '<') angle++;[m
+[32m+[m[32m    else if (c === '>') angle--;[m
+[32m+[m[32m    else if (c === '{') curly++;[m
+[32m+[m[32m    else if (c === '}') curly--;[m
+[32m+[m[32m    else if (c === '[') square++;[m
+[32m+[m[32m    else if (c === ']') square--;[m
+[32m+[m[32m    else if (c === '(') paren++;[m
+[32m+[m[32m    else if (c === ')') paren--;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  return {angle, curly, square, paren, quote: inSingle || inDouble || inBacktick};[m
+[32m+[m[32m}[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Finds a keyword (e.g. `in`, `as`, `extends`) at top level, outside brackets/quotes.[m
+[32m+[m[32m * @param {string} str - The string to search.[m
+[32m+[m[32m * @param {string} keyword - Keyword without surrounding spaces.[m
+[32m+[m[32m * @returns {number} Start index or -1.[m
+[32m+[m[32m */[m
+[32m+[m[32mfunction findTopLevelKeyword(str, keyword) {[m
+[32m+[m[32m  const isWord = (c) => /[A-Za-z0-9_$]/.test(c);[m
+[32m+[m[32m  for (let i = 0; i <= str.length - keyword.length; i++) {[m
+[32m+[m[32m    if (str.slice(i, i + keyword.length) !== keyword) continue;[m
+[32m+[m[32m    const before = i > 0 ? str[i - 1] : ' ';[m
+[32m+[m[32m    const after = i + keyword.length < str.length ? str[i + keyword.length] : ' ';[m
+[32m+[m[32m    if (isWord(before) || isWord(after)) continue;[m
+[32m+[m[32m    const d = depthsAt(str, i);[m
+[32m+[m[32m    if (d.angle === 0 && d.curly === 0 && d.square === 0 && d.paren === 0 && !d.quote) {[m
+[32m+[m[32m      // Ensure remainder after keyword is also top-level (keyword itself not quoted).[m
+[32m+[m[32m      const d2 = depthsAt(str, i + keyword.length);[m
+[32m+[m[32m      if (!d2.quote) return i;[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m[32m  return -1;[m
+[32m+[m[32m}[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Finds a single-char delimiter at top level, outside brackets/quotes.[m
+[32m+[m[32m * @param {string} str - The string to search.[m
+[32m+[m[32m * @param {string} delimiter - Single character.[m
+[32m+[m[32m * @param {number} from - Start index.[m
+[32m+[m[32m * @returns {number} Index or -1.[m
+[32m+[m[32m */[m
+[32m+[m[32mfunction findTopLevelChar(str, delimiter, from = 0) {[m
+[32m+[m[32m  let angle = 0;[m
+[32m+[m[32m  let curly = 0;[m
+[32m+[m[32m  let square = 0;[m
+[32m+[m[32m  let paren = 0;[m
+[32m+[m[32m  let inSingle = false;[m
+[32m+[m[32m  let inDouble = false;[m
+[32m+[m[32m  let inBacktick = false;[m
+[32m+[m[32m  for (let i = 0; i < str.length; i++) {[m
+[32m+[m[32m    const c = str[i];[m
+[32m+[m[32m    // Check at depths *before* the current char, so `[` itself is findable.[m
+[32m+[m[32m    const inQuoteBefore = inSingle || inDouble || inBacktick;[m
+[32m+[m[32m    if (i >= from && c === delimiter && !inQuoteBefore && angle === 0 && curly === 0 && square === 0 && paren === 0) {[m
+[32m+[m[32m      return i;[m
+[32m+[m[32m    }[m
+[32m+[m[32m    const prev = i > 0 ? str[i - 1] : '';[m
+[32m+[m[32m    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') inSingle = !inSingle;[m
+[32m+[m[32m    else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') inDouble = !inDouble;[m
+[32m+[m[32m    else if (c === '`' && !inSingle && !inDouble && prev !== '\\') inBacktick = !inBacktick;[m
+[32m+[m[32m    const inQuote = inSingle || inDouble || inBacktick;[m
+[32m+[m[32m    if (!inQuote) {[m
+[32m+[m[32m      if (c === '<') angle++;[m
+[32m+[m[32m      else if (c === '>') angle--;[m
+[32m+[m[32m      else if (c === '{') curly++;[m
+[32m+[m[32m      else if (c === '}') curly--;[m
+[32m+[m[32m      else if (c === '[') square++;[m
+[32m+[m[32m      else if (c === ']') square--;[m
+[32m+[m[32m      else if (c === '(') paren++;[m
+[32m+[m[32m      else if (c === ')') paren--;[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m[32m  return -1;[m
+[32m+[m[32m}[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Strips balanced outer parens, e.g. `(( T ))` -> `T`.[m
+[32m+[m[32m * @param {string} type - Trimmed type string.[m
+[32m+[m[32m * @returns {string} Unwrapped type.[m
+[32m+[m[32m */[m
+[32m+[m[32mfunction stripOuterParens(type) {[m
+[32m+[m[32m  let changed = true;[m
+[32m+[m[32m  while (changed) {[m
+[32m+[m[32m    changed = false;[m
+[32m+[m[32m    if (type.length >= 2 && type[0] === '(' && type[type.length - 1] === ')') {[m
+[32m+[m[32m      let depth = 0;[m
+[32m+[m[32m      let balanced = true;[m
+[32m+[m[32m      let inSingle = false;[m
+[32m+[m[32m      let inDouble = false;[m
+[32m+[m[32m      for (let i = 0; i < type.length; i++) {[m
+[32m+[m[32m        const c = type[i];[m
+[32m+[m[32m        if (c === "'" && !inDouble && type[i - 1] !== '\\') inSingle = !inSingle;[m
+[32m+[m[32m        else if (c === '"' && !inSingle && type[i - 1] !== '\\') inDouble = !inDouble;[m
+[32m+[m[32m        else if (!inSingle && !inDouble) {[m
+[32m+[m[32m          if (c === '(') depth++;[m
+[32m+[m[32m          else if (c === ')') {[m
+[32m+[m[32m            depth--;[m
+[32m+[m[32m            if (depth === 0 && i !== type.length - 1) {[m
+[32m+[m[32m              balanced = false;[m
+[32m+[m[32m              break;[m
+[32m+[m[32m            }[m
+[32m+[m[32m          }[m
+[32m+[m[32m        }[m
+[32m+[m[32m      }[m
+[32m+[m[32m      if (balanced && depth === 0) {[m
+[32m+[m[32m        type = type.slice(1, -1).trim();[m
+[32m+[m[32m        changed = true;[m
+[32m+[m[32m      }[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m[32m  return type;[m
+[32m+[m[32m}[m
+ /**[m
+  * Parses `Name<A, B>` into name + raw arg strings, respecting nested brackets.[m
+  * Returns undefined when input isn't a generic reference.[m
+[36m@@ -89,6 +233,183 @@[m [mfunction parseGenericReference(type) {[m
+   }[m
+   return {name, args};[m
+ }[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Parses `{[K in Iterable as NameType]?: Result}` mapped syntax.[m
+[32m+[m[32m * Returns undefined when input isn't a mapped type.[m
+[32m+[m[32m * @param {string} type - Trimmed type string starting with `{`.[m
+[32m+[m[32m * @returns {object|undefined} Mapping struct with raw strings, or undefined.[m
+[32m+[m[32m */[m
+[32m+[m[32mfunction parseMappedRaw(type) {[m
+[32m+[m[32m  if (type[0] !== '{' || type[type.length - 1] !== '}') {[m
+[32m+[m[32m    return;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  let inner = type.slice(1, -1).trim();[m
+[32m+[m[32m  let readonly;[m
+[32m+[m[32m  if (inner.startsWith('-readonly') && (inner[9] === ' ' || inner[9] === '[')) {[m
+[32m+[m[32m    readonly = '-';[m
+[32m+[m[32m    inner = inner.slice(9).trim();[m
+[32m+[m[32m  } else if (inner.startsWith('+readonly') && (inner[9] === ' ' || inner[9] === '[')) {[m
+[32m+[m[32m    readonly = '+';[m
+[32m+[m[32m    inner = inner.slice(9).trim();[m
+[32m+[m[32m  } else if (inner.startsWith('readonly') && (inner[8] === ' ' || inner[8] === '[')) {[m
+[32m+[m[32m    readonly = 'readonly';[m
+[32m+[m[32m    inner = inner.slice(8).trim();[m
+[32m+[m[32m  }[m
+[32m+[m[32m  if (inner[0] !== '[') {[m
+[32m+[m[32m    return;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  // Find matching `]` for the opening `[`, quote-aware.[m
+[32m+[m[32m  let square = 0;[m
+[32m+[m[32m  let inSingle = false;[m
+[32m+[m[32m  let inDouble = false;[m
+[32m+[m[32m  let inBacktick = false;[m
+[32m+[m[32m  let close = -1;[m
+[32m+[m[32m  for (let i = 0; i < inner.length; i++) {[m
+[32m+[m[32m    const c = inner[i];[m
+[32m+[m[32m    const prev = i > 0 ? inner[i - 1] : '';[m
+[32m+[m[32m    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') inSingle = !inSingle;[m
+[32m+[m[32m    else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') inDouble = !inDouble;[m
+[32m+[m[32m    else if (c === '`' && !inSingle && !inDouble && prev !== '\\') inBacktick = !inBacktick;[m
+[32m+[m[32m    else if (!inSingle && !inDouble && !inBacktick) {[m
+[32m+[m[32m      if (c === '[') square++;[m
+[32m+[m[32m      else if (c === ']') {[m
+[32m+[m[32m        square--;[m
+[32m+[m[32m        if (square === 0) {[m
+[32m+[m[32m          close = i;[m
+[32m+[m[32m          break;[m
+[32m+[m[32m        }[m
+[32m+[m[32m      }[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m[32m  if (close === -1) {[m
+[32m+[m[32m    return;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  const bracket = inner.slice(1, close);[m
+[32m+[m[32m  let rest = inner.slice(close + 1).trim();[m
+[32m+[m[32m  let question;[m
+[32m+[m[32m  if (rest.startsWith('-?')) {[m
+[32m+[m[32m    question = '-';[m
+[32m+[m[32m    rest = rest.slice(2).trim();[m
+[32m+[m[32m  } else if (rest.startsWith('+?')) {[m
+[32m+[m[32m    question = '+';[m
+[32m+[m[32m    rest = rest.slice(2).trim();[m
+[32m+[m[32m  } else if (rest.startsWith('?')) {[m
+[32m+[m[32m    question = '?';[m
+[32m+[m[32m    rest = rest.slice(1).trim();[m
+[32m+[m[32m  }[m
+[32m+[m[32m  if (!rest.startsWith(':')) {[m
+[32m+[m[32m    return;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  const resultRaw = rest.slice(1).trim();[m
+[32m+[m[32m  if (!resultRaw) {[m
+[32m+[m[32m    return;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  const inIdx = findTopLevelKeyword(bracket, 'in');[m
+[32m+[m[32m  if (inIdx === -1) {[m
+[32m+[m[32m    return;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  const element = bracket.slice(0, inIdx).trim();[m
+[32m+[m[32m  if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(element)) {[m
+[32m+[m[32m    return;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  const afterIn = bracket.slice(inIdx + 2).trim();[m
+[32m+[m[32m  if (!afterIn) {[m
+[32m+[m[32m    return;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  const asIdx = findTopLevelKeyword(afterIn, 'as');[m
+[32m+[m[32m  let iterableRaw = afterIn;[m
+[32m+[m[32m  let nameRaw;[m
+[32m+[m[32m  if (asIdx !== -1) {[m
+[32m+[m[32m    iterableRaw = afterIn.slice(0, asIdx).trim();[m
+[32m+[m[32m    nameRaw = afterIn.slice(asIdx + 2).trim();[m
+[32m+[m[32m    if (!iterableRaw || !nameRaw) {[m
+[32m+[m[32m      return;[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m[32m  return {element, iterableRaw, nameRaw, resultRaw, question, readonly};[m
+[32m+[m[32m}[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Splits `Check extends Extends ? True : False` at top level.[m
+[32m+[m[32m * Returns undefined when input isn't a conditional type.[m
+[32m+[m[32m * @param {string} type - Trimmed type string.[m
+[32m+[m[32m * @returns {{check: string, extends_: string, true_: string, false_: string}|undefined} Raw parts.[m
+[32m+[m[32m */[m
+[32m+[m[32mfunction parseConditionRaw(type) {[m
+[32m+[m[32m  const qIdx = findTopLevelChar(type, '?');[m
+[32m+[m[32m  if (qIdx === -1) {[m
+[32m+[m[32m    return;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  const beforeQ = type.slice(0, qIdx);[m
+[32m+[m[32m  const afterQ = type.slice(qIdx + 1);[m
+[32m+[m[32m  const extIdx = findTopLevelKeyword(beforeQ, 'extends');[m
+[32m+[m[32m  if (extIdx === -1) {[m
+[32m+[m[32m    return;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  const colonIdx = findTopLevelChar(afterQ, ':');[m
+[32m+[m[32m  if (colonIdx === -1) {[m
+[32m+[m[32m    return;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  const check = beforeQ.slice(0, extIdx).trim();[m
+[32m+[m[32m  const extends_ = beforeQ.slice(extIdx + 7).trim();[m
+[32m+[m[32m  const true_ = afterQ.slice(0, colonIdx).trim();[m
+[32m+[m[32m  const false_ = afterQ.slice(colonIdx + 1).trim();[m
+[32m+[m[32m  if (!check || !extends_ || !true_ || !false_) {[m
+[32m+[m[32m    return;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  // Guard against `?.` optional chaining and `??` nullish coalescing.[m
+[32m+[m[32m  if (type[qIdx + 1] === '.' || type[qIdx + 1] === '?') {[m
+[32m+[m[32m    return;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  return {check, extends_, true_, false_};[m
+[32m+[m[32m}[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Splits `Object[Index]` at top level. Excludes tuples (`[...]`) and[m
+[32m+[m[32m * empty-index arrays (`T[]`, handled earlier).[m
+[32m+[m[32m * @param {string} type - Trimmed type string.[m
+[32m+[m[32m * @returns {{objectRaw: string, indexRaw: string}|undefined} Raw parts.[m
+[32m+[m[32m */[m
+[32m+[m[32mfunction parseIndexedAccessRaw(type) {[m
+[32m+[m[32m  if (!type.endsWith(']') || type.endsWith('[]')) {[m
+[32m+[m[32m    return;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  if (type[0] === '[') {[m
+[32m+[m[32m    return;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  const openIdx = findTopLevelChar(type, '[');[m
+[32m+[m[32m  if (openIdx === -1) {[m
+[32m+[m[32m    return;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  // Ensure the `[` at openIdx closes at the very end.[m
+[32m+[m[32m  let square = 0;[m
+[32m+[m[32m  let inSingle = false;[m
+[32m+[m[32m  let inDouble = false;[m
+[32m+[m[32m  let inBacktick = false;[m
+[32m+[m[32m  for (let i = openIdx; i < type.length; i++) {[m
+[32m+[m[32m    const c = type[i];[m
+[32m+[m[32m    const prev = i > 0 ? type[i - 1] : '';[m
+[32m+[m[32m    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') inSingle = !inSingle;[m
+[32m+[m[32m    else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') inDouble = !inDouble;[m
+[32m+[m[32m    else if (c === '`' && !inSingle && !inDouble && prev !== '\\') inBacktick = !inBacktick;[m
+[32m+[m[32m    else if (!inSingle && !inDouble && !inBacktick) {[m
+[32m+[m[32m      if (c === '[') square++;[m
+[32m+[m[32m      else if (c === ']') {[m
+[32m+[m[32m        square--;[m
+[32m+[m[32m        if (square === 0 && i !== type.length - 1) {[m
+[32m+[m[32m          return;[m
+[32m+[m[32m        }[m
+[32m+[m[32m      }[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m[32m  if (square !== 0) {[m
+[32m+[m[32m    return;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  const objectRaw = type.slice(0, openIdx).trim();[m
+[32m+[m[32m  const indexRaw = type.slice(openIdx + 1, -1).trim();[m
+[32m+[m[32m  if (!objectRaw || !indexRaw) {[m
+[32m+[m[32m    return;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  return {objectRaw, indexRaw};[m
+[32m+[m[32m}[m
+ /**[m
+  * 'DepFree' refers to the fact that this function has no dependencies,[m
+  * while `expandType` depends on TypeScript itself for maximum compatibility.[m
+[36m@@ -104,12 +425,11 @@[m [mfunction parseGenericReference(type) {[m
+  */[m
+ function expandTypeDepFree(type) {[m
+   type = type.trim();[m
+[31m-  // JSDocNullableType (`T?` / `?T`): union with null, matching expandType().[m
+[31m-  if (type.endsWith('?') && type.length > 1) {[m
+[31m-    return {type: 'union', members: [expandTypeDepFree(type.slice(0, -1).trim()), 'null']};[m
+[31m-  }[m
+[31m-  if (type.startsWith('?') && type.length > 1) {[m
+[31m-    return {type: 'union', members: [expandTypeDepFree(type.slice(1).trim()), 'null']};[m
+[32m+[m[32m  // '(123)' -> '123': strip balanced outer parens first so `(cond)?`[m
+[32m+[m[32m  // nullable and `(A|B)` unions see through them.[m
+[32m+[m[32m  const stripped = stripOuterParens(type);[m
+[32m+[m[32m  if (stripped !== type) {[m
+[32m+[m[32m    return expandTypeDepFree(stripped);[m
+   }[m
+   // `readonly T` erased at runtime, same shape as the inner type.[m
+   if (type.startsWith('readonly ') && type.length > 9) {[m
+[36m@@ -118,13 +438,30 @@[m [mfunction expandTypeDepFree(type) {[m
+   if (type === 'unique symbol') {[m
+     return 'any';[m
+   }[m
+[31m-  // '(123)' -> '123'[m
+[31m-  while (!type.includes('|') && type[0] === '(' && type[type.length - 1] === ')') {[m
+[31m-    type = type.slice(1, -1).trim();[m
+[32m+[m[32m  // Conditionals before nullable: `A extends B ? C : D?` must keep the[m
+[32m+[m[32m  // nullable on the false branch, not lift it over the whole condition.[m
+[32m+[m[32m  // (`(cond)?` has no top-level `?` due to parens, so it falls through[m
+[32m+[m[32m  // to nullable below.)[m
+[32m+[m[32m  const earlyCond = parseConditionRaw(type);[m
+[32m+[m[32m  if (earlyCond) {[m
+[32m+[m[32m    return {[m
+[32m+[m[32m      type: 'condition',[m
+[32m+[m[32m      checkType: expandTypeDepFree(earlyCond.check),[m
+[32m+[m[32m      extendsType: expandTypeDepFree(earlyCond.extends_),[m
+[32m+[m[32m      trueType: expandTypeDepFree(earlyCond.true_),[m
+[32m+[m[32m      falseType: expandTypeDepFree(earlyCond.false_),[m
+[32m+[m[32m    };[m
+[32m+[m[32m  }[m
+[32m+[m[32m  // JSDocNullableType (`T?` / `?T`): union with null, matching expandType().[m
+[32m+[m[32m  if (type.endsWith('?') && type.length > 1) {[m
+[32m+[m[32m    return {type: 'union', members: [expandTypeDepFree(type.slice(0, -1).trim()), 'null']};[m
+[32m+[m[32m  }[m
+[32m+[m[32m  if (type.startsWith('?') && type.length > 1) {[m
+[32m+[m[32m    return {type: 'union', members: [expandTypeDepFree(type.slice(1).trim()), 'null']};[m
+   }[m
+   // (1) Rest parameters like ...string[m
+   if (type[0] === '.' && type[1] === '.' && type[2] === '.') {[m
+[31m-    const elementType = type.slice(3);[m
+[32m+[m[32m    const elementType = expandTypeDepFree(type.slice(3).trim());[m
+     return {type: 'array', elementType};[m
+   }[m
+   // (2)[m
+[36m@@ -147,17 +484,18 @@[m [mfunction expandTypeDepFree(type) {[m
+       type.startsWith("Record<")[m
+     ) && type.endsWith('>')) {[m
+     const recordSlice = type.slice(7, -1);[m
+[31m-    const firstComma = recordSlice.indexOf(',');[m
+[31m-    if (firstComma === -1) {[m
+[32m+[m[32m    const commaIdx = findTopLevelChar(recordSlice, ',');[m
+[32m+[m[32m    if (commaIdx === -1) {[m
+       console.warn("expandTypeDepFree> invalid Object/Record");[m
+[32m+[m[32m    } else {[m
+[32m+[m[32m      const key = recordSlice.slice(0, commaIdx).trim();[m
+[32m+[m[32m      const val = recordSlice.slice(commaIdx + 1).trim();[m
+[32m+[m[32m      return {[m
+[32m+[m[32m        type: "record",[m
+[32m+[m[32m        key: expandTypeDepFree(key),[m
+[32m+[m[32m        val: expandTypeDepFree(val),[m
+[32m+[m[32m      };[m
+     }[m
+[31m-    const key = recordSlice.slice(0, firstComma).trim();[m
+[31m-    const val = recordSlice.slice(firstComma + 1).trim();[m
+[31m-    return {[m
+[31m-      type: "record",[m
+[31m-      key: expandTypeDepFree(key),[m
+[31m-      val: expandTypeDepFree(val),[m
+[31m-    };[m
+   }[m
+   // (3b) Map<...> / Set<...' for dep-free parity with expandType()[m
+   if (type.startsWith("Map<") && type.endsWith('>')) {[m
+[36m@@ -185,30 +523,83 @@[m [mfunction expandTypeDepFree(type) {[m
+     const {name, args} = genericRef;[m
+     return {type: 'reference', name, args: args.map(expandTypeDepFree)};[m
+   }[m
+[31m-  // (4) {...}[m
+[32m+[m[32m  // (4) Mapped types `{[K in X as Y]?: Z}` before the object-literal fallback.[m
+   if (type[0] === '{' && type[type.length - 1] === '}') {[m
+[31m-    const propertiesArray = type.slice(1, -1).split(','); // ['entity: Entity', ' app: AppBase'][m
+[32m+[m[32m    const mapped = parseMappedRaw(type);[m
+[32m+[m[32m    if (mapped) {[m
+[32m+[m[32m      const out = {[m
+[32m+[m[32m        type: 'mapping',[m
+[32m+[m[32m        iterable: expandTypeDepFree(mapped.iterableRaw),[m
+[32m+[m[32m        element: mapped.element,[m
+[32m+[m[32m        result: expandTypeDepFree(mapped.resultRaw),[m
+[32m+[m[32m      };[m
+[32m+[m[32m      if (mapped.nameRaw !== undefined) {[m
+[32m+[m[32m        out.nameType = expandTypeDepFree(mapped.nameRaw);[m
+[32m+[m[32m      }[m
+[32m+[m[32m      if (mapped.question !== undefined) {[m
+[32m+[m[32m        out.question = mapped.question;[m
+[32m+[m[32m      }[m
+[32m+[m[32m      if (mapped.readonly !== undefined) {[m
+[32m+[m[32m        out.readonly = mapped.readonly;[m
+[32m+[m[32m      }[m
+[32m+[m[32m      return out;[m
+[32m+[m[32m    }[m
+[32m+[m[32m    const propertiesArray = splitTopLevel(type.slice(1, -1), ','); // ['entity: Entity', ' app: AppBase'][m
+     const properties = {};[m
+[31m-    propertiesArray.forEach(_ => {[m
+[31m-      const [propName, propType] = _.split(":").map(_ => _.trim());[m
+[31m-      if (!propName || !propType) {[m
+[32m+[m[32m    for (const entry of propertiesArray) {[m
+[32m+[m[32m      const colonIdx = findTopLevelChar(entry, ':');[m
+[32m+[m[32m      if (colonIdx === -1) {[m
+[32m+[m[32m        // Empty `{}` yields one empty entry: the empty object type.[m
+[32m+[m[32m        if (entry.trim() === '') {[m
+[32m+[m[32m          continue;[m
+[32m+[m[32m        }[m
+[32m+[m[32m        console.warn('expandTypeDepFree> unexpected type format, fix');[m
+[32m+[m[32m        continue;[m
+[32m+[m[32m      }[m
+[32m+[m[32m      const propName = entry.slice(0, colonIdx).trim();[m
+[32m+[m[32m      const propTypeRaw = entry.slice(colonIdx + 1).trim();[m
+[32m+[m[32m      if (!propName || !propTypeRaw) {[m
+         console.warn('expandTypeDepFree> unexpected type format, fix');[m
+[31m-        return false;[m
+[32m+[m[32m        continue;[m
+       }[m
+[31m-      properties[propName] = propType;[m
+[31m-    });[m
+[32m+[m[32m      properties[propName] = expandTypeDepFree(propTypeRaw);[m
+[32m+[m[32m    }[m
+     return {type: 'object', properties};[m
+   }[m
+[31m-  // (5) expand unions[m
+[31m-  const members = type.split("|");[m
+[31m-  if (members.length >= 2) {[m
+[31m-    members.forEach((_, i) => members[i] = _.trim());[m
+[32m+[m[32m  // (5) Unions and intersections via top-level splits (`&` binds tighter, so `|` first).[m
+[32m+[m[32m  // Note: conditionals already handled up front (before nullable) so `D?`[m
+[32m+[m[32m  // false branches keep their nullability; this slot is intentionally union-only.[m
+[32m+[m[32m  const unionParts = splitTopLevel(type, "|");[m
+[32m+[m[32m  if (unionParts.length >= 2) {[m
+     return {[m
+       type: 'union',[m
+[31m-      members: members.map(expandTypeDepFree),[m
+[32m+[m[32m      members: unionParts.map((_) => expandTypeDepFree(_.trim())),[m
+[32m+[m[32m    };[m
+[32m+[m[32m  }[m
+[32m+[m[32m  const interParts = splitTopLevel(type, "&");[m
+[32m+[m[32m  if (interParts.length >= 2) {[m
+[32m+[m[32m    return {[m
+[32m+[m[32m      type: 'intersection',[m
+[32m+[m[32m      members: interParts.map((_) => expandTypeDepFree(_.trim())),[m
+     };[m
+   }[m
+[31m-  // (6) expand [] Arrays[m
+[32m+[m[32m  // (7) `keyof T` before typeof so `keyof typeof X` nests correctly.[m
+[32m+[m[32m  if (type.startsWith('keyof ') || type.startsWith('keyof(')) {[m
+[32m+[m[32m    const after = type.startsWith('keyof(') ? type.slice(5).trim() : type.slice(6).trim();[m
+[32m+[m[32m    if (after) {[m
+[32m+[m[32m      return {type: 'keyof', argument: expandTypeDepFree(after)};[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m[32m  // (8) Indexed access `T[K]` (arrays `T[]` handled below, tuples above start with `[`).[m
+[32m+[m[32m  const indexed = parseIndexedAccessRaw(type);[m
+[32m+[m[32m  if (indexed) {[m
+[32m+[m[32m    return {[m
+[32m+[m[32m      type: 'indexedAccess',[m
+[32m+[m[32m      index: expandTypeDepFree(indexed.indexRaw),[m
+[32m+[m[32m      object: expandTypeDepFree(indexed.objectRaw),[m
+[32m+[m[32m    };[m
+[32m+[m[32m  }[m
+[32m+[m[32m  // (9) expand [] Arrays[m
+   // Test arrays: new pc.Mat3().set([1, 2, 3, "asd"])[m
+   if (type.endsWith("[]")) {[m
+     const typeSlice = type.slice(0, -2);[m
+[36m@@ -217,17 +608,21 @@[m [mfunction expandTypeDepFree(type) {[m
+       elementType: expandTypeDepFree(typeSlice)[m
+     };[m
+   }[m
+[31m-  // (7) expand tuples[m
+[32m+[m[32m  // (10) expand tuples[m
+   if (type[0] === '[' && type[type.length - 1] === ']') {[m
+[31m-    const elements = type.slice(1, -1).split(','); // ['null', ' Texture', ' Texture', ' Texture', ' Texture', ' Texture', ' Texture'][m
+[32m+[m[32m    const inner = type.slice(1, -1);[m
+[32m+[m[32m    if (inner.trim() === '') {[m
+[32m+[m[32m      return {type: 'tuple', elements: []};[m
+[32m+[m[32m    }[m
+[32m+[m[32m    const elements = splitTopLevel(inner, ','); // ['null', ' Texture', ...][m
+     return {[m
+       type: 'tuple',[m
+[31m-      elements: elements.map(expandTypeDepFree)[m
+[32m+[m[32m      elements: elements.map((_) => expandTypeDepFree(_.trim()))[m
+     };[m
+   }[m
+[31m-  // (8) expand typeof expressions[m
+[32m+[m[32m  // (11) expand typeof expressions[m
+   if (type.startsWith('typeof ')) {[m
+[31m-    const argument = expandTypeDepFree(type.substring(7));[m
+[32m+[m[32m    const argument = expandTypeDepFree(type.substring(7).trim());[m
+     return {type: 'typeof', argument};[m
+   }[m
+   if (type === 'object' || type === 'Object') {[m
+[1mdiff --git a/src-transpiler/expandTypeParity.spec.js b/src-transpiler/expandTypeParity.spec.js[m
+[1mindex c0719e1..32ea3e8 100644[m
+[1m--- a/src-transpiler/expandTypeParity.spec.js[m
+[1m+++ b/src-transpiler/expandTypeParity.spec.js[m
+[36m@@ -105,6 +105,56 @@[m [mfunction testBabelReferenceValidates() {[m
+   }[m
+   return true;[m
+ }[m
+[32m+[m[32mfunction testMappedModifierParity() {[m
+[32m+[m[32m  // All `-?`/`+?`/`?`/`readonly` spellings must match the TS parser on all three parsers.[m
+[32m+[m[32m  for (const type of [[m
+[32m+[m[32m    '{[K in TaskType]: 123}',[m
+[32m+[m[32m    '{[K in "a"|"b"]: number}',[m
+[32m+[m[32m    '{[K in TaskType]?: 123}',[m
+[32m+[m[32m    '{[K in TaskType]+?: 123}',[m
+[32m+[m[32m    '{[K in TaskType]-?: 123}',[m
+[32m+[m[32m    '{readonly [K in TaskType]: 123}',[m
+[32m+[m[32m    '{-readonly [K in TaskType]: 123}',[m
+[32m+[m[32m    '{+readonly [K in TaskType]: 123}',[m
+[32m+[m[32m    '{readonly [K in TaskType]+?: 123}',[m
+[32m+[m[32m    '{-readonly [K in TaskType]-?: 123}',[m
+[32m+[m[32m  ]) {[m
+[32m+[m[32m    if (!assertParity(type)) {[m
+[32m+[m[32m      return false;[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m[32m  return true;[m
+[32m+[m[32m}[m
+[32m+[m[32mfunction testMappedAsRemapParity() {[m
+[32m+[m[32m  // `as` key remaps via `nameType`: conditions and intrinsic references.[m
+[32m+[m[32m  for (const type of [[m
+[32m+[m[32m    '{[K in keyof T as K extends string ? K : never]: number}',[m
+[32m+[m[32m    '{[K in keyof T as Uppercase<K & string>]: number}',[m
+[32m+[m[32m    '{[K in keyof T]: number}',[m
+[32m+[m[32m  ]) {[m
+[32m+[m[32m    if (!assertParity(type)) {[m
+[32m+[m[32m      return false;[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m[32m  return true;[m
+[32m+[m[32m}[m
+[32m+[m[32mfunction testMappedNestedParity() {[m
+[32m+[m[32m  // Dependencies of mapped shapes: conditions, keyof, intersections, indexed access.[m
+[32m+[m[32m  for (const type of [[m
+[32m+[m[32m    'K extends string ? K : never',[m
+[32m+[m[32m    'keyof T',[m
+[32m+[m[32m    'keyof typeof obj',[m
+[32m+[m[32m    'K & string',[m
+[32m+[m[32m    'string & number',[m
+[32m+[m[32m    'T[K]',[m
+[32m+[m[32m    'T["a"]',[m
+[32m+[m[32m  ]) {[m
+[32m+[m[32m    if (!assertParity(type)) {[m
+[32m+[m[32m      return false;[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m[32m  return true;[m
+[32m+[m[32m}[m
+ export const tests = [[m
+   testArrayLikeParity,[m
+   testArrayLikeStringParity,[m
+[36m@@ -120,4 +170,7 @@[m [mexport const tests = [[m
+   testJSDocNullableValidates,[m
+   testReadonlyUniqueParity,[m
+   testBabelReferenceValidates,[m
+[32m+[m[32m  testMappedModifierParity,[m
+[32m+[m[32m  testMappedAsRemapParity,[m
+[32m+[m[32m  testMappedNestedParity,[m
+ ];[m
+[1mdiff --git a/src-transpiler/harvestClassShape.spec.js b/src-transpiler/harvestClassShape.spec.js[m
+[1mindex ea72aca..a8cfe75 100644[m
+[1m--- a/src-transpiler/harvestClassShape.spec.js[m
+[1m+++ b/src-transpiler/harvestClassShape.spec.js[m
+[36m@@ -113,6 +113,20 @@[m [mfunction testAnonymousSkipped() {[m
+   const {out} = shapeFor('const A = class { x = 1; };');[m
+   return !out.includes('registerTypedef');[m
+ }[m
+[32m+[m[32m// Hand-written typedefs win: harvest skips the second emission.[m
+[32m+[m[32mfunction testHandTypedefSkipsHarvest() {[m
+[32m+[m[32m  const src = `/** @typedef {{x: string}} A */\nclass A { x = 1; }`;[m
+[32m+[m[32m  const {out} = shapeFor(src);[m
+[32m+[m[32m  const count = out.split(`registerTypedef('A'`).length - 1;[m
+[32m+[m[32m  if (count !== 1) {[m
+[32m+[m[32m    return false;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  // Hand-written shape (string) wins over harvested inference (number).[m
+[32m+[m[32m  if (!out.includes('"x": "string"') || out.includes('"x": "number"')) {[m
+[32m+[m[32m    return false;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  return true;[m
+[32m+[m[32m}[m
+ const tests = [[m
+   testFieldInference,[m
+   testJSDocBeatsInference,[m
+[36m@@ -126,5 +140,6 @@[m [mconst tests = [[m
+   testMethodsAndAccessors,[m
+   testEmptyClassSkipped,[m
+   testAnonymousSkipped,[m
+[32m+[m[32m  testHandTypedefSkipsHarvest,[m
+ ];[m
+ export {tests};[m

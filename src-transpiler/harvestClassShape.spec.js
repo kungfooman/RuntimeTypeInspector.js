@@ -113,6 +113,20 @@ function testAnonymousSkipped() {
   const {out} = shapeFor('const A = class { x = 1; };');
   return !out.includes('registerTypedef');
 }
+// Hand-written typedefs win: harvest skips the second emission.
+function testHandTypedefSkipsHarvest() {
+  const src = `/** @typedef {{x: string}} A */\nclass A { x = 1; }`;
+  const {out} = shapeFor(src);
+  const count = out.split(`registerTypedef('A'`).length - 1;
+  if (count !== 1) {
+    return false;
+  }
+  // Hand-written shape (string) wins over harvested inference (number).
+  if (!out.includes('"x": "string"') || out.includes('"x": "number"')) {
+    return false;
+  }
+  return true;
+}
 const tests = [
   testFieldInference,
   testJSDocBeatsInference,
@@ -126,5 +140,6 @@ const tests = [
   testMethodsAndAccessors,
   testEmptyClassSkipped,
   testAnonymousSkipped,
+  testHandTypedefSkipsHarvest,
 ];
 export {tests};
