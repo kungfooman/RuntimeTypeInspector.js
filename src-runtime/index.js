@@ -5,6 +5,7 @@ export * from './createTypeFromIndexedAccess.js';
 export * from './createTypeFromKeyof.js';
 export * from './createTypeFromMapping.js';
 export * from './crossContextPostMessage.js';
+export * from './collectCandidates.js';
 export * from './customTypes.js';
 export * from './customValidations.js';
 export * from './evaluateCondition.js';

@@ -160,6 +160,10 @@
     "output": "./test/typechecking/new-computed-callee-output.mjs"
   },
   {
+    "input": "./test/typechecking/noinfer-templates-input.mjs",
+    "output": "./test/typechecking/noinfer-templates-output.mjs"
+  },
+  {
     "input": "./test/typechecking/only-description-input.mjs",
     "output": "./test/typechecking/only-description-output.mjs"
   },
