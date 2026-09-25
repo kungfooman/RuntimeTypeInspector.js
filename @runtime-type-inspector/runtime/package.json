@@ -1,6 +1,6 @@
 {
   "name": "@runtime-type-inspector/runtime",
-  "version": "5.0.1",
+  "version": "5.0.3",
   "description": "Validating JSDoc types at runtime for high-quality types - Trust is good, control is better.",
   "main": "index.cjs",
   "module": "index.mjs",

@@ -4,7 +4,7 @@
     "ts2js": "ts2js.js"
   },
   "name": "@runtime-type-inspector/transpiler",
-  "version": "5.0.1",
+  "version": "5.0.3",
   "description": "Validating JSDoc types at runtime for high-quality types - Trust is good, control is better.",
   "main": "index.cjs",
   "module": "index.mjs",
@@ -22,7 +22,7 @@
   "homepage": "https://github.com/kungfooman/RuntimeTypeInspector.js#readme",
   "dependencies": {
     "@babel/parser": "^7.23.0",
-    "@runtime-type-inspector/runtime": "^5.0.1",
+    "@runtime-type-inspector/runtime": "^5.0.3",
     "typescript": "^5.1.6"
   },
   "files": [
