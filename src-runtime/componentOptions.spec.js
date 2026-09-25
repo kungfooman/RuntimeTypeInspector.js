@@ -92,6 +92,7 @@ function testAsRemap() {
   }
   return true;
 }
+// Partial makes every prop optional but still checks present ones.
 function testPartial() {
   prepare();
   registerTypedef('Box', {type: 'object', properties: {a: 'number', b: 'string'}});
@@ -111,6 +112,7 @@ function testPartial() {
   }
   return true;
 }
+// Pick keeps only the named keys, still required.
 function testPick() {
   prepare();
   registerTypedef('Box', {type: 'object', properties: {a: 'number', b: 'string'}});
@@ -127,6 +129,7 @@ function testPick() {
   }
   return true;
 }
+// Omit drops the named keys and keeps the rest required.
 function testOmit() {
   prepare();
   registerTypedef('Box', {type: 'object', properties: {a: 'number', b: 'string'}});
@@ -143,6 +146,7 @@ function testOmit() {
   }
   return true;
 }
+// Extract keeps union members assignable to the target, nothing otherwise.
 function testExtract() {
   prepare();
   const expect = expandType('Extract<"a" | "b" | 1, string>');
@@ -158,16 +162,17 @@ function testExtract() {
   }
   return true;
 }
+// IfEquals takes the A branch for identical types and B otherwise, defaulting to A=X and B=never.
 function testIfEquals() {
   prepare();
-  // Equal → A branch ('string' here).
+  // Equal types take the A branch ('string' here).
   if (!validateType('s', expandType('IfEquals<number, number, string, boolean>'), 'loc', 'name', true, warn, 0)) {
     return false;
   }
   if (validateType(1, expandType('IfEquals<number, number, string, boolean>'), 'loc', 'name', true, warn, 0)) {
     return false;
   }
-  // Unequal → B branch ('boolean' here).
+  // Unequal types take the B branch ('boolean' here).
   if (!validateType(true, expandType('IfEquals<number, string, string, boolean>'), 'loc', 'name', true, warn, 0)) {
     return false;
   }
@@ -183,6 +188,7 @@ function testIfEquals() {
   }
   return true;
 }
+// WritableKeys keeps writable props and drops readonly ones.
 function testWritableKeys() {
   prepare();
   registerTypedef('CCamera', expandType('{ readonly id: string, clearColor: Array<number>, enabled: boolean, update: () => void }'));
@@ -201,6 +207,7 @@ function testWritableKeys() {
   }
   return true;
 }
+// Generic references substitute arguments for template parameters.
 function testGenericTypedefInstantiation() {
   // Generic references instantiate by substituting arguments for the
   // typedef's template parameters (harvested from `@template` lines).

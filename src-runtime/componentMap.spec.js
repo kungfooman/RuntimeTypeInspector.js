@@ -69,6 +69,7 @@ function prepare() {
    */
   registerTypedef('ComponentName', expandType('keyof ComponentMap & string'));
 }
+// The ComponentMap mapping keeps its `as` remapping after parsing.
 function testAsClauseParsed() {
   prepare();
   const mapping = typedefs.ComponentMap;
@@ -81,6 +82,7 @@ function testAsClauseParsed() {
   }
   return true;
 }
+// Materializing ComponentMap keeps only component props (camera, light).
 function testComponentMapMaterializes() {
   prepare();
   const type = createType('ComponentMap', warn);
@@ -94,6 +96,7 @@ function testComponentMapMaterializes() {
   }
   return true;
 }
+// ComponentName accepts known component names.
 function testComponentNameAccepts() {
   prepare();
   if (!validateType('camera', 'ComponentName', 'Entity#addComponent', 'name', true, warn, 0)) {
@@ -104,6 +107,7 @@ function testComponentNameAccepts() {
   }
   return true;
 }
+// ComponentName rejects non-components, unknown names and non-strings.
 function testComponentNameRejects() {
   prepare();
   // Remapped away: valid Entity key but not a component.
@@ -118,6 +122,7 @@ function testComponentNameRejects() {
   }
   return true;
 }
+// A camera instance matches the camera option, a light does not.
 function testComponentInstanceMatches() {
   prepare();
   const type = createType('ComponentMap', warn);
@@ -131,6 +136,7 @@ function testComponentInstanceMatches() {
   }
   return true;
 }
+// Template substitution flows through mappings and indexed access.
 function testGenericMappedInstantiation() {
   // The machinery `ComponentOptions<K>` needs: template substitution must
   // flow through `mapping` and `indexedAccess` (local stand-in, not engine code).
@@ -146,6 +152,7 @@ function testGenericMappedInstantiation() {
   }
   return true;
 }
+// Mapping modifiers (-?, +?, ?, readonly) parse onto the mapping struct.
 function testModifierParsing() {
   const strip = expandType('{ [K in T]-?: X }');
   if (strip.question !== '-') {
@@ -172,6 +179,7 @@ function testModifierParsing() {
   }
   return true;
 }
+// -? and +? strip and force optionality without mutating the typedef.
 function testQuestionModifiers() {
   prepare();
   registerTypedef('O', {type: 'object', properties: {v: 'number'}, optional: true});

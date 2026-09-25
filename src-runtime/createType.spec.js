@@ -26,6 +26,7 @@ function prepare() {
   registerTypedef('ObjValuesTypedef', "ObjValues");
   registerTypedef('ObjValuesTypedef2', "ObjValuesTypedef");
 }
+// Chained typedef aliases resolve to the same union of literals.
 function test1() {
   prepare();
   /** @type {import('./validateUnion.js').Union} */
