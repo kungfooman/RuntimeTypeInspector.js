@@ -92,6 +92,10 @@
     "output": "./test/typechecking/good-old-es5-output.mjs"
   },
   {
+    "input": "./test/typechecking/ifequals-input.mjs",
+    "output": "./test/typechecking/ifequals-output.mjs"
+  },
+  {
     "input": "./test/typechecking/import-as-input.mjs",
     "output": "./test/typechecking/import-as-output.mjs"
   },
