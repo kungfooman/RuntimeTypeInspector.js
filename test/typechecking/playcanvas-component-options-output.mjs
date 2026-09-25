@@ -6,21 +6,6 @@ registerTypedef('EntityShape', {
     "name": "string"
   }
 });
-registerTypedef('CameraComponent', {
-  "type": "object",
-  "properties": {
-    "clearColor": {
-      "type": "array",
-      "elementType": "number"
-    }
-  }
-});
-registerTypedef('LightComponent', {
-  "type": "object",
-  "properties": {
-    "intensity": "number"
-  }
-});
 registerTypedef('ComponentMap', {
   "type": "mapping",
   "iterable": {
@@ -305,8 +290,8 @@ registerTypedef('ComponentOptions', {
 
 /**
  * Stripped engine classes: only the inheritance chain and the component
- * slots matter here. Static shapes live in the typedefs below, mirroring
- * how the engine pairs runtime classes with JSDoc types.
+ * slots matter here. Property maps come from harvested class shapes, which
+ * the Asserter registers next to each class.
  */
 class Component {
 
@@ -315,10 +300,21 @@ registerClass(Component);
 class CameraComponent extends Component {
   constructor() {
     super();
+    /** @type {Array<number>} */
+
     this.clearColor = [0, 0, 0, 1];
   }
 }
 registerClass(CameraComponent);
+registerTypedef('CameraComponent', {
+  "type": "object",
+  "properties": {
+    "clearColor": {
+      "type": "array",
+      "elementType": "number"
+    }
+  }
+});
 class LightComponent extends Component {
   constructor() {
     super();
@@ -326,6 +322,12 @@ class LightComponent extends Component {
   }
 }
 registerClass(LightComponent);
+registerTypedef('LightComponent', {
+  "type": "object",
+  "properties": {
+    "intensity": "number"
+  }
+});
 class Entity {
   constructor() {
     this.camera = null;
@@ -359,17 +361,19 @@ class Entity {
   }
 }
 registerClass(Entity);
+registerTypedef('Entity', {
+  "type": "object",
+  "properties": {
+    "addComponent": "Function"
+  }
+});
 
 /**
- * Static shapes standing in for the component classes below. The engine runs
- * this machinery directly over the real classes; RTI cannot read keys off a
- * class, so the fixture declares the relevant property maps as typedefs.
- * Sharing names with the classes is deliberate: values validate by
- * instanceof (class wins), static keys resolve through the typedef.
+ * Minimal stand-in for the component slots on the engine's Entity: which
+ * names map to which component classes. The classes above supply the
+ * property maps through their harvested shapes.
  *
  * @typedef {{ camera: CameraComponent, light: LightComponent, name: string }} EntityShape
- * @typedef {{ clearColor: Array<number> }} CameraComponent
- * @typedef {{ intensity: number }} LightComponent
  */
 
 
@@ -463,15 +467,11 @@ registerClass(Entity);
 
 
 /**
- * Static shapes standing in for the component classes below. The engine runs
- * this machinery directly over the real classes; RTI cannot read keys off a
- * class, so the fixture declares the relevant property maps as typedefs.
- * Sharing names with the classes is deliberate: values validate by
- * instanceof (class wins), static keys resolve through the typedef.
+ * Minimal stand-in for the component slots on the engine's Entity: which
+ * names map to which component classes. The classes above supply the
+ * property maps through their harvested shapes.
  *
  * @typedef {{ camera: CameraComponent, light: LightComponent, name: string }} EntityShape
- * @typedef {{ clearColor: Array<number> }} CameraComponent
- * @typedef {{ intensity: number }} LightComponent
  */
 
 /**

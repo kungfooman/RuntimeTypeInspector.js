@@ -1,5 +1,6 @@
 import {typedefs} from "./registerTypedef.js";
 import {classes} from "./registerClass.js";
+import {mergedClassShape} from "./classShape.js";
 import {getTypeKeys} from "./getTypeKeys.js";
 import {validators} from "./validators.js";
 validators.evaluateCondition = evaluateCondition;
@@ -83,8 +84,9 @@ function resolveForExtends(type, warn, depth = 0) {
     // Follow names through typedefs: indexed access reads static shapes,
     // so class/shorthand names resolve to their property maps here
     // (identity checks keep the name; see the string branch above).
-    for (let i = 0; i < 10 && typeof object === 'string' && typedefs[object]; i++) {
-      object = resolveForExtends(typedefs[object], warn, depth + 1);
+    // Classes merge harvested shapes up the constructor chain.
+    for (let i = 0; i < 10 && typeof object === 'string' && (classes[object] || typedefs[object]); i++) {
+      object = classes[object] ? mergedClassShape(object) : resolveForExtends(typedefs[object], warn, depth + 1);
     }
     if (object && object.type === 'mapping') {
       const materialize = validators.materializeMapping;

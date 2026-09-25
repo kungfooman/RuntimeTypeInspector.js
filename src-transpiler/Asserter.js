@@ -1,6 +1,7 @@
 import {annotateOptional   } from './annotateOptional.js';
 import {requiredTypeofs    } from './expandType.js';
 import {expandTypeDepFree  } from './expandTypeDepFree.js';
+import {harvestClassShape  } from './harvestClassShape.js';
 import {inferTypeFromDefault} from './inferTypeFromDefault.js';
 import {parseInlineParamType} from './parseInlineParamType.js';
 import {nodeIsFunctionLike } from './nodeIsFunctionLike.js';
@@ -106,6 +107,11 @@ class Asserter extends Stringifier {
     const id_ = this.toSource(id);
     let out = super.ClassDeclaration(node);
     out += `${this.spaces}registerClass(${id_});`;
+    const harvested = harvestClassShape(node, {expandType: this.expandType, warn: this.warn.bind(this)});
+    if (harvested) {
+      const json = simplifyTypeToSource(harvested.shape);
+      out += `\n${this.spaces}registerTypedef('${harvested.name}', ${json});`;
+    }
     return out;
   }
   /**

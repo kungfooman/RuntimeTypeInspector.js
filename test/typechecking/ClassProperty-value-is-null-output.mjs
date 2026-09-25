@@ -7,3 +7,9 @@ class Vec4 {
   x;
 }
 registerClass(Vec4);
+registerTypedef('Vec4', {
+  "type": "object",
+  "properties": {
+    "x": "number"
+  }
+});

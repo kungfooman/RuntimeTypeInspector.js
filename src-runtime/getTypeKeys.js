@@ -1,5 +1,7 @@
 import {variables} from "./registerVariable.js";
 import {typedefs, typedefTemplates} from "./registerTypedef.js";
+import {classes} from "./registerClass.js";
+import {mergedClassShape} from "./classShape.js";
 import {replaceType} from "./replaceType.js";
 import {validators} from "./validators.js";
 /** Module-local nesting guard: materialize funnels back through here. */
@@ -152,6 +154,11 @@ function resolveObject(type, warn, depth) {
     return;
   }
   if (typeof type === 'string') {
+    // Class names merge harvested shapes up the constructor chain, so
+    // `keyof` sees inherited members too. Plain typedefs resolve as before.
+    if (classes[type]) {
+      return mergedClassShape(type);
+    }
     if (!typedefs[type]) {
       return;
     }

@@ -1,6 +1,8 @@
 import {getTypeKeys, instantiateReference, resolveObject, stripKey} from "./getTypeKeys.js";
+import {classes} from "./registerClass.js";
 import {typedefs} from "./registerTypedef.js";
 import {validators} from "./validators.js";
+import {mergedClassShape} from "./classShape.js";
 import {createTypeFromMapping} from "./createTypeFromMapping.js";
 /**
  * Materializes Pick/Omit/Partial to object shapes for indexed access.
@@ -59,9 +61,18 @@ function resolveObjectSide(object, warn, depth = 0) {
   }
   let target = object;
   for (let i = 0; i < 10; i++) {
-    if (typeof target === 'string' && typedefs[target]) {
-      target = typedefs[target];
-      continue;
+    if (typeof target === 'string') {
+      // Class names merge harvested shapes up the constructor chain; plain
+      // typedef names resolve straight to their shape.
+      if (classes[target]) {
+        target = mergedClassShape(target);
+        continue;
+      }
+      if (typedefs[target]) {
+        target = typedefs[target];
+        continue;
+      }
+      break;
     }
     if (target && target.type === 'reference') {
       if ((target.name === 'NonNullable' || target.name === 'Readonly' || target.name === 'NoInfer') && target.args?.length) {
