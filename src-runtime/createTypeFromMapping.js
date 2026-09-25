@@ -2,6 +2,8 @@ import {replaceType} from "./replaceType.js";
 import {getTypeKeys} from "./getTypeKeys.js";
 import {typedefs   } from "./registerTypedef.js";
 import {evaluateCondition, literalType, resolveForExtends} from "./evaluateCondition.js";
+import {validators} from "./validators.js";
+validators.materializeMapping = createTypeFromMapping;
 /**
  * @param {any} str - Value to strip quotes from.
  * @returns {any} Stripped value.

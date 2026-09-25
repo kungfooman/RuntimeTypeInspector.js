@@ -17,6 +17,11 @@ function replaceType(type, search, replace, warn) {
     // console.log("replaceType", {type, search, replace, warn});
     return replace;
   }
+  if (type === null || typeof type !== 'object') {
+    // Bare names, literals and modifiers pass through untouched: only the
+    // searched template key is substituted, everything else keeps its shape.
+    return type;
+  }
   switch (type.type) {
     case 'object': {
       const {properties} = type;
@@ -128,6 +133,17 @@ function replaceType(type, search, replace, warn) {
       }
       if (type.ret !== undefined) {
         type.ret = replaceType(type.ret, search, replace, warn);
+      }
+      return type;
+    }
+    case 'function': {
+      const {parameters} = type;
+      if (Array.isArray(parameters)) {
+        for (const parameter of parameters) {
+          if (parameter && typeof parameter === 'object' && parameter.type !== undefined) {
+            parameter.type = replaceType(parameter.type, search, replace, warn);
+          }
+        }
       }
       return type;
     }

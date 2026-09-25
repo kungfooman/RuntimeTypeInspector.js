@@ -160,6 +160,10 @@
     "output": "./test/typechecking/only-description-output.mjs"
   },
   {
+    "input": "./test/typechecking/playcanvas-component-options-input.mjs",
+    "output": "./test/typechecking/playcanvas-component-options-output.mjs"
+  },
+  {
     "input": "./test/typechecking/setter-no-type-getter-no-type-input.mjs",
     "output": "./test/typechecking/setter-no-type-getter-no-type-output.mjs"
   },

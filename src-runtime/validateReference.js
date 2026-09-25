@@ -6,18 +6,19 @@ import {createTypeFromMapping} from "./createTypeFromMapping.js";
 import {getTypeKeys} from "./getTypeKeys.js";
 import {extendsCheck, resolveForExtends, stripLiteral, deepEqualType} from "./evaluateCondition.js";
 /**
- * Follows strings through typedefs (and materializes mappings) to an
- * object shape. Never mutates the registry: callers build fresh containers.
+ * Follows strings through typedefs (and materializes mappings) to object
+ * shapes, distributing over unions like homomorphic mapped types do.
+ * Never mutates the registry: callers build fresh containers.
  * @param {*} type - The type to resolve.
  * @param {console["warn"]} warn - Function to warn with.
- * @returns {object|undefined} Object shape or undefined.
+ * @returns {object[]} Object shapes, empty when unresolvable.
  */
-function resolveObjectArg(type, warn) {
+function resolveObjectArgs(type, warn) {
   let current = type;
   for (let i = 0; i < 10; i++) {
     if (typeof current === 'string') {
       if (!typedefs[current]) {
-        return;
+        return [];
       }
       current = typedefs[current];
       continue;
@@ -28,9 +29,13 @@ function resolveObjectArg(type, warn) {
     }
     break;
   }
-  if (current && current.type === 'object' && current.properties) {
-    return current;
+  if (current && current.type === 'union' && Array.isArray(current.members)) {
+    return current.members.flatMap((member) => resolveObjectArgs(member, warn));
   }
+  if (current && current.type === 'object' && current.properties) {
+    return [current];
+  }
+  return [];
 }
 /**
  * @param {*} prop - A property type.
@@ -161,16 +166,19 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         warn('Partial requires one type argument.', {expect});
         return false;
       }
-      const object = resolveObjectArg(firstArg, warn);
-      if (!object) {
+      const objects = resolveObjectArgs(firstArg, warn);
+      if (!objects.length) {
         warn('Partial requires an object type argument.', {expect});
         return false;
       }
-      const properties = {};
-      for (const key of Object.keys(object.properties)) {
-        properties[key] = asOptional(object.properties[key]);
-      }
-      return recurse(value, {type: 'object', properties}, loc, name, critical, warn, depth + 1);
+      const members = objects.map((object) => {
+        const properties = {};
+        for (const key of Object.keys(object.properties)) {
+          properties[key] = asOptional(object.properties[key]);
+        }
+        return {type: 'object', properties};
+      });
+      return recurse(value, members.length === 1 ? members[0] : {type: 'union', members}, loc, name, critical, warn, depth + 1);
     }
     case 'Pick':
     case 'Omit': {
@@ -179,20 +187,23 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         warn(`${refName} requires two type arguments.`, {expect});
         return false;
       }
-      const object = resolveObjectArg(target, warn);
+      const objects = resolveObjectArgs(target, warn);
       const names = keyList(keys, warn);
-      if (!object || !names) {
+      if (!objects.length || !names) {
         warn(`${refName} requires an object and key names.`, {expect});
         return false;
       }
       const wanted = new Set(names);
-      const properties = {};
-      for (const key of Object.keys(object.properties)) {
-        if (wanted.has(key) === (refName === 'Pick')) {
-          properties[key] = object.properties[key];
+      const members = objects.map((object) => {
+        const properties = {};
+        for (const key of Object.keys(object.properties)) {
+          if (wanted.has(key) === (refName === 'Pick')) {
+            properties[key] = object.properties[key];
+          }
         }
-      }
-      return recurse(value, {type: 'object', properties}, loc, name, critical, warn, depth + 1);
+        return {type: 'object', properties};
+      });
+      return recurse(value, members.length === 1 ? members[0] : {type: 'union', members}, loc, name, critical, warn, depth + 1);
     }
     case 'IfEquals': {
       // Identity comparison for WritableKeys-style filtering. Missing A/B
@@ -202,22 +213,16 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         warn('IfEquals requires two type arguments.', {expect});
         return false;
       }
-      const materialize = (side) => {
-        if (side && side.type === 'mapping') {
-          return createTypeFromMapping(side, warn);
-        }
-        return resolveForExtends(side, warn) ?? side;
-      };
-      const resolvedX = materialize(X);
-      const resolvedY = materialize(Y);
-      if (resolvedX === undefined || resolvedY === undefined) {
-        warn('IfEquals: undecidable comparison, failing closed.', {expect});
-        return false;
-      }
-      if (deepEqualType(resolvedX, resolvedY)) {
+      const decide = validators.decideIfEquals;
+      const decision = decide ? decide(X, Y, warn) : undefined;
+      if (decision === true) {
         return recurse(value, A ?? X, loc, name, critical, warn, depth + 1);
       }
-      return recurse(value, B ?? 'never', loc, name, critical, warn, depth + 1);
+      if (decision === false) {
+        return recurse(value, B ?? 'never', loc, name, critical, warn, depth + 1);
+      }
+      warn('IfEquals: undecidable comparison, failing closed.', {expect});
+      return false;
     }
     case 'Extract': {
       const [from, to] = args ?? [];
@@ -263,18 +268,21 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         warn('Required requires one type argument.', {expect});
         return false;
       }
-      const object = resolveObjectArg(firstArg, warn);
-      if (!object) {
+      const objects = resolveObjectArgs(firstArg, warn);
+      if (!objects.length) {
         warn('Required requires an object type argument.', {expect});
         return false;
       }
       // Required is shallow: only top-level optionality is stripped.
-      const properties = {};
-      for (const key of Object.keys(object.properties)) {
-        const prop = object.properties[key];
-        properties[key] = prop && typeof prop === 'object' ? {...prop, optional: false} : prop;
-      }
-      return recurse(value, {type: 'object', properties}, loc, name, critical, warn, depth + 1);
+      const members = objects.map((object) => {
+        const properties = {};
+        for (const key of Object.keys(object.properties)) {
+          const prop = object.properties[key];
+          properties[key] = prop && typeof prop === 'object' ? {...prop, optional: false} : prop;
+        }
+        return {type: 'object', properties};
+      });
+      return recurse(value, members.length === 1 ? members[0] : {type: 'union', members}, loc, name, critical, warn, depth + 1);
     }
     case 'Awaited': {
       if (!firstArg) {
