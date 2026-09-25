@@ -125,6 +125,9 @@ function resolveForExtends(type, warn, depth = 0) {
   if (type.type === 'union' && Array.isArray(type.members)) {
     return {type: 'union', members: type.members.map((member) => resolveForExtends(member, warn, depth + 1))};
   }
+  if (type.type === 'intersection' && Array.isArray(type.members)) {
+    return {type: 'intersection', members: type.members.map((member) => resolveForExtends(member, warn, depth + 1))};
+  }
   if (type.type === 'keyof') {
     const keys = getTypeKeys(type.argument, warn);
     if (!Array.isArray(keys)) {
@@ -135,6 +138,12 @@ function resolveForExtends(type, warn, depth = 0) {
   return type;
 }
 const primitives = new Set(['string', 'number', 'boolean', 'bigint', 'symbol', 'undefined', 'object', 'function']);
+/**
+ * Silent warn sink for internal resolutions: `extendsCheck` takes no `warn`
+ * parameter, so key reads that cannot report use this instead.
+ * @param {...any} _args - Ignored.
+ */
+function noopWarn(..._args) {}
 /**
  * Canonicalizes a type for structural comparison: sorted keys, `false`
  * flags normalized to absent (both mean the same in RTI semantics).
@@ -281,6 +290,38 @@ function extendsCheck(check, target) {
         }
       }
       return false;
+    }
+    if (target && target.type === 'intersection' && Array.isArray(target.members)) {
+      // `check extends (A & B)` holds iff it extends every member.
+      let decided = true;
+      for (const member of target.members) {
+        const result = extendsCheck(check, member);
+        if (result === false) {
+          return false;
+        }
+        if (result === undefined) {
+          decided = undefined;
+        }
+      }
+      return decided;
+    }
+    if (check && check.type === 'intersection' && Array.isArray(check.members)) {
+      // `(A & B) extends target` holds iff either member extends it.
+      for (const member of check.members) {
+        if (extendsCheck(member, target) === true) {
+          return true;
+        }
+      }
+      return false;
+    }
+    if (target && target.type === 'keyof') {
+      // `check extends keyof T` reads the key names first, then decides
+      // against their union (e.g. `"render" extends keyof ComponentMap`).
+      const keys = getTypeKeys(target.argument, noopWarn);
+      if (!Array.isArray(keys)) {
+        return undefined;
+      }
+      return extendsCheck(check, {type: 'union', members: keys.map((key) => (typeof key === 'string' ? literalType(key) : key))});
     }
     if (target && target.type === 'templateLiteral') {
       if (typeof check === 'string') {
