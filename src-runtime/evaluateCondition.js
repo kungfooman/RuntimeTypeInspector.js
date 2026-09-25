@@ -332,6 +332,41 @@ function extendsCheck(check, target) {
       }
       return false;
     }
+    if (target && target.type === 'object' &&
+        target.properties === undefined && !target.indexSignatures) {
+      // `{}` accepts every non-nullish type, like TS (`1 extends {}`).
+      // Only the bare literal shape (no `properties` key): `object` keeps
+      // rejecting primitives below, as before.
+      if (check === null || check === undefined || check === 'null' || check === 'undefined') {
+        return false;
+      }
+      if (typeof check !== 'object') {
+        // Literals, primitives and classes extend {}; unknown names stay
+        // undecidable rather than failing closed.
+        if (typeof check !== 'string') {
+          return true;
+        }
+        if (stripLiteral(check) !== check || primitives.has(check) || classes[check] !== undefined) {
+          return true;
+        }
+        return undefined;
+      }
+      switch (check.type) {
+        case 'object':
+        case 'array':
+        case 'tuple':
+        case 'record':
+        case 'map':
+        case 'set':
+        case 'promise':
+        case 'function':
+        case 'new':
+        case 'templateLiteral':
+          return true;
+        default:
+          return undefined;
+      }
+    }
     return undefined;
   }
   // Quoted literals extend their primitive base ('"camera"' extends string);

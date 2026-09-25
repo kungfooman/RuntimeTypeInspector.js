@@ -626,8 +626,7 @@ function addComponentConditional(type, data) {
           "members": [
             "string",
             {
-              "type": "object",
-              "properties": {}
+              "type": "object"
             }
           ]
         }

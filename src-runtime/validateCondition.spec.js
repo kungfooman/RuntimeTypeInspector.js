@@ -90,12 +90,16 @@ function testTemplateTarget() {
 }
 /**
  * Intersection targets decide by conjunction: every member must extend it.
+ * Bare `{}` accepts non-nullish checks like TS, so `"a" extends string & {}`
+ * decides true while `1` fails on the `string` member.
  * @returns {boolean} True when documented behavior holds.
  */
 function testIntersectionTarget() {
   clearTypedefs();
-  if (evaluateCondition('"a"', expandType('string & {}'), warn) !== undefined) {
-    // `{}` is not resolvable here: undecidable, not false.
+  if (evaluateCondition('"a"', expandType('string & {}'), warn) !== true) {
+    return false;
+  }
+  if (evaluateCondition(1, expandType('string & {}'), warn) !== false) {
     return false;
   }
   const expect = expandType('"a" extends string & ("a" | "b") ? number : boolean');

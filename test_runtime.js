@@ -24,9 +24,10 @@ const tests = [
   // Every function is also an object
   () => validateType(Math.sqrt,           {type: 'object', optional: false}, 'loc', 'name', true, warn, 0),
   () => validateType(new Date(),          {type: 'object', optional: false}, 'loc', 'name', true, warn, 0),
-  () => validateType(1,                   {type: 'object', optional: false}, 'loc', 'name', true, warn, 0) === false,
-  () => validateType('nope',              {type: 'object', optional: false}, 'loc', 'name', true, warn, 0) === false,
-  () => validateType(Symbol('nope'),      {type: 'object', optional: false}, 'loc', 'name', true, warn, 0) === false,
+  // `{}` accepts every non-nullish value like TS (`1 extends {}`).
+  () => validateType(1,                   {type: 'object', optional: false}, 'loc', 'name', true, warn, 0),
+  () => validateType('nope',              {type: 'object', optional: false}, 'loc', 'name', true, warn, 0),
+  () => validateType(Symbol('nope'),      {type: 'object', optional: false}, 'loc', 'name', true, warn, 0),
   () => validateUnion(1,         {type: 'union', optional: false, members: [1, 2, 3                  ]}, 'loc', 'name', true, warn, 0),
   () => validateUnion(true,      {type: 'union', optional: false, members: [false, true, 'null'      ]}, 'loc', 'name', true, warn, 0),
   () => validateUnion({},        {type: 'union', optional: false, members: ['object', 123            ]}, 'loc', 'name', true, warn, 0),

@@ -1,4 +1,5 @@
 class Tokenizer {
+  
   /**
    * Converts a list of message objects with `"role"` and `"content"` keys to a list of token
    * ids. This method is intended for use with chat models, and will read the tokenizer's chat_template attribute to
@@ -53,8 +54,8 @@ class Tokenizer {
     max_length = null,
     return_tensor = true,
     tokenizer_kwargs = {},
-    ...kwargs
-  } = {}) {
+...kwargs
+} = {}) {
     if (!inspectType(conversation, {
       "type": "array",
       "elementType": "Message",
@@ -106,6 +107,7 @@ class Tokenizer {
     }
     if (!inspectType(tokenizer_kwargs, {
       "type": "object",
+      "properties": {},
       "optional": true
     }, 'Tokenizer#apply_chat_template', 'options')) {
       youCanAddABreakpointHere();
