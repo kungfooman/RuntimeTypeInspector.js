@@ -22,6 +22,19 @@ function replaceType(type, search, replace, warn) {
     // searched template key is substituted, everything else keeps its shape.
     return type;
   }
+  // Annotated atoms like `{type: 'T', optional: true}` (what annotateOptional
+  // emits for optional bare params, e.g. `@param {T} [a]`): substitute inside
+  // `.type` so optional/nullable template params actually instantiate instead
+  // of warning `unchecked`/`@todo unhandled`. Restricted to pure flag
+  // wrappers (no structural fields) so real discriminators (e.g. a template
+  // literally named `array`) are never rewritten.
+  if (typeof type.type === 'string' || typeof type.type === 'number' || typeof type.type === 'boolean') {
+    const keys = Object.keys(type);
+    if (keys.every((key) => key === 'type' || key === 'optional' || key === 'readonly')) {
+      type.type = replaceType(type.type, search, replace, warn);
+      return type;
+    }
+  }
   switch (type.type) {
     case 'object': {
       const {properties} = type;
@@ -31,8 +44,33 @@ function replaceType(type, search, replace, warn) {
         const val = properties[prop];
         properties[prop] = replaceType(val, search, replace, warn);
       }
+      if (Array.isArray(type.indexSignatures)) {
+        // `{[k: string]: T}` value positions instantiate like properties.
+        for (let i = 0; i < type.indexSignatures.length; i++) {
+          type.indexSignatures[i] = replaceType(type.indexSignatures[i], search, replace, warn);
+        }
+      }
       return type;
     }
+    case 'indexSignature': {
+      if (type.indexType !== undefined) {
+        type.indexType = replaceType(type.indexType, search, replace, warn);
+      }
+      if (Array.isArray(type.indexParameters)) {
+        // Parameter descriptors `{type, name}`: only `.type` is a type position.
+        for (const parameter of type.indexParameters) {
+          if (parameter && typeof parameter === 'object' && parameter.type !== undefined) {
+            parameter.type = replaceType(parameter.type, search, replace, warn);
+          }
+        }
+      }
+      return type;
+    }
+    case 'typeof':
+      // `typeof X` names a value, not a type: a same-named template must not
+      // rewrite it. Silent no-op (previously warned `@todo unhandled` on every
+      // templated function that merely had a typeof-typed param).
+      return type;
     case 'tuple': {
       const {elements} = type;
       const {length  } = elements;

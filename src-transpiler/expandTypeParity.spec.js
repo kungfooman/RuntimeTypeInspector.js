@@ -105,6 +105,56 @@ function testBabelReferenceValidates() {
   }
   return true;
 }
+function testMappedModifierParity() {
+  // All `-?`/`+?`/`?`/`readonly` spellings must match the TS parser on all three parsers.
+  for (const type of [
+    '{[K in TaskType]: 123}',
+    '{[K in "a"|"b"]: number}',
+    '{[K in TaskType]?: 123}',
+    '{[K in TaskType]+?: 123}',
+    '{[K in TaskType]-?: 123}',
+    '{readonly [K in TaskType]: 123}',
+    '{-readonly [K in TaskType]: 123}',
+    '{+readonly [K in TaskType]: 123}',
+    '{readonly [K in TaskType]+?: 123}',
+    '{-readonly [K in TaskType]-?: 123}',
+  ]) {
+    if (!assertParity(type)) {
+      return false;
+    }
+  }
+  return true;
+}
+function testMappedAsRemapParity() {
+  // `as` key remaps via `nameType`: conditions and intrinsic references.
+  for (const type of [
+    '{[K in keyof T as K extends string ? K : never]: number}',
+    '{[K in keyof T as Uppercase<K & string>]: number}',
+    '{[K in keyof T]: number}',
+  ]) {
+    if (!assertParity(type)) {
+      return false;
+    }
+  }
+  return true;
+}
+function testMappedNestedParity() {
+  // Dependencies of mapped shapes: conditions, keyof, intersections, indexed access.
+  for (const type of [
+    'K extends string ? K : never',
+    'keyof T',
+    'keyof typeof obj',
+    'K & string',
+    'string & number',
+    'T[K]',
+    'T["a"]',
+  ]) {
+    if (!assertParity(type)) {
+      return false;
+    }
+  }
+  return true;
+}
 export const tests = [
   testArrayLikeParity,
   testArrayLikeStringParity,
@@ -120,4 +170,7 @@ export const tests = [
   testJSDocNullableValidates,
   testReadonlyUniqueParity,
   testBabelReferenceValidates,
+  testMappedModifierParity,
+  testMappedAsRemapParity,
+  testMappedNestedParity,
 ];

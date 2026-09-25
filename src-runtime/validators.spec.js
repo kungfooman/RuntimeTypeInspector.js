@@ -3,7 +3,7 @@ import {validators, recurse} from './validators.js';
 const warn = () => undefined;
 // Every validator is registered in the dispatch table.
 function testTableComplete() {
-  for (const key of ['validateType', 'validateCondition', 'validateObject', 'validateRecord', 'validateReference', 'validateMap', 'validateMapping', 'validateArray', 'validateIntersection', 'validateIndexedAccess', 'validateKeyof', 'validateUnion', 'validateSet', 'validateTemplateLiteral', 'validateTuple', 'validateTypeof', 'validateNumber', 'validatePromise', 'validateArrayLike', 'validateTypedef', 'materializeMapping', 'evaluateCondition', 'decideIfEquals']) {
+  for (const key of ['validateType', 'validateCondition', 'validateObject', 'validateRecord', 'validateReference', 'validateMap', 'validateMapping', 'validateArray', 'validateIntersection', 'validateIndexedAccess', 'validateKeyof', 'validateUnion', 'validateSet', 'validateTemplateLiteral', 'validateTuple', 'validateTypeof', 'validateNumber', 'validatePromise', 'validateArrayLike', 'validateTypedef', 'validateString', 'validateBoolean', 'validateNull', 'validateUndefined', 'validateSymbol', 'validateBigint', 'validateVoid', 'materializeMapping', 'evaluateCondition', 'decideIfEquals']) {
     if (typeof validators[key] !== 'function') {
       return false;
     }
@@ -59,10 +59,50 @@ function testRecurseMatchesValidateType() {
   }
   return true;
 }
+// Primitive validators are overridable through the table, like validateNumber.
+function testPrimitiveOverrideTakesEffect() {
+  for (const [type, good, bad] of [
+    ['string', 'hi', 1],
+    ['boolean', true, 1],
+    ['null', null, 0],
+    ['undefined', undefined, 0],
+    ['symbol', Symbol('s'), 0],
+    ['bigint', 1n, 1],
+    ['void', undefined, 0],
+  ]) {
+    const orig = validators[{string: 'validateString', boolean: 'validateBoolean', null: 'validateNull', undefined: 'validateUndefined', symbol: 'validateSymbol', bigint: 'validateBigint', void: 'validateVoid'}[type]];
+    if (typeof orig !== 'function') {
+      return false;
+    }
+    let calls = 0;
+    validators[{string: 'validateString', boolean: 'validateBoolean', null: 'validateNull', undefined: 'validateUndefined', symbol: 'validateSymbol', bigint: 'validateBigint', void: 'validateVoid'}[type]] = () => {
+      calls++;
+      return true;
+    };
+    let ret;
+    try {
+      ret = validateType(bad, type, 'loc', 'name', true, warn, 0);
+    } finally {
+      validators[{string: 'validateString', boolean: 'validateBoolean', null: 'validateNull', undefined: 'validateUndefined', symbol: 'validateSymbol', bigint: 'validateBigint', void: 'validateVoid'}[type]] = orig;
+    }
+    if (ret !== true || calls !== 1) {
+      return false;
+    }
+    // Restored validator still accepts good values and rejects bad ones.
+    if (!validateType(good, type, 'loc', 'name', true, warn, 0)) {
+      return false;
+    }
+    if (validateType(bad, type, 'loc', 'name', true, warn, 0)) {
+      return false;
+    }
+  }
+  return true;
+}
 export const tests = [
   testTableComplete,
   testOverrideTakesEffect,
   testOverrideRestored,
   testRecurseGuard,
   testRecurseMatchesValidateType,
+  testPrimitiveOverrideTakesEffect,
 ];

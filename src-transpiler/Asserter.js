@@ -109,8 +109,15 @@ class Asserter extends Stringifier {
     out += `${this.spaces}registerClass(${id_});`;
     const harvested = harvestClassShape(node, {expandType: this.expandType, warn: this.warn.bind(this)});
     if (harvested) {
-      const json = simplifyTypeToSource(harvested.shape);
-      out += `\n${this.spaces}registerTypedef('${harvested.name}', ${json});`;
+      // Hand-written typedefs win: emitting a second registerTypedef for the
+      // same name would be last-wins deterministic but noisy, so the harvest
+      // step skips names already present in this.typedefs (populated in File).
+      if (this.typedefs[harvested.name]) {
+        this.warn(`harvestClassShape: skipping harvested shape for '${harvested.name}', hand-written typedef wins`);
+      } else {
+        const json = simplifyTypeToSource(harvested.shape);
+        out += `\n${this.spaces}registerTypedef('${harvested.name}', ${json});`;
+      }
     }
     return out;
   }

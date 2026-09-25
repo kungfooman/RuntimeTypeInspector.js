@@ -91,7 +91,10 @@ function toSourceBabelTS(node) {
     case 'TSTypeReference': {
       const name = toSourceBabelTS(node.typeName);
       if (!node.typeParameters) {
-        // console.log(`node.typeName.name=${node.typeName.name} name=${name}`, node);
+        // Bare `Object` is the empty object type, matching expandType().
+        if (name === 'Object') {
+          return {type: 'object', properties: {}};
+        }
         // Bare reference: Identifier gives name, TSQualifiedName gives dotted path.
         return name;
       }
@@ -212,15 +215,90 @@ function toSourceBabelTS(node) {
     case 'ParenthesizedType':
       // fall-through for parentheses
       return toSourceBabelTS(node.type);
+    case 'TSParenthesizedType':
+      return toSourceBabelTS(node.typeAnnotation);
     case 'LastTypeNode':
       return toSourceBabelTS(node.qualifier);
     case 'TSTypeQuery':
       const argument = toSourceBabelTS(node.exprName);
       return {type: 'typeof', argument};
+    case 'TSConditionalType': {
+      const checkType = toSourceBabelTS(node.checkType);
+      const extendsType = toSourceBabelTS(node.extendsType);
+      const trueType = toSourceBabelTS(node.trueType);
+      const falseType = toSourceBabelTS(node.falseType);
+      return {type: 'condition', checkType, extendsType, trueType, falseType};
+    }
+    case 'TSIndexedAccessType': {
+      const index = toSourceBabelTS(node.indexType);
+      const object = toSourceBabelTS(node.objectType);
+      return {type: 'indexedAccess', index, object};
+    }
+    case 'TSMappedType': {
+      const param = node.typeParameter;
+      const nameNode = param?.name;
+      const element = typeof nameNode === 'string' ? nameNode : toSourceBabelTS(nameNode);
+      const iterable = toSourceBabelTS(param?.constraint);
+      const result = toSourceBabelTS(node.typeAnnotation);
+      const out = {type: 'mapping', iterable, element, result};
+      if (node.nameType) {
+        out.nameType = toSourceBabelTS(node.nameType);
+      }
+      if (node.optional !== undefined && node.optional !== false && node.optional !== null) {
+        out.question = node.optional === '-' ? '-' : node.optional === '+' ? '+' : '?';
+      }
+      if (node.readonly !== undefined && node.readonly !== false && node.readonly !== null) {
+        out.readonly = node.readonly === '-' ? '-' : node.readonly === '+' ? '+' : 'readonly';
+      }
+      return out;
+    }
+    case 'TSTypeAnnotation':
+      return toSourceBabelTS(node.typeAnnotation);
+    case 'TSTypeLiteral': {
+      const properties = {};
+      let indexSignatures;
+      for (const member of node.members ?? []) {
+        if (member.type === 'TSIndexSignature') {
+          indexSignatures = indexSignatures ?? [];
+          indexSignatures.push(toSourceBabelTS(member));
+        } else if (member.type === 'TSPropertySignature') {
+          const name = toSourceBabelTS(member.key);
+          let type = toSourceBabelTS(member.typeAnnotation);
+          if (member.optional) {
+            if (type && typeof type === 'object') type.optional = true;
+            else type = {type, optional: true};
+          }
+          if (member.readonly) {
+            if (type && typeof type === 'object') type.readonly = true;
+            else type = {type, readonly: true};
+          }
+          properties[name] = type;
+        } else {
+          console.warn('TSTypeLiteral: unhandled member', member.type);
+        }
+      }
+      const ret = {type: 'object'};
+      if (Object.keys(properties).length) {
+        ret.properties = properties;
+      }
+      if (indexSignatures) {
+        ret.indexSignatures = indexSignatures;
+      }
+      return ret;
+    }
+    case 'TSIndexSignature': {
+      const indexType = toSourceBabelTS(node.typeAnnotation);
+      const indexParameters = (node.parameters ?? []).map(toSourceBabelTS);
+      return {type: 'indexSignature', indexType, indexParameters};
+    }
     case 'TSTypeOperator':
       if (node.operator === 'readonly') {
         // readonly erased at runtime, same shape as the inner type.
         return toSourceBabelTS(node.typeAnnotation);
+      }
+      if (node.operator === 'keyof') {
+        const keyofArg = toSourceBabelTS(node.typeAnnotation);
+        return {type: 'keyof', argument: keyofArg};
       }
       console.warn('unimplemented TSTypeOperator', node.operator);
       return 'any';

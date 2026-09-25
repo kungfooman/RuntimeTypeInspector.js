@@ -11,8 +11,15 @@ import {validateIndexedAccess} from "./validateIndexedAccess.js";
 import {validateKeyof       } from "./validateKeyof.js";
 import {validateMap         } from "./validateMap.js";
 import {validateMapping     } from "./validateMapping.js";
+import {validateNull        } from "./validateNull.js";
 import {validateNumber      } from "./validateNumber.js";
 import {validateObject      } from "./validateObject.js";
+import {validateBigint      } from "./validateBigint.js";
+import {validateBoolean     } from "./validateBoolean.js";
+import {validateString      } from "./validateString.js";
+import {validateSymbol      } from "./validateSymbol.js";
+import {validateUndefined   } from "./validateUndefined.js";
+import {validateVoid        } from "./validateVoid.js";
 import {validatePromise     } from "./validatePromise.js";
 import {validateRecord      } from "./validateRecord.js";
 import {validateReference   } from "./validateReference.js";
@@ -49,6 +56,13 @@ Object.assign(validators, {
   validatePromise,
   validateArrayLike,
   validateTypedef,
+  validateString,
+  validateBoolean,
+  validateNull,
+  validateUndefined,
+  validateSymbol,
+  validateBigint,
+  validateVoid,
 });
 /**
  * @typedef {object} TypeObject
@@ -142,11 +156,7 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
   }
   switch (type) {
     case 'undefined': {
-      const ret = value === undefined;
-      if (!ret) {
-        warn(`Expected undefined.`, {value, expect});
-      }
-      return ret;
+      return validators.validateUndefined(value, expect, loc, name, critical, warn, depth + 1);
     }
     case 'object':
       return validators.validateObject(value, properties, loc, name, critical, warn, depth + 1);
@@ -189,53 +199,22 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
       warn('Expected never: no value validates.', {value});
       return false;
     case 'null': {
-      const ret = value === null;
-      if (!ret) {
-        warn(`Expected null.`, {value, expect});
-      }
-      return ret;
+      return validators.validateNull(value, expect, loc, name, critical, warn, depth + 1);
     }
     case 'void': {
-      const ret = value === undefined;
-      if (!ret) {
-        warn(`Expected void.`, {value, expect});
-      }
-      return ret;
+      return validators.validateVoid(value, expect, loc, name, critical, warn, depth + 1);
     }
     case 'symbol': {
-      const ret = typeof value === 'symbol';
-      if (!ret) {
-        warn(`Expected symbol.`, {value, expect});
-      }
-      return ret;
+      return validators.validateSymbol(value, expect, loc, name, critical, warn, depth + 1);
     }
     case 'bigint':
-      if (expect && typeof expect === 'object' && expect.literal !== undefined) {
-        try {
-          const ret = value === BigInt(expect.literal);
-          if (!ret) {
-            warn(`Expected literal ${expect.literal}.`, {value, expect});
-          }
-          return ret;
-        } catch {
-          warn(`Expected bigint.`, {value, expect});
-          return false;
-        }
-      }
-      const bigintRet = typeof value === 'bigint';
-      if (!bigintRet) {
-        warn(`Expected bigint.`, {value, expect});
-      }
-      return bigintRet;
+      return validators.validateBigint(value, expect, loc, name, critical, warn, depth + 1);
     case 'number':
       return validators.validateNumber(value, expect, loc, name, critical, warn, depth + 1);
     case 'string':
+      return validators.validateString(value, expect, loc, name, critical, warn, depth + 1);
     case 'boolean': {
-      const ret = typeof value === type;
-      if (!ret) {
-        warn(`Expected ${type}.`, {value, expect});
-      }
-      return ret;
+      return validators.validateBoolean(value, expect, loc, name, critical, warn, depth + 1);
     }
     case 'Function':
     case 'CallableFunction':

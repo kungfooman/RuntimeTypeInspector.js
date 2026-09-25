@@ -4,6 +4,20 @@ import {classes} from "./registerClass.js";
 import {mergedClassShape} from "./classShape.js";
 import {replaceType} from "./replaceType.js";
 import {validators} from "./validators.js";
+/**
+ * Key-resolution split, documented per #256 (consolidation pass deferred):
+ * - `resolveKeys(target)` -> string[] names (for `keyof`-style reads; unions
+ *   concatenate as a superset approximation, fail-open for validation).
+ * - `resolveObject(type)` -> object shape or undefined (narrower than full
+ *   materialization; unions/utilities yield undefined, callers fail closed).
+ * - `resolveObjectSide(object)` (in createTypeFromIndexedAccess.js) -> property
+ *   map for indexed access (chases typedefs, instantiates generics, merges
+ *   intersections/unions member-wise, materializes mappings/utilities).
+ * A single path would conflate names vs shapes vs merged maps and their
+ * distinct fail-open/closed contracts, so the split stays. Depth budgets
+ * (25 for names/shapes, 10 for object-side/materialize) reflect that
+ * materialization fans out per key and needs the tighter guard.
+ */
 /** Module-local nesting guard: materialize funnels back through here. */
 let mappingDepth = 0;
 function stripKey(key) {
