@@ -14,6 +14,13 @@ class Test {
   }
 }
 registerClass(Test);
+registerTypedef('Test', {
+  "type": "object",
+  "properties": {
+    "_abc": "number",
+    "abc": "any"
+  }
+});
 const test = new Test();
 console.log(test.abc);
 test.abc = 1;

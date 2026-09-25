@@ -91,6 +91,7 @@ function toSourceTS(node) {
     PropertySignature,   // parseType("{a: 1, b: 2}"                   ).members[0].kind      === ts.SyntaxKind.PropertySignature
     StringKeyword,       // parseType("string"                         ).kind                 === ts.SyntaxKind.StringKeyword
     StringLiteral,       // parseType("'test'"                         ).literal.kind         === ts.SyntaxKind.StringLiteral
+    SymbolKeyword,       // parseType("symbol"                         ).kind                 === ts.SyntaxKind.SymbolKeyword
     ThisType,            // parseType("this"                           ).kind                 === ts.SyntaxKind.ThisType
     TupleType,           // parseType("[1, 2, 3]"                      ).kind                 === ts.SyntaxKind.TupleType
     TypeLiteral,         // parseType("{a: 1, b: 2}"                   ).kind                 === ts.SyntaxKind.TypeLiteral
@@ -116,7 +117,9 @@ function toSourceTS(node) {
     UniqueKeyword,       // parseType('unique symbol'                  ).operator             === ts.SyntaxKind.UniqueKeyword
     ConstructorType,     // parseType('new (...args: any[]) => any'    ).kind                 === ts.SyntaxKind.ConstructorType
     NamedTupleMember,    // parseType('[a: 1]'                         ).elements[0].kind     === ts.SyntaxKind.NamedTupleMember
-    MappedType,          // parseType('{[K in TaskType]: 123}'         ).kind                 === ts.SyntaxKind.MappedType
+    MappedType,          // parseType('{[K in TaskType]: 123}'         ).kind                 ===  ts.SyntaxKind.MappedType
+    MinusToken,          // parseType('{[K in TaskType]-?: 123}'        ).questionToken.kind  === ts.SyntaxKind.MinusToken
+    PlusToken,           // parseType('{[K in TaskType]+?: 123}'        ).questionToken.kind  === ts.SyntaxKind.PlusToken
     TypeParameter,       // parseType('{[K in TaskType]: 123}'         ).typeParameter.kind   ===  ts.SyntaxKind.TypeParameter
     QualifiedName,       // parseType("import('abc').x.y"              ).qualifier.kind       === ts.SyntaxKind.QualifiedName
     TemplateLiteralType, // parseType('`${A}_id`'                      ).kind                 === ts.SyntaxKind.TemplateLiteralType
@@ -195,7 +198,21 @@ function toSourceTS(node) {
         // For example: {[K in TaskType]: InstanceType etc.
         const iterable = toSourceTS(parameter.constraint); // TaskType
         const element = toSourceTS(parameter.name); // K
-        return {type: 'mapping', iterable, element, result};
+        const out = {type: 'mapping', iterable, element, result};
+        if (node.nameType) {
+          // `as` key remapping, e.g. {[K in keyof T as K extends string ? K : never]: ...}
+          out.nameType = toSourceTS(node.nameType);
+        }
+        // Modifiers: `-?` strips optionality, `+?`/`?` force it;
+        // `-readonly` strips readonly, `+readonly`/`readonly` force it.
+        // Absent modifiers preserve the source behavior (see createTypeFromMapping).
+        if (node.questionToken) {
+          out.question = node.questionToken.kind === MinusToken ? '-' : node.questionToken.kind === PlusToken ? '+' : '?';
+        }
+        if (node.readonlyToken) {
+          out.readonly = node.readonlyToken.kind === MinusToken ? '-' : node.readonlyToken.kind === PlusToken ? '+' : 'readonly';
+        }
+        return out;
       }
       console.warn("MappedType: expected TypeParameter");
       return 'transpiler-error';
@@ -348,6 +365,11 @@ function toSourceTS(node) {
             if (type && typeof type === 'object') type.optional = true;
             else type = { type, optional: true };
           }
+          if (Array.isArray(member.modifiers) && member.modifiers.some((modifier) => modifier.kind === ReadonlyKeyword)) {
+            // Tracked for IfEquals-style comparisons; ignored by validation.
+            if (type && typeof type === 'object') type.readonly = true;
+            else type = {type, readonly: true};
+          }
           properties[name] = type;
         } else {
           console.warn('TypeLiteral: unhandled member', member);
@@ -397,6 +419,7 @@ function toSourceTS(node) {
     case       AnyKeyword:
     case   BooleanKeyword:
     case    StringKeyword:
+    case    SymbolKeyword:
     case     NeverKeyword:
     case      NullKeyword:
     case    NumberKeyword:

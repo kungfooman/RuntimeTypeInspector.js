@@ -84,8 +84,16 @@
     "output": "./test/typechecking/functions-output.mjs"
   },
   {
+    "input": "./test/typechecking/fundamental-types-input.mjs",
+    "output": "./test/typechecking/fundamental-types-output.mjs"
+  },
+  {
     "input": "./test/typechecking/good-old-es5-input.mjs",
     "output": "./test/typechecking/good-old-es5-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/ifequals-input.mjs",
+    "output": "./test/typechecking/ifequals-output.mjs"
   },
   {
     "input": "./test/typechecking/import-as-input.mjs",
@@ -154,6 +162,10 @@
   {
     "input": "./test/typechecking/only-description-input.mjs",
     "output": "./test/typechecking/only-description-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/playcanvas-component-options-input.mjs",
+    "output": "./test/typechecking/playcanvas-component-options-output.mjs"
   },
   {
     "input": "./test/typechecking/setter-no-type-getter-no-type-input.mjs",
@@ -248,6 +260,10 @@
     "output": "./test/typechecking/typedef-template-strings-output.mjs"
   },
   {
+    "input": "./test/typechecking/utility-types-input.mjs",
+    "output": "./test/typechecking/utility-types-output.mjs"
+  },
+  {
     "input": "./test/typechecking/validateDivision-class-input.mjs",
     "output": "./test/typechecking/validateDivision-class-output.mjs"
   },
@@ -258,5 +274,9 @@
   {
     "input": "./test/typechecking/validateDivision-top-input.mjs",
     "output": "./test/typechecking/validateDivision-top-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/writable-keys-input.mjs",
+    "output": "./test/typechecking/writable-keys-output.mjs"
   }
 ]

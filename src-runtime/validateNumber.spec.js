@@ -40,7 +40,7 @@ function testNullishAndWrongTypes() {
   return true;
 }
 function testBoxedNumber() {
-  // Boxed Number objects are `object`, not `number` — even with a good value.
+  // Boxed Number objects are `object`, not `number` - even with a good value.
   // eslint-disable-next-line no-new-wrappers
   const boxed = new Number(1);
   if (validateNumber(boxed, expectNumber, 'loc', 'name', true, warn, 0)) {

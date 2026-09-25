@@ -26,3 +26,9 @@ class XrManager {
   }
 }
 registerClass(XrManager);
+registerTypedef('XrManager', {
+  "type": "object",
+  "properties": {
+    "_onSessionStart": "Function"
+  }
+});

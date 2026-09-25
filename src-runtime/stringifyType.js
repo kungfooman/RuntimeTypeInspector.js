@@ -50,6 +50,8 @@ function stringifyType(type, space = 0, depth = 0) {
         for (const key of Object.keys(properties)) {
           const val = properties[key];
           const isOpt = !!(val && typeof val === 'object' && val.optional);
+          const isReadonly = !!(val && typeof val === 'object' && val.readonly);
+          const prefix = isReadonly ? 'readonly ' : '';
           if (isOpt) {
             const inner = { ...val, optional: false };
             let innerStr;
@@ -58,9 +60,9 @@ function stringifyType(type, space = 0, depth = 0) {
             } else {
               innerStr = stringifyType(inner, space, depth + 1);
             }
-            parts.push(`${stringifyKey(key)}?: ${innerStr}`);
+            parts.push(`${prefix}${stringifyKey(key)}?: ${innerStr}`);
           } else {
-            parts.push(`${stringifyKey(key)}: ${stringifyType(val, space, depth + 1)}`);
+            parts.push(`${prefix}${stringifyKey(key)}: ${stringifyType(val, space, depth + 1)}`);
           }
         }
       }
@@ -144,9 +146,17 @@ function stringifyType(type, space = 0, depth = 0) {
     case 'indexedAccess':
       out = `${stringifyType(type.object, space, depth + 1)}[${stringifyType(type.index, space, depth + 1)}]`;
       break;
-    case 'mapping':
-      out = `{[${stringifyType(type.element, space, depth + 1)} in ${stringifyType(type.iterable, space, depth + 1)}]: ${stringifyType(type.result, space, depth + 1)}}`;
-      break;
+    case 'mapping': {
+      const iterable = stringifyType(type.iterable, space, depth + 1);
+      const element = stringifyType(type.element, space, depth + 1);
+      const result = stringifyType(type.result, space, depth + 1);
+      const readonly = type.readonly === '-' ? '-readonly ' : type.readonly === '+' ? '+readonly ' : type.readonly === 'readonly' ? 'readonly ' : '';
+      const question = type.question === '-' ? '-?' : type.question === '+' ? '+?' : type.question === '?' ? '?' : '';
+      if (type.nameType !== undefined) {
+        return `{${readonly}[${element} in ${iterable} as ${stringifyType(type.nameType, space, depth + 1)}]${question}: ${result}}`;
+      }
+      return `{${readonly}[${element} in ${iterable}]${question}: ${result}}`;
+    }
     case 'function': {
       const params = (type.parameters || []).map((_) => stringifyType(_, space, depth + 1)).join(', ');
       out = `(${params})=>any`;

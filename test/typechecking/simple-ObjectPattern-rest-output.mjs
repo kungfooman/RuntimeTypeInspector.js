@@ -114,6 +114,12 @@ class Tokenizer {
   }
 }
 registerClass(Tokenizer);
+registerTypedef('Tokenizer', {
+  "type": "object",
+  "properties": {
+    "apply_chat_template": "Function"
+  }
+});
 const tokenizer = new Tokenizer();
 tokenizer.apply_chat_template([1, 2, 3], {
   chat_template: "nope",

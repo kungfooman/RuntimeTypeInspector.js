@@ -14,3 +14,9 @@ class Test {
   }
 }
 registerClass(Test);
+registerTypedef('Test', {
+  "type": "object",
+  "properties": {
+    "abc": "string"
+  }
+});

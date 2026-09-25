@@ -1,4 +1,5 @@
 import {stringifyType} from './stringifyType.js';
+// Objects with tuple props stringify in TS notation (issue 154).
 function testIssue154() {
   const t2 = {
     type: 'object',
@@ -17,6 +18,7 @@ function testIssue154() {
   }
   return true;
 }
+// Pretty printing keeps exact whitespace like JSON.stringify with indent.
 function testIssue154PrettyNonNormalized() {
   const t2 = {
     type: 'object',
@@ -77,6 +79,7 @@ function testIssue154PrettyNonNormalized() {
   }
   return true;
 }
+// Rest annotations in tuples print with spread syntax.
 function testRestKept() {
   const str = stringifyType({type: 'tuple', elements: [1, {type: 'rest', annotation: {type: 'tuple', elements: [2, 3]}}]});
   if (str !== '[1, ...[2, 3]]') {
@@ -85,10 +88,34 @@ function testRestKept() {
   }
   return true;
 }
+// Mappings print in mapped-type notation.
 function testMapping() {
   const str = stringifyType({type: 'mapping', iterable: 'ObjKeys', element: 'Key', result: 'Key'});
   if (str !== '{[Key in ObjKeys]: Key}') {
     console.warn('stringifyType mapping mismatch', {str});
+    return false;
+  }
+  return true;
+}
+// Mapping modifiers and as-remaps print in TS notation.
+function testMappingModifiers() {
+  const str = stringifyType({type: 'mapping', iterable: 'T', element: 'K', result: 'X', question: '-', readonly: '-'});
+  if (str !== '{-readonly [K in T]-?: X}') {
+    console.warn('stringifyType mapping modifiers mismatch', {str});
+    return false;
+  }
+  const cond = stringifyType({type: 'mapping', iterable: 'T', element: 'K', result: 'X', nameType: {type: 'condition', checkType: 'K', extendsType: 'string', trueType: 'K', falseType: 'never'}});
+  if (cond !== '{[K in T as K extends string?K:never]: X}') {
+    console.warn('stringifyType mapping as mismatch', {cond});
+    return false;
+  }
+  return true;
+}
+// Readonly props print with the readonly keyword.
+function testReadonlyProps() {
+  const str = stringifyType({type: 'object', properties: {id: {type: 'string', readonly: true}, x: 'number'}});
+  if (str !== '{readonly id: string, x: number}') {
+    console.warn('stringifyType readonly mismatch', {str});
     return false;
   }
   return true;
@@ -98,4 +125,6 @@ export const tests = [
   testIssue154PrettyNonNormalized,
   testRestKept,
   testMapping,
+  testMappingModifiers,
+  testReadonlyProps,
 ];

@@ -1,6 +1,7 @@
 import {annotateOptional   } from './annotateOptional.js';
 import {requiredTypeofs    } from './expandType.js';
 import {expandTypeDepFree  } from './expandTypeDepFree.js';
+import {harvestClassShape  } from './harvestClassShape.js';
 import {inferTypeFromDefault} from './inferTypeFromDefault.js';
 import {parseInlineParamType} from './parseInlineParamType.js';
 import {nodeIsFunctionLike } from './nodeIsFunctionLike.js';
@@ -106,6 +107,11 @@ class Asserter extends Stringifier {
     const id_ = this.toSource(id);
     let out = super.ClassDeclaration(node);
     out += `${this.spaces}registerClass(${id_});`;
+    const harvested = harvestClassShape(node, {expandType: this.expandType, warn: this.warn.bind(this)});
+    if (harvested) {
+      const json = simplifyTypeToSource(harvested.shape);
+      out += `\n${this.spaces}registerTypedef('${harvested.name}', ${json});`;
+    }
     return out;
   }
   /**
@@ -891,6 +897,8 @@ class Asserter extends Stringifier {
   }
   /** @type {Record<string, object>} */
   typedefs = {};
+  /** @type {Record<string, string[]>} */
+  typedefTemplates = {};
   /**
    * @override
    * @param {import("@babel/types").File} node - The Babel AST node.
@@ -902,7 +910,7 @@ class Asserter extends Stringifier {
     if (comments) {
       for (const comment of comments) {
         const warn = this.warn.bind(this);
-        parseJSDocTypedef(this.typedefs, warn, comment, this.expandType);
+        parseJSDocTypedef(this.typedefs, this.typedefTemplates, warn, comment, this.expandType);
       }
     }
     //console.log("this.typedefs", this.typedefs);
@@ -910,7 +918,8 @@ class Asserter extends Stringifier {
     for (const name in this.typedefs) {
       const typedef = this.typedefs[name];
       const json = simplifyTypeToSource(typedef);
-      out += `registerTypedef('${name}', ${json});\n`;
+      const params = this.typedefTemplates[name];
+      out += params?.length ? `registerTypedef('${name}', ${json}, ${JSON.stringify(params)});\n` : `registerTypedef('${name}', ${json});\n`;
     }
     const code = this.toSource(program) + '\n';
     out += code;

@@ -26,6 +26,7 @@ function prepare() {
   registerTypedef('ObjValuesTypedef', "ObjValues");
   registerTypedef('ObjValuesTypedef2', "ObjValuesTypedef");
 }
+// Chained typedef aliases resolve to the same union of literals.
 function test1() {
   prepare();
   /** @type {import('./validateUnion.js').Union} */
@@ -43,15 +44,15 @@ function test1() {
     console.warn('t should have three union members.');
     return false;
   }
-  if (t.members[0] !== 'aa') {
+  if (t.members[0] !== "'aa'") {
     console.warn(`Value for t.members[0] should be 'aa', but got '${t.members[0]}'.`);
     return false;
   }
-  if (t.members[1] !== 'bb') {
+  if (t.members[1] !== '"bb"') {
     console.warn(`Value for t.members[1] should be 'aa', but got '${t.members[1]}'.`);
     return false;
   }
-  if (t.members[2] !== 'cc') {
+  if (t.members[2] !== "'cc'") {
     console.warn(`Value for t.members[2] should be 'aa', but got '${t.members[2]}'.`);
     return false;
   }
