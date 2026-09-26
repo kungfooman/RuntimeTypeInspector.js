@@ -6,8 +6,9 @@ import {createTable} from "./warnedTable.js";
 import {stringifyValue} from "./stringifyValue.js";
 import {RTI_VERSION} from "./version.js";
 import {formatCompare} from "./humanizeExpect.js";
+import {explainMismatch} from "./explainMismatch.js";
 import {Warning    } from "./Warning.js";
-import {Div, Span, Button, Input, Select, Option, H3, Dialog, Pre, genJsx} from "./jsx.js";
+import {Div, Span, Button, Input, Select, Option, H3, Dialog, Pre, Details, Summary, genJsx} from "./jsx.js";
 /**
  * @typedef {MessageEvent<{action: string}>} MessageEventRTI
  */
@@ -277,6 +278,40 @@ function niceDiv(div) {
     .rti-expect summary {
       cursor: pointer;
       color: #0645ad;
+    }
+    .rti-finding {
+      border-left: 3px solid #888;
+      padding: 4px 8px;
+      margin: 6px 0;
+      background: #fafafa;
+    }
+    .rti-finding-missing {
+      border-left-color: #d00;
+    }
+    .rti-finding-wrong, .rti-finding-not-object {
+      border-left-color: #e80;
+    }
+    .rti-finding-union {
+      border-left-color: #05e;
+    }
+    .rti-finding-extra {
+      border-left-color: #888;
+    }
+    .rti-path {
+      font-family: monospace;
+      font-weight: bold;
+    }
+    .rti-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: bold;
+      border-radius: 3px;
+      padding: 0 5px;
+      margin-right: 6px;
+      background: #ddd;
+    }
+    .rti-fix {
+      color: #060;
     }
   `);
   div.classList.add('rti');
@@ -797,9 +832,31 @@ class TypePanel {
     }
   }
   /**
-   * Fullscreen comparator for one warning: expected type vs actual value side
-   * by side (issue #134 item 3), so large option/union mismatches show exactly
-   * what differs instead of a single `K` or class-name string.
+   * Renders one diagnosis finding as an interactive row. Union findings
+   * expand to the closest member's own findings; everything is selectable.
+   * @param {object} finding - One `explainMismatch` finding.
+   * @returns {HTMLElement} The row element.
+   */
+  renderFinding(finding) {
+    const row = Div({className: `rti-finding rti-finding-${finding.kind}`},
+                    Div({},
+                        Span({className: 'rti-badge', textContent: finding.kind}),
+                        Span({className: 'rti-path', textContent: finding.path})),
+                    Div({textContent: finding.detail || ''}),
+                    Div({textContent: `expected ${finding.expected}, got ${finding.actual}`}));
+    if (finding.fix) {
+      row.append(Div({className: 'rti-fix', textContent: `→ ${finding.fix}`}));
+    }
+    if (finding.children?.length) {
+      row.append(Details({},
+                         Summary({textContent: `Closest match problems (${finding.children.length})`}),
+                         ...finding.children.map((_) => this.renderFinding(_))));
+    }
+    return row;
+  }
+  /**
+   * Fullscreen comparator: a path-pinned diagnosis with fix hints first
+   * (issue #134 item 3), then the expected/actual panes and raw messages.
    * @param {import('./Warning.js').Warning} warnObj - The row to inspect.
    */
   openComparator(warnObj) {
@@ -821,13 +878,40 @@ class TypePanel {
     const {compareBody, compareDialog} = this;
     compareBody.innerHTML = '';
     const Grid = genJsx('div');
+    let diagnosis;
+    try {
+      diagnosis = explainMismatch(warnObj.value, warnObj.expect, warnObj.name);
+    } catch {
+      diagnosis = {findings: [], stub: ''};
+    }
     compareBody.append(
       H3({}, `Expected vs actual: ${warnObj.loc} / ${warnObj.name}`),
       Div({}, warnObj.msg || ''),
+      H3({}, 'Diagnosis'),
+    );
+    if (diagnosis.findings.length) {
+      compareBody.append(...diagnosis.findings.map((_) => this.renderFinding(_)));
+    } else {
+      compareBody.append(Div({textContent: 'The value now passes (or the shape is opaque to the differ); see raw messages below.'}));
+    }
+    if (diagnosis.stub) {
+      compareBody.append(
+        H3({}, 'To make it work, add the missing keys'),
+        Pre({}, diagnosis.stub),
+      );
+    }
+    compareBody.append(
       Grid({className: 'rti-compare'},
            Div({}, H3({}, 'Expected'), Pre({}, expectPretty)),
            Div({}, H3({}, 'Actual'), Pre({}, actualPretty)),
       ),
+    );
+    if (warnObj.detailStrings?.length) {
+      compareBody.append(Details({},
+                                 Summary({textContent: `Raw validator messages (${warnObj.detailStrings.length})`}),
+                                 ...warnObj.detailStrings.map((_) => Div({textContent: _}))));
+    }
+    compareBody.append(
       Div({style: {fontSize: '12px', color: '#555'}},
           `Hits: ${warnObj.hits} — fix the JSDoc/type or the value, then reload.`),
     );
@@ -1094,6 +1178,7 @@ class TypePanel {
     warnObj.value = value;
     // Message may change aswell, especially after loading state.
     warnObj.msg = detail || msg;
+    warnObj.detailStrings = [...strings];
   }
   /**
    * @param {MessageEventRTI} event - The event from Worker, IFrame or own window.

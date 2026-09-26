@@ -39,6 +39,8 @@ class Warning {
   _dbg             = false;
   /** @type {any} */
   _value;
+  /** @type {string[]} */
+  detailStrings = [];
   /** @type {import('./validateType.js').Type} */
   _expect;
   constructor(msg, value, expect, loc, name, onCompare) {
