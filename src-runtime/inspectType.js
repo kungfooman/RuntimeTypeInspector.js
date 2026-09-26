@@ -49,6 +49,10 @@ const breakpoints = new Set();
       options.strictNullChecks = data.value !== false;
       return;
     }
+    if (action === 'checkInfinity') {
+      options.checkInfinity = data.value !== false;
+      return;
+    }
   }
   console.log('Unhandled action destination combo', {action, destination, e, data});
 });

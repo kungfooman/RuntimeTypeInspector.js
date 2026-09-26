@@ -46,6 +46,7 @@ const tests = [
     const ret = keys[0] === 1 && keys[1] === 2 && keys[2] === 3;
     return ret;
   },
+  ...(await import('./src-runtime/jsx.spec.js'                       )).tests,
   ...(await import('./src-runtime/base64.spec.js'                  )).tests,
   ...(await import('./src-runtime/createType.spec.js'         )).tests,
   ...(await import('./src-runtime/createTypeFromKeyof.spec.js')).tests,
@@ -62,6 +63,9 @@ const tests = [
   ...(await import('./src-runtime/validateCondition.spec.js'       )).tests,
   ...(await import('./src-runtime/validatePromise.spec.js'         )).tests,
   ...(await import('./src-runtime/validateNumber.spec.js'         )).tests,
+  ...(await import('./src-runtime/checkInfinity.spec.js'          )).tests,
+  ...(await import('./src-runtime/humanizeExpect.spec.js'        )).tests,
+  ...(await import('./src-runtime/explainMismatch.spec.js'       )).tests,
   ...(await import('./src-transpiler/expandTypeParity.spec.js'   )).tests,
   ...(await import('./src-transpiler/inferTypeFromDefault.spec.js')).tests,
   ...(await import('./src-transpiler/parseInlineParamType.spec.js')).tests,

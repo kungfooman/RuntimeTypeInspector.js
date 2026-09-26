@@ -133,8 +133,10 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
       return false;
     }
     if (!isFinite(value)) {
-      warn("value is +-infinite");
-      return false;
+      if (options.checkInfinity !== false) {
+        warn("value is +-infinite");
+        return false;
+      }
     }
   }
   for (const customValidation of customValidations) {
