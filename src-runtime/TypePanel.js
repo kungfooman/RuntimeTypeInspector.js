@@ -5,9 +5,11 @@ import {options    } from "./options.js";
 import {createTable} from "./warnedTable.js";
 import {stringifyValue} from "./stringifyValue.js";
 import {Warning    } from "./Warning.js";
+import {Div, Span, Button, Input, Select, Option, genJsx} from "./jsx.js";
 /**
  * @typedef {MessageEvent<{action: string}>} MessageEventRTI
  */
+const Style = genJsx('style');
 /**
  * @param {HTMLDivElement} div - The <div>.
  */
@@ -19,8 +21,8 @@ function niceDiv(div) {
   div.style.lineHeight = "25px";
   div.style.backgroundColor = "#F3F3F3";
   div.style.borderRadius = "4px";
-  const rule = document.createElement('style');
-  rule.innerHTML = /* css */ `
+  const rule = Style({},
+    /* css */ `
     .rti tr:nth-child(even) {
       background-color: #ccc;
     }
@@ -41,7 +43,7 @@ function niceDiv(div) {
       max-width: 200px;
       width: min-content;
     }
-  `;
+  `);
   div.classList.add('rti');
   document.head.appendChild(rule);
 }
@@ -56,22 +58,37 @@ function isStrictNullChecks() {
 class TypePanel {
   /** @type {HTMLDivElement | null} */
   static divAll = null;
-  div             = document.createElement('div');
-  inputEnable     = document.createElement('input');
-  inputStrict     = document.createElement('input');
-  spanErrors      = document.createElement('span');
-  span            = document.createElement('span');
-  spanStrict      = document.createElement('span');
-  select          = document.createElement('select');
-  option_spam     = document.createElement('option');
-  option_once     = document.createElement('option');
-  option_never    = document.createElement('option');
-  buttonHide      = document.createElement('button');
-  buttonLoadState = document.createElement('button');
-  buttonSaveState = document.createElement('button');
-  buttonClear     = document.createElement('button');
-  buttonDownloadLog = document.createElement('button');
-  warnedTable     = createTable();
+  /** @type {HTMLDivElement} */
+  div;
+  /** @type {HTMLInputElement} */
+  inputEnable;
+  /** @type {HTMLInputElement} */
+  inputStrict;
+  /** @type {HTMLSpanElement} */
+  spanErrors;
+  /** @type {HTMLSpanElement} */
+  span;
+  /** @type {HTMLSpanElement} */
+  spanStrict;
+  /** @type {HTMLSelectElement} */
+  select;
+  /** @type {HTMLOptionElement} */
+  option_spam;
+  /** @type {HTMLOptionElement} */
+  option_once;
+  /** @type {HTMLOptionElement} */
+  option_never;
+  /** @type {HTMLButtonElement} */
+  buttonHide;
+  /** @type {HTMLButtonElement} */
+  buttonLoadState;
+  /** @type {HTMLButtonElement} */
+  buttonSaveState;
+  /** @type {HTMLButtonElement} */
+  buttonClear;
+  /** @type {HTMLButtonElement} */
+  buttonDownloadLog;
+  warnedTable;
   /** @type {Record<string, import('./Warning.js').Warning>} */
   warnings = {};
   /** @type {object[]} */
@@ -79,70 +96,59 @@ class TypePanel {
   maxEventLogSize = 1000;
   maxStackFrames = 20;
   constructor() {
-    const {
-      div, inputEnable, inputStrict, spanErrors, span, spanStrict, select, option_spam, option_once, option_never,
-      buttonHide, buttonLoadState, buttonSaveState, buttonClear, buttonDownloadLog, warnedTable,
-    } = this;
-    TypePanel.divAll ??= document.createElement('div');
-    const {divAll} = TypePanel;
-    divAll.style.position = "absolute";
-    divAll.style.bottom = "0px";
-    divAll.style.right = "0px";
-    divAll.style.zIndex = "10";
-    divAll.classList.add('rti-all');
-    niceDiv(div);
-    inputEnable.checked = isEnabled();
-    inputEnable.type = "checkbox";
-    inputEnable.onchange = (e) => {
-      if (inputEnable.checked) {
+    // UI IS THE SOURCE-OF-TRUTH: build nodes declaratively, read `checked`/
+    // `value`/children straight off the DOM, never mirror them in JS state.
+    this.div = Div({style: {maxHeight: '200px', overflow: 'scroll'}});
+    this.inputEnable = Input({type: 'checkbox', checked: isEnabled(), onchange: () => {
+      if (this.inputEnable.checked) {
         this.enableTypeChecking();
       } else {
         this.disableTypeChecking();
       }
-    };
-    inputEnable.onchange();
-    inputStrict.checked = isStrictNullChecks();
-    inputStrict.type = "checkbox";
-    inputStrict.onchange = () => {
-      options.strictNullChecks = inputStrict.checked;
-      localStorage.setItem('rti-strict-null-checks', String(inputStrict.checked));
+    }});
+    this.inputStrict = Input({type: 'checkbox', checked: isStrictNullChecks(), onchange: () => {
+      options.strictNullChecks = this.inputStrict.checked;
+      localStorage.setItem('rti-strict-null-checks', String(this.inputStrict.checked));
       this.sendStrictStateToWorker();
-    };
+    }});
+    this.spanErrors = Span({});
+    this.span = Span({innerText: ' Type report mode:'});
+    this.spanStrict = Span({innerText: ' Strict null checks:'});
+    this.option_spam = Option({text: 'spam'});
+    this.option_once = Option({text: 'once'});
+    this.option_never = Option({text: 'never'});
+    this.select = Select({onchange: () => {
+      const {value} = this.select;
+      localStorage.setItem('rti-spam-type-reports', value);
+      assertMode(value);
+      options.mode = value;
+    }}, this.option_spam, this.option_once, this.option_never);
+    this.buttonHide = Button({textContent: 'Hide', onclick: () => this.hide()});
+    this.buttonLoadState = Button({textContent: 'Load state', onclick: () => this.loadState()});
+    this.buttonSaveState = Button({textContent: 'Save state', onclick: () => this.saveState()});
+    this.buttonClear = Button({textContent: 'Clear', onclick: () => this.clear()});
+    this.buttonDownloadLog = Button({textContent: 'Download log', onclick: () => this.downloadLog()});
+    this.warnedTable = createTable();
+    const {
+      div, inputEnable, inputStrict, spanErrors, span, spanStrict, select,
+      buttonHide, buttonLoadState, buttonSaveState, buttonClear, buttonDownloadLog, warnedTable,
+    } = this;
+    TypePanel.divAll ??= Div({
+      className: 'rti-all',
+      style: {position: 'absolute', bottom: '0px', right: '0px', zIndex: '10'},
+    });
+    const {divAll} = TypePanel;
+    niceDiv(div);
+    inputEnable.onchange();
     inputStrict.onchange();
-    spanStrict.innerText = " Strict null checks:";
-    span.innerText = " Type report mode:";
-    option_spam.text = 'spam';
-    option_once.text = 'once';
-    option_never.text = 'never';
-    select.append(option_spam, option_once, option_never);
     const spamTypeReports = localStorage.getItem('rti-spam-type-reports');
     select.value = options.mode;
     if (spamTypeReports !== null) {
       select.value = spamTypeReports;
     }
-    const onchange = () => {
-      const {value} = select;
-      localStorage.setItem('rti-spam-type-reports', value);
-      assertMode(value);
-      options.mode = value;
-    };
-    select.onchange = onchange;
-    onchange(); // set mode in options
-    buttonHide.textContent = 'Hide';
-    buttonHide.onclick = () => {
-      this.hide();
-    };
-    buttonLoadState.textContent = 'Load state';
-    buttonLoadState.onclick = () => this.loadState();
-    buttonSaveState.textContent = 'Save state';
-    buttonSaveState.onclick = () => this.saveState();
-    buttonClear.textContent = 'Clear';
-    buttonClear.onclick = () => this.clear();
-    buttonDownloadLog.textContent = 'Download log';
-    buttonDownloadLog.onclick = () => this.downloadLog();
-    div.append(inputEnable, spanErrors, span, select, inputStrict, spanStrict, buttonHide, buttonLoadState, buttonSaveState, buttonClear, buttonDownloadLog, warnedTable);
-    div.style.maxHeight = '200px';
-    div.style.overflow = 'scroll';
+    select.onchange(); // set mode in options
+    div.append(inputEnable, spanErrors, span, select, inputStrict, spanStrict,
+               buttonHide, buttonLoadState, buttonSaveState, buttonClear, buttonDownloadLog, warnedTable);
     divAll.append(div);
     const finalFunc = () => document.body.append(divAll);
     // Add our <div> to <body> when possible

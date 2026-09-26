@@ -1,20 +1,32 @@
 import {options} from "./options.js";
 import {DisplayAnything} from 'display-anything';
+import {Tr, Td, Button} from './jsx.js';
 /**
  * @todo Also construct a Node.js version, WarningConsole and WarningBrowser
  */
 class Warning {
-  tr               = document.createElement('tr');
-  td_dbg           = document.createElement('td');
-  td_hide          = document.createElement('td');
-  td_location      = document.createElement('td');
-  td_name          = document.createElement('td');
-  td_expect        = document.createElement('td');
-  td_value         = document.createElement('td');
-  td_count         = document.createElement('td');
-  td_desc          = document.createElement('td');
-  button_dbgInput  = document.createElement('button');
-  button_hideInput = document.createElement('button');
+  /** @type {HTMLTableRowElement} */
+  tr;
+  /** @type {HTMLTableCellElement} */
+  td_dbg;
+  /** @type {HTMLTableCellElement} */
+  td_hide;
+  /** @type {HTMLTableCellElement} */
+  td_location;
+  /** @type {HTMLTableCellElement} */
+  td_name;
+  /** @type {HTMLTableCellElement} */
+  td_expect;
+  /** @type {HTMLTableCellElement} */
+  td_value;
+  /** @type {HTMLTableCellElement} */
+  td_count;
+  /** @type {HTMLTableCellElement} */
+  td_desc;
+  /** @type {HTMLButtonElement} */
+  button_dbgInput;
+  /** @type {HTMLButtonElement} */
+  button_hideInput;
   _msg             = '';
   _hits            = 0;
   _hidden          = false;
@@ -27,26 +39,21 @@ class Warning {
     this.loc = loc;
     this.name = name;
     this._expect = expect;
-    const {
-      tr,
-      td_hide, td_dbg, td_count, td_location, td_name, td_expect, td_value, td_desc,
-      button_dbgInput, button_hideInput,
-    } = this;
-    button_dbgInput.textContent = '🧐';
-    button_dbgInput.onclick = () => this.dbg = !this.dbg;
-    button_hideInput.textContent = '👁️‍🗨️';
-    button_hideInput.onclick = () => this.hidden = !this.hidden;
-    tr.append(td_hide, td_dbg, td_count, td_location, td_name, td_expect, td_value, td_desc);
-    td_hide.append(button_hideInput);
-    td_dbg.append(button_dbgInput);
+    this.button_dbgInput = Button({textContent: '🧐', onclick: () => this.dbg = !this.dbg});
+    this.button_hideInput = Button({textContent: '👁️‍🗨️', onclick: () => this.hidden = !this.hidden});
+    this.td_hide = Td({}, this.button_hideInput);
+    this.td_dbg = Td({}, this.button_dbgInput);
+    this.td_count = Td({});
+    this.td_location = Td({textContent: loc});
+    this.td_name = Td({textContent: name});
+    this.td_expect = Td({});
+    this.td_value = Td({className: 'value'});
+    this.td_desc = Td({className: 'desc', innerText: msg});
+    const {td_hide, td_dbg, td_count, td_location, td_name, td_expect, td_value, td_desc} = this;
+    this.tr = Tr({}, td_hide, td_dbg, td_count, td_location, td_name, td_expect, td_value, td_desc);
     // todo hits setter/getter
-    td_location.textContent = loc;
-    td_name.textContent = name;
     //td_expect.textContent = expect;
     this.expect = expect;
-    td_desc.innerText = msg;
-    td_value.classList.add('value');
-    td_desc.classList.add('desc');
   }
   set dbg(_) {
     this._dbg = _;

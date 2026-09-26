@@ -14,6 +14,7 @@ export * from './inspectIndexedAccess.js';
 export * from './inspectType.js';
 export * from './inspectTypeWithTemplates.js';
 export * from './isObject.js';
+export * from './jsx.js';
 export * from './makeJSDoc.js';
 export * from './options.js';
 export * from './partition.js';
