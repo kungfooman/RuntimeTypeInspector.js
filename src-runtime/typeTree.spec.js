@@ -74,6 +74,29 @@ function testUnlimitedDepth() {
   }
   return node.children?.[0]?.summary === 'number';
 }
+function testTransparentWrapperUnwraps() {
+  // The user's exact dead end: NonNullable<EntityShape["camera"]> must
+  // descend instead of stopping at the reference level.
+  reset();
+  registerTypedef('EntityShape', expandType('{camera: {fov: number}, light: {intensity: number}}'));
+  const tree = buildTypeTree(expandType('NonNullable<EntityShape["camera"]>'), {}, 'camera');
+  if (tree.kind !== 'reference' || !tree.children?.length) {
+    return false;
+  }
+  const selected = tree.children[0];
+  if (selected.kind !== 'indexedAccess' || !selected.children?.length) {
+    return false;
+  }
+  const shape = selected.children[0];
+  return shape.kind === 'object' && shape.children.some((_) => _.label.startsWith('fov:'));
+}
+function testIndexedAccessDirect() {
+  reset();
+  registerTypedef('EntityShape', expandType('{camera: {fov: number}}'));
+  const tree = buildTypeTree(expandType('EntityShape["camera"]'), {fov: 60}, 'camera');
+  return tree.kind === 'indexedAccess' && tree.passes === true &&
+    tree.children?.[0]?.kind === 'object';
+}
 function testRecursiveTypedefTerminates() {
   reset();
   registerTypedef('Node', expandType('{child: Node}'));
@@ -90,5 +113,7 @@ const tests = [
   testUnionMarks,
   testUnlimitedDepth,
   testRecursiveTypedefTerminates,
+  testTransparentWrapperUnwraps,
+  testIndexedAccessDirect,
 ];
 export {tests};

@@ -1,5 +1,5 @@
 import {typedefs} from './registerTypedef.js';
-import {getTypeKeys, instantiateReference, stripKey} from './getTypeKeys.js';
+import {getTypeKeys, instantiateReference, resolveObject, stripKey} from './getTypeKeys.js';
 import {createTypeFromMapping} from './createTypeFromMapping.js';
 import {recurse} from './validators.js';
 import './validateType.js';
@@ -190,6 +190,13 @@ function buildObjectNode(expect, value, node, sub) {
     }
     case 'reference': {
       node.kind = 'reference';
+      // Transparent wrappers don't change the runtime shape (same unwrap
+      // `validateReference` performs) — descend instead of dead-ending.
+      if ((expect.name === 'NonNullable' || expect.name === 'Readonly' || expect.name === 'NoInfer') && expect.args?.length) {
+        node.detail = `${expect.name}<…> passes the shape through; unwraps to:`;
+        node.children = [sub(expect.args[0], treeSnip(expect.args[0]))];
+        return node;
+      }
       let instance;
       try {
         instance = instantiateReference(expect, noop);
@@ -201,6 +208,21 @@ function buildObjectNode(expect, value, node, sub) {
       }
       node.detail = `${expect.name}<${(expect.args ?? []).map(treeSnip).join(', ')}> resolves to:`;
       node.children = [sub(instance, treeSnip(instance))];
+      return node;
+    }
+    case 'indexedAccess': {
+      node.kind = 'indexedAccess';
+      let shape;
+      try {
+        shape = resolveObject(expect, noop, 0);
+      } catch {
+        shape = undefined;
+      }
+      if (!shape) {
+        return node;
+      }
+      node.detail = `${treeSnip(expect)} selects:`;
+      node.children = [sub(shape, treeSnip(shape))];
       return node;
     }
     case 'mapping': {
