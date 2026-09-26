@@ -19,5 +19,11 @@ const options = {
    * hiding the real errors. Toggleable via the TypePanel checkbox.
    */
   strictNullChecks: true,
+  /**
+   * When `true` (default), `+-Infinity` fails `number` validation, catching
+   * `NaN` precursors like `Infinity - Infinity`. When `false`, infinities
+   * pass `number`. `NaN` always fails. Toggleable via the TypePanel checkbox.
+   */
+  checkInfinity: true,
 };
 export {options};

@@ -72,4 +72,7 @@ const Td = genJsx('td');
 const Th = genJsx('th');
 const Dialog = genJsx('dialog');
 const Pre = genJsx('pre');
-export {genJsx, appendChildren, Div, Span, Button, Input, Select, Option, Table, Tr, Td, Th, Dialog, Pre};
+const Details = genJsx('details');
+const Summary = genJsx('summary');
+const H3 = genJsx('h3');
+export {genJsx, appendChildren, Div, Span, Button, Input, Select, Option, Table, Tr, Td, Th, Dialog, Pre, Details, Summary, H3};

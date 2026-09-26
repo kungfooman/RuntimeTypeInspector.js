@@ -1,6 +1,8 @@
 import {options} from "./options.js";
 import {DisplayAnything} from 'display-anything';
-import {Tr, Td, Button} from './jsx.js';
+import {Tr, Td, Button, Details, Summary, Pre, Div} from './jsx.js';
+import {humanizeExpect} from './humanizeExpect.js';
+import {stringifyType} from './stringifyType.js';
 /**
  * @todo Also construct a Node.js version, WarningConsole and WarningBrowser
  */
@@ -23,6 +25,10 @@ class Warning {
   td_count;
   /** @type {HTMLTableCellElement} */
   td_desc;
+  /** @type {HTMLTableCellElement} */
+  td_inspect;
+  /** @type {HTMLButtonElement} */
+  button_inspect;
   /** @type {HTMLButtonElement} */
   button_dbgInput;
   /** @type {HTMLButtonElement} */
@@ -35,26 +41,34 @@ class Warning {
   _value;
   /** @type {import('./validateType.js').Type} */
   _expect;
-  constructor(msg, value, expect, loc, name) {
+  constructor(msg, value, expect, loc, name, onCompare) {
     this.loc = loc;
     this.name = name;
     this._expect = expect;
+    this.onCompare = onCompare;
     this.button_dbgInput = Button({textContent: '🧐', onclick: () => this.dbg = !this.dbg});
     this.button_hideInput = Button({textContent: '👁️‍🗨️', onclick: () => this.hidden = !this.hidden});
+    this.button_inspect = Button({textContent: '🔍', title: 'Compare expected vs actual fullscreen', onclick: () => this.onCompare?.()});
     this.td_hide = Td({}, this.button_hideInput);
     this.td_dbg = Td({}, this.button_dbgInput);
     this.td_count = Td({});
     this.td_location = Td({textContent: loc});
     this.td_name = Td({textContent: name});
-    this.td_expect = Td({});
+    this.td_expect = Td({className: 'expect'});
     this.td_value = Td({className: 'value'});
     this.td_desc = Td({className: 'desc', innerText: msg});
-    const {td_hide, td_dbg, td_count, td_location, td_name, td_expect, td_value, td_desc} = this;
-    this.tr = Tr({}, td_hide, td_dbg, td_count, td_location, td_name, td_expect, td_value, td_desc);
+    this.td_inspect = Td({}, this.button_inspect);
+    const {td_hide, td_dbg, td_count, td_location, td_name, td_expect, td_value, td_desc, td_inspect} = this;
+    this.tr = Tr({}, td_hide, td_dbg, td_count, td_location, td_name, td_expect, td_value, td_desc, td_inspect);
     // todo hits setter/getter
     //td_expect.textContent = expect;
     this.expect = expect;
   }
+  /**
+   * Callback opening the fullscreen comparator for this row (wired by TypePanel).
+   * @type {(() => void) | undefined}
+   */
+  onCompare;
   set dbg(_) {
     this._dbg = _;
     this.button_dbgInput.textContent = _ ? '🐞' : '🧐';
@@ -143,9 +157,22 @@ class Warning {
    * @param {import('./validateType.js').Type} _ - The expected type.
    */
   set expect(_) {
+    this._expect = _;
+    const {summary, notes} = humanizeExpect(_);
+    let pretty = summary;
+    try {
+      pretty = stringifyType(_, null, 2);
+    } catch {
+      // Fall back to the one-line summary.
+    }
     const val = new DisplayAnything(_);
+    const rendered = val.render();
     this.td_expect.innerHTML = '';
-    this.td_expect.append(val.render());
+    const noteNodes = notes.map((note) => Div({style: {fontSize: '11px', color: '#555'}}, note));
+    this.td_expect.append(
+      Div({title: summary}, summary),
+      Details({}, Summary({}, 'full type'), Pre({}, pretty), rendered, ...noteNodes),
+    );
   }
   get expect() {
     return this._expect;

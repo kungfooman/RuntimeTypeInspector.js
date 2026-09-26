@@ -10,7 +10,7 @@ function createTable() {
   if (typeof document === 'undefined') {
     return null;
   }
-  const descs = ['Hide', 'Debug', 'Hits', 'Loc', 'Name', 'Expect', 'Value', 'Message'];
+  const descs = ['Hide', 'Debug', 'Hits', 'Loc', 'Name', 'Expect', 'Value', 'Message', 'Inspect'];
   return Table({},
                Tr({}, ...descs.map(createTableHead))
   );
