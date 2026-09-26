@@ -4,11 +4,10 @@ import {createTypeFromMapping} from './createTypeFromMapping.js';
 import {recurse} from './validators.js';
 import './validateType.js';
 import {stringifyType} from './stringifyType.js';
-const MAX_DEPTH = 3;
 const MAX_MEMBERS = 12;
 const MAX_PROPS = 20;
 const MAX_KEYS = 60;
-const MAX_NODES = 60;
+const MAX_NODES = 200;
 const noop = () => undefined;
 /**
  * Edit distance for "did you mean …?" key suggestions.
@@ -91,36 +90,68 @@ function probe(value, expect) {
 /**
  * Climbable type tree: every node names what the level IS (alias, keyof,
  * intersection member, …), resolves one step deeper, and probes the actual
- * value so failures pinpoint their level. Cycles stop via `seen` typedef
- * names plus depth/breadth/node budgets.
+ * value so failures pinpoint their level. Depth is unlimited — levels you
+ * don't open cost nothing — while cycles (the only thing that could loop
+ * forever) stop via path tracking: typedef names and object identities
+ * currently being expanded above this node. Breadth stays capped
+ * (members/props/keys, all labeled with their remainder) plus a global node
+ * budget against combinatorial fan-out.
  * @param {*} expect - The type at this level.
  * @param {*} value - The actual value (probed per level).
  * @param {string} label - Display name for this level.
- * @param {object} budget - Shared `{depth, seen, nodes}` limits.
+ * @param {object} budget - Shared `{nodes}` limit plus path stacks.
  * @returns {object} Tree node.
  */
-function buildTypeTree(expect, value, label, budget = {depth: 0, seen: new Set(), nodes: 0}) {
+function buildTypeTree(expect, value, label, budget = {nodes: 0, names: [], objs: []}) {
   const node = {label, kind: 'leaf', summary: treeSnip(expect), full: treeFull(expect), passes: probe(value, expect)};
-  if (++budget.nodes > MAX_NODES || budget.depth > MAX_DEPTH) {
+  if (++budget.nodes > MAX_NODES) {
     node.truncated = true;
     return node;
   }
-  const next = {depth: budget.depth + 1, seen: budget.seen, nodes: budget.nodes};
-  const sub = (type, name) => buildTypeTree(type, value, name, next);
+  const sub = (type, name) => buildTypeTree(type, value, name, budget);
   if (typeof expect === 'string') {
-    if (budget.seen.has(expect) || !typedefs[expect]) {
+    if (!typedefs[expect]) {
       return node;
     }
-    budget.seen.add(expect);
-    node.kind = 'alias';
-    node.detail = `Alias for ${treeSnip(typedefs[expect])}.`;
-    node.children = [sub(typedefs[expect], treeSnip(typedefs[expect]))];
-    budget.nodes = next.nodes;
+    if (budget.names.includes(expect)) {
+      node.kind = 'alias';
+      node.detail = 'Recursive reference — climb up to see it again.';
+      return node;
+    }
+    budget.names.push(expect);
+    try {
+      node.kind = 'alias';
+      node.detail = `Alias for ${treeSnip(typedefs[expect])}.`;
+      node.children = [sub(typedefs[expect], treeSnip(typedefs[expect]))];
+    } finally {
+      budget.names.pop();
+    }
     return node;
   }
   if (!expect || typeof expect !== 'object') {
     return node;
   }
+  if (budget.objs.includes(expect)) {
+    node.detail = 'Recursive structure — climb up to see it again.';
+    return node;
+  }
+  budget.objs.push(expect);
+  try {
+    return buildObjectNode(expect, value, node, sub);
+  } finally {
+    budget.objs.pop();
+  }
+}
+/**
+ * Expands one materialized type level; split out so the path guards above
+ * stay readable.
+ * @param {*} expect - The object-shaped type.
+ * @param {*} value - The actual value.
+ * @param {object} node - The node being filled in.
+ * @param {Function} sub - Child builder `(type, name) => node`.
+ * @returns {object} The filled node.
+ */
+function buildObjectNode(expect, value, node, sub) {
   switch (expect.type) {
     case 'keyof': {
       node.kind = 'keyof';
@@ -144,7 +175,6 @@ function buildTypeTree(expect, value, label, budget = {depth: 0, seen: new Set()
         node.detail = `${names.length} allowed key${names.length === 1 ? '' : 's'}.`;
       }
       node.children = [sub(expect.argument, `keys of ${treeSnip(expect.argument)}`)];
-      budget.nodes = next.nodes;
       return node;
     }
     case 'intersection':
@@ -156,7 +186,6 @@ function buildTypeTree(expect, value, label, budget = {depth: 0, seen: new Set()
         `Must satisfy ANY member; ✗ marks failures, closest match first.`;
       node.children = members.map((_) => sub(_, treeSnip(_)));
       node.children.sort((a, b) => (a.passes === false ? 0 : 1) - (b.passes === false ? 0 : 1));
-      budget.nodes = next.nodes;
       return node;
     }
     case 'reference': {
@@ -172,7 +201,6 @@ function buildTypeTree(expect, value, label, budget = {depth: 0, seen: new Set()
       }
       node.detail = `${expect.name}<${(expect.args ?? []).map(treeSnip).join(', ')}> resolves to:`;
       node.children = [sub(instance, treeSnip(instance))];
-      budget.nodes = next.nodes;
       return node;
     }
     case 'mapping': {
@@ -188,7 +216,6 @@ function buildTypeTree(expect, value, label, budget = {depth: 0, seen: new Set()
       }
       node.detail = 'Mapped type materializes to:';
       node.children = [sub(made, treeSnip(made))];
-      budget.nodes = next.nodes;
       return node;
     }
     case 'object': {
@@ -199,7 +226,6 @@ function buildTypeTree(expect, value, label, budget = {depth: 0, seen: new Set()
       const keys = Object.keys(expect.properties).slice(0, MAX_PROPS);
       node.moreKeys = Object.keys(expect.properties).length - keys.length;
       node.children = keys.map((_) => sub(expect.properties[_], `${_}: ${treeSnip(expect.properties[_])}`));
-      budget.nodes = next.nodes;
       return node;
     }
     default:

@@ -55,10 +55,40 @@ function testUnionMarks() {
   return tree.kind === 'union' && tree.children.length === 2 &&
     tree.children.every((_) => _.passes === false);
 }
+function deepType(n) {
+  let t = 'number';
+  for (let i = 0; i < n; i++) {
+    t = `{level${i}: ${t}}`;
+  }
+  return expandType(t);
+}
+function testUnlimitedDepth() {
+  // No depth cap: 8 nested levels all expand, each one collapsible.
+  reset();
+  let node = buildTypeTree(deepType(8), {}, 'root');
+  for (let i = 0; i < 8; i++) {
+    node = node.children?.[0];
+    if (!node || node.kind !== 'object') {
+      return false;
+    }
+  }
+  return node.children?.[0]?.summary === 'number';
+}
+function testRecursiveTypedefTerminates() {
+  reset();
+  registerTypedef('Node', expandType('{child: Node}'));
+  const tree = buildTypeTree('Node', {}, 'Node');
+  const child = tree.children?.[0]?.children?.find((_) => _.label.startsWith('child:'));
+  const grandchild = child?.children?.[0];
+  // Terminates and says where the recursion folds back.
+  return !!grandchild && grandchild.detail.includes('Recursive');
+}
 const tests = [
   testKeyofListsKeys,
   testDidYouMean,
   testAliasClimb,
   testUnionMarks,
+  testUnlimitedDepth,
+  testRecursiveTypedefTerminates,
 ];
 export {tests};
