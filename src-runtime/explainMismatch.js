@@ -1,8 +1,9 @@
 import {typedefs, typedefTemplates} from './registerTypedef.js';
 import {replaceType} from './replaceType.js';
 import {createTypeFromMapping} from './createTypeFromMapping.js';
-import {recurse} from './validators.js';
+import {recurse, validators} from './validators.js';
 import './validateType.js';
+import './evaluateCondition.js';
 import {stringifyType} from './stringifyType.js';
 import {stringifyValue} from './stringifyValue.js';
 const MAX_DEPTH = 6;
@@ -38,9 +39,9 @@ function expectSnip(expect) {
 /**
  * Materializes aliases into concrete shapes without validating: named
  * typedefs, generic references (`ComponentOptions<"camera">` is instantiated
- * like `validateReference` does) and mapped types. Anything else (utility
- * types like `Partial`, conditions, classes) is returned as-is and treated
- * as an opaque leaf by the differ.
+ * like `validateReference` does), mapped types, and decided conditions.
+ * Anything else (utility types like `Partial`, undecidable conditions,
+ * classes) is returned as-is and treated as an opaque leaf by the differ.
  * @param {*} expect - The expected type.
  * @returns {*} Concrete type, or the input when unresolvable.
  */
@@ -55,6 +56,23 @@ function materializeExpect(expect) {
       continue;
     }
     if (current && typeof current === 'object') {
+      if (current.type === 'condition') {
+        let decision;
+        try {
+          decision = validators.evaluateCondition?.(current.checkType, current.extendsType, noop);
+        } catch {
+          decision = undefined;
+        }
+        if (decision === true) {
+          current = current.trueType;
+          continue;
+        }
+        if (decision === false) {
+          current = current.falseType;
+          continue;
+        }
+        return current;
+      }
       if (current.type === 'mapping') {
         try {
           const made = createTypeFromMapping(current, noop);
@@ -125,12 +143,13 @@ function diffValue(value, expect, path, depth) {
   if (mat && typeof mat === 'object' && mat.type === 'union' && Array.isArray(mat.members)) {
     const members = mat.members.slice(0, MAX_UNION_MEMBERS);
     let best = null;
+    const score = (/** @type {object[]} */ list) => list.length + (list.length === 1 && list[0].kind === 'wrong' && !list[0].children ? 0.5 : 0);
     for (const member of members) {
       const sub = diffValue(value, member, path, depth + 1);
       if (!sub.length) {
         return [];
       }
-      if (!best || sub.length < best.findings.length) {
+      if (!best || score(sub) < score(best.findings)) {
         best = {member, findings: sub};
       }
     }

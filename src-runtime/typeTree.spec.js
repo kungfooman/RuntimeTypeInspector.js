@@ -63,16 +63,30 @@ function deepType(n) {
   return expandType(t);
 }
 function testUnlimitedDepth() {
-  // No depth cap: 8 nested levels all expand, each one collapsible.
+  // No depth cap: root + level7..level1 expand as objects, level0 is the leaf.
   reset();
   let node = buildTypeTree(deepType(8), {}, 'root');
   for (let i = 0; i < 8; i++) {
-    node = node.children?.[0];
-    if (!node || node.kind !== 'object') {
+    if (!node || node.kind !== 'object' || !node.children?.length) {
       return false;
     }
+    node = node.children?.[0];
   }
-  return node.children?.[0]?.summary === 'number';
+  return node?.kind === 'leaf' && node?.summary === 'number';
+}
+function testConditionDescends() {
+  reset();
+  const tree = buildTypeTree(expandType('"camera" extends "camera" | "other" ? {fov: number} : string'), {fov: 'x'}, 'data');
+  if (tree.kind !== 'condition' || !tree.children?.length) {
+    return false;
+  }
+  // Decided true: exactly one child, the object branch, failure pinned.
+  if (tree.children.length !== 1) {
+    return false;
+  }
+  const branch = tree.children[0];
+  return branch.kind === 'object' && branch.passes === false &&
+    branch.children.some((_) => _.label.startsWith('fov:') && _.passes === false);
 }
 function testTransparentWrapperUnwraps() {
   // The user's exact dead end: NonNullable<EntityShape["camera"]> must
@@ -102,9 +116,8 @@ function testRecursiveTypedefTerminates() {
   registerTypedef('Node', expandType('{child: Node}'));
   const tree = buildTypeTree('Node', {}, 'Node');
   const child = tree.children?.[0]?.children?.find((_) => _.label.startsWith('child:'));
-  const grandchild = child?.children?.[0];
-  // Terminates and says where the recursion folds back.
-  return !!grandchild && grandchild.detail.includes('Recursive');
+  // Terminates: the recursive alias itself carries the fold-back note.
+  return !!child && child.kind === 'alias' && !child.children && child.detail.includes('Recursive');
 }
 const tests = [
   testKeyofListsKeys,

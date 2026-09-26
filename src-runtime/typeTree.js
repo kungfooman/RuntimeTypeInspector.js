@@ -1,8 +1,9 @@
 import {typedefs} from './registerTypedef.js';
 import {getTypeKeys, instantiateReference, resolveObject, stripKey} from './getTypeKeys.js';
 import {createTypeFromMapping} from './createTypeFromMapping.js';
-import {recurse} from './validators.js';
+import {recurse, validators} from './validators.js';
 import './validateType.js';
+import './evaluateCondition.js';
 import {stringifyType} from './stringifyType.js';
 const MAX_MEMBERS = 12;
 const MAX_PROPS = 20;
@@ -72,6 +73,19 @@ function treeFull(expect) {
     return stringifyType(expect, null, 2);
   } catch {
     return treeSnip(expect);
+  }
+}
+/**
+ * Decides a conditional type via the registered evaluator (same one
+ * validation uses). Never throws: undecidable means undefined.
+ * @param {*} expect - The `{type: 'condition', …}` object.
+ * @returns {boolean|undefined} Branch decision.
+ */
+function decideCondition(expect) {
+  try {
+    return validators.evaluateCondition?.(expect.checkType, expect.extendsType, noop);
+  } catch {
+    return undefined;
   }
 }
 /**
@@ -225,8 +239,27 @@ function buildObjectNode(expect, value, node, sub) {
       node.children = [sub(shape, treeSnip(shape))];
       return node;
     }
-    case 'mapping': {
-      node.kind = 'mapping';
+    case 'condition': {
+      node.kind = 'condition';
+      const decision = decideCondition(expect);
+      if (decision === true) {
+        node.detail = 'The check holds, so the true branch applies:';
+        node.children = [sub(expect.trueType, treeSnip(expect.trueType))];
+        return node;
+      }
+      if (decision === false) {
+        node.detail = 'The check fails, so the false branch applies:';
+        node.children = [sub(expect.falseType, treeSnip(expect.falseType))];
+        return node;
+      }
+      node.detail = 'Undecidable here — both branches shown:';
+      node.children = [
+        sub(expect.trueType, `true: ${treeSnip(expect.trueType)}`),
+        sub(expect.falseType, `false: ${treeSnip(expect.falseType)}`),
+      ];
+      return node;
+    }
+    case 'mapping': {      node.kind = 'mapping';
       let made;
       try {
         made = createTypeFromMapping(expect, noop);
