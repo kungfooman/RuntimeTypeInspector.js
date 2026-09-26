@@ -7,6 +7,7 @@ import {stringifyValue} from "./stringifyValue.js";
 import {RTI_VERSION} from "./version.js";
 import {formatCompare} from "./humanizeExpect.js";
 import {explainMismatch} from "./explainMismatch.js";
+import {buildTypeTree} from "./typeTree.js";
 import {Warning    } from "./Warning.js";
 import {Div, Span, Button, Input, Select, Option, H3, Dialog, Pre, Details, Summary, genJsx} from "./jsx.js";
 /**
@@ -312,6 +313,45 @@ function niceDiv(div) {
     }
     .rti-fix {
       color: #060;
+    }
+    .rti-tree details {
+      margin-left: 14px;
+    }
+    .rti-tree summary {
+      cursor: pointer;
+    }
+    .rti-pass {
+      color: #060;
+      font-weight: bold;
+    }
+    .rti-fail {
+      color: #d00;
+      font-weight: bold;
+    }
+    .rti-kind {
+      display: inline-block;
+      font-size: 11px;
+      border-radius: 3px;
+      padding: 0 5px;
+      margin: 0 6px;
+      background: #dde7ff;
+    }
+    .rti-chip {
+      display: inline-block;
+      font-family: monospace;
+      border: 1px solid #888;
+      border-radius: 3px;
+      padding: 0 5px;
+      margin: 1px 2px;
+      background: white;
+    }
+    .rti-chip-ok {
+      background: #dfd;
+      border-color: #060;
+    }
+    .rti-chip-bad {
+      background: #fdd;
+      border-color: #d00;
     }
   `);
   div.classList.add('rti');
@@ -855,6 +895,57 @@ class TypePanel {
     return row;
   }
   /**
+   * Renders one type-tree level as a climbable nested disclosure: hover any
+   * row for the full type, expand to climb one level deeper. The actual value
+   * is probed per level so ✗ pinpoints the failing depth; keyof levels list
+   * every allowed key with the value marked present/missing.
+   * @param {object} node - One `buildTypeTree` node.
+   * @param {number} depth - Nesting depth (first two levels start open).
+   * @returns {HTMLElement} The tree element.
+   */
+  renderTypeNode(node, depth) {
+    const mark = node.passes === true ? '✓' : node.passes === false ? '✗' : '?';
+    const markCls = node.passes === true ? 'rti-pass' : node.passes === false ? 'rti-fail' : '';
+    const head = Summary({title: node.full},
+                         Span({className: markCls, textContent: `${mark} `}),
+                         Span({className: 'rti-path', textContent: node.label}),
+                         Span({className: 'rti-kind', textContent: node.kind}));
+    const box = Div({className: 'rti-tree'});
+    const open = Details({open: depth < 2 || node.passes === false}, head);
+    if (node.detail) {
+      open.append(Div({textContent: node.detail}));
+    }
+    if (node.keys) {
+      const chips = Div({},
+                        Span({textContent: 'Allowed: '}),
+                        ...node.keys.map((_) => Span({className: 'rti-chip', textContent: String(_) })));
+      if (node.moreKeys > 0) {
+        chips.append(Span({textContent: ` (+${node.moreKeys} more)`}));
+      }
+      if (node.valueInKeys === false) {
+        chips.append(Div({},
+                         Span({className: 'rti-chip rti-chip-bad', textContent: JSON.stringify(node.value ?? null) ?? '?'}),
+                         Span({textContent: ' is not among them.'})));
+        if (node.suggestion) {
+          chips.append(Div({className: 'rti-fix', textContent: `→ Did you mean \`${node.suggestion}\`?`}));
+        }
+      } else if (node.valueInKeys === true) {
+        chips.append(Div({},
+                         Span({className: 'rti-chip rti-chip-ok', textContent: JSON.stringify(node.value ?? null) ?? '?'}),
+                         Span({textContent: ' is allowed here — another level fails.'})));
+      }
+      open.append(chips);
+    }
+    if (node.children?.length) {
+      open.append(...node.children.map((_) => this.renderTypeNode(_, depth + 1)));
+    }
+    if (node.truncated) {
+      open.append(Div({textContent: '(tree truncated: too deep/wide to expand fully)'}));
+    }
+    box.append(open);
+    return box;
+  }
+  /**
    * Fullscreen comparator: a path-pinned diagnosis with fix hints first
    * (issue #134 item 3), then the expected/actual panes and raw messages.
    * @param {import('./Warning.js').Warning} warnObj - The row to inspect.
@@ -899,6 +990,17 @@ class TypePanel {
         H3({}, 'To make it work, add the missing keys'),
         Pre({}, diagnosis.stub),
       );
+    }
+    let tree;
+    try {
+      const rootLabel = typeof warnObj.expect === 'string' ? warnObj.expect : warnObj.name;
+      tree = buildTypeTree(warnObj.expect, warnObj.value, rootLabel);
+    } catch {
+      tree = undefined;
+    }
+    if (tree) {
+      compareBody.append(H3({}, 'Type tree (expand to climb, hover for full type)'));
+      compareBody.append(this.renderTypeNode(tree, 0));
     }
     compareBody.append(
       Grid({className: 'rti-compare'},

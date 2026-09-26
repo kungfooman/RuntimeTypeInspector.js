@@ -15,6 +15,7 @@ export * from './inspectType.js';
 export * from './inspectTypeWithTemplates.js';
 export * from './isObject.js';
 export * from './explainMismatch.js';
+export * from './typeTree.js';
 export * from './humanizeExpect.js';
 export * from './jsx.js';
 export * from './makeJSDoc.js';
