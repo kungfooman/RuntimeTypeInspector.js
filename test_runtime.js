@@ -67,6 +67,7 @@ const tests = [
   ...(await import('./src-runtime/humanizeExpect.spec.js'        )).tests,
   ...(await import('./src-runtime/explainMismatch.spec.js'       )).tests,
   ...(await import('./src-runtime/typeTree.spec.js'              )).tests,
+  ...(await import('./src-runtime/panelRefresh.spec.js'          )).tests,
   ...(await import('./src-transpiler/expandTypeParity.spec.js'   )).tests,
   ...(await import('./src-transpiler/inferTypeFromDefault.spec.js')).tests,
   ...(await import('./src-transpiler/parseInlineParamType.spec.js')).tests,

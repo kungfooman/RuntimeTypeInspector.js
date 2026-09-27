@@ -13,6 +13,28 @@ import {Div, Span, Button, Input, Select, Option, H3, Dialog, Pre, Details, Summ
 /**
  * @typedef {MessageEvent<{action: string}>} MessageEventRTI
  */
+/**
+ * Refreshes a warning row with the latest failure. Rows are keyed by
+ * `loc-name`, so one row absorbs every call site hit: value, expect,
+ * message and strings must ALL follow the latest error, otherwise the
+ * modal explains one call's value with another call's type.
+ * @param {import('./Warning.js').Warning} warnObj - The row to refresh.
+ * @param {object} error - The latest failure.
+ * @param {*} error.value - The latest wrong value.
+ * @param {*} error.expect - The latest expected type.
+ * @param {string} error.msg - The latest short message.
+ * @param {string[]} error.strings - The latest validator messages.
+ */
+function refreshWarning(warnObj, {value, expect, msg, strings}) {
+  // The value may change and we only show the latest wrong value.
+  warnObj.value = value;
+  // Same for the expected type: template inference re-substitutes per call,
+  // so a stale expect contradicts the fresh value.
+  warnObj.expect = expect;
+  // Message may change aswell, especially after loading state.
+  warnObj.msg = msg;
+  warnObj.detailStrings = [...strings];
+}
 const Style = genJsx('style');
 const Label = genJsx('label');
 /**
@@ -1305,11 +1327,7 @@ class TypePanel {
     warnObj.event = event;
     warnObj.hits++;
     warnObj.warn(msg, {expect, value, valueToString}, ...extras);
-    // The value may change and we only show the latest wrong value
-    warnObj.value = value;
-    // Message may change aswell, especially after loading state.
-    warnObj.msg = detail || msg;
-    warnObj.detailStrings = [...strings];
+    refreshWarning(warnObj, {value, expect, msg: detail || msg, strings});
   }
   /**
    * @param {MessageEventRTI} event - The event from Worker, IFrame or own window.
@@ -1339,4 +1357,4 @@ class TypePanel {
     this.sendEnabledDisabledStateToWorker();
   }
 }
-export {niceDiv, TypePanel};
+export {niceDiv, TypePanel, refreshWarning};
