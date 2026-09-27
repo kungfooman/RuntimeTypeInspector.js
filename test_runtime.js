@@ -64,6 +64,7 @@ const tests = [
   ...(await import('./src-runtime/validatePromise.spec.js'         )).tests,
   ...(await import('./src-runtime/validateNumber.spec.js'         )).tests,
   ...(await import('./src-runtime/checkInfinity.spec.js'          )).tests,
+  ...(await import('./src-runtime/exactObjects.spec.js'           )).tests,
   ...(await import('./src-runtime/humanizeExpect.spec.js'        )).tests,
   ...(await import('./src-runtime/explainMismatch.spec.js'       )).tests,
   ...(await import('./src-runtime/typeTree.spec.js'              )).tests,

@@ -25,5 +25,14 @@ const options = {
    * pass `number`. `NaN` always fails. Toggleable via the TypePanel checkbox.
    */
   checkInfinity: true,
+  /**
+   * When `true` (default), object keys outside the expected shape fail with
+   * an excess-property error, so `Omit`/`Pick` actually reject. Strictly
+   * speaking this exceeds tsc, whose excess check only fires for fresh
+   * literals (wider variables pass) — runtime values carry no such
+   * provenance. Disable per project if wide-variable passing must stay
+   * quiet. Toggleable via the TypePanel checkbox.
+   */
+  exactObjects: true,
 };
 export {options};

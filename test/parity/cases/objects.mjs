@@ -24,6 +24,6 @@ case01({fov: "60"});
 case02({fov: 60, clearColor: [0, 0, 0]});
 case02({fov: 60});
 case02({fov: 60, clearColor: "red"});
-case01({fov: 60, extra: true}); // parity-diverges: rti-quieter (no excess-property check)
+case01({fov: 60, extra: true});
 case03({nested: {enabled: 1}});
 case03({nested: {enabled: true}});

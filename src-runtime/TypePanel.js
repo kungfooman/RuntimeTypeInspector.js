@@ -412,6 +412,9 @@ function isCheckInfinity() {
   const tmp = localStorage.getItem('rti-check-infinity');
   return tmp === null || tmp === 'true';
 }
+function isExactObjects() {
+  return localStorage.getItem('rti-exact-objects') !== 'false';
+}
 class TypePanel {
   /** @type {HTMLDivElement | null} */
   static divAll = null;
@@ -423,6 +426,8 @@ class TypePanel {
   inputStrict;
   /** @type {HTMLInputElement} */
   inputInfinity;
+  /** @type {HTMLInputElement} */
+  inputExact;
   /** @type {HTMLSpanElement} */
   spanErrors;
   /** @type {HTMLSpanElement} */
@@ -431,6 +436,8 @@ class TypePanel {
   spanStrict;
   /** @type {HTMLSpanElement} */
   spanInfinity;
+  /** @type {HTMLSpanElement} */
+  spanExact;
   /** @type {HTMLSelectElement} */
   select;
   /** @type {HTMLOptionElement} */
@@ -514,10 +521,16 @@ class TypePanel {
       localStorage.setItem('rti-check-infinity', String(this.inputInfinity.checked));
       this.sendInfinityStateToWorker();
     }});
+    this.inputExact = Input({type: 'checkbox', checked: isExactObjects(), onchange: () => {
+      options.exactObjects = this.inputExact.checked;
+      localStorage.setItem('rti-exact-objects', String(this.inputExact.checked));
+      this.sendExactStateToWorker();
+    }});
     this.spanErrors = Span({});
     this.span = Span({innerText: 'Report mode:'});
     this.spanStrict = Span({innerText: ' Strict null checks'});
     this.spanInfinity = Span({innerText: ' Check Infinity'});
+    this.spanExact = Span({innerText: ' Exact objects'});
     this.option_spam = Option({text: 'spam'});
     this.option_once = Option({text: 'once'});
     this.option_never = Option({text: 'never'});
@@ -556,6 +569,8 @@ class TypePanel {
                     Div({className: 'rti-setting-row'},
                         Label({}, this.inputInfinity, this.spanInfinity)),
                     Div({className: 'rti-setting-row'},
+                        Label({}, this.inputExact, this.spanExact)),
+                    Div({className: 'rti-setting-row'},
                         this.buttonLoadState, this.buttonSaveState));
     this.menu.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
@@ -584,7 +599,7 @@ class TypePanel {
     const {
       div, titlebar, toolbar, body,
     } = this;
-    const {inputEnable, inputStrict, inputInfinity, select} = this;
+    const {inputEnable, inputStrict, inputInfinity, inputExact, select} = this;
     TypePanel.divAll ??= Div({
       className: 'rti-all',
       style: {position: 'fixed', bottom: '0px', right: '0px', zIndex: '10000', overflow: 'unset'},
@@ -594,6 +609,7 @@ class TypePanel {
     inputEnable.onchange();
     inputStrict.onchange();
     inputInfinity.onchange();
+    inputExact.onchange();
     const spamTypeReports = localStorage.getItem('rti-spam-type-reports');
     select.value = options.mode;
     if (spamTypeReports !== null) {
@@ -1129,6 +1145,17 @@ class TypePanel {
       });
     });
   }
+  sendExactStateToWorker() {
+    const {eventSources} = this;
+    eventSources.forEach(eventSource => {
+      eventSource.postMessage({
+        type: 'rti',
+        action: 'exactObjects',
+        value: options.exactObjects,
+        destination: 'worker',
+      });
+    });
+  }
   sendEnabledDisabledStateToWorker() {
     // Problem: First time the worker may not even have started and `this.eventSources.size === 0`
     // So we first know a RTI worker started after receiving the first message from it.
@@ -1188,6 +1215,7 @@ class TypePanel {
         mode: options.mode,
         strictNullChecks: options.strictNullChecks,
         checkInfinity: options.checkInfinity,
+        exactObjects: options.exactObjects,
         logSuperfluousProperty: options.logSuperfluousProperty,
       },
       counts: {
@@ -1198,7 +1226,9 @@ class TypePanel {
       llmHint: [
         'This is a RuntimeTypeInspector error log. Each entry in `errors` is one failed runtime type check.',
         '`meta.settings` matters: `strictNullChecks: false` means null/undefined pass every type,',
-        '`checkInfinity: false` means +-Infinity passes `number`. Those are settings, not bugs.',
+        '`checkInfinity: false` means +-Infinity passes `number`.',
+        '`exactObjects: true` means excess keys fail (stricter than tsc, which only checks fresh literals).',
+        'Those are settings, not bugs.',
         'Fix the underlying JSDoc/type or value; `stack` points at the check site, `loc`/`name` at the argument.',
       ].join(' '),
     };

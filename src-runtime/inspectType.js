@@ -53,6 +53,10 @@ const breakpoints = new Set();
       options.checkInfinity = data.value !== false;
       return;
     }
+    if (action === 'exactObjects') {
+      options.exactObjects = data.value === true;
+      return;
+    }
   }
   console.log('Unhandled action destination combo', {action, destination, e, data});
 });
