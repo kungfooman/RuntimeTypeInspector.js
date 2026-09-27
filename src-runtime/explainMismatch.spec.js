@@ -1,5 +1,6 @@
 import {expandType} from '../src-transpiler/expandType.js';
 import {registerTypedef, typedefs, typedefTemplates} from './registerTypedef.js';
+import {registerClass, classes} from './registerClass.js';
 import {explainMismatch, materializeExpect} from './explainMismatch.js';
 function reset() {
   Object.keys(typedefs).forEach((_) => delete typedefs[_]);
@@ -60,6 +61,42 @@ function testIndexedAccessResolvesConcretely() {
   return findings.length === 1 && findings[0].path === 'data.fov' &&
     findings[0].expected === 'number';
 }
+function testPartialRelaxesRequired() {
+  reset();
+  registerTypedef('Box', expandType('{a: number, b: string}'));
+  const partial = explainMismatch({}, expandType('Partial<Box>'), 'p').findings;
+  const required = explainMismatch({}, expandType('Required<Box>'), 'p').findings;
+  return partial.length === 0 && required.length === 2;
+}
+function testPickNarrowsKeys() {
+  reset();
+  registerTypedef('Box', expandType('{a: number, b: string}'));
+  const {findings} = explainMismatch({}, expandType('Pick<Box, "a">'), 'p');
+  return findings.length === 1 && findings[0].path === 'p.a';
+}
+function testClassInstancePassesShape() {
+  reset();
+  class Widget {
+    render() {}
+  }
+  registerClass(Widget);
+  try {
+    const ok = explainMismatch(new Widget(), 'Widget', 'w').findings;
+    const bad = explainMismatch({}, 'Widget', 'w').findings;
+    return ok.length === 0 && bad.length > 0;
+  } finally {
+    delete classes.Widget;
+  }
+}
+function testPresentValuesLoseOptionalWrapper() {
+  // A present-but-wrong value under Partial must read `'draft' | ...`,
+  // not `('draft' | ...)|undefined` — presence settles optionality.
+  reset();
+  registerTypedef('Article', expandType('{title: string, status: "draft" | "published"}'));
+  const {findings} = explainMismatch({title: 'x', status: 1}, expandType('Partial<Article>'), 'patch');
+  const wrong = findings.find((_) => _.path === 'patch.status');
+  return findings.length === 1 && !!wrong && !wrong.expected.includes('undefined');
+}
 const tests = [
   testMissingKey,
   testWrongNestedType,
@@ -68,5 +105,9 @@ const tests = [
   testExtraKey,
   testPassingValueHasNoFindings,
   testIndexedAccessResolvesConcretely,
+  testPartialRelaxesRequired,
+  testPickNarrowsKeys,
+  testClassInstancePassesShape,
+  testPresentValuesLoseOptionalWrapper,
 ];
 export {tests};

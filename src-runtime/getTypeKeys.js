@@ -133,6 +133,91 @@ function keyNames(keys, warn, depth) {
   return resolved.map(stripKey).filter(key => typeof key === 'string');
 }
 /**
+ * @param {*} prop - A property type.
+ * @returns {object} Same type marked optional, without mutating the input.
+ */
+function asOptionalProp(prop) {
+  if (prop && typeof prop === 'object') {
+    return {...prop, optional: true};
+  }
+  return {type: prop, optional: true};
+}
+/**
+ * Resolves Partial/Pick/Omit/Required to concrete shapes, mirroring
+ * `validateReference` semantics (homomorphic distribution over unions,
+ * shallow optionality changes). Shared by key reads, the explanation
+ * differ and the type tree so all three agree.
+ * @param {string} name - Partial, Pick, Omit or Required.
+ * @param {any[]} args - Type arguments.
+ * @param {console["warn"]} warn - Function to warn with.
+ * @param {number} depth - The depth to detect recursion.
+ * @returns {object|undefined} Object shape, union of shapes, or undefined.
+ */
+function resolveUtilityShape(name, args, warn, depth = 0) {
+  if (depth > 10) {
+    return;
+  }
+  const [target, keys] = args ?? [];
+  if (target === undefined) {
+    return;
+  }
+  const shapes = [];
+  const collect = (type) => {
+    if (type && type.type === 'union' && Array.isArray(type.members)) {
+      type.members.forEach(collect);
+      return;
+    }
+    const shape = resolveObject(type, warn, depth + 1);
+    if (shape && shape.type === 'object' && shape.properties) {
+      shapes.push(shape);
+    }
+  };
+  collect(target);
+  if (!shapes.length) {
+    return;
+  }
+  if (name === 'Partial') {
+    const members = shapes.map((shape) => {
+      const properties = {};
+      for (const key of Object.keys(shape.properties)) {
+        properties[key] = asOptionalProp(shape.properties[key]);
+      }
+      return {type: 'object', properties};
+    });
+    return members.length === 1 ? members[0] : {type: 'union', members};
+  }
+  if (name === 'Required') {
+    // Shallow like validation: only top-level optionality is stripped.
+    const members = shapes.map((shape) => {
+      const properties = {};
+      for (const key of Object.keys(shape.properties)) {
+        const prop = shape.properties[key];
+        properties[key] = prop && typeof prop === 'object' ? {...prop, optional: false} : prop;
+      }
+      return {type: 'object', properties};
+    });
+    return members.length === 1 ? members[0] : {type: 'union', members};
+  }
+  if (keys === undefined) {
+    return;
+  }
+  const names = keyNames(keys, warn, depth + 1);
+  if (!names) {
+    return;
+  }
+  const wanted = new Set(names);
+  const members = shapes.map((shape) => {
+    const properties = {};
+    for (const key of Object.keys(shape.properties)) {
+      if (wanted.has(key) === (name === 'Pick')) {
+        properties[key] = shape.properties[key];
+      }
+    }
+    return {type: 'object', properties};
+  });
+  return members.length === 1 ? members[0] : {type: 'union', members};
+}
+/**
  * Instantiates a generic typedef reference by substituting arguments for
  * template parameters. Shared by reference resolution paths.
  * @param {object} type - Reference with name and args.
@@ -221,6 +306,10 @@ function resolveObject(type, warn, depth) {
     const {name, args} = type;
     if ((name === 'NonNullable' || name === 'Readonly' || name === 'NoInfer') && args?.length) {
       return resolveObject(args[0], warn, depth + 1);
+    }
+    if ((name === 'Partial' || name === 'Pick' || name === 'Omit' || name === 'Required') && args?.length) {
+      const shape = resolveUtilityShape(name, args, warn, depth + 1);
+      return shape && shape.type === 'object' ? shape : undefined;
     }
     const instance = instantiateReference(type, warn);
     if (instance === undefined) {
@@ -654,4 +743,4 @@ function getTypeKeys(expect, warn, depth = 0) {
   }
   warn(`Couldn't get keys for type`, expect);
 }
-export {getTypeKeys, instantiateReference, resolveObject, stripKey};
+export {getTypeKeys, instantiateReference, resolveObject, resolveUtilityShape, stripKey};

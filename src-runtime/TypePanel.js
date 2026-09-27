@@ -931,7 +931,7 @@ class TypePanel {
       row.append(Div({className: 'rti-fix', textContent: `→ ${finding.fix}`}));
     }
     if (finding.children?.length) {
-      row.append(Details({},
+      row.append(Details({open: finding.children.length <= 2},
                          Summary({textContent: `Closest match problems (${finding.children.length})`}),
                          ...finding.children.map((_) => this.renderFinding(_))));
     }

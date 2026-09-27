@@ -1,7 +1,9 @@
 import {typedefs, typedefTemplates} from './registerTypedef.js';
 import {replaceType} from './replaceType.js';
 import {createTypeFromMapping} from './createTypeFromMapping.js';
-import {resolveObject} from './getTypeKeys.js';
+import {resolveObject, resolveUtilityShape} from './getTypeKeys.js';
+import {classes} from './registerClass.js';
+import {mergedClassShape} from './classShape.js';
 import {recurse, validators} from './validators.js';
 import './validateType.js';
 import './evaluateCondition.js';
@@ -53,11 +55,23 @@ function materializeExpect(expect) {
   let current = expect;
   for (let i = 0; i < 10; i++) {
     if (typeof current === 'string') {
-      if (!typedefs[current]) {
-        return current;
+      if (typedefs[current]) {
+        current = structuredClone(typedefs[current]);
+        continue;
       }
-      current = structuredClone(typedefs[current]);
-      continue;
+      if (classes[current]) {
+        let shape;
+        try {
+          shape = mergedClassShape(current);
+        } catch {
+          shape = undefined;
+        }
+        if (shape && shape.properties) {
+          current = shape;
+          continue;
+        }
+      }
+      return current;
     }
     if (current && typeof current === 'object') {
       if (current.type === 'condition') {
@@ -104,6 +118,18 @@ function materializeExpect(expect) {
       }
       if (current.type === 'reference') {
         const {name, args} = current;
+        if ((name === 'Partial' || name === 'Pick' || name === 'Omit' || name === 'Required') && args?.length) {
+          let shape;
+          try {
+            shape = resolveUtilityShape(name, args, noop, 0);
+          } catch {
+            shape = undefined;
+          }
+          if (shape !== undefined) {
+            current = shape;
+            continue;
+          }
+        }
         if (typedefs[name]) {
           const params = typedefTemplates[name];
           let instance = structuredClone(typedefs[name]);
@@ -218,7 +244,10 @@ function diffValue(value, expect, path, depth) {
         }
         continue;
       }
-      findings.push(...diffValue(value[key], prop, subPath, depth + 1));
+      // Present: presence already established, so strip the optional wrapper
+      // — findings read `'draft' | 'published'`, not `(…)|undefined`.
+      const present = prop && typeof prop === 'object' ? {...prop, optional: false} : prop;
+      findings.push(...diffValue(value[key], present, subPath, depth + 1));
     }
     for (const key of Object.keys(value)) {
       if (!mat.properties[key]) {

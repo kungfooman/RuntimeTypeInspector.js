@@ -1,5 +1,6 @@
 import {expandType} from '../src-transpiler/expandType.js';
 import {registerTypedef, typedefs, typedefTemplates} from './registerTypedef.js';
+import {registerClass, classes} from './registerClass.js';
 import {buildTypeTree, suggestKey} from './typeTree.js';
 function reset() {
   Object.keys(typedefs).forEach((_) => delete typedefs[_]);
@@ -115,6 +116,42 @@ function testIndexedAccessDirect() {
   return tree.kind === 'indexedAccess' && tree.passes === true &&
     tree.children?.[0]?.kind === 'object';
 }
+function testPartialExpands() {
+  reset();
+  registerTypedef('Box', expandType('{a: number, b: string}'));
+  const tree = buildTypeTree(expandType('Partial<Box>'), {}, 'p');
+  if (tree.kind !== 'reference' || !tree.children?.length) {
+    return false;
+  }
+  const shape = tree.children[0];
+  return shape.kind === 'object' &&
+    shape.children.some((_) => _.label.startsWith('a:')) &&
+    shape.children.some((_) => _.label.startsWith('b:'));
+}
+function testPickExpands() {
+  reset();
+  registerTypedef('Box', expandType('{a: number, b: string}'));
+  const tree = buildTypeTree(expandType('Pick<Box, "a">'), {a: 1}, 'p');
+  const shape = tree.children?.[0];
+  return tree.kind === 'reference' && shape?.kind === 'object' &&
+    shape.children.length === 1 && shape.children[0].label.startsWith('a:');
+}
+function testClassClimbs() {
+  reset();
+  class Widget {
+    render() {}
+  }
+  registerClass(Widget);
+  try {
+    const tree = buildTypeTree('Widget', new Widget(), 'Widget');
+    if (tree.kind !== 'class' || !tree.children?.length) {
+      return false;
+    }
+    return tree.children[0].children.some((_) => _.label.startsWith('render'));
+  } finally {
+    delete classes.Widget;
+  }
+}
 function testRecursiveTypedefTerminates() {
   reset();
   registerTypedef('Node', expandType('{child: Node}'));
@@ -122,6 +159,32 @@ function testRecursiveTypedefTerminates() {
   const child = tree.children?.[0]?.children?.find((_) => _.label.startsWith('child:'));
   // Terminates: the recursive alias itself carries the fold-back note.
   return !!child && child.kind === 'alias' && !child.children && child.detail.includes('Recursive');
+}
+function testObjectChildrenProbeValues() {
+  // Regression: property levels probed the whole parent object, so a
+  // correct email showed ✗ next to a correct Diagnosis. Levels must probe
+  // their own value: name ✗, email ✓.
+  reset();
+  registerTypedef('User', expandType('{id: number, name: string, email: string, passwordHash: string}'));
+  const tree = buildTypeTree(expandType('Pick<User, "name" | "email">'), {name: 1, email: 'a@b.c'}, 'userInfo');
+  const shape = tree.children?.[0];
+  if (tree.kind !== 'reference' || shape?.kind !== 'object') {
+    return false;
+  }
+  const byKey = Object.fromEntries(shape.children.map((_) => [_.label.split(':')[0], _]));
+  return byKey.name?.passes === false && byKey.email?.passes === true;
+}
+function testAbsentOptionalKeysPass() {
+  // Missing optional keys probe `undefined`, which satisfies optional —
+  // they must not render as errors (explicit-undefined used to resubstitute
+  // the parent object via a parameter default).
+  reset();
+  registerTypedef('Box', expandType('{a: number, b: string}'));
+  const tree = buildTypeTree(expandType('Partial<Box>'), {}, 'p');
+  const shape = tree.children?.[0];
+  return shape?.kind === 'object' &&
+    shape.children.length === 2 &&
+    shape.children.every((_) => _.passes === true);
 }
 const tests = [
   testKeyofListsKeys,
@@ -132,5 +195,10 @@ const tests = [
   testRecursiveTypedefTerminates,
   testTransparentWrapperUnwraps,
   testIndexedAccessDirect,
+  testPartialExpands,
+  testPickExpands,
+  testClassClimbs,
+  testObjectChildrenProbeValues,
+  testAbsentOptionalKeysPass,
 ];
 export {tests};

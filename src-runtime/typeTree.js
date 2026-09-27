@@ -1,5 +1,7 @@
 import {typedefs} from './registerTypedef.js';
-import {getTypeKeys, instantiateReference, resolveObject, stripKey} from './getTypeKeys.js';
+import {getTypeKeys, instantiateReference, resolveObject, resolveUtilityShape, stripKey} from './getTypeKeys.js';
+import {classes} from './registerClass.js';
+import {mergedClassShape} from './classShape.js';
 import {createTypeFromMapping} from './createTypeFromMapping.js';
 import {recurse, validators} from './validators.js';
 import './validateType.js';
@@ -122,9 +124,11 @@ function buildTypeTree(expect, value, label, budget = {nodes: 0, names: [], objs
     node.truncated = true;
     return node;
   }
-  const sub = (type, name) => buildTypeTree(type, value, name, budget);
+  // NB: no `= value` default below: missing keys pass explicit `undefined`
+  // and defaults would re-substitute the parent object (the actual bug).
+  const sub = (type, name, ...rest) => buildTypeTree(type, rest.length ? rest[0] : value, name, budget);
   if (typeof expect === 'string') {
-    if (!typedefs[expect]) {
+    if (!typedefs[expect] && !classes[expect]) {
       return node;
     }
     if (budget.names.includes(expect)) {
@@ -134,9 +138,26 @@ function buildTypeTree(expect, value, label, budget = {nodes: 0, names: [], objs
     }
     budget.names.push(expect);
     try {
-      node.kind = 'alias';
-      node.detail = `Alias for ${treeSnip(typedefs[expect])}.`;
-      node.children = [sub(typedefs[expect], treeSnip(typedefs[expect]))];
+      if (typedefs[expect]) {
+        node.kind = 'alias';
+        node.detail = `Alias for ${treeSnip(typedefs[expect])}.`;
+        node.children = [sub(typedefs[expect], treeSnip(typedefs[expect]))];
+      } else {
+        // Registered class: harvested constructor-chain shape merged with
+        // prototype members, so methods and fields are climbable too.
+        let shape;
+        try {
+          shape = mergedClassShape(expect);
+        } catch {
+          shape = undefined;
+        }
+        if (!shape || !shape.properties) {
+          return node;
+        }
+        node.kind = 'class';
+        node.detail = `Class ${expect} members (inherited first):`;
+        node.children = [sub(shape, treeSnip(shape))];
+      }
     } finally {
       budget.names.pop();
     }
@@ -188,7 +209,11 @@ function buildObjectNode(expect, value, node, sub) {
         }
         node.detail = `${names.length} allowed key${names.length === 1 ? '' : 's'}.`;
       }
-      node.children = [sub(expect.argument, `keys of ${treeSnip(expect.argument)}`)];
+      // The keyed object itself: the value is a key, not the object, so a
+      // pass/fail probe would be noise — leave it unmarked but climbable.
+      const keyed = sub(expect.argument, `keys of ${treeSnip(expect.argument)}`);
+      keyed.passes = undefined;
+      node.children = [keyed];
       return node;
     }
     case 'intersection':
@@ -210,6 +235,21 @@ function buildObjectNode(expect, value, node, sub) {
         node.detail = `${expect.name}<…> passes the shape through; unwraps to:`;
         node.children = [sub(expect.args[0], treeSnip(expect.args[0]))];
         return node;
+      }
+      // Utility wrappers materialize to concrete shapes (same semantics as
+      // validation); anything else instantiates generic typedefs.
+      if ((expect.name === 'Partial' || expect.name === 'Pick' || expect.name === 'Omit' || expect.name === 'Required') && expect.args?.length) {
+        let shape;
+        try {
+          shape = resolveUtilityShape(expect.name, expect.args, noop, 0);
+        } catch {
+          shape = undefined;
+        }
+        if (shape !== undefined) {
+          node.detail = `${expect.name}<${expect.args.map(treeSnip).join(', ')}> resolves to:`;
+          node.children = [sub(shape, treeSnip(shape))];
+          return node;
+        }
       }
       let instance;
       try {
@@ -278,7 +318,9 @@ function buildObjectNode(expect, value, node, sub) {
       node.kind = 'object';
       const keys = Object.keys(expect.properties).slice(0, MAX_PROPS);
       node.moreKeys = Object.keys(expect.properties).length - keys.length;
-      node.children = keys.map((_) => sub(expect.properties[_], `${_}: ${treeSnip(expect.properties[_])}`));
+      // Probe each property against ITS value, not the whole parent object.
+      const childValue = value != null && typeof value === 'object' ? value : {};
+      node.children = keys.map((_) => sub(expect.properties[_], `${_}: ${treeSnip(expect.properties[_])}`, childValue[_]));
       return node;
     }
     default:
