@@ -242,21 +242,19 @@ function buildObjectNode(expect, value, node, sub) {
     case 'condition': {
       node.kind = 'condition';
       const decision = decideCondition(expect);
-      if (decision === true) {
-        node.detail = 'The check holds, so the true branch applies:';
-        node.children = [sub(expect.trueType, treeSnip(expect.trueType))];
-        return node;
+      node.decision = decision;
+      const ifTrue = sub(expect.trueType, `true: ${treeSnip(expect.trueType)}`);
+      const ifFalse = sub(expect.falseType, `false: ${treeSnip(expect.falseType)}`);
+      ifTrue.entered = decision === true;
+      ifFalse.entered = decision === false;
+      // Both branches render so the conditional itself stays inspectable;
+      // the entered one sorts first and gets marked in the renderer.
+      node.children = decision === false ? [ifFalse, ifTrue] : [ifTrue, ifFalse];
+      if (decision === undefined) {
+        node.detail = 'Undecidable here — both branches shown:';
+      } else {
+        node.detail = `Check ${decision ? 'holds' : 'fails'} — entered branch first:`;
       }
-      if (decision === false) {
-        node.detail = 'The check fails, so the false branch applies:';
-        node.children = [sub(expect.falseType, treeSnip(expect.falseType))];
-        return node;
-      }
-      node.detail = 'Undecidable here — both branches shown:';
-      node.children = [
-        sub(expect.trueType, `true: ${treeSnip(expect.trueType)}`),
-        sub(expect.falseType, `false: ${treeSnip(expect.falseType)}`),
-      ];
       return node;
     }
     case 'mapping': {      node.kind = 'mapping';

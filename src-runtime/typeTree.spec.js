@@ -80,8 +80,12 @@ function testConditionDescends() {
   if (tree.kind !== 'condition' || !tree.children?.length) {
     return false;
   }
-  // Decided true: exactly one child, the object branch, failure pinned.
-  if (tree.children.length !== 1) {
+  // Decided true: both branches render, entered one first and marked.
+  if (tree.children.length !== 2) {
+    return false;
+  }
+  const [entered, skipped] = tree.children;
+  if (entered.entered !== true || skipped.entered !== false) {
     return false;
   }
   const branch = tree.children[0];

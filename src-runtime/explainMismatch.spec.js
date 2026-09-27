@@ -52,6 +52,14 @@ function testPassingValueHasNoFindings() {
   const expect = expandType('{fov: number}');
   return explainMismatch({fov: 60}, expect, 'options').findings.length === 0;
 }
+function testIndexedAccessResolvesConcretely() {
+  reset();
+  registerTypedef('EntityShape', expandType('{camera: {fov: number}}'));
+  const expect = expandType('EntityShape["camera"]');
+  const {findings} = explainMismatch({fov: 'x'}, expect, 'data');
+  return findings.length === 1 && findings[0].path === 'data.fov' &&
+    findings[0].expected === 'number';
+}
 const tests = [
   testMissingKey,
   testWrongNestedType,
@@ -59,5 +67,6 @@ const tests = [
   testUnionClosestMatch,
   testExtraKey,
   testPassingValueHasNoFindings,
+  testIndexedAccessResolvesConcretely,
 ];
 export {tests};

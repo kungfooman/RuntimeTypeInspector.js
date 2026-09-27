@@ -1,6 +1,7 @@
 import {typedefs, typedefTemplates} from './registerTypedef.js';
 import {replaceType} from './replaceType.js';
 import {createTypeFromMapping} from './createTypeFromMapping.js';
+import {resolveObject} from './getTypeKeys.js';
 import {recurse, validators} from './validators.js';
 import './validateType.js';
 import './evaluateCondition.js';
@@ -24,13 +25,15 @@ function snip(value) {
   return text.length > 160 ? `${text.slice(0, 157)}...` : text;
 }
 /**
- * Short one-line summary of an expected type.
+ * Short one-line summary of an expected type, resolved to the concrete
+ * shape first so rows read `Array<number>` instead of
+ * `MergedComponentOptions<"camera">["clearColor"]`.
  * @param {*} expect - The expected type.
  * @returns {string} Type summary.
  */
 function expectSnip(expect) {
   try {
-    const flat = stringifyType(expect);
+    const flat = stringifyType(materializeExpect(expect));
     return flat.length > 160 ? `${flat.slice(0, 157)}...` : flat;
   } catch {
     return String(expect?.type ?? expect);
@@ -39,9 +42,10 @@ function expectSnip(expect) {
 /**
  * Materializes aliases into concrete shapes without validating: named
  * typedefs, generic references (`ComponentOptions<"camera">` is instantiated
- * like `validateReference` does), mapped types, and decided conditions.
- * Anything else (utility types like `Partial`, undecidable conditions,
- * classes) is returned as-is and treated as an opaque leaf by the differ.
+ * like `validateReference` does), mapped types, decided conditions, and
+ * indexed access (`T["clearColor"]` selects the property type). Anything
+ * else (utility types like `Partial`, undecidable conditions, classes) is
+ * returned as-is and treated as an opaque leaf by the differ.
  * @param {*} expect - The expected type.
  * @returns {*} Concrete type, or the input when unresolvable.
  */
@@ -84,6 +88,19 @@ function materializeExpect(expect) {
         } catch {
           return expect;
         }
+      }
+      if (current.type === 'indexedAccess') {
+        let selected;
+        try {
+          selected = resolveObject(current, noop, 0);
+        } catch {
+          selected = undefined;
+        }
+        if (selected === undefined) {
+          return current;
+        }
+        current = selected;
+        continue;
       }
       if (current.type === 'reference') {
         const {name, args} = current;

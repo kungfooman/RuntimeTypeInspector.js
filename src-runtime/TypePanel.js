@@ -353,6 +353,27 @@ function niceDiv(div) {
       background: #fdd;
       border-color: #d00;
     }
+    .rti-entered {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: bold;
+      border-radius: 3px;
+      padding: 0 5px;
+      margin-left: 6px;
+      background: #dfd;
+    }
+    .rti-skipped {
+      display: inline-block;
+      font-size: 11px;
+      border-radius: 3px;
+      padding: 0 5px;
+      margin-left: 6px;
+      background: #eee;
+      color: #666;
+    }
+    .rti-dimmed {
+      opacity: 0.55;
+    }
   `);
   div.classList.add('rti');
   document.head.appendChild(rule);
@@ -898,19 +919,26 @@ class TypePanel {
    * Renders one type-tree level as a climbable nested disclosure: hover any
    * row for the full type, expand to climb one level deeper. The actual value
    * is probed per level so ✗ pinpoints the failing depth; keyof levels list
-   * every allowed key with the value marked present/missing.
+   * every allowed key with the value marked present/missing. Condition
+   * branches carry entered/not-entered marks instead of hiding a branch.
    * @param {object} node - One `buildTypeTree` node.
    * @param {number} depth - Nesting depth (first two levels start open).
+   * @param {boolean} dimmed - True for a decided-away conditional branch.
    * @returns {HTMLElement} The tree element.
    */
-  renderTypeNode(node, depth) {
+  renderTypeNode(node, depth, dimmed = false) {
     const mark = node.passes === true ? '✓' : node.passes === false ? '✗' : '?';
     const markCls = node.passes === true ? 'rti-pass' : node.passes === false ? 'rti-fail' : '';
     const head = Summary({title: node.full},
                          Span({className: markCls, textContent: `${mark} `}),
                          Span({className: 'rti-path', textContent: node.label}),
                          Span({className: 'rti-kind', textContent: node.kind}));
-    const box = Div({className: 'rti-tree'});
+    if (node.entered === true) {
+      head.append(Span({className: 'rti-entered', textContent: 'entered'}));
+    } else if (dimmed) {
+      head.append(Span({className: 'rti-skipped', textContent: 'not entered'}));
+    }
+    const box = Div({className: dimmed ? 'rti-tree rti-dimmed' : 'rti-tree'});
     const open = Details({open: depth < 2 || node.passes === false}, head);
     if (node.detail) {
       open.append(Div({textContent: node.detail}));
@@ -937,7 +965,8 @@ class TypePanel {
       open.append(chips);
     }
     if (node.children?.length) {
-      open.append(...node.children.map((_) => this.renderTypeNode(_, depth + 1)));
+      const dimChild = (/** @type {object} */ _) => node.kind === 'condition' && node.decision !== undefined && _.entered !== true;
+      open.append(...node.children.map((_) => this.renderTypeNode(_, depth + 1, dimChild(_))));
     }
     if (node.truncated) {
       open.append(Div({textContent: '(tree truncated: too deep/wide to expand fully)'}));
