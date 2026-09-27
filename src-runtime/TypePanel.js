@@ -4,7 +4,7 @@ import {encodeBase64 } from "./base64.js";
 import {options    } from "./options.js";
 import {createTable} from "./warnedTable.js";
 import {stringifyValue} from "./stringifyValue.js";
-import {RTI_VERSION} from "./version.js";
+import {RTI_VERSION, RTI_BUILD} from "./version.js";
 import {formatCompare} from "./humanizeExpect.js";
 import {explainMismatch} from "./explainMismatch.js";
 import {buildTypeTree} from "./typeTree.js";
@@ -1205,8 +1205,21 @@ class TypePanel {
   getLogMeta() {
     const pageUrl = typeof location !== 'undefined' ? location.href : undefined;
     const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : undefined;
+    const hints = [
+      'This is a RuntimeTypeInspector error log. Each entry in `errors` is one failed runtime type check.',
+      '`meta.settings` matters: `strictNullChecks: false` means null/undefined pass every type,',
+      '`checkInfinity: false` means +-Infinity passes `number`.',
+      '`exactObjects: true` means excess keys fail (stricter than tsc, which only checks fresh literals).',
+      'Those are settings, not bugs.',
+      '`meta.build` is null when running from source; bundles stamp date, commit and message.',
+    ];
+    if (options.projectVersion === null || options.projectVersion === undefined) {
+      hints.push('`meta.projectVersion` is NOT set — pass `projectVersion` to your RTI bundler plugin (rollup/webpack loader option) or call `setProjectVersion(...)` so logs identify the app build.');
+    }
     return {
       rtiVersion: RTI_VERSION,
+      build: RTI_BUILD,
+      projectVersion: options.projectVersion,
       downloadedAt: new Date().toISOString(),
       pageUrl,
       userAgent,
@@ -1223,14 +1236,8 @@ class TypePanel {
         distinctWarnings: Object.keys(this.warnings).length,
         events: this.eventLog.length,
       },
-      llmHint: [
-        'This is a RuntimeTypeInspector error log. Each entry in `errors` is one failed runtime type check.',
-        '`meta.settings` matters: `strictNullChecks: false` means null/undefined pass every type,',
-        '`checkInfinity: false` means +-Infinity passes `number`.',
-        '`exactObjects: true` means excess keys fail (stricter than tsc, which only checks fresh literals).',
-        'Those are settings, not bugs.',
-        'Fix the underlying JSDoc/type or value; `stack` points at the check site, `loc`/`name` at the argument.',
-      ].join(' '),
+      llmHint: [...hints,
+        'Fix the underlying JSDoc/type or value; `stack` points at the check site, `loc`/`name` at the argument.'].join(' '),
     };
   }
   /**

@@ -3,6 +3,9 @@ const {Compilation, Compiler} = require('webpack');
  * @typedef OptionsProps
  * @property {RegExp} [test] - Test for file extensions.
  * @property {RegExp} [exclude] - Test for exclusion.
+ * @property {string} [projectVersion] - Host project version for `Download
+ * log` meta (forwarded to the loader). Defaults to the host package.json
+ * version; unset when none is readable (the log then nudges to set it).
  */
 /**
  * @typedef {OptionsProps & import('@runtime-type-inspector/transpiler').Options} Options

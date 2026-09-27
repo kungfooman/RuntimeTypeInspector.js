@@ -34,5 +34,21 @@ const options = {
    * quiet. Toggleable via the TypePanel checkbox.
    */
   exactObjects: true,
+  /**
+   * Host project version for log headers (`Download log` meta), e.g.
+   * `"1.2.3"`. Set via the `projectVersion` option of the bundler plugins
+   * (rollup/webpack loaders funnel it into the emitted header) or by
+   * calling `setProjectVersion` directly. Stays `null` when unset — the log
+   * then says so, nudging toward setting it.
+   * @type {string|null}
+   */
+  projectVersion: null,
 };
-export {options};
+/**
+ * Records the host project version (see `options.projectVersion`).
+ * @param {string} version - The version, e.g. from the app's package.json.
+ */
+function setProjectVersion(version) {
+  options.projectVersion = version;
+}
+export {options, setProjectVersion};
