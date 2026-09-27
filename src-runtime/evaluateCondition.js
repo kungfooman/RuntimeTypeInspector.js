@@ -386,6 +386,9 @@ function extendsCheck(check, target) {
         if (primitives.has(target)) {
           return false;
         }
+      } else if (typeof target === 'boolean' || typeof target === 'number') {
+        // String literal vs boolean/number literal: distinct kinds never extend.
+        return false;
       }
     } else if (primitives.has(check) && primitives.has(target)) {
       // Distinct primitives never extend each other.
@@ -402,6 +405,10 @@ function extendsCheck(check, target) {
         if (targetStripped !== target || primitives.has(target)) {
           return false;
         }
+      } else if (typeof target === 'boolean' || typeof target === 'number') {
+        // Distinct boolean/number literals never extend each other
+        // (identical ones already returned true above).
+        return check === target;
       }
     }
   }
