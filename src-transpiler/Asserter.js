@@ -27,6 +27,10 @@ import {Stringifier        } from './Stringifier.js';
  * @property {string} [filename] - The name of a file to which the instance pertains.
  * @property {boolean} [addHeader] - Whether to add import declarations headers. Defaults to true.
  * @property {string[]} [ignoreLocations] - Ignore these locations because they are known false-positives.
+ * @property {string} [projectVersion] - Host project version funneled into
+ * the emitted header via `setProjectVersion(...)`, so `Download log` meta
+ * identifies the app build. Bundler plugins resolve it from their own
+ * option or the host package.json.
  */
 class Asserter extends Stringifier {
   /**
@@ -40,6 +44,7 @@ class Asserter extends Stringifier {
     filename,
     addHeader = true,
     ignoreLocations = [],
+    projectVersion,
   } = {}) {
     super();
     this.forceCurly = forceCurly;
@@ -51,6 +56,7 @@ class Asserter extends Stringifier {
     this.filename = filename;
     this.addHeader = addHeader;
     this.ignoreLocations = ignoreLocations;
+    this.projectVersion = projectVersion;
   }
   /** @type {Record<string, Stat>} */
   stats = {
@@ -155,9 +161,16 @@ class Asserter extends Stringifier {
     if (this.validateDivision) {
       header += ", validateDivision";
     }
-    header += ", registerTypedef, registerClass, registerImportNamespaceSpecifier} from '@runtime-type-inspector/runtime';\n";
+    header += ", registerTypedef, registerClass, registerImportNamespaceSpecifier";
+    if (this.projectVersion !== undefined && this.projectVersion !== null) {
+      header += ", setProjectVersion";
+    }
+    header += "} from '@runtime-type-inspector/runtime';\n";
     // Prevent tree-shaking in UMD build so we can always "add a breakpoint here".
     header += "export * from '@runtime-type-inspector/runtime';\n";
+    if (this.projectVersion !== undefined && this.projectVersion !== null) {
+      header += `setProjectVersion(${JSON.stringify(this.projectVersion)});\n`;
+    }
     return header;
   }
   /**

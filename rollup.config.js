@@ -18,6 +18,40 @@ import commonjs from '@rollup/plugin-commonjs';
 /** @typedef {import('rollup').OutputOptions} OutputOptions */
 /** @typedef {import('@rollup/plugin-babel').RollupBabelInputPluginOptions} RollupBabelInputPluginOptions */
 /**
+ * Injects package version + git build stamps into `src-runtime/version.js`
+ * placeholders (date, commit hash, subject). No new dependency: a plain
+ * transform hook scoped to that module; outside bundles (dev, REPL, tests)
+ * the placeholders survive and `version.js` falls back gracefully.
+ * @returns {Plugin} The plugin.
+ */
+function buildInfoPlugin() {
+  let info = null;
+  try {
+    const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+    info = {
+      version: pkg.version,
+      date: new Date().toISOString(),
+      commit: execSync('git log -1 --format=%H', {encoding: 'utf8'}).trim(),
+      subject: execSync('git log -1 --format=%s', {encoding: 'utf8'}).trim(),
+    };
+  } catch {
+    info = null;
+  }
+  return {
+    name: 'rti-build-info',
+    transform(code, id) {
+      if (!id.endsWith('src-runtime/version.js') || !info) {
+        return null;
+      }
+      return code
+        .replaceAll('__RTI_PKG_VERSION__', info.version)
+        .replaceAll('__RTI_BUILD_DATE__', info.date)
+        .replaceAll('__RTI_BUILD_COMMIT__', info.commit)
+        .replaceAll('__RTI_BUILD_SUBJECT__', info.subject);
+    },
+  };
+}
+/**
  * The ES5 options for babel(...) plugin.
  * @returns {RollupBabelInputPluginOptions} The babel options.
  */
@@ -135,6 +169,7 @@ function buildTarget(name, rootFile, path, buildType, moduleFormat) {
     input: rootFile,
     output: outputOptions,
     plugins: [
+      buildInfoPlugin(),
       //runtimeTypeInspector(buildType === 'debug'),
       babel(babelOptions[moduleFormat]),
       //nodeResolve({

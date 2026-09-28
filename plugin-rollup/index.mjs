@@ -1,7 +1,35 @@
+import {existsSync, readFileSync} from 'fs';
+import {join} from 'path';
 import {createFilter} from '@rollup/pluginutils';
 import {
   addTypeChecks, expandType, compareAST, code2ast2code
 } from '@runtime-type-inspector/transpiler';
+/**
+ * Host project version funneled into the emitted header (`setProjectVersion`
+ * in `Download log` meta): explicit option wins, else the version from the
+ * host package.json in the build working directory, else unset (the log
+ * then nudges toward setting it).
+ * @param {string} [explicit] - Explicit `projectVersion` option.
+ * @returns {string|undefined} Resolved version or undefined.
+ */
+function resolveProjectVersion(explicit) {
+  if (explicit !== undefined && explicit !== null) {
+    return explicit;
+  }
+  try {
+    const path = join(process.cwd(), 'package.json');
+    if (!existsSync(path)) {
+      return undefined;
+    }
+    const {version} = JSON.parse(readFileSync(path, 'utf8'));
+    if (typeof version === 'string' && version) {
+      return version;
+    }
+  } catch {
+    // No readable host package.json: leave unset (log says so).
+  }
+  return undefined;
+}
 /**
  * @typedef OptionsProps
  * @property {boolean} [enable] - Enable or disable entire plugin. Defaults to true.
@@ -13,6 +41,9 @@ import {
  * @property {boolean} [inspectIndexedAccess] - Whether indexed accesses like
  * `arr[i]` are wrapped for bounds and integer validation. Disable to drop
  * indexed access inspection entirely. Defaults to true.
+ * @property {string} [projectVersion] - Host project version for `Download
+ * log` meta. Defaults to the host package.json version in the build working
+ * directory; unset when none is readable (the log then nudges to set it).
  */
 /**
  * @typedef {OptionsProps & import('@runtime-type-inspector/transpiler').Options} Options
@@ -45,7 +76,8 @@ function runtimeTypeInspector({enable = true, selftest = false, ignoredFiles, ..
       code = addTypeChecks(code, {
         expandType,
         filename: id,
-        ...options
+        ...options,
+        projectVersion: resolveProjectVersion(options.projectVersion),
       });
       return {
         code,

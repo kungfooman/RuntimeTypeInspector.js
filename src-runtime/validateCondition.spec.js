@@ -174,7 +174,54 @@ function testComponentNameCondition() {
     delete classes.CondLight;
   }
 }
+/**
+ * Boolean literal conditions decide (issue: `T extends true ? …` with a
+ * pinned boolean `T` failed closed on both branches, flagging valid calls
+ * like `logData(false, "Single Error")`).
+ * @returns {boolean} True when documented behavior holds.
+ */
+function testBooleanLiteralCondition() {
+  clearTypedefs();
+  if (evaluateCondition(false, true, warn) !== false) {
+    return false;
+  }
+  if (evaluateCondition(true, true, warn) !== true) {
+    return false;
+  }
+  if (evaluateCondition(true, false, warn) !== false) {
+    return false;
+  }
+  if (evaluateCondition(false, 'boolean', warn) !== true) {
+    return false;
+  }
+  if (evaluateCondition(1, 2, warn) !== false) {
+    return false;
+  }
+  if (evaluateCondition(1, 1, warn) !== true) {
+    return false;
+  }
+  if (evaluateCondition('"a"', true, warn) !== false) {
+    return false;
+  }
+  // End to end: substituted `T extends true ? string[] : string`.
+  const verbose = {type: 'condition', checkType: true, extendsType: true, trueType: expandType('string[]'), falseType: 'string'};
+  const quiet = {type: 'condition', checkType: false, extendsType: true, trueType: expandType('string[]'), falseType: 'string'};
+  if (!validateType(['Error 1', 'Error 2'], verbose, 'loc', 'payload', true, warn, 0)) {
+    return false;
+  }
+  if (validateType('Single Error', verbose, 'loc', 'payload', true, warn, 0)) {
+    return false;
+  }
+  if (!validateType('Single Error', quiet, 'loc', 'payload', true, warn, 0)) {
+    return false;
+  }
+  if (validateType(['Error 1'], quiet, 'loc', 'payload', true, warn, 0)) {
+    return false;
+  }
+  return true;
+}
 export const tests = [
+  testBooleanLiteralCondition,
   testTrueBranch,
   testFalseBranch,
   testUndecidableFailsClosed,

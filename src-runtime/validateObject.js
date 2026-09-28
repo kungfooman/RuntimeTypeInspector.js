@@ -23,11 +23,16 @@ function validateObject(value, properties, loc, name, critical, warn, depth) {
           return;
         }
         if (!properties[key]) {
-          if (options.logSuperfluousProperty) {
+          if (options.exactObjects) {
+            warn(`Excess property '${name}.${key}' is not allowed (exact object check).`, {properties, value});
+          } else if (options.logSuperfluousProperty) {
             warn(`Superfluous property: ${name}.${key}`, {properties, value});
           }
         }
       });
+      if (options.exactObjects && Object.keys(value).some((key) => key !== 'profilerHint' && !properties[key])) {
+        return false;
+      }
     }
     for (const key of Object.keys(properties)) {
       const innerValue = value[key];

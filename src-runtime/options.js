@@ -9,7 +9,7 @@ const options = {
    * many type errors, so the best way to keep it quiet is to fix the noisiest type issues first.
    * Spam-mode basically retains the order, which mentally helps to figure out the actual issues.
    */
-  mode: 'spam',
+  mode: 'once',
   logSuperfluousProperty: false,
   count: 0,
   /**
@@ -19,5 +19,44 @@ const options = {
    * hiding the real errors. Toggleable via the TypePanel checkbox.
    */
   strictNullChecks: true,
+  /**
+   * When `true` (default), `+-Infinity` fails `number` validation, catching
+   * `NaN` precursors like `Infinity - Infinity`. When `false`, infinities
+   * pass `number`. `NaN` always fails. Toggleable via the TypePanel checkbox.
+   */
+  checkInfinity: true,
+  /**
+   * When `true` (default), object keys outside the expected shape fail with
+   * an excess-property error, so `Omit`/`Pick` actually reject. Strictly
+   * speaking this exceeds tsc, whose excess check only fires for fresh
+   * literals (wider variables pass) — runtime values carry no such
+   * provenance. Disable per project if wide-variable passing must stay
+   * quiet. Toggleable via the TypePanel checkbox.
+   */
+  exactObjects: true,
+  /**
+   * Corner (or center) where a fresh panel docks: `'bottom-right'`
+   * (default), `'bottom-left'`, `'top-right'`, `'top-left'`, `'center'`.
+   * A persisted drag position wins over it. Settable via the TypePanel
+   * settings menu or `localStorage` (`rti-panel-position`) before load.
+   * @type {'bottom-right'|'bottom-left'|'top-right'|'top-left'|'center'}
+   */
+  panelPosition: 'bottom-right',
+  /**
+   * Host project version for log headers (`Download log` meta), e.g.
+   * `"1.2.3"`. Set via the `projectVersion` option of the bundler plugins
+   * (rollup/webpack loaders funnel it into the emitted header) or by
+   * calling `setProjectVersion` directly. Stays `null` when unset — the log
+   * then says so, nudging toward setting it.
+   * @type {string|null}
+   */
+  projectVersion: null,
 };
-export {options};
+/**
+ * Records the host project version (see `options.projectVersion`).
+ * @param {string} version - The version, e.g. from the app's package.json.
+ */
+function setProjectVersion(version) {
+  options.projectVersion = version;
+}
+export {options, setProjectVersion};

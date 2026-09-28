@@ -11,7 +11,8 @@
     "docs": "jsdoc -c jsdoc.json",
     "lint": "eslint --ext .js,.mjs,.cjs src-transpiler src-runtime",
     "watch": "rollup -c -w",
-    "test": "npm run test:update && node test.js && node test_runtime.js && node test/jsdoc-annotation/run.js && node test/ts2js.mjs && node test/wat-converter.mjs",
+    "test": "npm run test:update && node test.js && node test_runtime.js && node test/jsdoc-annotation/run.js && node test/ts2js.mjs && node test/wat-converter.mjs && npm run test:parity",
+    "test:parity": "node test/parity/run.mjs",
     "test:update": "node gen_tests.js > test/typechecking.json"
   },
   "repository": {
@@ -56,5 +57,8 @@
     "rollup-plugin-visualizer": "^5.9.2",
     "to-fast-properties": "^4.0.0",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "display-anything": "^1.2.1"
   }
 }
