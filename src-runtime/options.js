@@ -35,6 +35,14 @@ const options = {
    */
   exactObjects: true,
   /**
+   * Corner (or center) where a fresh panel docks: `'bottom-right'`
+   * (default), `'bottom-left'`, `'top-right'`, `'top-left'`, `'center'`.
+   * A persisted drag position wins over it. Settable via the TypePanel
+   * settings menu or `localStorage` (`rti-panel-position`) before load.
+   * @type {'bottom-right'|'bottom-left'|'top-right'|'top-left'|'center'}
+   */
+  panelPosition: 'bottom-right',
+  /**
    * Host project version for log headers (`Download log` meta), e.g.
    * `"1.2.3"`. Set via the `projectVersion` option of the bundler plugins
    * (rollup/webpack loaders funnel it into the emitted header) or by

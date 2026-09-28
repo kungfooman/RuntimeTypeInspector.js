@@ -9,7 +9,7 @@ import {formatCompare} from "./humanizeExpect.js";
 import {explainMismatch} from "./explainMismatch.js";
 import {buildTypeTree} from "./typeTree.js";
 import {Warning    } from "./Warning.js";
-import {Div, Span, Button, Input, Select, Option, H3, Dialog, Pre, Details, Summary, genJsx} from "./jsx.js";
+import {Div, Span, Button, Input, Select, Option, H3, Pre, Details, Summary, genJsx} from "./jsx.js";
 /**
  * @typedef {MessageEvent<{action: string}>} MessageEventRTI
  */
@@ -131,6 +131,10 @@ function niceDiv(div) {
       white-space: nowrap;
       font-size: 13px;
     }
+    .rti-titlebar.rti-inactive {
+      background: linear-gradient(to bottom, #b8c7e8 0%, #7f8ba3 100%);
+      color: #f0f0f0;
+    }
     .rti-caption {
       display: flex;
       gap: 2px;
@@ -245,7 +249,7 @@ function niceDiv(div) {
     }
     .rti-taskbar {
       position: fixed;
-      right: 0;
+      left: 0;
       bottom: 0;
       z-index: 10001;
       display: flex;
@@ -255,7 +259,7 @@ function niceDiv(div) {
       background: linear-gradient(to bottom, #3d95ff 0%, #0058e6 100%);
       color: white;
       border: 1px solid #0058e6;
-      border-radius: 6px 0 0 0;
+      border-radius: 0 6px 0 0;
       font-size: 12px;
       line-height: 20px;
     }
@@ -263,8 +267,15 @@ function niceDiv(div) {
       cursor: pointer;
       font-weight: bold;
     }
-    .rti-taskbar-count {
-      white-space: nowrap;
+    .rti-taskbar-entry {
+      background: rgba(255, 255, 255, 0.25);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      border-radius: 3px;
+    }
+    .rti-taskbar-active {
+      background: #ffffff;
+      color: #003399;
     }
     .rti-setting-row {
       display: flex;
@@ -273,17 +284,26 @@ function niceDiv(div) {
       padding: 2px 0;
       white-space: nowrap;
     }
-    .rti-modal {
-      border: 1px solid #888;
-      border-radius: 8px;
-      padding: 16px;
-      width: min(90vw, 900px);
-      max-width: 90vw;
+    .rti-compare-win {
+      position: fixed;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #0058e6;
+      border-radius: 8px 8px 4px 4px;
+      background: #F3F3F3;
+      color: black;
+      box-shadow: 3px 3px 12px rgba(0, 0, 0, 0.4);
+      width: min(92vw, 760px);
       max-height: 85vh;
-      overflow: auto;
+      overflow: hidden;
     }
-    .rti-modal::backdrop {
-      background: rgba(0, 0, 0, 0.5);
+    .rti-compare-win .rti-titlebar {
+      border-radius: 6px 6px 0 0;
+      flex: none;
+    }
+    .rti-compare-body {
+      overflow: auto;
+      padding: 4px 16px 16px 16px;
     }
     .rti-compare {
       display: grid;
@@ -419,9 +439,31 @@ function isCheckInfinity() {
 function isExactObjects() {
   return localStorage.getItem('rti-exact-objects') !== 'false';
 }
+/**
+ * Asserts a panel start position, falling back to the default corner.
+ * @param {unknown} value - Candidate position.
+ * @returns {'bottom-right'|'bottom-left'|'top-right'|'top-left'|'center'} Valid position.
+ */
+function assertPanelPosition(value) {
+  if (value === 'bottom-left' || value === 'top-right' || value === 'top-left' || value === 'center') {
+    return value;
+  }
+  return 'bottom-right';
+}
+/**
+ * Validated start corner for a fresh panel (`rti-panel-position`).
+ * @returns {'bottom-right'|'bottom-left'|'top-right'|'top-left'|'center'} Start position.
+ */
+function isPanelPosition() {
+  return assertPanelPosition(localStorage.getItem('rti-panel-position'));
+}
 class TypePanel {
   /** @type {HTMLDivElement | null} */
   static divAll = null;
+  /** @type {TypePanel | null} */
+  static instance = null;
+  /** Views already carrying the shrink-revive listener (main + pop-outs). */
+  static viewportClampedViews = new Set();
   /** @type {HTMLDivElement} */
   div;
   /** @type {HTMLInputElement} */
@@ -478,10 +520,10 @@ class TypePanel {
   body;
   /** @type {HTMLDivElement} */
   taskbar;
-  /** @type {HTMLSpanElement} */
-  taskbarCount;
   /** @type {HTMLButtonElement} */
-  taskbarCompare;
+  taskbarRti;
+  /** @type {HTMLDivElement} */
+  taskbarWins;
   /** @type {string | null} */
   poppedDivAllCss = null;
   /** @type {string | null} */
@@ -492,10 +534,16 @@ class TypePanel {
   poppedBodyCss = null;
   /** @type {Window | null} */
   popoutWin = null;
-  /** @type {HTMLDialogElement | null} */
-  compareDialog = null;
-  /** @type {HTMLDivElement | null} */
-  compareBody = null;
+  /** @type {Map<string, {el: HTMLDivElement, minimized: boolean}>} */
+  compareWins = new Map();
+  /** @type {string[]} */
+  compareFocus = [];
+  winZ = 10002;
+  winSeq = 0;
+  /** @type {Set<Document>} */
+  escDocs = new Set();
+  /** @type {Set<Document>} */
+  focusDocs = new Set();
   warnedTable;
   /** @type {Record<string, import('./Warning.js').Warning>} */
   warnings = {};
@@ -504,6 +552,28 @@ class TypePanel {
   maxEventLogSize = 1000;
   maxStackFrames = 20;
   constructor() {
+    // Single panel by design (one shared wrapper, one message stream):
+    // re-evaluating `new TypePanel()` (REPL Shift-Enter) refreshes and
+    // reveals the existing panel instead of stacking dead twins whose
+    // identical windows made clicks appear to do nothing. But a detached
+    // wrapper (closed pop-out, wiped body, replaced root) is a corpse:
+    // handing it back would keep appending new errors into dead nodes
+    // where nobody can see them, so that rebuilds fresh instead.
+    if (TypePanel.instance && TypePanel.divAll?.isConnected) {
+      TypePanel.instance.clear();
+      TypePanel.instance.show();
+      // Singleton hand-back: returning an object overrides `this` by design.
+      // eslint-disable-next-line no-constructor-return
+      return TypePanel.instance;
+    }
+    if (TypePanel.divAll && !TypePanel.divAll.isConnected) {
+      TypePanel.divAll.remove();
+      TypePanel.divAll = null;
+    }
+    TypePanel.instance = this;
+    // Shrink-revive: viewport resizes (docked devtools, unplugged monitor)
+    // re-clamp every window back on-screen. Pop-out views wire in ensureFocus.
+    this.ensureViewportClamp(typeof window === 'undefined' ? null : window);
     // UI IS THE SOURCE-OF-TRUTH: build nodes declaratively, read `checked`/
     // `value`/children straight off the DOM, never mirror them in JS state.
     // (Sizing/positioning lives in `niceDiv` + saved geometry, not here.)
@@ -544,6 +614,15 @@ class TypePanel {
       assertMode(value);
       options.mode = value;
     }}, this.option_spam, this.option_once, this.option_never);
+    this.spanPosition = Span({innerText: ' Panel start:'});
+    this.option_pos_bottom_right = Option({text: 'bottom-right'});
+    this.option_pos_bottom_left = Option({text: 'bottom-left'});
+    this.option_pos_top_right = Option({text: 'top-right'});
+    this.option_pos_top_left = Option({text: 'top-left'});
+    this.option_pos_center = Option({text: 'center'});
+    this.selectPosition = Select({onchange: () => this.applyChosenPosition()},
+                                 this.option_pos_bottom_right, this.option_pos_bottom_left,
+                                 this.option_pos_top_right, this.option_pos_top_left, this.option_pos_center);
     this.buttonHide = Button({textContent: '_', title: 'Hide', onclick: () => this.hide()});
     this.buttonLoadState = Button({textContent: 'Load state', onclick: () => this.loadState()});
     this.buttonSaveState = Button({textContent: 'Save state', onclick: () => this.saveState()});
@@ -569,6 +648,8 @@ class TypePanel {
                     Div({className: 'rti-setting-row'},
                         Label({}, this.span, ' ', this.select)),
                     Div({className: 'rti-setting-row'},
+                        Label({}, this.spanPosition, ' ', this.selectPosition)),
+                    Div({className: 'rti-setting-row'},
                         Label({}, this.inputStrict, this.spanStrict)),
                     Div({className: 'rti-setting-row'},
                         Label({}, this.inputInfinity, this.spanInfinity)),
@@ -588,18 +669,13 @@ class TypePanel {
     this.body = Div({className: 'rti-body'});
     this.warnedTable = createTable();
     this.body.append(this.warnedTable);
-    // Mini taskbar (our stand-in for the missing OS taskbar): the only way
-    // back after `-` hides the panel, plus a re-opener for the compare modal.
-    this.taskbarCount = Span({className: 'rti-taskbar-count', textContent: ''});
-    this.taskbarCompare = Button({
-      textContent: 'Compare',
-      title: 'Reopen expected-vs-actual comparison',
-      style: {display: 'none'},
-      onclick: () => this.reopenComparator(),
-    });
+    // Mini taskbar (our stand-in for the missing OS taskbar): the panel is
+    // just another entry, and every entry toggles — open minimizes,
+    // minimized maximizes. The error count lives in the RTI title.
+    this.taskbarRti = Button({textContent: 'RTI', title: 'Focus RTI panel', onclick: () => this.togglePanel()});
+    this.taskbarWins = Span({});
     this.taskbar = Div({className: 'rti-taskbar', style: {display: 'none'}},
-                       Button({textContent: 'RTI', title: 'Show RTI panel', onclick: () => this.show()}),
-                       this.taskbarCount, this.taskbarCompare);
+                       this.taskbarRti, this.taskbarWins);
     const {
       div, titlebar, toolbar, body,
     } = this;
@@ -624,15 +700,30 @@ class TypePanel {
     for (const dir of ['n', 'e', 's', 'w', 'ne', 'nw', 'se', 'sw']) {
       const handle = Div({className: `rti-handle rti-handle-${dir}`, dataset: {dir}});
       div.append(handle);
-      this.makeResizable(handle, dir);
+      this.makeResizable(handle, dir, this.div, TypePanel.divAll, () => this.saveGeometry());
     }
     divAll.append(div);
-    this.applyGeometry();
+    const positionRestored = this.applyGeometry();
+    this.selectPosition.value = options.panelPosition;
+    const storedPosition = localStorage.getItem('rti-panel-position');
+    if (storedPosition !== null) {
+      this.selectPosition.value = storedPosition;
+    }
+    if (positionRestored) {
+      // A persisted drag wins over the start position; still normalize.
+      options.panelPosition = assertPanelPosition(this.selectPosition.value);
+    } else {
+      this.applyChosenPosition();
+    }
     this.makeDraggable(titlebar, divAll);
     this.observeGeometry(div);
     const finalFunc = () => {
       document.body.append(divAll);
       document.body.append(this.taskbar);
+      if (!positionRestored) {
+        // Center needs layout: re-dock fresh panels once measurable.
+        this.applyStartPosition();
+      }
     };
     // Add our <div> to <body> when possible
     if (document.readyState === "complete") {
@@ -642,6 +733,7 @@ class TypePanel {
       document.addEventListener("DOMContentLoaded", finalFunc);
     }
     this.loadState();
+    this.updateTaskbarVisibility();
     // In the simplest case RTI sends its errors onto `window` to update UI state.
     // If you start a Worker, you have to attach RTI yourself.
     window.addEventListener('message', (e) => {
@@ -657,18 +749,62 @@ class TypePanel {
       }
       this.handleEvent(e);
     });
+    // Fresh panel starts front and active (it is the only thing on screen),
+    // so the first RTI taskbar click minimizes instead of no-op fronting.
+    this.setActive('panel');
   }
   hide() {
     this.div.style.display = 'none';
-    if (this.taskbar) {
-      this.taskbar.style.display = '';
-    }
+    this.updateTaskbarVisibility();
+    this.refreshCompareTaskbar();
+    this.settleActive();
   }
   show() {
     this.div.style.display = '';
-    if (this.taskbar) {
-      this.taskbar.style.display = 'none';
+    this.updateTaskbarVisibility();
+    this.refreshCompareTaskbar();
+    this.frontPanel();
+  }
+  /**
+   * Taskbar entry for the panel: hidden shows it, inactive fronts it,
+   * active minimizes it — plain XP toggle semantics.
+   */
+  togglePanel() {
+    if (this.div.style.display === 'none') {
+      this.show();
+    } else if (this.activeWindow === 'panel') {
+      this.hide();
+    } else {
+      this.frontPanel();
     }
+  }
+  /**
+   * Taskbar entry for a compare window: minimized reopens, inactive
+   * focuses, active minimizes — plain XP toggle semantics.
+   * @param {string} key - The warning key.
+   */
+  toggleCompare(key) {
+    const win = this.compareWins.get(key);
+    if (!win) {
+      return;
+    }
+    if (win.minimized) {
+      this.restoreCompare(key);
+    } else if (this.activeWindow === key) {
+      this.minimizeCompare(key);
+    } else {
+      this.focusCompare(key);
+    }
+  }
+  /**
+   * The taskbar is always visible: it holds the panel entry plus every open
+   * compare window, so there is always a way back.
+   */
+  updateTaskbarVisibility() {
+    if (!this.taskbar) {
+      return;
+    }
+    this.taskbar.style.display = '';
   }
   /**
    * Chrome-style `⋮` overflow menu: outside pointer-down or `Escape` closes.
@@ -693,12 +829,15 @@ class TypePanel {
   }
   /**
    * Restores persisted panel size/position (bottom-right defaults).
+   * Persisted positions predate the viewport clamp (or the screen shrank
+   * since), so they are clamped back on-screen: a reviveable panel.
+   * @returns {boolean} True when a persisted position was restored.
    */
   applyGeometry() {
     try {
       const raw = localStorage.getItem('rti-panel-geometry');
       if (!raw) {
-        return;
+        return false;
       }
       const geo = JSON.parse(raw);
       if (geo.width) {
@@ -713,10 +852,65 @@ class TypePanel {
         divAll.style.top = geo.top;
         divAll.style.right = 'auto';
         divAll.style.bottom = 'auto';
+        const left = Number.parseFloat(divAll.style.left);
+        const top = Number.parseFloat(divAll.style.top);
+        if (Number.isFinite(left) && Number.isFinite(top)) {
+          const pos = this.clampToViewport(divAll, left, top, this.titlebar?.offsetHeight || 28);
+          divAll.style.left = `${pos.x}px`;
+          divAll.style.top = `${pos.y}px`;
+        }
+        return true;
       }
+      return false;
     } catch {
       // Corrupt geometry must never break the panel.
+      return false;
     }
+  }
+  /**
+   * Docks a fresh (never-moved) panel at the configured start position:
+   * a corner re-anchors, `center` measures the live size once laid out.
+   * Persisted drag positions win over it — callers skip this when
+   * geometry was restored.
+   */
+  applyStartPosition() {
+    const {divAll} = TypePanel;
+    if (!divAll || typeof window === 'undefined') {
+      return;
+    }
+    const pos = options.panelPosition;
+    divAll.style.position = 'fixed';
+    if (pos === 'center') {
+      // Fallbacks only cover measuring before layout; finalFunc re-docks
+      // once appended, and the menu path always measures laid-out DOM.
+      const w = divAll.offsetWidth || 640;
+      const h = divAll.offsetHeight || 320;
+      const at = this.clampToViewport(divAll,
+                                      Math.round(window.innerWidth / 2 - w / 2),
+                                      Math.round(window.innerHeight / 2 - h / 2));
+      divAll.style.left = `${at.x}px`;
+      divAll.style.top = `${at.y}px`;
+      divAll.style.right = 'auto';
+      divAll.style.bottom = 'auto';
+      return;
+    }
+    const top = pos.startsWith('top');
+    const leftSide = pos.endsWith('left');
+    divAll.style.top = top ? '0px' : 'auto';
+    divAll.style.bottom = top ? 'auto' : '0px';
+    divAll.style.left = leftSide ? '0px' : 'auto';
+    divAll.style.right = leftSide ? 'auto' : '0px';
+  }
+  /**
+   * Applies the settings-menu start position: validates the select,
+   * persists it, and re-docks a fresh panel live.
+   */
+  applyChosenPosition() {
+    const pos = assertPanelPosition(this.selectPosition.value);
+    this.selectPosition.value = pos;
+    localStorage.setItem('rti-panel-position', pos);
+    options.panelPosition = pos;
+    this.applyStartPosition();
   }
   /**
    * Persists current panel size/position for the next page load.
@@ -751,8 +945,94 @@ class TypePanel {
     observer.observe(div);
   }
   /**
+   * Activates whatever window a grab started on: compare windows by key,
+   * the main panel wrapper otherwise. Grabbing always marks, like any OS.
+   * @param {HTMLElement} root - The dragged/resized wrapper.
+   */
+  activateRoot(root) {
+    const key = root?.dataset?.rtiWin;
+    if (key && this.compareWins.has(key)) {
+      this.focusCompare(key);
+    } else if (root === TypePanel.divAll) {
+      this.frontPanel();
+    }
+  }
+  /**
+   * Pulls every explicitly-positioned window back on-screen (panel plus
+   * all live compare windows). Runs on viewport resize: docking devtools
+   * or unplugging a monitor shrinks the viewport, stranding positions
+   * that were valid a moment ago with no grab left to revive them.
+   * Bottom/right-anchored panels are skipped — anchoring can't strand.
+   */
+  clampAllToViewport() {
+    const {divAll} = TypePanel;
+    if (divAll) {
+      const left = Number.parseFloat(divAll.style.left);
+      const top = Number.parseFloat(divAll.style.top);
+      if (Number.isFinite(left) && Number.isFinite(top)) {
+        const pos = this.clampToViewport(divAll, left, top, this.titlebar?.offsetHeight || 28);
+        divAll.style.left = `${pos.x}px`;
+        divAll.style.top = `${pos.y}px`;
+      }
+    }
+    for (const win of this.compareWins.values()) {
+      if (!win.el?.isConnected) {
+        continue;
+      }
+      const left = Number.parseFloat(win.el.style.left);
+      const top = Number.parseFloat(win.el.style.top);
+      if (!Number.isFinite(left) || !Number.isFinite(top)) {
+        continue;
+      }
+      const pos = this.clampToViewport(win.el, left, top, win.titlebar?.offsetHeight || 28);
+      win.el.style.left = `${pos.x}px`;
+      win.el.style.top = `${pos.y}px`;
+    }
+  }
+  /**
+   * Wires the shrink-revive listener once per view (main window plus any
+   * popped-out one). The handler always goes through the live singleton,
+   * so rebuilt panels never stack duplicate listeners.
+   * @param {Window|null} view - The view to watch.
+   */
+  ensureViewportClamp(view) {
+    if (!view || typeof view.addEventListener !== 'function' || TypePanel.viewportClampedViews.has(view)) {
+      return;
+    }
+    TypePanel.viewportClampedViews.add(view);
+    view.addEventListener('resize', () => TypePanel.instance?.clampAllToViewport());
+  }
+  /**
+   * XP rule: a window is never draggable fully off-screen — its caption
+   * stays on-screen and grabbable, so every window stays "reviveable".
+   * Clamps a desired left/top so the top edge (caption) never leaves the
+   * viewport vertically and a horizontal sliver always stays reachable.
+   * @param {HTMLElement} root - The positioned wrapper being moved.
+   * @param {number} x - Desired left in px.
+   * @param {number} y - Desired top in px.
+   * @param {number} [captionH] - Caption height to keep visible.
+   * @returns {{x: number, y: number}} Clamped position.
+   */
+  clampToViewport(root, x, y, captionH = 28) {
+    const vw = typeof window === 'undefined' ? undefined : window.innerWidth;
+    const vh = typeof window === 'undefined' ? undefined : window.innerHeight;
+    if (!Number.isFinite(vw) || !Number.isFinite(vh)) {
+      return {x, y};
+    }
+    const rect = root.getBoundingClientRect?.();
+    const w = rect?.width || root.offsetWidth || 0;
+    const gripX = 64;
+    const cap = Math.max(1, captionH || 28);
+    return {
+      x: Math.min(Math.max(x, gripX - w), vw - gripX),
+      y: Math.min(Math.max(y, 0), Math.max(0, vh - cap)),
+    };
+  }
+  /**
    * Makes the panel movable by dragging the blue titlebar only (XP style).
-   * Clicks on caption buttons (`-`, pop-out) never start a drag.
+   * Clicks on caption buttons (`-`, pop-out) never start a drag. The
+   * caption is clamped into the viewport: it can never be dragged
+   * off-screen and lost.
    * @param {HTMLElement} handle - The titlebar to drag by.
    * @param {HTMLElement} root - The positioned wrapper to move.
    */
@@ -762,6 +1042,7 @@ class TypePanel {
       if (target.closest('button')) {
         return;
       }
+      this.activateRoot(root);
       e.preventDefault();
       const startX = e.clientX;
       const startY = e.clientY;
@@ -772,9 +1053,11 @@ class TypePanel {
       root.style.right = 'auto';
       root.style.bottom = 'auto';
       root.style.position = 'fixed';
+      const captionH = handle.offsetHeight || 28;
       const onMove = (ev) => {
-        root.style.left = `${rect.left + ev.clientX - startX}px`;
-        root.style.top = `${rect.top + ev.clientY - startY}px`;
+        const pos = this.clampToViewport(root, rect.left + ev.clientX - startX, rect.top + ev.clientY - startY, captionH);
+        root.style.left = `${pos.x}px`;
+        root.style.top = `${pos.y}px`;
       };
       const onUp = () => {
         document.removeEventListener('mousemove', onMove);
@@ -795,16 +1078,19 @@ class TypePanel {
    * anchoring to explicit left/top just like dragging does.
    * @param {HTMLElement} handle - The edge/corner grip.
    * @param {string} dir - Resize direction (`e`, `w`, `n`, `s` and combos).
+   * @param {HTMLElement} box - The window body to resize.
+   * @param {HTMLElement} root - The positioned wrapper to move for w/n grips.
+   * @param {Function} onDone - Called on mouse-up (e.g. persist geometry).
    */
-  makeResizable(handle, dir) {
+  makeResizable(handle, dir, box, root, onDone) {
     handle.addEventListener('mousedown', (e) => {
+      this.activateRoot(root);
       e.preventDefault();
       e.stopPropagation();
-      const root = TypePanel.divAll;
       const startX = e.clientX;
       const startY = e.clientY;
-      const startW = this.div.offsetWidth;
-      const startH = this.div.offsetHeight;
+      const startW = box.offsetWidth;
+      const startH = box.offsetHeight;
       const rect = root.getBoundingClientRect();
       // Anchor explicitly so west/north growth can push left/top around.
       root.style.left = `${rect.left}px`;
@@ -818,26 +1104,28 @@ class TypePanel {
         const dx = ev.clientX - startX;
         const dy = ev.clientY - startY;
         if (dir.includes('e')) {
-          this.div.style.width = `${Math.max(minW, startW + dx)}px`;
+          box.style.width = `${Math.max(minW, startW + dx)}px`;
         }
         if (dir.includes('s')) {
-          this.div.style.height = `${Math.max(minH, startH + dy)}px`;
+          box.style.height = `${Math.max(minH, startH + dy)}px`;
         }
         if (dir.includes('w')) {
           const grow = Math.min(dx, startW - minW);
-          this.div.style.width = `${startW - grow}px`;
-          root.style.left = `${rect.left + grow}px`;
+          box.style.width = `${startW - grow}px`;
+          const topNow = Number.parseFloat(root.style.top) || rect.top;
+          root.style.left = `${this.clampToViewport(root, rect.left + grow, topNow).x}px`;
         }
         if (dir.includes('n')) {
           const grow = Math.min(dy, startH - minH);
-          this.div.style.height = `${startH - grow}px`;
-          root.style.top = `${rect.top + grow}px`;
+          box.style.height = `${startH - grow}px`;
+          const leftNow = Number.parseFloat(root.style.left) || rect.left;
+          root.style.top = `${this.clampToViewport(root, leftNow, rect.top + grow).y}px`;
         }
       };
       const onUp = () => {
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
-        this.saveGeometry();
+        onDone();
       };
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
@@ -881,6 +1169,11 @@ class TypePanel {
     popup.document.body.style.margin = '0';
     popup.document.body.style.padding = '0';
     popup.document.body.append(TypePanel.divAll);
+    for (const [, win] of this.compareWins) {
+      popup.document.body.append(win.el);
+    }
+    this.ensureEsc(popup.document);
+    this.ensureFocus(popup.document);
     // Fill the popup window; flex column lets the body take leftover space no
     // matter how tall the wrapped toolbar is (no magic-number max-heights).
     Object.assign(TypePanel.divAll.style, {
@@ -915,6 +1208,10 @@ class TypePanel {
     if (TypePanel.divAll) {
       TypePanel.divAll.classList.remove('rti-popped');
       document.body.append(TypePanel.divAll);
+      // Compare windows come home too, or they'd die with the popup.
+      for (const [, win] of this.compareWins) {
+        document.body.append(win.el);
+      }
       if (this.poppedDivAllCss !== null) {
         TypePanel.divAll.style.cssText = this.poppedDivAllCss;
       }
@@ -1020,28 +1317,13 @@ class TypePanel {
     return box;
   }
   /**
-   * Fullscreen comparator: a path-pinned diagnosis with fix hints first
-   * (issue #134 item 3), then the expected/actual panes and raw messages.
+   * Builds the comparison content (diagnosis, stub, type tree, panes).
    * @param {import('./Warning.js').Warning} warnObj - The row to inspect.
+   * @returns {HTMLDivElement} Content element.
    */
-  openComparator(warnObj) {
-    if (!warnObj) {
-      return;
-    }
+  buildCompareContent(warnObj) {
+    const body = Div({});
     const {expectPretty, actualPretty} = formatCompare(warnObj.expect, warnObj.value);
-    // The dialog lives in whichever document currently hosts the panel, so
-    // the modal opens on the popped-out window when popped out.
-    const hostDoc = TypePanel.divAll?.ownerDocument || document;
-    if (!this.compareDialog || this.compareDialog.ownerDocument !== hostDoc) {
-      this.compareBody = Div({});
-      this.compareDialog = Dialog({className: 'rti-modal'},
-                                  this.compareBody,
-                                  Div({style: {marginTop: '12px', textAlign: 'right'}},
-                                      Button({textContent: 'Close', onclick: () => this.compareDialog?.close()})));
-      hostDoc.body.append(this.compareDialog);
-    }
-    const {compareBody, compareDialog} = this;
-    compareBody.innerHTML = '';
     const Grid = genJsx('div');
     let diagnosis;
     try {
@@ -1049,18 +1331,17 @@ class TypePanel {
     } catch {
       diagnosis = {findings: [], stub: ''};
     }
-    compareBody.append(
-      H3({}, `Expected vs actual: ${warnObj.loc} / ${warnObj.name}`),
+    body.append(
       Div({}, warnObj.msg || ''),
       H3({}, 'Diagnosis'),
     );
     if (diagnosis.findings.length) {
-      compareBody.append(...diagnosis.findings.map((_) => this.renderFinding(_)));
+      body.append(...diagnosis.findings.map((_) => this.renderFinding(_)));
     } else {
-      compareBody.append(Div({textContent: 'The value now passes (or the shape is opaque to the differ); see raw messages below.'}));
+      body.append(Div({textContent: 'The value now passes (or the shape is opaque to the differ); see raw messages below.'}));
     }
     if (diagnosis.stub) {
-      compareBody.append(
+      body.append(
         H3({}, 'To make it work, add the missing keys'),
         Pre({}, diagnosis.stub),
       );
@@ -1073,49 +1354,309 @@ class TypePanel {
       tree = undefined;
     }
     if (tree) {
-      compareBody.append(H3({}, 'Type tree (expand to climb, hover for full type)'));
-      compareBody.append(this.renderTypeNode(tree, 0));
+      body.append(H3({}, 'Type tree (expand to climb, hover for full type)'));
+      body.append(this.renderTypeNode(tree, 0));
     }
-    compareBody.append(
+    body.append(
       Grid({className: 'rti-compare'},
            Div({}, H3({}, 'Expected'), Pre({}, expectPretty)),
            Div({}, H3({}, 'Actual'), Pre({}, actualPretty)),
       ),
     );
     if (warnObj.detailStrings?.length) {
-      compareBody.append(Details({},
-                                 Summary({textContent: `Raw validator messages (${warnObj.detailStrings.length})`}),
-                                 ...warnObj.detailStrings.map((_) => Div({textContent: _}))));
+      body.append(Details({},
+                          Summary({textContent: `Raw validator messages (${warnObj.detailStrings.length})`}),
+                          ...warnObj.detailStrings.map((_) => Div({textContent: _}))));
     }
-    compareBody.append(
+    body.append(
       Div({style: {fontSize: '12px', color: '#555'}},
           `Hits: ${warnObj.hits} — fix the JSDoc/type or the value, then reload.`),
     );
-    if (typeof compareDialog.showModal === 'function') {
-      if (!compareDialog.open) {
-        compareDialog.showModal();
-      }
-    } else {
-      compareDialog.setAttribute('open', '');
+    return body;
+  }
+  /**
+   * Opens one compare window per warning row (XP frame: drag by the blue
+   * titlebar, `_` minimizes to the taskbar, `×` destroys, `Escape` closes
+   * the topmost). Reopening a live row focuses it instead of duplicating.
+   * @param {import('./Warning.js').Warning} warnObj - The row to inspect.
+   */
+  openComparator(warnObj) {
+    if (!warnObj) {
+      return;
     }
-    if (this.taskbarCompare) {
-      this.taskbarCompare.style.display = '';
+    const key = `${warnObj.loc}-${warnObj.name}`;
+    const existing = this.compareWins.get(key);
+    if (existing?.el.isConnected) {
+      if (existing.minimized) {
+        this.restoreCompare(key);
+      } else {
+        this.focusCompare(key);
+      }
+      return;
+    }
+    if (existing) {
+      this.compareWins.delete(key);
+    }
+    // Windows live in whichever document currently hosts the panel, so they
+    // follow it into the popped-out window.
+    const hostDoc = TypePanel.divAll?.ownerDocument || document;
+    const view = hostDoc.defaultView || window;
+    const n = this.winSeq++ % 10;
+    const el = Div({className: 'rti-compare-win', dataset: {rtiWin: key}});
+    const left = Math.max(8, Math.round(view.innerWidth * 0.5 - 380 + n * 32));
+    const top = Math.max(8, Math.round(view.innerHeight * 0.15 + n * 28));
+    const pos = this.clampToViewport(el, left, top);
+    el.style.left = `${pos.x}px`;
+    el.style.top = `${pos.y}px`;
+    const title = Span({className: 'rti-title', textContent: `Compare: ${warnObj.loc} / ${warnObj.name}`});
+    const btnMin = Button({textContent: '_', title: 'Minimize to taskbar', onclick: () => this.minimizeCompare(key)});
+    const btnClose = Button({textContent: '×', title: 'Close', onclick: () => this.closeCompare(key)});
+    const titlebar = Div({className: 'rti-titlebar', title: 'Drag to move window'},
+                         title, Div({className: 'rti-caption'}, btnMin, btnClose));
+    el.append(titlebar, Div({className: 'rti-compare-body'}, this.buildCompareContent(warnObj)));
+    for (const dir of ['n', 'e', 's', 'w', 'ne', 'nw', 'se', 'sw']) {
+      const handle = Div({className: `rti-handle rti-handle-${dir}`, dataset: {dir}});
+      el.append(handle);
+      this.makeResizable(handle, dir, el, el, () => {});
+    }
+    // No per-element focus listener: document-capture (ensureFocus) fronts
+    // the window even when a subtree grip stops mousedown propagation.
+    hostDoc.body.append(el);
+    this.compareWins.set(key, {el, titlebar, minimized: false});
+    this.makeDraggable(titlebar, el);
+    this.ensureEsc(hostDoc);
+    this.ensureFocus(hostDoc);
+    this.refreshCompareTaskbar();
+    this.updateTaskbarVisibility();
+    this.focusCompare(key);
+  }
+  /**
+   * Brings a compare window to the front and marks it active.
+   * @param {string} key - The warning key.
+   */
+  focusCompare(key) {
+    const win = this.compareWins.get(key);
+    if (!win || win.minimized) {
+      return;
+    }
+    win.el.style.zIndex = String(++this.winZ);
+    if (this.taskbar) {
+      this.taskbar.style.zIndex = String(this.winZ + 1);
+    }
+    this.compareFocus = [...this.compareFocus.filter((_) => _ !== key), key];
+    this.setActive(key);
+  }
+  /**
+   * The focused window: a compare key, `'panel'`, or `null` (nothing).
+   * @type {string|null}
+   */
+  activeWindow = null;
+  /**
+   * The one and only place active-state is painted: clear everything, then
+   * mark the single active window (compare, panel) or nothing at all.
+   * @param {string|null} id - Compare key, `'panel'`, or null.
+   */
+  setActive(id) {
+    this.activeWindow = id;
+    for (const [key, win] of this.compareWins) {
+      win.titlebar?.classList.toggle('rti-inactive', key !== id);
+    }
+    this.titlebar?.classList.toggle('rti-inactive', id !== 'panel');
+    this.refreshCompareTaskbar();
+  }
+  /**
+   * Settles activity after programmatic changes (minimize/close/hide): the
+   * topmost visible window by z-order wins, else the panel if visible.
+   */
+  settleActive() {
+    this.setActive(this.topCompareKey() ?? (this.div.style.display !== 'none' ? 'panel' : null));
+  }
+  /**
+   * Key of the topmost visible compare window, if any.
+   * @returns {string|null} Top key or null.
+   */
+  topCompareKey() {
+    const panelZ = Number(TypePanel.divAll?.style.zIndex) || 10000;
+    let topKey = null;
+    let topZ = panelZ;
+    for (const [key, win] of this.compareWins) {
+      const z = Number(win.el.style.zIndex) || 0;
+      if (!win.minimized && win.el.isConnected && z > topZ) {
+        topZ = z;
+        topKey = key;
+      }
+    }
+    return topKey;
+  }
+  /**
+   * Minimizes a compare window into a taskbar entry.
+   * @param {string} key - The warning key.
+   */
+  minimizeCompare(key) {
+    const win = this.compareWins.get(key);
+    if (!win) {
+      return;
+    }
+    win.minimized = true;
+    win.el.style.display = 'none';
+    this.refreshCompareTaskbar();
+    this.updateTaskbarVisibility();
+    this.settleActive();
+  }
+  /**
+   * Restores a minimized compare window.
+   * @param {string} key - The warning key.
+   */
+  restoreCompare(key) {
+    const win = this.compareWins.get(key);
+    if (!win) {
+      return;
+    }
+    win.minimized = false;
+    win.el.style.display = '';
+    this.refreshCompareTaskbar();
+    this.updateTaskbarVisibility();
+    this.focusCompare(key);
+  }
+  /**
+   * Closes (destroys) a compare window. Gone means gone.
+   * @param {string} key - The warning key.
+   */
+  closeCompare(key) {
+    const win = this.compareWins.get(key);
+    if (!win) {
+      return;
+    }
+    win.el.remove();
+    this.compareWins.delete(key);
+    this.compareFocus = this.compareFocus.filter((_) => _ !== key);
+    this.refreshCompareTaskbar();
+    this.updateTaskbarVisibility();
+    this.settleActive();
+  }
+  /**
+   * Closes the topmost visible compare window (Escape).
+   */
+  closeTopCompare() {
+    for (let i = this.compareFocus.length - 1; i >= 0; i--) {
+      const key = this.compareFocus[i];
+      const win = this.compareWins.get(key);
+      if (win && !win.minimized && win.el.isConnected) {
+        this.closeCompare(key);
+        return;
+      }
     }
   }
   /**
-   * Reopens the last comparison (taskbar button: way back after Esc-close).
+   * Rebuilds taskbar entries: the panel plus one per open compare window.
+   * Plain XP toggles: minimized entries reopen, inactive ones focus, the
+   * active one minimizes. Minimizing happens nowhere else from here.
    */
-  reopenComparator() {
-    const {compareDialog} = this;
-    if (!compareDialog) {
+  refreshCompareTaskbar() {
+    if (!this.taskbarWins || !this.taskbarRti) {
       return;
     }
-    if (typeof compareDialog.showModal === 'function') {
-      if (!compareDialog.open) {
-        compareDialog.showModal();
+    const active = this.activeWindow;
+    const panelActive = active === 'panel';
+    this.taskbarRti.className = panelActive ? 'rti-taskbar-entry rti-taskbar-active' : 'rti-taskbar-entry';
+    this.taskbarWins.innerHTML = '';
+    for (const [key, win] of this.compareWins) {
+      const label = key.length > 28 ? `…${key.slice(-27)}` : key;
+      const isActive = key === active && !win.minimized;
+      let title = `Focus compare window (${key})`;
+      if (win.minimized) {
+        title = `Open compare window (${key})`;
+      } else if (isActive) {
+        title = `Minimize compare window (${key})`;
       }
-    } else {
-      compareDialog.setAttribute('open', '');
+      this.taskbarWins.append(Button({
+        className: isActive ? 'rti-taskbar-entry rti-taskbar-active' : 'rti-taskbar-entry',
+        textContent: label,
+        title,
+        onclick: () => this.toggleCompare(key),
+      }));
+    }
+  }
+  /**
+   * Listens for Escape on a document once, closing the topmost compare.
+   * @param {Document} doc - The document to listen on.
+   */
+  ensureEsc(doc) {
+    if (!doc || this.escDocs.has(doc)) {
+      return;
+    }
+    this.escDocs.add(doc);
+    doc.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        this.closeTopCompare();
+      }
+    });
+  }
+  /**
+   * Fronts whichever compare window a mousedown lands in, or the main panel
+   * itself (`.rti-all`) — which otherwise stays buried once any compare
+   * window (z-index past the panel's fixed one) exists. Capture phase on
+   * the document: subtree grips stop propagation on mousedown, which would
+   * starve a per-element bubble listener.
+   * @param {Document} doc - The document to listen on.
+   */
+  ensureFocus(doc) {
+    if (!doc || this.focusDocs.has(doc)) {
+      return;
+    }
+    this.focusDocs.add(doc);
+    this.ensureViewportClamp(doc.defaultView || null);
+    // mousedown AND pointerdown: touch/pen dispatch pointer events that may
+    // never become mousedowns. Fronting is idempotent, so double delivery
+    // from both is harmless.
+    const onPress = (e) => {
+      // The whole rule: clear everything, mark only the clicked window.
+      // Taskbar entries are exempt: fronting here would rebuild the taskbar
+      // (destroying the pressed button, so its click never fires) and
+      // clobber the active state their XP toggle reads. They own focus
+      // through their own click handlers.
+      if (e.target?.closest?.('.rti-taskbar')) {
+        return;
+      }
+      const win = e.target?.closest?.('.rti-compare-win');
+      const key = win?.dataset?.rtiWin;
+      if (key) {
+        const entry = this.compareWins.get(key);
+        if (entry && !entry.minimized) {
+          this.focusCompare(key);
+        }
+        return;
+      }
+      if (e.target?.closest?.('.rti-all')) {
+        this.frontPanel();
+        return;
+      }
+      this.setActive(null);
+    };
+    doc.addEventListener('mousedown', onPress, true);
+    doc.addEventListener('pointerdown', onPress, true);
+  }
+  /**
+   * Brings the main panel above the compare windows (they outgrow its fixed
+   * z-index otherwise) and keeps the taskbar chip above everything.
+   */
+  frontPanel() {
+    const {divAll} = TypePanel;
+    if (!divAll) {
+      return;
+    }
+    divAll.style.zIndex = String(++this.winZ);
+    if (this.taskbar) {
+      this.taskbar.style.zIndex = String(this.winZ + 1);
+    }
+    this.setActive('panel');
+  }
+  /**
+   * Destroys all compare windows (e.g. on Clear: their rows are gone).
+   */
+  closeAllCompares() {
+    for (const key of [...this.compareWins.keys()]) {
+      this.closeCompare(key);
     }
   }
   disableTypeChecking() {
@@ -1190,6 +1731,12 @@ class TypePanel {
       delete warnings[key];
     }
     this.eventLog.length = 0;
+    // Fresh session, fresh numbers: the counter is session state like the
+    // rows, or the badge keeps bragging about dead runs while the table
+    // only shows the latest ones.
+    options.count = 0;
+    this.updateErrorCount();
+    this.closeAllCompares();
   }
   /**
    * Captures the current stack like the console shows it for warnings,
@@ -1327,8 +1874,8 @@ class TypePanel {
     const {count} = options;
     this.spanErrors.innerText = `Type validation errors: ${count}`;
     this.titleText.textContent = count ? `Runtime Type Inspector (${count})` : 'Runtime Type Inspector';
-    if (this.taskbarCount) {
-      this.taskbarCount.textContent = count ? `${count} error${count === 1 ? '' : 's'}` : '';
+    if (this.taskbarRti) {
+      this.taskbarRti.textContent = count ? `RTI (${count} error${count === 1 ? '' : 's'})` : 'RTI';
     }
   }
   get eventSources() {
@@ -1395,6 +1942,11 @@ class TypePanel {
    * @param {MessageEventRTI} event - The event from Worker, IFrame or own window.
    */
   handleEvent(event) {
+    // Pre-singleton pages may hold leaked instances (each re-eval registered
+    // another window listener): only the current panel processes messages.
+    if (TypePanel.instance !== this) {
+      return;
+    }
     const {action} = event.data;
     this[action](event);
     // Could be anywhere we know that a new worker is sending RTI messages.
