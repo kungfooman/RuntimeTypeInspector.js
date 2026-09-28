@@ -767,7 +767,7 @@ class TypePanel {
   }
   /**
    * Taskbar entry for the panel: hidden shows it, inactive fronts it,
-   * active minimizes it — plain XP toggle semantics.
+   * active minimizes it — standard taskbar toggle semantics.
    */
   togglePanel() {
     if (this.div.style.display === 'none') {
@@ -780,7 +780,7 @@ class TypePanel {
   }
   /**
    * Taskbar entry for a compare window: minimized reopens, inactive
-   * focuses, active minimizes — plain XP toggle semantics.
+   * focuses, active minimizes — standard taskbar toggle semantics.
    * @param {string} key - The warning key.
    */
   toggleCompare(key) {
@@ -1003,7 +1003,7 @@ class TypePanel {
     view.addEventListener('resize', () => TypePanel.instance?.clampAllToViewport());
   }
   /**
-   * XP rule: a window is never draggable fully off-screen — its caption
+   * A window is never draggable fully off-screen — its caption
    * stays on-screen and grabbable, so every window stays "reviveable".
    * Clamps a desired left/top so the top edge (caption) never leaves the
    * viewport vertically and a horizontal sliver always stays reachable.
@@ -1029,7 +1029,7 @@ class TypePanel {
     };
   }
   /**
-   * Makes the panel movable by dragging the blue titlebar only (XP style).
+   * Makes the panel movable by dragging the blue titlebar only.
    * Clicks on caption buttons (`-`, pop-out) never start a drag. The
    * caption is clamped into the viewport: it can never be dragged
    * off-screen and lost.
@@ -1069,7 +1069,7 @@ class TypePanel {
     });
   }
   /**
-   * XP-style 8-direction resizing with matching resize cursors (see
+   * 8-direction resizing with matching resize cursors (see
    * `.rti-handle-*`). Only the edge/corner grips resize; the body/table area
    * never does. The top (`n`) grip is a thin strip overlaying the titlebar's
    * top pixels: it is a sibling of the titlebar (not a child), so grabbing
@@ -1375,7 +1375,7 @@ class TypePanel {
     return body;
   }
   /**
-   * Opens one compare window per warning row (XP frame: drag by the blue
+   * Opens one compare window per warning row (drag by the blue
    * titlebar, `_` minimizes to the taskbar, `×` destroys, `Escape` closes
    * the topmost). Reopening a live row focuses it instead of duplicating.
    * @param {import('./Warning.js').Warning} warnObj - The row to inspect.
@@ -1549,7 +1549,7 @@ class TypePanel {
   }
   /**
    * Rebuilds taskbar entries: the panel plus one per open compare window.
-   * Plain XP toggles: minimized entries reopen, inactive ones focus, the
+   * Taskbar toggles: minimized entries reopen, inactive ones focus, the
    * active one minimizes. Minimizing happens nowhere else from here.
    */
   refreshCompareTaskbar() {
@@ -1613,7 +1613,7 @@ class TypePanel {
       // The whole rule: clear everything, mark only the clicked window.
       // Taskbar entries are exempt: fronting here would rebuild the taskbar
       // (destroying the pressed button, so its click never fires) and
-      // clobber the active state their XP toggle reads. They own focus
+      // clobber the active state their toggle reads. They own focus
       // through their own click handlers.
       if (e.target?.closest?.('.rti-taskbar')) {
         return;

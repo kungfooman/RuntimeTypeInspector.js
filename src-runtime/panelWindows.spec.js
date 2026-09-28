@@ -353,7 +353,7 @@ function testTaskbarEntryFrontsOrRestores() {
       return false;
     }
     // Inactive entry fronts without minimizing; active entry minimizes;
-    // minimized entry reopens. Plain XP toggle on active state.
+    // minimized entry reopens. Toggle on active state.
     entries()[0].onclick();
     const a = panel.compareWins.get('L1-a');
     if (a.minimized || panel.activeWindow !== 'L1-a') {
@@ -494,7 +494,7 @@ function testCompareWindowsResizable() {
  * Replays the real browser sequence for a taskbar click: document-capture
  * mousedown first, then the entry's own click. The press must neither
  * destroy the pressed button (a rebuild detaches it, so no click would
- * ever dispatch) nor clobber the active state the XP toggle reads.
+ * ever dispatch) nor clobber the active state the toggle reads.
  * @returns {boolean} True when the press survives and the click focuses.
  */
 function testTaskbarPressKeepsButtonAlive() {
@@ -515,8 +515,8 @@ function testTaskbarPressKeepsButtonAlive() {
   });
 }
 /**
- * Drags a compare window far past every edge: the XP rule keeps the
- * caption on-screen and grabbable, so no window is ever lost.
+ * Drags a compare window far past every edge: the caption stays on-screen
+ * and grabbable, so no window is ever lost.
  * @returns {boolean} True when both corners clamp into the viewport.
  */
 function testDragCannotLoseWindow() {
