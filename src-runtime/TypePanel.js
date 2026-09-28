@@ -320,6 +320,10 @@ function niceDiv(div) {
     .rti-finding-extra {
       border-left-color: #888;
     }
+    .rti-finding-info {
+      border-left-color: #aaa;
+      background: #f5f5f5;
+    }
     .rti-path {
       font-family: monospace;
       font-weight: bold;
@@ -937,9 +941,9 @@ class TypePanel {
    * @returns {HTMLElement} The row element.
    */
   renderFinding(finding) {
-    const row = Div({className: `rti-finding rti-finding-${finding.kind}`},
+    const row = Div({className: `rti-finding rti-finding-${finding.kind}${finding.info ? ' rti-finding-info' : ''}`},
                     Div({},
-                        Span({className: 'rti-badge', textContent: finding.kind}),
+                        Span({className: 'rti-badge', textContent: finding.info ? `${finding.kind} · info` : finding.kind}),
                         Span({className: 'rti-path', textContent: finding.path})),
                     Div({textContent: finding.detail || ''}),
                     Div({textContent: `expected ${finding.expected}, got ${finding.actual}`}));
@@ -980,6 +984,9 @@ class TypePanel {
     const open = Details({open: depth < 2 || node.passes === false}, head);
     if (node.detail) {
       open.append(Div({textContent: node.detail}));
+    }
+    if (node.fix) {
+      open.append(Div({className: 'rti-fix', textContent: `→ ${node.fix}`}));
     }
     if (node.keys) {
       const chips = Div({},
@@ -1061,7 +1068,7 @@ class TypePanel {
     let tree;
     try {
       const rootLabel = typeof warnObj.expect === 'string' ? warnObj.expect : warnObj.name;
-      tree = buildTypeTree(warnObj.expect, warnObj.value, rootLabel);
+      tree = buildTypeTree(warnObj.expect, warnObj.value, rootLabel, undefined, warnObj.name);
     } catch {
       tree = undefined;
     }

@@ -1,6 +1,7 @@
 import {expandType} from '../src-transpiler/expandType.js';
 import {registerTypedef, typedefs, typedefTemplates} from './registerTypedef.js';
 import {registerClass, classes} from './registerClass.js';
+import {options} from './options.js';
 import {explainMismatch, materializeExpect} from './explainMismatch.js';
 function reset() {
   Object.keys(typedefs).forEach((_) => delete typedefs[_]);
@@ -97,6 +98,51 @@ function testPresentValuesLoseOptionalWrapper() {
   const wrong = findings.find((_) => _.path === 'patch.status');
   return findings.length === 1 && !!wrong && !wrong.expected.includes('undefined');
 }
+function testOmitExcessNamesRemoval() {
+  // The user's Omit case: a deliberately removed key must say so, never
+  // suggest a typo.
+  reset();
+  registerTypedef('Account', expandType('{id: string, email: string, role: string}'));
+  const {findings} = explainMismatch(
+    {email: 'a', role: 'b', id: 1}, expandType('Omit<Account, "id">'), 'payload');
+  const extra = findings.find((_) => _.path === 'payload.id');
+  return findings.length === 1 && !!extra && extra.kind === 'extra' &&
+    extra.detail.includes('deliberately removed by') && extra.detail.includes('Omit') &&
+    extra.fix === 'Remove `payload.id`.' && !extra.detail.includes('spelling');
+}
+function testPickExcessNamesSelection() {
+  reset();
+  registerTypedef('User', expandType('{id: number, name: string}'));
+  const {findings} = explainMismatch(
+    {name: 'x', id: 1}, expandType('Pick<User, "name">'), 'user');
+  const extra = findings.find((_) => _.path === 'user.id');
+  return findings.length === 1 && !!extra &&
+    extra.detail.includes('not selected by') && extra.detail.includes('Pick') &&
+    extra.fix === 'Remove `user.id`.';
+}
+function testPlainExcessStillSuspectsTypo() {
+  reset();
+  const {findings} = explainMismatch(
+    {fov: 60, fovv: 1}, expandType('{fov: number}'), 'options');
+  const extra = findings.find((_) => _.path === 'options.fovv');
+  return !!extra && extra.detail.includes('check spelling');
+}
+function testExtrasInformationalWhenLenient() {
+  // Exact off: excess still renders (nothing silently vanishes) but marked
+  // informational, without a fix imperative.
+  reset();
+  const prev = options.exactObjects;
+  options.exactObjects = false;
+  try {
+    const {findings} = explainMismatch(
+      {fov: 60, fovv: 1}, expandType('{fov: number}'), 'options');
+    const extra = findings.find((_) => _.path === 'options.fovv');
+    return !!extra && extra.info === true && !extra.fix &&
+      extra.detail.includes('informational');
+  } finally {
+    options.exactObjects = prev;
+  }
+}
 const tests = [
   testMissingKey,
   testWrongNestedType,
@@ -109,5 +155,9 @@ const tests = [
   testPickNarrowsKeys,
   testClassInstancePassesShape,
   testPresentValuesLoseOptionalWrapper,
+  testOmitExcessNamesRemoval,
+  testPickExcessNamesSelection,
+  testPlainExcessStillSuspectsTypo,
+  testExtrasInformationalWhenLenient,
 ];
 export {tests};

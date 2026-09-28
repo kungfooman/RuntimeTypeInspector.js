@@ -9,7 +9,7 @@ const options = {
    * many type errors, so the best way to keep it quiet is to fix the noisiest type issues first.
    * Spam-mode basically retains the order, which mentally helps to figure out the actual issues.
    */
-  mode: 'spam',
+  mode: 'once',
   logSuperfluousProperty: false,
   count: 0,
   /**

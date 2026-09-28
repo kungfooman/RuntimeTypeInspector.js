@@ -1,6 +1,7 @@
 import {expandType} from '../src-transpiler/expandType.js';
 import {registerTypedef, typedefs, typedefTemplates} from './registerTypedef.js';
 import {registerClass, classes} from './registerClass.js';
+import {options} from './options.js';
 import {buildTypeTree, suggestKey} from './typeTree.js';
 function reset() {
   Object.keys(typedefs).forEach((_) => delete typedefs[_]);
@@ -186,6 +187,36 @@ function testAbsentOptionalKeysPass() {
     shape.children.length === 2 &&
     shape.children.every((_) => _.passes === true);
 }
+function testTreeExtrasOmit() {
+  // The user's Pick/Omit case: excess keys render in the tree with the
+  // removal wording and a dotted fix path, not just in Diagnosis.
+  reset();
+  registerTypedef('User', expandType('{id: number, name: string, email: string}'));
+  const tree = buildTypeTree(expandType('Pick<User, "name" | "email">'), {name: 1, email: 'a', id: 2}, 'userInfo', undefined, 'userInfo');
+  const shape = tree.children?.[0];
+  const extra = shape?.children?.find((_) => _.kind === 'extra');
+  return shape?.kind === 'object' && !!extra && extra.passes === false &&
+    extra.detail.includes('not selected by') && extra.detail.includes('Pick') &&
+    extra.fix === 'Remove `userInfo.id`.' && extra.label.startsWith('id:');
+}
+function testTreeExtrasPlain() {
+  reset();
+  const tree = buildTypeTree(expandType('{fov: number}'), {fov: 60, fovv: 1}, 'options', undefined, 'options');
+  const extra = tree.children?.find((_) => _.kind === 'extra');
+  return !!extra && extra.passes === false && extra.detail.includes('check spelling');
+}
+function testTreeExtrasUnmarkedWhenLenient() {
+  reset();
+  const prev = options.exactObjects;
+  options.exactObjects = false;
+  try {
+    const tree = buildTypeTree(expandType('{fov: number}'), {fov: 60, fovv: 1}, 'options', undefined, 'options');
+    const extra = tree.children?.find((_) => _.kind === 'extra');
+    return !!extra && extra.passes === undefined && !extra.fix;
+  } finally {
+    options.exactObjects = prev;
+  }
+}
 const tests = [
   testKeyofListsKeys,
   testDidYouMean,
@@ -200,5 +231,8 @@ const tests = [
   testClassClimbs,
   testObjectChildrenProbeValues,
   testAbsentOptionalKeysPass,
+  testTreeExtrasOmit,
+  testTreeExtrasPlain,
+  testTreeExtrasUnmarkedWhenLenient,
 ];
 export {tests};

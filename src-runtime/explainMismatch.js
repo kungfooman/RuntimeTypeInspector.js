@@ -1,10 +1,11 @@
 import {typedefs, typedefTemplates} from './registerTypedef.js';
 import {replaceType} from './replaceType.js';
 import {createTypeFromMapping} from './createTypeFromMapping.js';
-import {resolveObject, resolveUtilityShape} from './getTypeKeys.js';
+import {keyNames, resolveObject, resolveUtilityShape} from './getTypeKeys.js';
 import {classes} from './registerClass.js';
 import {mergedClassShape} from './classShape.js';
 import {recurse, validators} from './validators.js';
+import {options} from './options.js';
 import './validateType.js';
 import './evaluateCondition.js';
 import {stringifyType} from './stringifyType.js';
@@ -165,6 +166,116 @@ function isOptionalProp(prop) {
   return !!(prop && typeof prop === 'object' && prop.optional);
 }
 /**
+ * Checks whether an excess key was deliberately excluded upstream (`Omit`)
+ * or simply never selected (`Pick`), by walking the unresolved expect tree.
+ * Plain objects have no such provenance — those stay typo suspects.
+ * @param {*} expect - The unresolved expected type.
+ * @param {string} key - The excess key.
+ * @param {Array} [seen] - Path guard against registry cycles.
+ * @returns {{removed: boolean, source: string}|null} Provenance or null.
+ */
+function removalInfo(expect, key, seen = []) {
+  if (!expect || seen.includes(expect)) {
+    return null;
+  }
+  if (typeof expect === 'string') {
+    if (!typedefs[expect]) {
+      return null;
+    }
+    return removalInfo(typedefs[expect], key, [...seen, expect]);
+  }
+  if (typeof expect !== 'object') {
+    return null;
+  }
+  if (expect.type === 'reference') {
+    const {name, args} = expect;
+    if ((name === 'NonNullable' || name === 'Readonly' || name === 'NoInfer') && args?.length) {
+      return removalInfo(args[0], key, [...seen, expect]);
+    }
+    if ((name === 'Omit' || name === 'Pick') && args?.length === 2) {
+      const names = keyNames(args[1], noop, 0);
+      if (!names) {
+        return null;
+      }
+      const listed = names.includes(key);
+      // Source label keeps the unresolved spelling (`Omit<…>`), which is
+      // the whole point of this message.
+      let source;
+      try {
+        source = stringifyType(expect);
+      } catch {
+        source = name;
+      }
+      if (source.length > 80) {
+        source = `${source.slice(0, 77)}...`;
+      }
+      if (name === 'Omit' && listed) {
+        return {removed: true, source};
+      }
+      if (name === 'Pick' && !listed) {
+        return {removed: false, source};
+      }
+      return null;
+    }
+    if (typedefs[name]) {
+      const params = typedefTemplates[name];
+      let instance = typedefs[name];
+      if (args?.length && params?.length) {
+        instance = structuredClone(instance);
+        params.forEach((param, j) => {
+          instance = replaceType(instance, param, j < args.length ? args[j] : 'any', noop);
+        });
+      }
+      return removalInfo(instance, key, [...seen, expect]);
+    }
+    return null;
+  }
+  if (expect.type === 'union' && Array.isArray(expect.members)) {
+    for (const member of expect.members) {
+      const info = removalInfo(member, key, [...seen, expect]);
+      if (info) {
+        return info;
+      }
+    }
+  }
+  return null;
+}
+/**
+ * One shared wording for excess keys, used by the Diagnosis list and the
+ * type tree alike. Provenance (`Omit` removal / `Pick` selection) wins over
+ * the typo suspicion; without any, plain objects stay typo suspects.
+ * @param {string} subPath - Dotted path, e.g. `payload.id`.
+ * @param {string} key - The excess key.
+ * @param {string} actual - Actual-value snapshot.
+ * @param {string[]} allowed - Declared keys of the shape.
+ * @param {{removed: boolean, source: string}|null} info - Provenance or null.
+ * @returns {{kind: string, expected: string, detail: string, fix: string}} Finding fields.
+ */
+function describeExcess(subPath, key, actual, allowed, info) {
+  if (info?.removed) {
+    return {
+      kind: 'extra',
+      expected: `(without \`${key}\` per ${info.source})`,
+      detail: `\`${key}\` was deliberately removed by ${info.source} — drop it.`,
+      fix: `Remove \`${subPath}\`.`,
+    };
+  }
+  if (info) {
+    return {
+      kind: 'extra',
+      expected: `(selected by ${info.source})`,
+      detail: `\`${key}\` is not selected by ${info.source} — drop it.`,
+      fix: `Remove \`${subPath}\`.`,
+    };
+  }
+  return {
+    kind: 'extra',
+    expected: `(one of ${allowed.join(', ') || 'nothing'})`,
+    detail: `\`${key}\` is not part of the type — check spelling.`,
+    fix: `Remove \`${subPath}\` or check spelling against: ${allowed.join(', ') || 'nothing'}.`,
+  };
+}
+/**
  * Structural diff producing path-pinned findings. Objects compare key by
  * key (missing required, wrong-typed, unexpected extras); unions probe every
  * member and keep the closest match's findings; anything else is a silent
@@ -245,12 +356,19 @@ function diffValue(value, expect, path, depth) {
     }
     for (const key of Object.keys(value)) {
       if (!mat.properties[key]) {
+        // Excess keys fail validation only with Exact objects on — but the
+        // Diagnosis lists everything known, marking lenient extras as
+        // informational instead of dropping them silently.
+        const strict = options.exactObjects !== false;
+        const subPath = path ? `${path}.${key}` : key;
+        const info = mat.__provenance ?? removalInfo(expect, key);
+        const rendered = describeExcess(subPath, key, snip(value[key]), Object.keys(mat.properties), info);
         findings.push({
-          path: path ? `${path}.${key}` : key,
-          kind: 'extra',
-          expected: `(one of ${Object.keys(mat.properties).join(', ') || 'nothing'})`,
-          actual: snip(value[key]),
-          detail: `\`${key}\` is not part of the type — check spelling.`,
+          path: subPath,
+          ...rendered,
+          detail: strict ? rendered.detail : `${rendered.detail} (informational: passes validation with Exact objects off)`,
+          fix: strict ? rendered.fix : undefined,
+          info: strict ? undefined : true,
         });
       }
     }
@@ -299,4 +417,4 @@ function explainMismatch(value, expect, rootPath) {
     '';
   return {findings, stub};
 }
-export {materializeExpect, diffValue, explainMismatch, expectSnip, snip};
+export {materializeExpect, diffValue, explainMismatch, expectSnip, snip, describeExcess};

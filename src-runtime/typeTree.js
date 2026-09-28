@@ -4,6 +4,8 @@ import {classes} from './registerClass.js';
 import {mergedClassShape} from './classShape.js';
 import {createTypeFromMapping} from './createTypeFromMapping.js';
 import {recurse, validators} from './validators.js';
+import {options} from './options.js';
+import {describeExcess, snip} from './explainMismatch.js';
 import './validateType.js';
 import './evaluateCondition.js';
 import {stringifyType} from './stringifyType.js';
@@ -116,17 +118,18 @@ function probe(value, expect) {
  * @param {*} value - The actual value (probed per level).
  * @param {string} label - Display name for this level.
  * @param {object} budget - Shared `{nodes}` limit plus path stacks.
+ * @param {string} path - Dotted argument path for excess-key fix hints.
  * @returns {object} Tree node.
  */
-function buildTypeTree(expect, value, label, budget = {nodes: 0, names: [], objs: []}) {
-  const node = {label, kind: 'leaf', summary: treeSnip(expect), full: treeFull(expect), passes: probe(value, expect)};
+function buildTypeTree(expect, value, label, budget = {nodes: 0, names: [], objs: []}, path = '') {
+  const node = {label, path, kind: 'leaf', summary: treeSnip(expect), full: treeFull(expect), passes: probe(value, expect)};
   if (++budget.nodes > MAX_NODES) {
     node.truncated = true;
     return node;
   }
-  // NB: no `= value` default below: missing keys pass explicit `undefined`
-  // and defaults would re-substitute the parent object (the actual bug).
-  const sub = (type, name, ...rest) => buildTypeTree(type, rest.length ? rest[0] : value, name, budget);
+  // Rest-args (not defaults): explicit `undefined` sub-values must survive.
+  const sub = (type, name, ...rest) => buildTypeTree(type, rest.length ? rest[0] : value, name, budget,
+                                                     rest.length > 1 ? rest[1] : path);
   if (typeof expect === 'string') {
     if (!typedefs[expect] && !classes[expect]) {
       return node;
@@ -320,7 +323,28 @@ function buildObjectNode(expect, value, node, sub) {
       node.moreKeys = Object.keys(expect.properties).length - keys.length;
       // Probe each property against ITS value, not the whole parent object.
       const childValue = value != null && typeof value === 'object' ? value : {};
-      node.children = keys.map((_) => sub(expect.properties[_], `${_}: ${treeSnip(expect.properties[_])}`, childValue[_]));
+      const childPath = (key) => (node.path ? `${node.path}.${key}` : key);
+      node.children = keys.map((_) => sub(expect.properties[_], `${_}: ${treeSnip(expect.properties[_])}`, childValue[_], childPath(_)));
+      // Excess actual keys render too — otherwise the tree hides half the
+      // errors the Diagnosis lists. Marks follow Exact objects: unmarked
+      // when excess passes validation.
+      const exact = options.exactObjects !== false;
+      for (const key of Object.keys(childValue)) {
+        if (expect.properties[key] !== undefined || typeof key !== 'string') {
+          continue;
+        }
+        const actual = snip(childValue[key]);
+        const rendered = describeExcess(childPath(key), key, actual, Object.keys(expect.properties), expect.__provenance ?? null);
+        node.children.push({
+          label: `${key}: ${actual}`,
+          kind: 'extra',
+          summary: actual,
+          full: actual,
+          passes: exact ? false : undefined,
+          detail: rendered.detail + (exact ? '' : ' (informational: Exact objects is off, so this passes validation)'),
+          fix: exact ? rendered.fix : undefined,
+        });
+      }
       return node;
     }
     default:

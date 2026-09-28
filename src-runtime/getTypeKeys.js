@@ -4,6 +4,7 @@ import {classes} from "./registerClass.js";
 import {mergedClassShape} from "./classShape.js";
 import {replaceType} from "./replaceType.js";
 import {validators} from "./validators.js";
+import {stringifyType} from "./stringifyType.js";
 /**
  * Key-resolution split, documented per #256 (consolidation pass deferred):
  * - `resolveKeys(target)` -> string[] names (for `keyof`-style reads; unions
@@ -143,6 +144,36 @@ function asOptionalProp(prop) {
   return {type: prop, optional: true};
 }
 /**
+ * Stamps Omit/Pick provenance onto a materialized shape so renderers know
+ * WHY a key is absent (deliberately removed / never selected) instead of
+ * guessing typos. Non-enumerable: invisible to `Object.keys`, `JSON` and
+ * `structuredClone` consumers. Shapes are freshly built per call, never
+ * registry-shared.
+ * @param {object} result - Materialized shape or union of shapes.
+ * @param {string} name - Omit or Pick.
+ * @param {any[]} args - Type arguments (for the source spelling).
+ * @returns {object} Same result, tagged.
+ */
+function tagProvenance(result, name, args) {
+  let source;
+  try {
+    source = stringifyType({type: 'reference', name, args});
+    if (source.length > 80) {
+      source = `${source.slice(0, 77)}...`;
+    }
+  } catch {
+    source = name;
+  }
+  const info = {removed: name === 'Omit', source};
+  const members = result && result.type === 'union' && Array.isArray(result.members) ? result.members : [result];
+  for (const member of members) {
+    if (member && typeof member === 'object') {
+      Object.defineProperty(member, '__provenance', {value: info, enumerable: false, writable: true, configurable: true});
+    }
+  }
+  return result;
+}
+/**
  * Resolves Partial/Pick/Omit/Required to concrete shapes, mirroring
  * `validateReference` semantics (homomorphic distribution over unions,
  * shallow optionality changes). Shared by key reads, the explanation
@@ -215,7 +246,8 @@ function resolveUtilityShape(name, args, warn, depth = 0) {
     }
     return {type: 'object', properties};
   });
-  return members.length === 1 ? members[0] : {type: 'union', members};
+  const out = members.length === 1 ? members[0] : {type: 'union', members};
+  return tagProvenance(out, name, args);
 }
 /**
  * Instantiates a generic typedef reference by substituting arguments for
@@ -743,4 +775,4 @@ function getTypeKeys(expect, warn, depth = 0) {
   }
   warn(`Couldn't get keys for type`, expect);
 }
-export {getTypeKeys, instantiateReference, resolveObject, resolveUtilityShape, stripKey};
+export {getTypeKeys, instantiateReference, resolveObject, resolveUtilityShape, keyNames, stripKey};
