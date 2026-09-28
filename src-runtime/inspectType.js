@@ -1,6 +1,7 @@
 import {crossContextPostMessage  } from './crossContextPostMessage.js';
 import {options                  } from './options.js';
 import {stringifyType            } from './stringifyType.js';
+import {previewValue, stringifyValue} from './stringifyValue.js';
 import {validateType             } from './validateType.js';
 import {partition                } from './partition.js';
 import {importNamespaceSpecifiers} from './registerImportNamespaceSpecifier.js';
@@ -164,9 +165,11 @@ function inspectType(value, expect, loc, name, critical = true) {
     if (summary !== undefined) {
       strings.unshift(summary);
     }
-    // String form allows us to see more about certain values, like a vector with a NaN component.
-    // Since `value` will "only" be the actual reference and might be "repaired" after further calculations.
-    const valueToString = value?.toString?.();
+    // Deep preview instead of `.toString()`: plain objects would only say
+    // `[object Object]`, hiding the content the log is for. Still computed
+    // eagerly — `value` may be "repaired" by later calculations, and vectors
+    // with NaN components only show in the snapshot.
+    const valueToString = previewValue(value);
     const key = `${loc}-${name}`;
     if (breakpoints.has(key)) {
       // console.log("breakpoints", breakpoints);
@@ -176,12 +179,19 @@ function inspectType(value, expect, loc, name, critical = true) {
     }
     // Nytaralyxe: options.warns where each warn callback supports one system (node, div/dom etc.)
     // Don't post `value` when it can't be transmitted cross-context (just stringify it instead).
+    // Unclonable values (functions, DOM, class instances with methods) become
+    // the structured snapshot — still inspectable downstream — instead of a
+    // content-free `[object Object]` string.
     if (!isClonable(value)) {
-      value = valueToString;
+      value = stringifyValue(value);
     }
     for (const extra of extras) {
       if (!isClonable(extra)) {
-        extra.value = extra.value?.toString();
+        try {
+          extra.value = stringifyValue(extra.value);
+        } catch {
+          extra.value = valueToString;
+        }
       }
     }
     const msg = {type: 'rti', action: 'addError', destination: 'ui', value, expect, loc, name, valueToString, strings, extras, key};

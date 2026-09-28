@@ -21,7 +21,7 @@ function updateArticle(articleId, patch) {
 // Example usage — updating only title and status
 updateArticle("art_9042", {
   title: "Advanced JSDoc Patterns",
-  status: "published"
+  status: 1, // "published"
 });
 
 

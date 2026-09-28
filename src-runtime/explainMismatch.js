@@ -8,7 +8,7 @@ import {recurse, validators} from './validators.js';
 import './validateType.js';
 import './evaluateCondition.js';
 import {stringifyType} from './stringifyType.js';
-import {stringifyValue} from './stringifyValue.js';
+import {previewValue, stringifyValue} from './stringifyValue.js';
 const MAX_DEPTH = 6;
 const MAX_UNION_MEMBERS = 12;
 const noop = () => undefined;
@@ -18,13 +18,7 @@ const noop = () => undefined;
  * @returns {string} Truncated snapshot.
  */
 function snip(value) {
-  let text;
-  try {
-    text = JSON.stringify(stringifyValue(value)) ?? String(value);
-  } catch {
-    text = String(value?.toString?.() ?? value);
-  }
-  return text.length > 160 ? `${text.slice(0, 157)}...` : text;
+  return previewValue(value, 160);
 }
 /**
  * Short one-line summary of an expected type, resolved to the concrete
