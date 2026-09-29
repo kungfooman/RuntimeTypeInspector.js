@@ -348,6 +348,79 @@ function testClassFnExprChain() {
     return noneUnchecked(posted);
   });
 }
+// `(string & {})` in the constraint accepts application-defined handler
+// names: parity with tsc, which also stays silent here. Only a strict
+// `keyof` constraint rejects unknown names.
+function testStringFallbackAcceptsAnyName() {
+  const src = '/** @typedef {{texture: object, container: object}} AssetMap2 */\n' +
+    '/** @typedef {keyof AssetMap2 & string} AssetType2 */\n' +
+    '/** @template {AssetType2 | (string & {})} [K=string] */\n' +
+    'class Asset2 {\n' +
+    '  /** @param {string} name\n@param {K} type */\n' +
+    '  constructor(name, type) { this.type = type; }\n' +
+    '}';
+  return runChecks(src, 'Asset2', (scope, {hits, posted}) => {
+    const before = hits.length;
+    const asset = new scope.Asset2('cubeasd', 'container123'); // ok: app-defined name
+    if (asset.type !== 'container123' || hits.length !== before) {
+      return false;
+    }
+    return noneUnchecked(posted);
+  });
+}
+function testStrictKeyofRejectsUnknownName() {
+  const src = '/** @typedef {{texture: object, container: object}} AssetMap3 */\n' +
+    '/** @typedef {keyof AssetMap3 & string} AssetType3 */\n' +
+    '/** @template {AssetType3} [K=string] */\n' +
+    'class StrictAsset3 {\n' +
+    '  /** @param {string} name\n@param {K} type */\n' +
+    '  constructor(name, type) { this.type = type; }\n' +
+    '}';
+  return runChecks(src, 'StrictAsset3', (scope, {hits, posted}) => {
+    const before = hits.length;
+    const good = new scope.StrictAsset3('cube', 'container'); // ok
+    if (good.type !== 'container' || hits.length !== before) {
+      return false;
+    }
+    const bad = new scope.StrictAsset3('cubeasd', 'container123'); // warns
+    if (bad.type !== 'container123' || hits.length !== before + 1) {
+      return false;
+    }
+    if (!posted.some((msg) => (msg.strings ?? []).join(' ').includes('AssetType3'))) {
+      return false;
+    }
+    return noneUnchecked(posted);
+  });
+}
+// Deep diagnostic for nested optional-object params: `file.url` with the
+// wrong type warns on the full `new Asset(...)` call from the issue.
+function testFileObjectDeepDiagnostic() {
+  const src = '/** @typedef {{texture: object, container: object}} AssetMap4 */\n' +
+    '/** @typedef {keyof AssetMap4 & string} AssetType4 */\n' +
+    '/** @template {AssetType4 | (string & {})} [K=string] */\n' +
+    'class Asset4 {\n' +
+    '  /** @param {string} name\n@param {K} type\n@param {object} [file]\n' +
+    '@param {string} [file.url]\n@param {string} [file.filename]\n@param {number} [file.size] */\n' +
+    '  constructor(name, type, file) { this.type = type; }\n' +
+    '}';
+  return runChecks(src, 'Asset4', (scope, {hits, posted}) => {
+    const before = hits.length;
+    const good = new scope.Asset4('cube', 'container', {url: './a.glb'}); // ok
+    const omitted = new scope.Asset4('cube', 'container'); // ok: file optional
+    if (good.type !== 'container' || hits.length !== before) {
+      return false;
+    }
+    const bad = new scope.Asset4('cube', 'container', {url: 123}); // warns deep
+    if (bad.type !== 'container' || hits.length !== before + 1) {
+      return false;
+    }
+    const msg = (posted[posted.length - 1].strings ?? []).join(' ');
+    if (!msg.includes('file.url') || !msg.includes('123')) {
+      return false;
+    }
+    return noneUnchecked(posted);
+  });
+}
 export const tests = [
   testConstrainedDefaultKeepsConstraint,
   testIssueAsset,
@@ -363,4 +436,7 @@ export const tests = [
   testShadowedTemplate,
   testNestedFunctionSeesMethodTemplate,
   testClassFnExprChain,
+  testStringFallbackAcceptsAnyName,
+  testStrictKeyofRejectsUnknownName,
+  testFileObjectDeepDiagnostic,
 ];
