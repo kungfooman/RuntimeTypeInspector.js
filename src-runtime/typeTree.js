@@ -6,11 +6,13 @@ import {createTypeFromMapping} from './createTypeFromMapping.js';
 import {recurse, validators} from './validators.js';
 import {options} from './options.js';
 import {describeExcess, snip} from './explainMismatch.js';
+import {formatMapKey} from './describeValue.js';
 import './validateType.js';
 import './evaluateCondition.js';
 import {stringifyType} from './stringifyType.js';
 const MAX_MEMBERS = 12;
 const MAX_PROPS = 20;
+const MAX_ENTRIES = 20;
 const MAX_KEYS = 60;
 const MAX_NODES = 200;
 const noop = () => undefined;
@@ -322,6 +324,47 @@ function buildObjectNode(expect, value, node, sub) {
       }
       node.detail = 'Mapped type materializes to:';
       node.children = [sub(made, treeSnip(made))];
+      return node;
+    }
+    case 'map': {
+      node.kind = 'map';
+      let entries = null;
+      try {
+        entries = value instanceof Map ? [...value.entries()] : null;
+      } catch {
+        entries = null;
+      }
+      if (!entries) {
+        node.detail = 'Value is not a Map — nothing deeper to climb.';
+        return node;
+      }
+      node.detail = `Map with ${entries.length} entr${entries.length === 1 ? 'y' : 'ies'} (✗ marks the failing entries).`;
+      const shown = entries.slice(0, MAX_ENTRIES);
+      const childPath = (key) => (node.path ? `${node.path}.get(${formatMapKey(key)})` : `get(${formatMapKey(key)})`);
+      node.children = shown.map(([key, val]) => sub(expect.val, `get(${formatMapKey(key)}): ${treeSnip(expect.val)}`, val, childPath(key)));
+      if (entries.length > shown.length) {
+        node.truncated = true;
+      }
+      return node;
+    }
+    case 'set': {
+      node.kind = 'set';
+      let items = null;
+      try {
+        items = value instanceof Set ? [...value.values()] : null;
+      } catch {
+        items = null;
+      }
+      if (!items) {
+        node.detail = 'Value is not a Set — nothing deeper to climb.';
+        return node;
+      }
+      node.detail = `Set with ${items.length} member${items.length === 1 ? '' : 's'} (✗ marks the failing members).`;
+      const shown = items.slice(0, MAX_ENTRIES);
+      node.children = shown.map((item, i) => sub(expect.elementType, `[${i}]: ${treeSnip(expect.elementType)}`, item, node.path ? `${node.path}[${i}]` : `[${i}]`));
+      if (items.length > shown.length) {
+        node.truncated = true;
+      }
       return node;
     }
     case 'object': {

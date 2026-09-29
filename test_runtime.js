@@ -68,6 +68,7 @@ const tests = [
   ...(await import('./src-runtime/version.spec.js'                )).tests,
   ...(await import('./src-runtime/projectVersion.spec.js'         )).tests,
   ...(await import('./src-runtime/valueStrings.spec.js'            )).tests,
+  ...(await import('./src-runtime/mapDisplay.spec.js'             )).tests,
   ...(await import('./src-runtime/humanizeExpect.spec.js'        )).tests,
   ...(await import('./src-runtime/explainMismatch.spec.js'       )).tests,
   ...(await import('./src-runtime/typeTree.spec.js'              )).tests,

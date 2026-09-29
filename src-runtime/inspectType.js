@@ -1,5 +1,6 @@
 import {crossContextPostMessage  } from './crossContextPostMessage.js';
 import {options                  } from './options.js';
+import {describeValueType        } from './describeValue.js';
 import {stringifyType            } from './stringifyType.js';
 import {previewValue, stringifyValue} from './stringifyValue.js';
 import {validateType             } from './validateType.js';
@@ -61,41 +62,6 @@ const breakpoints = new Set();
   }
   console.log('Unhandled action destination combo', {action, destination, e, data});
 });
-/**
- * Describes a runtime value as a type, mirroring how TypeScript renders the
- * actual side of its assignability errors (`'"b"'`, `1`, `{sub: string}`).
- * Depth- and width-capped: detail beyond that lives in the raw `value` extra.
- * @param {*} value - The actual value.
- * @param {number} depth - Remaining nesting depth.
- * @returns {string} Type-style description.
- */
-function describeValueType(value, depth = 2) {
-  if (value === null) {
-    return 'null';
-  }
-  if (value === undefined) {
-    return 'undefined';
-  }
-  const kind = typeof value;
-  if (kind === 'string' || kind === 'number' || kind === 'boolean') {
-    return JSON.stringify(value) ?? kind;
-  }
-  if (kind === 'bigint') {
-    return `${String(value)}n`;
-  }
-  if (kind !== 'object' || depth <= 0) {
-    return kind;
-  }
-  if (value instanceof Array) {
-    const shown = value.slice(0, 3).map((element) => describeValueType(element, depth - 1));
-    return `[${shown.join(', ')}${value.length > 3 ? ', ...' : ''}]`;
-  }
-  const proto = Object.getPrototypeOf(value);
-  const prefix = proto !== null && proto !== Object.prototype && value.constructor?.name ? `${value.constructor.name} ` : '';
-  const keys = Object.keys(value).slice(0, 5);
-  const shown = keys.map((key) => `${key}: ${describeValueType(value[key], depth - 1)}`);
-  return `${prefix}{${shown.join(', ')}${Object.keys(value).length > 5 ? ', ...' : ''}}`;
-}
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.

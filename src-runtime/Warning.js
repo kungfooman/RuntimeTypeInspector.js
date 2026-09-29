@@ -3,6 +3,165 @@ import {DisplayAnything} from 'display-anything';
 import {Tr, Td, Button, Details, Summary, Pre, Div} from './jsx.js';
 import {humanizeExpect} from './humanizeExpect.js';
 import {stringifyType} from './stringifyType.js';
+import {previewValue} from './stringifyValue.js';
+import {describeValueType} from './describeValue.js';
+/** Max `Map`/`Set` entries rendered into the Value column (issue #267). */
+const MAX_CELL_ENTRIES = 20;
+/** Max characters per key/value one-line preview in the Value column. */
+const MAX_CELL_PREVIEW = 200;
+/**
+ * Bounded one-line preview for a single value in the error table.
+ * `Map`/`Set` read as inferred generics (`Map<string, null>`); everything
+ * else keeps the JSON snapshot. Never throws; falls back to `String()`.
+ * @param {*} value - The value to preview.
+ * @returns {string} Single-line preview.
+ */
+function shortPreview(value) {
+  try {
+    const text = value instanceof Map || value instanceof Set ?
+      describeValueType(value, 2) :
+      previewValue(value, MAX_CELL_PREVIEW);
+    const str = typeof text === 'string' ? text : String(text);
+    return str.length > MAX_CELL_PREVIEW ? `${str.slice(0, MAX_CELL_PREVIEW - 3)}...` : str;
+  } catch {
+    try {
+      return String(value?.toString?.() ?? value);
+    } catch {
+      return '[Unreadable]';
+    }
+  }
+}
+/**
+ * Renders a live `Map` as an expandable tree node (root open by default),
+ * with one `key => value` row per entry. `DisplayAnything` iterates `for..in`
+ * and stringifies the rest, so without this a `Map` collapses to a bare
+ * `[object Map]` leaf (issue #267). Entry count is capped — deeper
+ * inspection lives in the Compare window's Actual pane.
+ * @param {Map} map - The map to render.
+ * @returns {HTMLElement} The tree element.
+ */
+function renderMapValue(map) {
+  let entries;
+  try {
+    entries = [...map.entries()];
+  } catch {
+    return Div({textContent: shortPreview(map)});
+  }
+  const shown = entries.slice(0, MAX_CELL_ENTRIES);
+  const box = Details({open: true}, Summary({textContent: `Map(${map.size})`}));
+  for (const [key, val] of shown) {
+    box.append(Div({textContent: `${shortPreview(key)} => ${shortPreview(val)}`}));
+  }
+  if (entries.length > shown.length) {
+    box.append(Div({textContent: `...(+${entries.length - shown.length} more)`}));
+  }
+  return box;
+}
+/**
+ * Renders a live `Set` the same way as `renderMapValue` (issue #267).
+ * @param {Set} set - The set to render.
+ * @returns {HTMLElement} The tree element.
+ */
+function renderSetValue(set) {
+  let items;
+  try {
+    items = [...set.values()];
+  } catch {
+    return Div({textContent: shortPreview(set)});
+  }
+  const shown = items.slice(0, MAX_CELL_ENTRIES);
+  const box = Details({open: true}, Summary({textContent: `Set(${set.size})`}));
+  for (const item of shown) {
+    box.append(Div({textContent: shortPreview(item)}));
+  }
+  if (items.length > shown.length) {
+    box.append(Div({textContent: `...(+${items.length - shown.length} more)`}));
+  }
+  return box;
+}
+/**
+ * Clones plain objects/arrays for `DisplayAnything`, replacing nested
+ * `Map`/`Set` instances with bounded one-line previews. Without this a map
+ * nested inside an object still renders as `[object Map]`, since
+ * `DisplayAnything` only walks `for..in` keys. Class instances (and other
+ * non-plain objects) pass through untouched so their type tag survives.
+ * Cycle-safe, depth- and breadth-capped, never throws.
+ * @param {*} value - The value to prepare.
+ * @param {number} depth - Current cloning depth.
+ * @param {Map} seen - Originals already cloned (cycle guard).
+ * @returns {*} Display-safe value.
+ */
+function withCollectionPreviews(value, depth = 0, seen = new Map()) {
+  let isCollection = false;
+  try {
+    isCollection = value instanceof Map || value instanceof Set;
+  } catch {
+    return '[Unreadable]';
+  }
+  if (isCollection) {
+    return shortPreview(value);
+  }
+  if (!value || typeof value !== 'object' || depth > 3) {
+    return value;
+  }
+  if (seen.has(value)) {
+    return seen.get(value);
+  }
+  if (Array.isArray(value)) {
+    const clone = [];
+    seen.set(value, clone);
+    const count = Math.min(value.length, MAX_CELL_ENTRIES);
+    for (let i = 0; i < count; i++) {
+      let item;
+      try {
+        item = value[i];
+      } catch {
+        clone.push('[Unreadable]');
+        continue;
+      }
+      clone.push(withCollectionPreviews(item, depth + 1, seen));
+    }
+    return clone;
+  }
+  let proto;
+  try {
+    proto = Object.getPrototypeOf(value);
+  } catch {
+    return value;
+  }
+  if (proto !== Object.prototype && proto !== null) {
+    return value;
+  }
+  const clone = {};
+  seen.set(value, clone);
+  for (const key of Object.keys(value).slice(0, MAX_CELL_ENTRIES)) {
+    let prop;
+    try {
+      prop = value[key];
+    } catch {
+      clone[key] = '[Getter threw]';
+      continue;
+    }
+    clone[key] = withCollectionPreviews(prop, depth + 1, seen);
+  }
+  return clone;
+}
+/**
+ * Renders any error-table value: live `Map`/`Set` instances get the
+ * expandable bounded tree, everything else goes through `DisplayAnything`
+ * (with nested collections pre-previewed).
+ * @param {*} value - The value to render.
+ * @returns {HTMLElement} The cell content.
+ */
+function renderCellValue(value) {
+  if (value instanceof Map) {
+    return renderMapValue(value);
+  }
+  if (value instanceof Set) {
+    return renderSetValue(value);
+  }
+  return new DisplayAnything(withCollectionPreviews(value)).render();
+}
 /**
  * @todo Also construct a Node.js version, WarningConsole and WarningBrowser
  */
@@ -147,9 +306,14 @@ class Warning {
    */
   set value(_) {
     this._value = _;
-    const val = new DisplayAnything(_);
     this.td_value.innerHTML = '';
-    this.td_value.append(val.render());
+    let node;
+    try {
+      node = renderCellValue(_);
+    } catch {
+      node = Div({textContent: shortPreview(_)});
+    }
+    this.td_value.append(node);
   }
   get value() {
     return this._value;
@@ -243,4 +407,4 @@ class Warning {
     }
   }
 }
-export {Warning};
+export {Warning, renderCellValue};
