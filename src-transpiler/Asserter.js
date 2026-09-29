@@ -387,6 +387,12 @@ class Asserter extends Stringifier {
         const exportDefault = this.findParentOfType(classDecl, 'ExportDefaultDeclaration');
         leadingComments = exportDefault?.leadingComments;
       }
+      if (!leadingComments && classDecl.type === 'ClassExpression') {
+        // `/** @template K */ const Box = class {...}`: the comment lives on
+        // the declaration, mirroring function-expression handling.
+        const varDecl = this.findParentOfType(classDecl, 'VariableDeclaration');
+        leadingComments = varDecl?.leadingComments;
+      }
     }
     if (!leadingComments?.length) {
       return;

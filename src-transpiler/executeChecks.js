@@ -20,7 +20,7 @@ function runChecks(src, expose, body) {
   let out = asserter.toSource(parse(src, parserOptions));
   // `export` cannot run inside `new Function`: strip it. Export only affects
   // how the transpiler attaches JSDoc (already done above), never the checks.
-  out = out.replace(/^export /gm, '');
+  out = out.replace(/^export default /gm, '').replace(/^export /gm, '');
   const hits = [];
   const posted = [];
   const origSelf = globalThis.self;

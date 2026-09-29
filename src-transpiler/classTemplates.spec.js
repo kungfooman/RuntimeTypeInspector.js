@@ -128,6 +128,67 @@ function testPairJointInference() {
     return noneUnchecked(posted);
   });
 }
+// Class expressions inherit templates from the declaration comment,
+// mirroring function-expression handling.
+function testClassExpressionOnDeclaration() {
+  const src = '/** @template {string} K */\n' +
+    'const ExprBox = class {\n' +
+    '  /** @param {K} x */\n' +
+    '  constructor(x) { this.x = x; }\n' +
+    '}';
+  return runChecks(src, 'ExprBox', (scope, {hits, posted}) => {
+    const before = hits.length;
+    const good = new scope.ExprBox('a'); // ok
+    if (good.x !== 'a' || hits.length !== before) {
+      return false;
+    }
+    const bad = new scope.ExprBox(1); // warns
+    if (bad.x !== 1 || hits.length !== before + 1) {
+      return false;
+    }
+    return noneUnchecked(posted);
+  });
+}
+// `export const Bla = class {...}` inherits templates from the export comment.
+function testExportConstClassExpression() {
+  const src = '/** @template {string} K */\n' +
+    'export const ExportExpr = class {\n' +
+    '  /** @param {K} x */\n' +
+    '  constructor(x) { this.x = x; }\n' +
+    '}';
+  return runChecks(src, 'ExportExpr', (scope, {hits, posted}) => {
+    const before = hits.length;
+    const good = new scope.ExportExpr('a'); // ok
+    if (good.x !== 'a' || hits.length !== before) {
+      return false;
+    }
+    const bad = new scope.ExportExpr(1); // warns
+    if (bad.x !== 1 || hits.length !== before + 1) {
+      return false;
+    }
+    return noneUnchecked(posted);
+  });
+}
+// `export default class Bla {...}` inherits templates too.
+function testExportDefaultClass() {
+  const src = '/** @template {string} K */\n' +
+    'export default class DefaultBox {\n' +
+    '  /** @param {K} x */\n' +
+    '  constructor(x) { this.x = x; }\n' +
+    '}';
+  return runChecks(src, 'DefaultBox', (scope, {hits, posted}) => {
+    const before = hits.length;
+    const good = new scope.DefaultBox('a'); // ok
+    if (good.x !== 'a' || hits.length !== before) {
+      return false;
+    }
+    const bad = new scope.DefaultBox(1); // warns
+    if (bad.x !== 1 || hits.length !== before + 1) {
+      return false;
+    }
+    return noneUnchecked(posted);
+  });
+}
 export const tests = [
   testConstrainedDefaultKeepsConstraint,
   testIssueAsset,
@@ -135,4 +196,7 @@ export const tests = [
   testExportedClass,
   testBareClassTemplate,
   testPairJointInference,
+  testClassExpressionOnDeclaration,
+  testExportConstClassExpression,
+  testExportDefaultClass,
 ];
