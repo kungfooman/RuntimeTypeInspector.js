@@ -3,7 +3,7 @@
   "version": "5.0.5",
   "description": "Validating JSDoc types at runtime for high-quality types - Trust is good, control is better.",
   "scripts": {
-    "build": "rollup -c",
+    "build": "node sync-version.js && rollup -c",
     "build:publish": "npm run build && node npmhelper.js",
     "build:atBabelCore": "rollup -c --environment target:atBabelCore",
     "build:dts": "tsc src-transpiler/index.js --outDir types/transpiler --allowJs --declaration --emitDeclarationOnly --target esnext",
