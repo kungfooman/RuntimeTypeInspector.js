@@ -205,6 +205,17 @@ function testTreeExtrasPlain() {
   const extra = tree.children?.find((_) => _.kind === 'extra');
   return !!extra && extra.passes === false && extra.detail.includes('check spelling');
 }
+function testAbsentOptionalUnionPasses() {
+  // Issue #261: an absent optional union (`powerPreference?: 'a'|'b'|...`)
+  // passes via optionality — the tree must not expand the literal members
+  // as ✗ children under a ✓ parent (renders as "error"). Flagged compactly
+  // via `optional` so the renderer shows an [optional] tag, not a detail line.
+  reset();
+  const tree = buildTypeTree(expandType('{powerPreference?: \'default\' | \'high-performance\' | \'low-power\'}'), {}, 'options');
+  const child = tree.children?.find((_) => _.label.startsWith('powerPreference:'));
+  return !!child && child.passes === true && !child.children &&
+    child.optional === true && child.detail === undefined;
+}
 function testTreeExtrasUnmarkedWhenLenient() {
   reset();
   const prev = options.exactObjects;
@@ -231,6 +242,7 @@ const tests = [
   testClassClimbs,
   testObjectChildrenProbeValues,
   testAbsentOptionalKeysPass,
+  testAbsentOptionalUnionPasses,
   testTreeExtrasOmit,
   testTreeExtrasPlain,
   testTreeExtrasUnmarkedWhenLenient,

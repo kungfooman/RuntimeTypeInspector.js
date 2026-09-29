@@ -417,6 +417,14 @@ function niceDiv(div) {
       background: #eee;
       color: #666;
     }
+    .rti-optional {
+      display: inline-block;
+      font-size: 11px;
+      border-radius: 3px;
+      padding: 0 5px;
+      margin-left: 6px;
+      background: #dfd;
+    }
     .rti-dimmed {
       opacity: 0.55;
     }
@@ -1272,6 +1280,9 @@ class TypePanel {
                          Span({className: markCls, textContent: `${mark} `}),
                          Span({className: 'rti-path', textContent: node.label}),
                          Span({className: 'rti-kind', textContent: node.kind}));
+    if (node.optional === true) {
+      head.append(Span({className: 'rti-optional', textContent: 'optional'}));
+    }
     if (node.entered === true) {
       head.append(Span({className: 'rti-entered', textContent: 'entered'}));
     } else if (dimmed) {

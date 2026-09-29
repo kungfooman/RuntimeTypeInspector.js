@@ -190,6 +190,16 @@ function buildTypeTree(expect, value, label, budget = {nodes: 0, names: [], objs
  * @returns {object} The filled node.
  */
 function buildObjectNode(expect, value, node, sub) {
+  // Optional and absent (`undefined`, plus `null` which validation also
+  // accepts for optional): the level passes without checking its shape.
+  // Expanding e.g. a union's literal members here would render only ✗
+  // children under a ✓ parent — the "error" from issue #261. Flagged via
+  // `optional` so the renderer shows a compact [optional] tag instead of
+  // a per-row detail line.
+  if (expect.optional && (value === undefined || value === null)) {
+    node.optional = true;
+    return node;
+  }
   switch (expect.type) {
     case 'keyof': {
       node.kind = 'keyof';
