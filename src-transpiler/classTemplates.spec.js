@@ -1,35 +1,7 @@
-import {parse} from '@babel/parser';
-import {parserOptions} from './parserOptions.js';
-import {Asserter} from './Asserter.js';
-import {expandType} from './expandType.js';
 import {parseJSDocTemplates} from './parseJSDocTemplates.js';
-import {inspectTypeWithTemplates} from '../src-runtime/inspectTypeWithTemplates.js';
-/**
- * @param {string} src - Source code with one class to convert.
- * @returns {string} Converted code.
- */
-function convert(src) {
-  const asserter = new Asserter({expandType, addHeader: false, filename: 'test.js'});
-  return asserter.getHeader() + asserter.toSource(parse(src, parserOptions));
-}
-/**
- * Runs `fn` with `console.warn` stubbed, returning collected warnings.
- * @param {Function} fn - The function to run with warnings captured.
- * @returns {{ret: *, warnings: any[][]}} Return value plus captured warnings.
- */
-function captureWarns(fn) {
-  const warnings = [];
-  const orig = console.warn;
-  console.warn = (...args) => warnings.push(args);
-  try {
-    const ret = fn();
-    return {ret, warnings};
-  } finally {
-    console.warn = orig;
-  }
-}
+import {runChecks, noneUnchecked} from './executeChecks.js';
 // `@template {Constraint} [K=Default]` keeps the constraint: the default
-// only applies when nothing is inferred (issue #265 truncated this to
+// only applies when nothing is inferred (issue #265 parsed this as
 // undefined, so the whole class went unchecked).
 function testConstrainedDefaultKeepsConstraint() {
   const templates = parseJSDocTemplates('@template {AssetType | (string & {})} [K=string]');
@@ -42,76 +14,125 @@ function testConstrainedDefaultKeepsConstraint() {
   const bare = parseJSDocTemplates('@template {string} [K=string]');
   return bare?.K === 'string';
 }
-// The constructor inherits class templates: `@param {K}` emits joint
-// inference instead of a bare `inspectType(v, "K")` (`unchecked`).
-function testConstructorInheritsClassTemplates() {
-  const out = convert('/** @template {string} K */ class A { /** @param {K} v */ constructor(v) { this.v = v; } }');
-  if (!out.includes('"K": "string"') || !out.includes('inspectTypeWithTemplates(v, "K"')) {
-    return false;
-  }
-  return !out.includes('!inspectType(v, "K"');
+// The exact issue shape: `new Asset('cube', 'container')` passes,
+// `new Asset('cube', 123)` fails against the union constraint — and the
+// failure names `AssetType`, proving the constraint (not the default) won.
+function testIssueAsset() {
+  const src = '/** @typedef {string} AssetType */\n' +
+    '/** @template {AssetType | (string & {})} [K=string] */\n' +
+    'class Asset {\n' +
+    '  /** @param {string} name\n@param {K} type */\n' +
+    '  constructor(name, type) { this.type = type; }\n' +
+    '}';
+  return runChecks(src, 'Asset', (scope, {hits, posted}) => {
+    const before = hits.length;
+    const asset = new scope.Asset('cube', 'container'); // ok
+    if (asset.type !== 'container' || hits.length !== before) {
+      return false;
+    }
+    const bad = new scope.Asset('cube', 123); // warns, fail-open
+    if (bad.type !== 123 || hits.length !== before + 1) {
+      return false;
+    }
+    if (!posted.some((msg) => (msg.strings ?? []).join(' ').includes('AssetType'))) {
+      return false;
+    }
+    return noneUnchecked(posted);
+  });
 }
-// The exact issue shape: `Asset` with `@template {AssetType | ...} [K=string]`
-// checks both constructor params through the class constraint.
-function testIssueAssetShape() {
-  const src = '/** @template {AssetType | (string & {})} [K=string] */\n' +
-    'class Asset { /** @param {string} name\n@param {K} type */ constructor(name, type) { this.type = type; } }';
-  const out = convert(src);
-  if (!out.includes('"AssetType"') || !out.includes('inspectTypeWithTemplates(name, "string"')) {
-    return false;
-  }
-  return out.includes('inspectTypeWithTemplates(type, "K"');
-}
-// Non-constructor methods inherit too: `Box#set` validates against `K`.
-function testMethodInheritsClassTemplates() {
-  const out = convert('/** @template {string} K */ class Box { /** @param {K} v */ set(v) { this.v = v; } }');
-  return out.includes('inspectTypeWithTemplates(v, "K"') && out.includes('"K": "string"');
-}
-// Method-local `@template` wins over the class one for its own keys.
-function testMethodLocalWins() {
-  const src = '/** @template {string} K */ class Pair { /** @template {number} T\n@param {T} x\n@param {K} y */ mixed(x, y) { return [x, y]; } }';
-  const out = convert(src);
-  return out.includes('"T": "number"') && out.includes('"K": "string"');
+// Constructor and method share the class template: `new Box(1)` warns,
+// `set('b')` passes on a fresh per-call inference.
+function testBoxConstructorAndMethod() {
+  const src = '/** @template {string} K */\n' +
+    'class Box {\n' +
+    '  /** @param {K} value */\n' +
+    '  constructor(value) { this.value = value; }\n' +
+    '  /** @param {K} value */\n' +
+    '  set(value) { this.value = value; }\n' +
+    '}';
+  return runChecks(src, 'Box', (scope, {hits, posted}) => {
+    const before = hits.length;
+    const box = new scope.Box('a'); // ok
+    box.set('b'); // ok
+    if (box.value !== 'b' || hits.length !== before) {
+      return false;
+    }
+    const bad = new scope.Box(1); // warns
+    if (bad.value !== 1 || hits.length !== before + 1) {
+      return false;
+    }
+    return noneUnchecked(posted);
+  });
 }
 // Class templates survive `export` wrappers.
-function testExportWrapper() {
-  const out = convert('/** @template {string} K */ export class E { /** @param {K} x */ constructor(x) { this.x = x; } }');
-  return out.includes('inspectTypeWithTemplates(x, "K"') && out.includes('"K": "string"');
+function testExportedClass() {
+  const src = '/** @template {string} K */\n' +
+    'export class ExportedBox {\n' +
+    '  /** @param {K} x */\n' +
+    '  constructor(x) { this.x = x; }\n' +
+    '}';
+  return runChecks(src, 'ExportedBox', (scope, {hits, posted}) => {
+    const before = hits.length;
+    const good = new scope.ExportedBox('a'); // ok
+    if (good.x !== 'a' || hits.length !== before) {
+      return false;
+    }
+    const bad = new scope.ExportedBox(1); // warns
+    if (bad.x !== 1 || hits.length !== before + 1) {
+      return false;
+    }
+    return noneUnchecked(posted);
+  });
 }
-// Runtime side of `new Box('a')` (ok) vs `new Box(1)` (warns): a fresh
-// per-call `rtiTemplates` seeded with the class constraint.
-function testRuntimeOkAndWarns() {
-  const okTemplates = {K: 'string'};
-  const ok = captureWarns(() => inspectTypeWithTemplates('a', 'K', 'Box#constructor', 'value', okTemplates));
-  if (!ok.ret || ok.warnings.length || okTemplates.K !== '"a"') {
-    return false;
-  }
-  const badTemplates = {K: 'string'};
-  captureWarns(() => inspectTypeWithTemplates('a', 'K', 'Box#constructor', 'value', badTemplates));
-  const bad = captureWarns(() => inspectTypeWithTemplates(1, 'K', 'Box#constructor', 'value', badTemplates));
-  return bad.ret === false && bad.warnings.length === 0;
+// Bare class template infers anything, then pins it per call.
+function testBareClassTemplate() {
+  const src = '/** @template K */\n' +
+    'class Bare {\n' +
+    '  /** @param {K} x */\n' +
+    '  constructor(x) { this.x = x; }\n' +
+    '}';
+  return runChecks(src, 'Bare', (scope, {hits, posted}) => {
+    const before = hits.length;
+    const a = new scope.Bare('x'); // ok
+    const b = new scope.Bare(1); // ok: K pins per call
+    if (a.x !== 'x' || b.x !== 1 || hits.length !== before) {
+      return false;
+    }
+    return noneUnchecked(posted);
+  });
 }
-// Runtime joint inference across constructor params: `new Pair('a', 'b')`
-// widens `K` to string (ok), `new Pair('a', 1)` warns like tsc.
-function testRuntimeJointInference() {
-  const wide = {K: 'string'};
-  const first = captureWarns(() => inspectTypeWithTemplates('a', 'K', 'Pair#constructor', 'a', wide));
-  const second = captureWarns(() => inspectTypeWithTemplates('b', 'K', 'Pair#constructor', 'b', wide));
-  if (!first.ret || !second.ret || wide.K !== 'string') {
-    return false;
-  }
-  const narrow = {K: 'string'};
-  captureWarns(() => inspectTypeWithTemplates('a', 'K', 'Pair#constructor', 'a', narrow));
-  const warns = captureWarns(() => inspectTypeWithTemplates(1, 'K', 'Pair#constructor', 'b', narrow));
-  return warns.ret === false;
+// Joint inference across constructor params (`new Pair('a', 'b')` widens
+// `K` to string, `new Pair('a', 1)` warns) and method-local `@template`
+// shadowing the class one (`mixed('x', 'y')` warns: `T` is number).
+function testPairJointInference() {
+  const src = '/** @template {string} K */\n' +
+    'class Pair {\n' +
+    '  /** @param {K} a\n@param {K} b */\n' +
+    '  constructor(a, b) { this.pair = [a, b]; }\n' +
+    '  /** @template {number} T\n@param {T} x\n@param {K} y */\n' +
+    '  mixed(x, y) { return [x, y]; }\n' +
+    '}';
+  return runChecks(src, 'Pair', (scope, {hits, posted}) => {
+    const before = hits.length;
+    const p = new scope.Pair('a', 'a'); // ok
+    const q = new scope.Pair('a', 'b'); // ok: widens to string
+    const [mx, my] = new scope.Pair('a', 'a').mixed(1, 'x'); // ok
+    if (p.pair[0] !== 'a' || q.pair[1] !== 'b' || mx !== 1 || my !== 'x' || hits.length !== before) {
+      return false;
+    }
+    const bad = new scope.Pair('a', 1); // warns
+    const [nx, ny] = new scope.Pair('a', 'a').mixed('x', 'y'); // warns: T is number
+    if (bad.pair[1] !== 1 || nx !== 'x' || ny !== 'y' || hits.length !== before + 2) {
+      return false;
+    }
+    return noneUnchecked(posted);
+  });
 }
 export const tests = [
   testConstrainedDefaultKeepsConstraint,
-  testConstructorInheritsClassTemplates,
-  testIssueAssetShape,
-  testMethodInheritsClassTemplates,
-  testMethodLocalWins,
-  testExportWrapper,
-  testRuntimeOkAndWarns,
-  testRuntimeJointInference,
+  testIssueAsset,
+  testBoxConstructorAndMethod,
+  testExportedClass,
+  testBareClassTemplate,
+  testPairJointInference,
 ];
