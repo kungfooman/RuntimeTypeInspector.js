@@ -366,6 +366,38 @@ class Asserter extends Stringifier {
     return {templates, params};
   }
   /**
+   * Reads `@template` bindings from the enclosing class (declaration or
+   * expression, incl. `export` wrappers). Class templates scope over the
+   * constructor and methods, mirroring TypeScript: `new Asset('x', ...)`
+   * infers `K` from the constructor's `@param {K}` occurrences.
+   * @param {Node} node - The function or block node being checked.
+   * @returns {Record<string, any>|undefined} Class templates or undefined.
+   */
+  getClassTemplates(node) {
+    const classDecl = this.findParentOfType(node, 'ClassDeclaration') ??
+      this.findParentOfType(node, 'ClassExpression');
+    if (!classDecl) {
+      return;
+    }
+    let leadingComments = classDecl.leadingComments;
+    if (!leadingComments) {
+      const exportNamed = this.findParentOfType(classDecl, 'ExportNamedDeclaration');
+      leadingComments = exportNamed?.leadingComments;
+      if (!leadingComments) {
+        const exportDefault = this.findParentOfType(classDecl, 'ExportDefaultDeclaration');
+        leadingComments = exportDefault?.leadingComments;
+      }
+    }
+    if (!leadingComments?.length) {
+      return;
+    }
+    const lastComment = leadingComments[leadingComments.length - 1];
+    if (lastComment.type !== 'CommentBlock') {
+      return;
+    }
+    return parseJSDocTemplates(lastComment.value);
+  }
+  /**
    * Retrieves the name of a parameter from a Babel AST node.
    *
    * This function expects a node representing a function parameter and attempts to extract
@@ -500,12 +532,16 @@ class Asserter extends Stringifier {
       stat.checked++;
       return this.emitDefaultChecks(node, inferred, true);
     }
-    const {templates, params} = jsdoc;
+    const {templates: ownTemplates, params} = jsdoc;
     if (!params) {
       console.warn("This should never happen, please check your input code.", this.getLeadingComment(node), {jsdoc});
       stat.unchecked++;
       return '';
     }
+    // Class-level `@template` scopes over constructor and methods: merge it
+    // under method-local templates so `K` in `@param {K}` resolves jointly.
+    const classTemplates = this.getClassTemplates(node);
+    const templates = classTemplates ? {...classTemplates, ...ownTemplates} : ownTemplates;
     stat.checked++;
     const {spaces} = this;
     let out = '';

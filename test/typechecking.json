@@ -56,6 +56,10 @@
     "output": "./test/typechecking/callbacks-output.mjs"
   },
   {
+    "input": "./test/typechecking/class-templates-input.mjs",
+    "output": "./test/typechecking/class-templates-output.mjs"
+  },
+  {
     "input": "./test/typechecking/comment-newline-input.mjs",
     "output": "./test/typechecking/comment-newline-output.mjs"
   },
