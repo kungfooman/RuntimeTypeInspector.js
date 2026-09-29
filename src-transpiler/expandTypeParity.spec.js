@@ -72,7 +72,7 @@ function testJSDocNullableParity() {
   return true;
 }
 function testReadonlyUniqueParity() {
-  // Stresstest: readonly erased, unknown operators recover as any, no throws.
+  // Stresstest: readonly/`unique` erased, no throws.
   for (const type of ['readonly number[]', 'readonly [1, 2]', 'unique symbol']) {
     if (!assertParity(type)) {
       return false;

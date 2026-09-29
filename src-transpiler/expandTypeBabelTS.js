@@ -300,6 +300,11 @@ function toSourceBabelTS(node) {
         const keyofArg = toSourceBabelTS(node.typeAnnotation);
         return {type: 'keyof', argument: keyofArg};
       }
+      if (node.operator === 'unique') {
+        // `unique symbol` is a symbol at runtime; uniqueness refers to a
+        // specific declaration which we cannot track here.
+        return toSourceBabelTS(node.typeAnnotation);
+      }
       console.warn('unimplemented TSTypeOperator', node.operator);
       return 'any';
     case 'TSQualifiedName':

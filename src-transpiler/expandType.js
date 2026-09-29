@@ -252,6 +252,11 @@ function toSourceTS(node) {
         // readonly erased at runtime, same shape as the inner type.
         return toSourceTS(node.type);
       }
+      if (node.operator === UniqueKeyword) {
+        // `unique symbol` is a symbol at runtime; the uniqueness refers to
+        // a specific declaration which we cannot track here.
+        return toSourceTS(node.type);
+      }
       console.warn("unimplemented TypeOperator", node);
       return 'any';
     case TypeReference: {

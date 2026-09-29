@@ -436,7 +436,7 @@ function expandTypeDepFree(type) {
     return expandTypeDepFree(type.slice(9).trim());
   }
   if (type === 'unique symbol') {
-    return 'any';
+    return 'symbol';
   }
   // Conditionals before nullable: `A extends B ? C : D?` must keep the
   // nullable on the false branch, not lift it over the whole condition.
