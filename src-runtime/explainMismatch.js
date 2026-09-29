@@ -10,15 +10,27 @@ import './validateType.js';
 import './evaluateCondition.js';
 import {stringifyType} from './stringifyType.js';
 import {previewValue, stringifyValue} from './stringifyValue.js';
+import {describeValueType, formatMapKey} from './describeValue.js';
 const MAX_DEPTH = 6;
 const MAX_UNION_MEMBERS = 12;
+const MAX_MAP_ENTRIES = 20;
 const noop = () => undefined;
 /**
- * Short one-line JSON snapshot of a value for diagnosis rows.
+ * Short one-line JSON snapshot of a value for diagnosis rows. `Map`/`Set`
+ * read as inferred generics (`Map<string, null>`) instead of raw
+ * `{"$type": "Map", …}` snapshots (issue #267).
  * @param {*} value - The value.
  * @returns {string} Truncated snapshot.
  */
 function snip(value) {
+  try {
+    if (value instanceof Map || value instanceof Set) {
+      const text = describeValueType(value);
+      return text.length > 160 ? `${text.slice(0, 157)}...` : text;
+    }
+  } catch {
+    // Fall through to the JSON snapshot below.
+  }
   return previewValue(value, 160);
 }
 /**
@@ -276,6 +288,154 @@ function describeExcess(subPath, key, actual, allowed, info) {
   };
 }
 /**
+ * Structural diff of a `Map` value against a `Map<K, V>` type (issue #267).
+ * Every entry value is diffed against `V` with a `.get('key')` path — the
+ * same naming `validateMap` warns with — so the Diagnosis pinpoints the
+ * failing entry instead of reporting one opaque whole-value mismatch.
+ * @param {*} value - The actual value.
+ * @param {*} mat - The materialized `{type: 'map', key, val}` type.
+ * @param {string} path - Dotted path, e.g. `config`.
+ * @param {number} depth - Recursion depth.
+ * @returns {object[]} Findings (empty when the value satisfies the type).
+ */
+function diffMapValue(value, mat, path, depth) {
+  let isMap = false;
+  try {
+    isMap = value instanceof Map;
+  } catch {
+    isMap = false;
+  }
+  if (!isMap) {
+    return [{
+      path,
+      kind: 'wrong',
+      expected: expectSnip(mat),
+      actual: snip(value),
+      detail: `Expected a Map (${expectSnip(mat)}), got ${snip(value)}.`,
+      fix: `Change \`${path}\` to ${expectSnip(mat)}.`,
+    }];
+  }
+  if (mat.key !== 'string') {
+    // Mirrors validateMap: only string keys are supported.
+    return passes(value, mat) ? [] : [{
+      path,
+      kind: 'wrong',
+      expected: expectSnip(mat),
+      actual: snip(value),
+      detail: 'Value does not satisfy the type.',
+      fix: `Change \`${path}\` to ${expectSnip(mat)}.`,
+    }];
+  }
+  if (depth >= MAX_DEPTH) {
+    return passes(value, mat) ? [] : [{
+      path,
+      kind: 'wrong',
+      expected: expectSnip(mat),
+      actual: snip(value),
+      detail: 'Nested too deep to break down further.',
+    }];
+  }
+  const findings = [];
+  let shown = 0;
+  try {
+    for (const [key, val] of value) {
+      if (shown >= MAX_MAP_ENTRIES) {
+        break;
+      }
+      findings.push(...diffValue(val, mat.val, `${path}.get(${formatMapKey(key)})`, depth + 1));
+      shown++;
+    }
+  } catch {
+    return passes(value, mat) ? [] : [{
+      path,
+      kind: 'wrong',
+      expected: expectSnip(mat),
+      actual: snip(value),
+      detail: 'Map entries are unreadable.',
+      fix: `Change \`${path}\` to ${expectSnip(mat)}.`,
+    }];
+  }
+  if (!findings.length && !passes(value, mat)) {
+    // Entries past the budget fail without an entry pinpoint.
+    findings.push({
+      path,
+      kind: 'wrong',
+      expected: expectSnip(mat),
+      actual: snip(value),
+      detail: `First ${shown} entries match; the problem is in a later entry.`,
+      fix: `Change \`${path}\` to ${expectSnip(mat)}.`,
+    });
+  }
+  return findings;
+}
+/**
+ * Structural diff of a `Set` value against a `Set<T>` type (issue #267).
+ * Members are diffed by index (`path[0]`, …), mirroring the object diff.
+ * @param {*} value - The actual value.
+ * @param {*} mat - The materialized `{type: 'set', elementType}` type.
+ * @param {string} path - Dotted path, e.g. `tags`.
+ * @param {number} depth - Recursion depth.
+ * @returns {object[]} Findings (empty when the value satisfies the type).
+ */
+function diffSetValue(value, mat, path, depth) {
+  let isSet = false;
+  try {
+    isSet = value instanceof Set;
+  } catch {
+    isSet = false;
+  }
+  if (!isSet) {
+    return [{
+      path,
+      kind: 'wrong',
+      expected: expectSnip(mat),
+      actual: snip(value),
+      detail: `Expected a Set (${expectSnip(mat)}), got ${snip(value)}.`,
+      fix: `Change \`${path}\` to ${expectSnip(mat)}.`,
+    }];
+  }
+  if (depth >= MAX_DEPTH) {
+    return passes(value, mat) ? [] : [{
+      path,
+      kind: 'wrong',
+      expected: expectSnip(mat),
+      actual: snip(value),
+      detail: 'Nested too deep to break down further.',
+    }];
+  }
+  const findings = [];
+  let i = 0;
+  try {
+    for (const item of value) {
+      if (i >= MAX_MAP_ENTRIES) {
+        break;
+      }
+      findings.push(...diffValue(item, mat.elementType, `${path}[${i}]`, depth + 1));
+      i++;
+    }
+  } catch {
+    return passes(value, mat) ? [] : [{
+      path,
+      kind: 'wrong',
+      expected: expectSnip(mat),
+      actual: snip(value),
+      detail: 'Set members are unreadable.',
+      fix: `Change \`${path}\` to ${expectSnip(mat)}.`,
+    }];
+  }
+  if (!findings.length && !passes(value, mat)) {
+    findings.push({
+      path,
+      kind: 'wrong',
+      expected: expectSnip(mat),
+      actual: snip(value),
+      detail: `First ${i} members match; the problem is in a later member.`,
+      fix: `Change \`${path}\` to ${expectSnip(mat)}.`,
+    });
+  }
+  return findings;
+}
+/**
  * Structural diff producing path-pinned findings. Objects compare key by
  * key (missing required, wrong-typed, unexpected extras); unions probe every
  * member and keep the closest match's findings; anything else is a silent
@@ -312,6 +472,12 @@ function diffValue(value, expect, path, depth) {
       detail: `No union member matched; closest is ${expectSnip(best.member)} with ${best.findings.length} problem${best.findings.length === 1 ? '' : 's'}.`,
       children: best.findings,
     }];
+  }
+  if (mat && typeof mat === 'object' && mat.type === 'map') {
+    return diffMapValue(value, mat, path, depth);
+  }
+  if (mat && typeof mat === 'object' && mat.type === 'set') {
+    return diffSetValue(value, mat, path, depth);
   }
   if (mat && typeof mat === 'object' && mat.type === 'object' && mat.properties) {
     if (value === null || typeof value !== 'object') {

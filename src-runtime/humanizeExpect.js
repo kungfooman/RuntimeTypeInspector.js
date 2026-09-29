@@ -1,6 +1,7 @@
 import {classes} from './registerClass.js';
 import {stringifyType} from './stringifyType.js';
 import {stringifyValue} from './stringifyValue.js';
+import {prettyValue} from './describeValue.js';
 /**
  * Short human-readable summary for an expected type, for the panel's Expect
  * column (issue #134 item 2). Bare single-letter types like `K` are
@@ -30,7 +31,9 @@ function humanizeExpect(expect) {
 }
 /**
  * Pretty side-by-side texts for the comparator modal (issue #134 item 3).
- * Pure (no DOM) so it is unit-testable.
+ * Pure (no DOM) so it is unit-testable. `Map`/`Set` values render as an
+ * entry listing (`Map(1) { "apiKey" => null }`) instead of the raw
+ * `{"$type": "Map", …}` snapshot (issue #267).
  * @param {*} expect - The expected type.
  * @param {*} value - The actual value.
  * @returns {{expectPretty: string, actualPretty: string}} Formatted texts.
@@ -44,7 +47,7 @@ function formatCompare(expect, value) {
   }
   let actualPretty;
   try {
-    actualPretty = JSON.stringify(stringifyValue(value), null, 2) ?? String(value);
+    actualPretty = prettyValue(value) ?? JSON.stringify(stringifyValue(value), null, 2) ?? String(value);
   } catch {
     actualPretty = String(value?.toString?.() ?? value);
   }
