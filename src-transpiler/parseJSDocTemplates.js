@@ -16,6 +16,12 @@ function parseJSDocTemplates(src, expandType = expandTypeDepFree) {
   const matches = [...src.matchAll(regexTemplateTyped)];
   /** @type {Record<string, ExpandTypeReturnType>} */
   const templates = Object.create(null);
+  // `@template {Constraint} [Name=Default]` (or `[Name]`): constraint wins,
+  // the default only matters when nothing is inferred.
+  const regexTemplateConstrainedDefault = /@template \{(.*?)\}\s*\[([a-zA-Z0-9_$]+)(?:=([^\]]+))?\]/g;
+  for (const match of src.matchAll(regexTemplateConstrainedDefault)) {
+    templates[match[2]] = expandType(match[1].trim());
+  }
   matches.forEach(_ => {
     const type = expandType(_[1].trim());
     const name = _[2].trim();
