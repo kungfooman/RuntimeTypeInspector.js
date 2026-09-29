@@ -18,7 +18,7 @@ const BUILD_SUBJECT = '__RTI_BUILD_SUBJECT__';
 function isPlaceholder(value) {
   return typeof value === 'string' && value.startsWith('__RTI_') && value.endsWith('__');
 }
-const RTI_VERSION = isPlaceholder(PKG_VERSION) ? '5.0.3' : PKG_VERSION;
+const RTI_VERSION = isPlaceholder(PKG_VERSION) ? '5.0.4' : PKG_VERSION;
 const RTI_BUILD = isPlaceholder(BUILD_DATE) ? null : {
   date: BUILD_DATE,
   commit: isPlaceholder(BUILD_COMMIT) ? null : BUILD_COMMIT,
