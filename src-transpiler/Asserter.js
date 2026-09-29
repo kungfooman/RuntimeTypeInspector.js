@@ -366,19 +366,49 @@ class Asserter extends Stringifier {
     return {templates, params};
   }
   /**
-   * Reads `@template` bindings from the enclosing class (declaration or
-   * expression, incl. `export` wrappers). Class templates scope over the
-   * constructor and methods, mirroring TypeScript: `new Asset('x', ...)`
-   * infers `K` from the constructor's `@param {K}` occurrences.
+   * Reads `@template` bindings from every lexically enclosing scope, outer
+   * to inner: classes (declaration or expression, incl. `export` wrappers)
+   * and functions with their own `@template` tags. Class templates scope
+   * over the constructor and methods, mirroring TypeScript:
+   * `new Asset('x', ...)` infers `K` from the constructor's `@param {K}`
+   * occurrences. Inner scopes shadow outer names on conflict.
    * @param {Node} node - The function or block node being checked.
-   * @returns {Record<string, any>|undefined} Class templates or undefined.
+   * @returns {Record<string, any>|undefined} Merged scope templates or undefined.
    */
-  getClassTemplates(node) {
-    const classDecl = this.findParentOfType(node, 'ClassDeclaration') ??
-      this.findParentOfType(node, 'ClassExpression');
-    if (!classDecl) {
+  getScopeTemplates(node) {
+    let fnNode = node;
+    if (node.type === 'BlockStatement') {
+      fnNode = this.parent;
+    }
+    const anchorIdx = this.parents.findLastIndex(_ => _ === node);
+    if (anchorIdx === -1) {
       return;
     }
+    let merged;
+    for (let i = 0; i <= anchorIdx; i++) {
+      const ancestor = this.parents[i];
+      if (!ancestor || ancestor === fnNode) {
+        // Never inherit the node's own bindings: they merge separately and win.
+        continue;
+      }
+      let templates;
+      if (ancestor.type === 'ClassDeclaration' || ancestor.type === 'ClassExpression') {
+        templates = this.classTemplatesOf(ancestor);
+      } else if (nodeIsFunctionLike(ancestor)) {
+        templates = this.functionTemplatesOf(ancestor);
+      }
+      if (templates) {
+        merged = {...merged, ...templates};
+      }
+    }
+    return merged;
+  }
+  /**
+   * Reads the `@template` bindings off one class node.
+   * @param {Node} classDecl - The ClassDeclaration or ClassExpression node.
+   * @returns {Record<string, any>|undefined} Its templates or undefined.
+   */
+  classTemplatesOf(classDecl) {
     let leadingComments = classDecl.leadingComments;
     if (!leadingComments) {
       const exportNamed = this.findParentOfType(classDecl, 'ExportNamedDeclaration');
@@ -393,6 +423,35 @@ class Asserter extends Stringifier {
         const varDecl = this.findParentOfType(classDecl, 'VariableDeclaration');
         leadingComments = varDecl?.leadingComments;
       }
+    }
+    if (!leadingComments?.length) {
+      return;
+    }
+    const lastComment = leadingComments[leadingComments.length - 1];
+    if (lastComment.type !== 'CommentBlock') {
+      return;
+    }
+    return parseJSDocTemplates(lastComment.value);
+  }
+  /**
+   * Reads the `@template` bindings off one enclosing function: its own
+   * leading comment, resolving the same `export`/declarator wrappers the
+   * node's own JSDoc lookup uses.
+   * @param {Node} fnNode - The enclosing function-like node.
+   * @returns {Record<string, any>|undefined} Its templates or undefined.
+   */
+  functionTemplatesOf(fnNode) {
+    let leadingComments;
+    if (fnNode.type === 'FunctionDeclaration') {
+      leadingComments = fnNode.leadingComments ??
+        this.findParentOfType(fnNode, 'ExportNamedDeclaration')?.leadingComments;
+    } else if (fnNode.type === 'FunctionExpression') {
+      leadingComments = this.getLeadingCommentsNodeForFunctionExpression(fnNode)?.leadingComments;
+    } else if (fnNode.type === 'ArrowFunctionExpression') {
+      leadingComments = this.getLeadingCommentsNodeForArrowFunctionExpression(fnNode)?.leadingComments;
+    } else {
+      // ObjectMethod, ClassMethod, ClassPrivateMethod: docs sit on the node.
+      leadingComments = fnNode.leadingComments;
     }
     if (!leadingComments?.length) {
       return;
@@ -544,10 +603,11 @@ class Asserter extends Stringifier {
       stat.unchecked++;
       return '';
     }
-    // Class-level `@template` scopes over constructor and methods: merge it
-    // under method-local templates so `K` in `@param {K}` resolves jointly.
-    const classTemplates = this.getClassTemplates(node);
-    const templates = classTemplates ? {...classTemplates, ...ownTemplates} : ownTemplates;
+    // Lexically enclosing `@template`s (classes and functions) scope over
+    // this node: merge them under method-local templates so `K` in
+    // `@param {K}` resolves jointly. Inner scopes shadow outer ones.
+    const scopeTemplates = this.getScopeTemplates(node);
+    const templates = scopeTemplates ? {...scopeTemplates, ...ownTemplates} : ownTemplates;
     stat.checked++;
     const {spaces} = this;
     let out = '';

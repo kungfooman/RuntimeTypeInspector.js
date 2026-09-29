@@ -189,6 +189,165 @@ function testExportDefaultClass() {
     return noneUnchecked(posted);
   });
 }
+// Nested classes resolve their NEAREST template: an expression-class with
+// its own `@template` inside a declaration-class (and vice versa) infers
+// from its own params, not the outer class.
+function testNestedOwnTemplateBothKinds() {
+  const exprInDecl = '/** @template {string} O */\n' +
+    'class Outer {\n' +
+    '  /** @param {O} o */\n' +
+    '  constructor(o) {}\n' +
+    '  make() {\n' +
+    '    /** @template {number} I */\n' +
+    '    const Inner = class {\n' +
+    '      /** @param {I} x */\n' +
+    '      constructor(x) { this.x = x; }\n' +
+    '    };\n' +
+    '    return Inner;\n' +
+    '  }\n' +
+    '}';
+  const declInExpr = '/** @template {string} O */\n' +
+    'const OuterE = class {\n' +
+    '  /** @param {O} o */\n' +
+    '  constructor(o) {}\n' +
+    '  make() {\n' +
+    '    /** @template {number} I */\n' +
+    '    class Inner {\n' +
+    '      /** @param {I} x */\n' +
+    '      constructor(x) { this.x = x; }\n' +
+    '    }\n' +
+    '    return Inner;\n' +
+    '  }\n' +
+    '}';
+  for (const [src, name] of [[exprInDecl, 'Outer'], [declInExpr, 'OuterE']]) {
+    const ok = runChecks(src, name, (scope, {hits, posted}) => {
+      const before = hits.length;
+      const Inner = new scope[name]('o').make();
+      const good = new Inner(1); // ok
+      if (good.x !== 1 || hits.length !== before) {
+        return false;
+      }
+      const bad = new Inner('s'); // warns: I is number
+      if (bad.x !== 's' || hits.length !== before + 1) {
+        return false;
+      }
+      return noneUnchecked(posted);
+    });
+    if (!ok) {
+      return false;
+    }
+  }
+  return true;
+}
+// An inner class without its own template sees the outer one.
+function testInnerUsesOuterTemplate() {
+  const src = '/** @template {string} K */\n' +
+    'class Outer {\n' +
+    '  /** @param {K} o */\n' +
+    '  constructor(o) {}\n' +
+    '  make() {\n' +
+    '    const Inner = class {\n' +
+    '      /** @param {K} x */\n' +
+    '      constructor(x) { this.x = x; }\n' +
+    '    };\n' +
+    '    return Inner;\n' +
+    '  }\n' +
+    '}';
+  return runChecks(src, 'Outer', (scope, {hits, posted}) => {
+    const before = hits.length;
+    const Inner = new scope.Outer('o').make();
+    const good = new Inner('x'); // ok
+    if (good.x !== 'x' || hits.length !== before) {
+      return false;
+    }
+    const bad = new Inner(1); // warns: K is string
+    if (bad.x !== 1 || hits.length !== before + 1) {
+      return false;
+    }
+    return noneUnchecked(posted);
+  });
+}
+// Inner templates shadow outer ones on name conflict.
+function testShadowedTemplate() {
+  const src = '/** @template {string} K */\n' +
+    'class Outer {\n' +
+    '  /** @param {K} o */\n' +
+    '  constructor(o) {}\n' +
+    '  make() {\n' +
+    '    /** @template {number} K */\n' +
+    '    const Inner = class {\n' +
+    '      /** @param {K} x */\n' +
+    '      constructor(x) { this.x = x; }\n' +
+    '    };\n' +
+    '    return Inner;\n' +
+    '  }\n' +
+    '}';
+  return runChecks(src, 'Outer', (scope, {hits, posted}) => {
+    const before = hits.length;
+    const Inner = new scope.Outer('o').make();
+    const good = new Inner(1); // ok: inner K is number
+    if (good.x !== 1 || hits.length !== before) {
+      return false;
+    }
+    const bad = new Inner('s'); // warns
+    if (bad.x !== 's' || hits.length !== before + 1) {
+      return false;
+    }
+    return noneUnchecked(posted);
+  });
+}
+// A plain function nested in a generic method sees the method's template.
+function testNestedFunctionSeesMethodTemplate() {
+  const src = 'class A {\n' +
+    '  /** @template T\n@param {T} x */\n' +
+    '  method(x) {\n' +
+    '    /** @param {T} y */\n' +
+    '    function helper(y) { return y; }\n' +
+    '    return helper(x);\n' +
+    '  }\n' +
+    '}';
+  return runChecks(src, 'A', (scope, {hits, posted}) => {
+    const before = hits.length;
+    if (new scope.A().method('a') !== 'a' || hits.length !== before) {
+      return false;
+    }
+    return noneUnchecked(posted);
+  });
+}
+// The full chain: class > function > expression-class cross-referencing
+// both the method-visible outer template and the inner one.
+function testClassFnExprChain() {
+  const src = '/** @template {string} O */\n' +
+    'class Outer {\n' +
+    '  /** @param {O} o */\n' +
+    '  constructor(o) {}\n' +
+    '  /** @param {O} o */\n' +
+    '  make(o) {\n' +
+    '    /** @param {O} t */\n' +
+    '    function helper(t) {\n' +
+    '      /** @template {number} I */\n' +
+    '      const Inner = class {\n' +
+    '        /** @param {I} x\n@param {O} y */\n' +
+    '        constructor(x, y) { this.x = x; this.y = y; }\n' +
+    '      };\n' +
+    '      return new Inner(1, t);\n' +
+    '    }\n' +
+    '    return helper(o);\n' +
+    '  }\n' +
+    '}';
+  return runChecks(src, 'Outer', (scope, {hits, posted}) => {
+    const before = hits.length;
+    const good = new scope.Outer('ok').make('ok'); // ok
+    if (good.x !== 1 || good.y !== 'ok' || hits.length !== before) {
+      return false;
+    }
+    const bad = new scope.Outer('ok').make(2); // warns: O is string
+    if (bad.y !== 2 || hits.length === before) {
+      return false;
+    }
+    return noneUnchecked(posted);
+  });
+}
 export const tests = [
   testConstrainedDefaultKeepsConstraint,
   testIssueAsset,
@@ -199,4 +358,9 @@ export const tests = [
   testClassExpressionOnDeclaration,
   testExportConstClassExpression,
   testExportDefaultClass,
+  testNestedOwnTemplateBothKinds,
+  testInnerUsesOuterTemplate,
+  testShadowedTemplate,
+  testNestedFunctionSeesMethodTemplate,
+  testClassFnExprChain,
 ];
