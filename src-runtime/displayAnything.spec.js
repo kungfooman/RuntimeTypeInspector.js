@@ -278,6 +278,17 @@ function testSnapshotEmptyRendersTag() {
     return text === 'BarProp';
   });
 }
+function testTombstoneRowDims() {
+  // Recorder tombstones (data never captured) render dimmed so they never
+  // pose as drillable rows; normal rows stay undimmed.
+  return withFake(() => {
+    const tomb = renderTree({'[...+N more keys]': '5 more keys'}).el;
+    const [, tombRow] = tomb.children[0].children;
+    const plain = renderTree({a: 1}).el;
+    const [, plainRow] = plain.children[0].children;
+    return tombRow.className.includes('rti-dimmed') && plainRow.className === 'rti-line';
+  });
+}
 /**
  * Builds an object with `n` plain keys.
  * @param {number} n - Key count.
@@ -434,6 +445,7 @@ const tests = [
   testFunctionLeafUnaffected,
   testSnapshotTreeSkipsEnvelope,
   testSnapshotEmptyRendersTag,
+  testTombstoneRowDims,
   testDroppedKeysLeaveMarker,
   testDroppedIndicesLeaveMarker,
   testNoMarkerWhenFits,

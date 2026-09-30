@@ -356,6 +356,8 @@ class DisplayAnything {
   }
   /**
    * Appends the `key : value` leaf row (or the bare value for the root).
+   * Recorder tombstone rows (data the snapshot never captured) render
+   * dimmed so they never pose as drillable data.
    */
   buildLeaf() {
     if (!this.parent) {
@@ -364,6 +366,9 @@ class DisplayAnything {
       return;
     }
     this.valueEl = Span({className: `rti-${this.safeType()}`, textContent: this.valueToString()});
+    if (String(this.key).startsWith('[...+') && !this.el.className.includes('rti-dimmed')) {
+      this.el.className += ' rti-dimmed';
+    }
     this.el.append(
       Span({className: 'rti-key', textContent: String(this.key)}),
       Span({className: 'rti-separator', textContent: ':'}),

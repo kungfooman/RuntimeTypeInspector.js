@@ -346,6 +346,23 @@ function testUserDataDollarTypeUnaffected() {
     prettyValue(data) === undefined &&
     snip(data).includes('a');
 }
+function testPanelSnapshotCapturesBeyondLogBreadth() {
+  // Unclonable values post roomy snapshots: hundreds of keys arrive, so
+  // tree batches yield data instead of ending at a tombstone row.
+  const wide = {handler: () => {}};
+  for (let i = 0; i < 401; i++) {
+    wide[`k${i}`] = i;
+  }
+  const msgs = captureMessages(() => {
+    inspectType(wide, 'number', 'loc', 'name');
+  });
+  if (msgs.length !== 1) {
+    return false;
+  }
+  const {value} = msgs[0];
+  return value.k400 === 400 &&
+    !Object.keys(value).some((key) => key.startsWith('[...+'));
+}
 const tests = [
   testDescribeTypedArrays,
   testDescribeTypedArrayBounded,
@@ -385,5 +402,6 @@ const tests = [
   testSnapshotBigint,
   testSnapshotTypedArray,
   testUserDataDollarTypeUnaffected,
+  testPanelSnapshotCapturesBeyondLogBreadth,
 ];
 export {tests};
