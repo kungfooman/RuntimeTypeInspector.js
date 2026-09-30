@@ -21,6 +21,25 @@ class FakeNode {
     this.append(node);
     return node;
   }
+  removeChild(node) {
+    const index = this.children.indexOf(node);
+    if (index !== -1) {
+      this.children.splice(index, 1);
+    }
+    return node;
+  }
+  insertBefore(node, ref) {
+    if (node === undefined || node === null || node === false) {
+      return node;
+    }
+    const at = ref ? this.children.indexOf(ref) : -1;
+    if (at === -1) {
+      this.children.push(node);
+    } else {
+      this.children.splice(at, 0, node);
+    }
+    return node;
+  }
   set innerHTML(html) {
     this.children = [];
     this.html = String(html);

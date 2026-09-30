@@ -8,6 +8,14 @@ import {partition                } from './partition.js';
 import {importNamespaceSpecifiers} from './registerImportNamespaceSpecifier.js';
 import {isClonable               } from './isClonable.js';
 const breakpoints = new Set();
+/**
+ * Snapshot budgets for panel-bound values: the tree batches rows on click,
+ * so capture generously instead of log-sized. Real hosts carry hundreds of
+ * keys; capping at log breadth would end every drill-down at a tombstone
+ * row describing data that was never captured.
+ */
+const PANEL_SNAPSHOT_BREADTH = 500;
+const PANEL_SNAPSHOT_NODES = 20000;
 // In the simplest case we are attaching to `window` here, but it's designed to handle
 // more complex scenarious like running RTI inside a `Worker` or `<iframe>` aswell.
 (globalThis.window || self).addEventListener('message', (e) => {
@@ -147,9 +155,10 @@ function inspectType(value, expect, loc, name, critical = true) {
     // Don't post `value` when it can't be transmitted cross-context (just stringify it instead).
     // Unclonable values (functions, DOM, class instances with methods) become
     // the structured snapshot — still inspectable downstream — instead of a
-    // content-free `[object Object]` string.
+    // content-free `[object Object]` string. Panel-sized budgets: the tree
+    // batches on click, so capture roomy enough that batches yield data.
     if (!isClonable(value)) {
-      value = stringifyValue(value);
+      value = stringifyValue(value, {maxBreadth: PANEL_SNAPSHOT_BREADTH, maxNodes: PANEL_SNAPSHOT_NODES});
     }
     for (const extra of extras) {
       if (!isClonable(extra)) {

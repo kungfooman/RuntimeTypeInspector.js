@@ -13,7 +13,6 @@
     "@runtime-type-inspector/transpiler": "^5.0.5",
     "ace-builds": "^1.35.2",
     "ace-diff": "^3.0.3",
-    "display-anything": "^1.1.0",
     "express": "^4.18.2",
     "react-es6": "^1.0.0",
     "worker-with-import-map": "^1.0.4"

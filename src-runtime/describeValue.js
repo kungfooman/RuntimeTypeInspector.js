@@ -267,9 +267,158 @@ function describeValueType(value, depth = 2) {
   }
   const proto = Object.getPrototypeOf(value);
   const prefix = proto !== null && proto !== Object.prototype && value.constructor?.name ? `${value.constructor.name} ` : '';
+  if (prefix) {
+    let keys;
+    try {
+      keys = Object.keys(value);
+    } catch {
+      return prefix.trim();
+    }
+    // Host instances (`Window` and friends) carry hundreds of keys; anything
+    // that would not even fit the Actual pane lists as its bare tag instead
+    // of an unreadable nested blob, mirroring how TypeScript names them.
+    if (keys.length > MAX_PRETTY_ENTRIES) {
+      return prefix.trim();
+    }
+    const shown = keys.slice(0, 5).map((key) => `${key}: ${describeValueType(value[key], depth - 1)}`);
+    return `${prefix}{${shown.join(', ')}${keys.length > 5 ? ', ...' : ''}}`;
+  }
+  const snapshot = snapshotTag(value);
+  if (snapshot !== undefined) {
+    return describeSnapshot(value, snapshot, depth);
+  }
   const keys = Object.keys(value).slice(0, 5);
   const shown = keys.map((key) => `${key}: ${describeValueType(value[key], depth - 1)}`);
-  return `${prefix}{${shown.join(', ')}${Object.keys(value).length > 5 ? ', ...' : ''}}`;
+  return `{${shown.join(', ')}${Object.keys(value).length > 5 ? ', ...' : ''}}`;
+}
+/**
+ * Names `stringifyValue` snapshots: values that cannot cross into the UI
+ * (host objects, instances with methods, containers holding functions)
+ * arrive as plain objects carrying their recorded constructor tag, since
+ * the live reference cannot survive messaging. Only constructor-style tags
+ * count, so genuine data keys in the same shape keep expanding normally.
+ * @param {*} value - The value to inspect.
+ * @returns {string|undefined} Snapshot tag, or undefined for live values.
+ */
+function snapshotTag(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined;
+  }
+  let proto;
+  try {
+    proto = Object.getPrototypeOf(value);
+  } catch {
+    return undefined;
+  }
+  if (proto !== Object.prototype && proto !== null) {
+    return undefined;
+  }
+  let tag;
+  try {
+    tag = value.$type;
+  } catch {
+    return undefined;
+  }
+  if (typeof tag !== 'string' || (tag !== 'bigint' && !/^[A-Z]/.test(tag))) {
+    return undefined;
+  }
+  return tag;
+}
+/**
+ * One-line rendering of a snapshot by its recorded tag: hosts read as
+ * their bare tag, containers and buffers add their recorded size.
+ * Never throws.
+ * @param {*} snapshot - The snapshot object.
+ * @param {string} tag - The recorded constructor tag.
+ * @param {number} depth - Remaining nesting depth.
+ * @returns {string} One-line text.
+ */
+function describeSnapshot(snapshot, tag, depth) {
+  if (depth <= 0) {
+    return tag;
+  }
+  try {
+    if (tag === 'bigint') {
+      return `${snapshot.value}n`;
+    }
+    if ((tag === 'Map' || tag === 'Set') && typeof snapshot.size === 'number') {
+      return `${tag}(${snapshot.size})`;
+    }
+    if ((tag === 'ArrayBuffer' || tag === 'SharedArrayBuffer' || tag === 'DataView') &&
+        typeof snapshot.byteLength === 'number') {
+      return `${tag}(${snapshot.byteLength})`;
+    }
+    if ((tag.endsWith('Array') || tag === 'Buffer') && typeof snapshot.length === 'number') {
+      return `${tag}(${snapshot.length})`;
+    }
+  } catch {
+    // Fall through to the bare tag below.
+  }
+  return tag;
+}
+/**
+ * Multi-line Actual-pane rendering of a snapshot: containers list their
+ * recorded entries, hosts list one `key: value` row per recorded key with
+ * nested snapshots collapsing to their tags. Bounded like live rendering.
+ * Never throws.
+ * @param {*} snapshot - The snapshot object.
+ * @param {string} tag - The recorded constructor tag.
+ * @returns {string} Multi-line text.
+ */
+function prettySnapshot(snapshot, tag) {
+  try {
+    if (tag === 'Map' && Array.isArray(snapshot.entries)) {
+      const size = typeof snapshot.size === 'number' ? snapshot.size : snapshot.entries.length;
+      const lines = [`${tag}(${size}) {`];
+      for (const entry of snapshot.entries.slice(0, MAX_PRETTY_ENTRIES)) {
+        lines.push(Array.isArray(entry) ?
+          `  ${oneLine(entry[0])} => ${oneLine(entry[1])}` :
+          `  ${oneLine(entry)}`);
+      }
+      lines.push('}');
+      return lines.join('\n');
+    }
+    if (tag === 'Set' && Array.isArray(snapshot.values)) {
+      const size = typeof snapshot.size === 'number' ? snapshot.size : snapshot.values.length;
+      const lines = [`${tag}(${size}) {`];
+      for (const item of snapshot.values.slice(0, MAX_PRETTY_ENTRIES)) {
+        lines.push(`  ${oneLine(item)}`);
+      }
+      lines.push('}');
+      return lines.join('\n');
+    }
+    if ((tag.endsWith('Array') || tag === 'Buffer') && Array.isArray(snapshot.values)) {
+      const len = typeof snapshot.length === 'number' ? snapshot.length : snapshot.values.length;
+      if (len === 0) {
+        return `${tag}(0) []`;
+      }
+      const lines = [`${tag}(${len}) [`];
+      for (const item of snapshot.values.slice(0, MAX_PRETTY_ENTRIES)) {
+        lines.push(`  ${oneLine(item)}`);
+      }
+      lines.push(']');
+      return lines.join('\n');
+    }
+    if (tag === 'bigint' || tag === 'ArrayBuffer' || tag === 'SharedArrayBuffer' || tag === 'DataView') {
+      return describeSnapshot(snapshot, tag, 2);
+    }
+    const keys = Object.keys(snapshot).filter((key) => key !== '$type');
+    if (!keys.length) {
+      return `${tag} {}`;
+    }
+    const lines = [`${tag} {`];
+    const shown = keys.slice(0, MAX_PRETTY_ENTRIES);
+    for (const key of shown) {
+      lines.push(`  ${key}: ${oneLine(snapshot[key])}`);
+    }
+    if (keys.length > shown.length) {
+      lines.push(`  ...(+${keys.length - shown.length} more)`);
+    }
+    lines.push('}');
+    return lines.join('\n');
+  } catch {
+    return tag;
+  }
 }
 /**
  * Short display form of a `Map` key for `.get(…)` paths and labels:
@@ -332,10 +481,10 @@ function prettyTypedArray(value, tag) {
  * of a raw `{"$type": "Vec3", …}` snapshot.
  * @param {*} value - The class instance to render.
  * @param {string} tag - Constructor tag, e.g. `Vec3`.
+ * @param {string[]} keys - Own enumerable keys of the instance.
  * @returns {string} Multi-line text.
  */
-function prettyClassInstance(value, tag) {
-  const keys = Object.keys(value);
+function prettyClassInstance(value, tag, keys) {
   if (!keys.length) {
     return `${tag} {}`;
   }
@@ -382,6 +531,10 @@ function prettyNonCollection(value) {
   if (Array.isArray(value)) {
     return undefined;
   }
+  const snapshot = snapshotTag(value);
+  if (snapshot !== undefined) {
+    return prettySnapshot(value, snapshot);
+  }
   if (value instanceof Date || value instanceof RegExp || value instanceof Error ||
       value instanceof Promise || value instanceof WeakMap || value instanceof WeakSet ||
       (typeof URL !== 'undefined' && value instanceof URL) ||
@@ -424,7 +577,18 @@ function prettyNonCollection(value) {
   if (!tag || tag === 'Object') {
     return undefined;
   }
-  return prettyClassInstance(value, tag);
+  let keys;
+  try {
+    keys = Object.keys(value);
+  } catch {
+    return undefined;
+  }
+  // Giant host instances collapse to their one-line tag: a 20-row excerpt
+  // of `Window` internals helps nobody in the Actual pane.
+  if (keys.length > MAX_PRETTY_ENTRIES) {
+    return oneLine(value);
+  }
+  return prettyClassInstance(value, tag, keys);
 }
 /**
  * Pretty multi-line rendering for the comparator's Actual pane:
@@ -490,4 +654,4 @@ function prettyValue(value) {
     return undefined;
   }
 }
-export {describeValueType, formatMapKey, prettyValue};
+export {describeValueType, formatMapKey, oneLine, prettyValue, snapshotTag};

@@ -1,5 +1,5 @@
 import {options} from "./options.js";
-import {DisplayAnything} from 'display-anything';
+import {DisplayAnything} from './DisplayAnything.js';
 import {Tr, Td, Button, Details, Summary, Pre, Div} from './jsx.js';
 import {humanizeExpect} from './humanizeExpect.js';
 import {stringifyType} from './stringifyType.js';
@@ -182,7 +182,10 @@ function isPreviewLeaf(value) {
  * Without this a map nested inside an object still renders as
  * `[object Map]`, since `DisplayAnything` only walks `for..in` keys. Class
  * instances (and other non-plain objects) pass through untouched so their
- * type tag survives. Cycle-safe, depth- and breadth-capped, never throws.
+ * type tag survives. Cycle-safe, depth-capped, never throws. Breadth is
+ * deliberately uncapped here: the tree renders in clickable batches and
+ * keeps every row loadable, so slicing the clone would hide data the tree
+ * can no longer reach.
  * @param {*} value - The value to prepare.
  * @param {number} depth - Current cloning depth.
  * @param {Map} seen - Originals already cloned (cycle guard).
@@ -207,8 +210,7 @@ function withCollectionPreviews(value, depth = 0, seen = new Map()) {
   if (Array.isArray(value)) {
     const clone = [];
     seen.set(value, clone);
-    const count = Math.min(value.length, MAX_CELL_ENTRIES);
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < value.length; i++) {
       let item;
       try {
         item = value[i];
@@ -231,7 +233,7 @@ function withCollectionPreviews(value, depth = 0, seen = new Map()) {
   }
   const clone = {};
   seen.set(value, clone);
-  for (const key of Object.keys(value).slice(0, MAX_CELL_ENTRIES)) {
+  for (const key of Object.keys(value)) {
     let prop;
     try {
       prop = value[key];
@@ -296,6 +298,16 @@ class Warning {
   button_dbgInput;
   /** @type {HTMLButtonElement} */
   button_hideInput;
+  /** @type {import('./DisplayAnything.js').DisplayAnything | null} */
+  _valueNode = null;
+  /** @type {import('./DisplayAnything.js').DisplayAnything | null} */
+  _expectNode = null;
+  /** @type {HTMLDivElement | null} */
+  _expectSummary = null;
+  /** @type {HTMLElement | null} */
+  _expectPretty = null;
+  /** @type {HTMLDivElement | null} */
+  _expectNotes = null;
   _msg             = '';
   _hits            = 0;
   _hidden          = false;
@@ -408,9 +420,39 @@ class Warning {
   /**
    * @todo Log and show old values aswell for more comprehensive overview?
    */
+  /**
+   * Shows the latest value. Generic values refill their tree in place so
+   * an expanded tree survives repeat errors; dedicated Map/Set/typed-array
+   * trees and preview leaves rebuild like before. Never throws.
+   */
   set value(_) {
     this._value = _;
+    let generic = false;
+    try {
+      generic = !(_ instanceof Map) && !(_ instanceof Set) && !isTypedArray(_) && !isPreviewLeaf(_);
+    } catch {
+      generic = false;
+    }
+    if (generic && this._valueNode) {
+      try {
+        this._valueNode.refill(withCollectionPreviews(_));
+        return;
+      } catch {
+        // Refill failed: rebuild below.
+      }
+    }
     this.td_value.innerHTML = '';
+    this._valueNode = null;
+    if (generic) {
+      try {
+        const display = new DisplayAnything(withCollectionPreviews(_));
+        this.td_value.append(display.render());
+        this._valueNode = display;
+        return;
+      } catch {
+        // Fall through to the shared renderer below.
+      }
+    }
     let node;
     try {
       node = renderCellValue(_);
@@ -435,13 +477,42 @@ class Warning {
     } catch {
       // Fall back to the one-line summary.
     }
-    const val = new DisplayAnything(_);
-    const rendered = val.render();
+    if (this._expectNode) {
+      try {
+        // Refill in place so an open "full type" tree survives repeat hits.
+        this._expectSummary.textContent = summary;
+        this._expectSummary.title = summary;
+        this._expectPretty.textContent = pretty;
+        this._expectNode.refill(_);
+        this._expectNotes.innerHTML = '';
+        for (const note of notes) {
+          this._expectNotes.append(Div({style: {fontSize: '11px', color: '#555'}}, note));
+        }
+        return;
+      } catch {
+        // Refill failed: rebuild below.
+      }
+    }
     this.td_expect.innerHTML = '';
-    const noteNodes = notes.map((note) => Div({style: {fontSize: '11px', color: '#555'}}, note));
+    this._expectNode = null;
+    let rendered;
+    try {
+      const display = new DisplayAnything(_);
+      rendered = display.render();
+      this._expectNode = display;
+    } catch {
+      this._expectNode = null;
+      rendered = Div({textContent: pretty});
+    }
+    this._expectSummary = Div({title: summary, textContent: summary});
+    this._expectPretty = Pre({textContent: pretty});
+    this._expectNotes = Div({});
+    for (const note of notes) {
+      this._expectNotes.append(Div({style: {fontSize: '11px', color: '#555'}}, note));
+    }
     this.td_expect.append(
-      Div({title: summary}, summary),
-      Details({}, Summary({}, 'full type'), Pre({}, pretty), rendered, ...noteNodes),
+      this._expectSummary,
+      Details({}, Summary({textContent: 'full type'}), this._expectPretty, rendered, this._expectNotes),
     );
   }
   get expect() {

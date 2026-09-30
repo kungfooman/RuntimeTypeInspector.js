@@ -29,7 +29,6 @@ const imports = {
   "@runtime-type-inspector/runtime"   : '../src-runtime/index.js',
   "@runtime-type-inspector/transpiler": '../src-transpiler/index.js',
   "@babel/parser"                     : nodeModules + '@babel/parser/lib/index.js',
-  "display-anything"                  : nodeModules + 'display-anything/src/index.js',
   "worker-with-import-map"            : nodeModules + 'worker-with-import-map/src/index.js',
   "test-import-validation-b"          : '../test/typechecking/import-validation/b.js',
   //"@babel/helper-plugin-utils"      : './babel-helper-plugin-utils.js',
