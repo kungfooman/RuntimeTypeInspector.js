@@ -9,6 +9,7 @@ export * from './collectCandidates.js';
 export * from './customTypes.js';
 export * from './customValidations.js';
 export * from './describeValue.js';
+export * from './DisplayAnything.js';
 export * from './evaluateCondition.js';
 export * from './getTypeKeys.js';
 export * from './inspectIndexedAccess.js';

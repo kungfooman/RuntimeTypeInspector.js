@@ -164,7 +164,7 @@ function activateREPLRuntime() {
     .map(([key, val]) => data2code(key, val))
     .join('\n');
   const precode = [
-    'import {DisplayAnything} from "display-anything";',
+    'import {DisplayAnything} from "@runtime-type-inspector/runtime";',
   ].join('\n');
   const postcode = [
     // options.warned needs to be cleared since it contains "tr" values from old session

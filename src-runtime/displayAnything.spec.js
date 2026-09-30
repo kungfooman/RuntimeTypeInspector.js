@@ -1,4 +1,5 @@
 import {DisplayAnything} from './DisplayAnything.js';
+import * as runtimeBarrel from './index.js';
 import {dump, installFakeBrowser, warningFor} from '../src-unittest/index.js';
 /**
  * Runs a closure with the fake browser globals installed.
@@ -422,6 +423,11 @@ function testNestedBatching() {
       dump(el).includes('k24');
   });
 }
+function testBarrelExportsDisplayAnything() {
+  // The REPL worker precode imports the class from the runtime barrel, so
+  // the export is load-bearing, not decorative.
+  return typeof runtimeBarrel.DisplayAnything === 'function';
+}
 const tests = [
   testRenderLeaf,
   testRenderPlainObject,
@@ -456,5 +462,6 @@ const tests = [
   testShowMoreKeepsOpenRows,
   testBatchLimitPersistsAcrossRefill,
   testNestedBatching,
+  testBarrelExportsDisplayAnything,
 ];
 export {tests};
