@@ -88,6 +88,9 @@ function stringifyValue(value, options = {}) {
       if (val instanceof ArrayBuffer) {
         return {$type: 'ArrayBuffer', byteLength: val.byteLength};
       }
+      if (typeof SharedArrayBuffer !== 'undefined' && val instanceof SharedArrayBuffer) {
+        return {$type: 'SharedArrayBuffer', byteLength: val.byteLength};
+      }
       if (ArrayBuffer.isView(val)) {
         const tag = val.constructor?.name ?? 'ArrayBufferView';
         if (val instanceof DataView) {

@@ -40,6 +40,13 @@ When the user hands you tests (repro files, `/tmp` snippets, demo cases), make t
 - Prove the tests bite: stash the fix and show they fail, pop and show green.
 - Full gate before finishing: `npm test` + `npm run lint`.
 
+## Comment style
+
+Do not add issue-number references (e.g. `(issue #123)`) to code comments,
+JSDoc blocks, or specs. Describe the why in plain words instead; the commit
+message / PR is the place for issue links. Pre-existing references stay
+untouched — just don't introduce new ones.
+
 ## Test suite
 
 ```sh

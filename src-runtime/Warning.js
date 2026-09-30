@@ -4,21 +4,23 @@ import {Tr, Td, Button, Details, Summary, Pre, Div} from './jsx.js';
 import {humanizeExpect} from './humanizeExpect.js';
 import {stringifyType} from './stringifyType.js';
 import {previewValue} from './stringifyValue.js';
-import {describeValueType} from './describeValue.js';
-/** Max `Map`/`Set` entries rendered into the Value column (issue #267). */
+import {describeValueType, prettyValue} from './describeValue.js';
+/** Max `Map`/`Set`/typed-array entries rendered into the Value column (issue #267). */
 const MAX_CELL_ENTRIES = 20;
 /** Max characters per key/value one-line preview in the Value column. */
 const MAX_CELL_PREVIEW = 200;
 /**
  * Bounded one-line preview for a single value in the error table.
- * `Map`/`Set` read as inferred generics (`Map<string, null>`); everything
- * else keeps the JSON snapshot. Never throws; falls back to `String()`.
+ * Values with a dedicated display rendering (`Map`/`Set` as inferred
+ * generics, typed arrays, dates, errors, bigints, class instances, …) read
+ * as their one-line description; everything else keeps the JSON snapshot.
+ * Never throws; falls back to `String()`.
  * @param {*} value - The value to preview.
  * @returns {string} Single-line preview.
  */
 function shortPreview(value) {
   try {
-    const text = value instanceof Map || value instanceof Set ?
+    const text = prettyValue(value) !== undefined ?
       describeValueType(value, 2) :
       previewValue(value, MAX_CELL_PREVIEW);
     const str = typeof text === 'string' ? text : String(text);
@@ -29,6 +31,19 @@ function shortPreview(value) {
     } catch {
       return '[Unreadable]';
     }
+  }
+}
+/**
+ * True for typed arrays (`Uint8Array`, `Float64Array`, Node `Buffer`, …):
+ * every `ArrayBuffer` view except `DataView`. Never throws.
+ * @param {*} value - The value to test.
+ * @returns {boolean} True for typed arrays.
+ */
+function isTypedArray(value) {
+  try {
+    return ArrayBuffer.isView(value) && !(value instanceof DataView);
+  } catch {
+    return false;
   }
 }
 /**
@@ -80,25 +95,107 @@ function renderSetValue(set) {
   return box;
 }
 /**
+ * Renders a live typed array as an expandable tree node (root open by
+ * default), with one `index: value` row per element — the same treatment
+ * as `Map`/`Set` cells. Without this the cell collapses to
+ * a bare type header with its values hidden. Element count is
+ * capped — deeper inspection lives in the Compare window's Actual pane.
+ * @param {*} array - The typed array to render.
+ * @returns {HTMLElement} The tree element.
+ */
+function renderTypedArrayValue(array) {
+  let tag = 'ArrayBufferView';
+  try {
+    tag = array.constructor?.name ?? tag;
+  } catch {
+    // Keep the fallback.
+  }
+  let len = 0;
+  try {
+    len = array.length;
+  } catch {
+    return Div({textContent: shortPreview(array)});
+  }
+  if (typeof len !== 'number') {
+    return Div({textContent: shortPreview(array)});
+  }
+  const box = Details({open: true}, Summary({textContent: `${tag}(${len})`}));
+  const shown = Math.min(len, MAX_CELL_ENTRIES);
+  for (let i = 0; i < shown; i++) {
+    let item;
+    try {
+      item = array[i];
+    } catch {
+      box.append(Div({textContent: `${i}: [Unreadable]`}));
+      continue;
+    }
+    box.append(Div({textContent: `${i}: ${shortPreview(item)}`}));
+  }
+  if (len > shown) {
+    box.append(Div({textContent: `...(+${len - shown} more)`}));
+  }
+  return box;
+}
+/**
+ * True for leaf values `DisplayAnything` renders as `[object …]` (or drops
+ * content for): buffers/views, bigints, promises, weak collections and
+ * URLs. Those cells render as a one-line preview instead.
+ * Never throws.
+ * @param {*} value - The value to test.
+ * @returns {boolean} True when the cell should be a preview leaf.
+ */
+function isPreviewLeaf(value) {
+  try {
+    if (typeof value === 'bigint') {
+      return true;
+    }
+    if (value === null || typeof value !== 'object') {
+      return false;
+    }
+    if (value instanceof ArrayBuffer) {
+      return true;
+    }
+    if (typeof SharedArrayBuffer !== 'undefined' && value instanceof SharedArrayBuffer) {
+      return true;
+    }
+    if (value instanceof DataView) {
+      return true;
+    }
+    if (value instanceof Promise) {
+      return true;
+    }
+    if (value instanceof WeakMap || value instanceof WeakSet) {
+      return true;
+    }
+    if (typeof URL !== 'undefined' && value instanceof URL) {
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+/**
  * Clones plain objects/arrays for `DisplayAnything`, replacing nested
- * `Map`/`Set` instances with bounded one-line previews. Without this a map
- * nested inside an object still renders as `[object Map]`, since
- * `DisplayAnything` only walks `for..in` keys. Class instances (and other
- * non-plain objects) pass through untouched so their type tag survives.
- * Cycle-safe, depth- and breadth-capped, never throws.
+ * values that have a dedicated display rendering (`Map`/`Set`, typed
+ * arrays, buffers, bigints, promises, …) with bounded one-line previews.
+ * Without this a map nested inside an object still renders as
+ * `[object Map]`, since `DisplayAnything` only walks `for..in` keys. Class
+ * instances (and other non-plain objects) pass through untouched so their
+ * type tag survives. Cycle-safe, depth- and breadth-capped, never throws.
  * @param {*} value - The value to prepare.
  * @param {number} depth - Current cloning depth.
  * @param {Map} seen - Originals already cloned (cycle guard).
  * @returns {*} Display-safe value.
  */
 function withCollectionPreviews(value, depth = 0, seen = new Map()) {
-  let isCollection = false;
+  let isPreview = false;
   try {
-    isCollection = value instanceof Map || value instanceof Set;
+    isPreview = value instanceof Map || value instanceof Set || isTypedArray(value) || isPreviewLeaf(value);
   } catch {
     return '[Unreadable]';
   }
-  if (isCollection) {
+  if (isPreview) {
     return shortPreview(value);
   }
   if (!value || typeof value !== 'object' || depth > 3) {
@@ -147,9 +244,10 @@ function withCollectionPreviews(value, depth = 0, seen = new Map()) {
   return clone;
 }
 /**
- * Renders any error-table value: live `Map`/`Set` instances get the
- * expandable bounded tree, everything else goes through `DisplayAnything`
- * (with nested collections pre-previewed).
+ * Renders any error-table value: live `Map`/`Set`/typed-array instances get
+ * the expandable bounded tree, leaf shapes `DisplayAnything` cannot show
+ * (buffers, bigints, promises, …) render as a one-line preview, everything
+ * else goes through `DisplayAnything` (with nested values pre-previewed).
  * @param {*} value - The value to render.
  * @returns {HTMLElement} The cell content.
  */
@@ -159,6 +257,12 @@ function renderCellValue(value) {
   }
   if (value instanceof Set) {
     return renderSetValue(value);
+  }
+  if (isTypedArray(value)) {
+    return renderTypedArrayValue(value);
+  }
+  if (isPreviewLeaf(value)) {
+    return Div({textContent: shortPreview(value)});
   }
   return new DisplayAnything(withCollectionPreviews(value)).render();
 }
