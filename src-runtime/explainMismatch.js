@@ -10,21 +10,23 @@ import './validateType.js';
 import './evaluateCondition.js';
 import {stringifyType} from './stringifyType.js';
 import {previewValue, stringifyValue} from './stringifyValue.js';
-import {describeValueType, formatMapKey} from './describeValue.js';
+import {describeValueType, formatMapKey, prettyValue} from './describeValue.js';
 const MAX_DEPTH = 6;
 const MAX_UNION_MEMBERS = 12;
 const MAX_MAP_ENTRIES = 20;
 const noop = () => undefined;
 /**
- * Short one-line JSON snapshot of a value for diagnosis rows. `Map`/`Set`
- * read as inferred generics (`Map<string, null>`) instead of raw
- * `{"$type": "Map", …}` snapshots (issue #267).
+ * Short one-line JSON snapshot of a value for diagnosis rows. Values with a
+ * dedicated display rendering (`Map`/`Set` as inferred generics, typed
+ * arrays, dates, errors, bigints, class instances, …) read as their
+ * one-line description instead of raw `{"$type": …}` snapshots (issue
+ * #267); plain objects/arrays keep the JSON snapshot.
  * @param {*} value - The value.
  * @returns {string} Truncated snapshot.
  */
 function snip(value) {
   try {
-    if (value instanceof Map || value instanceof Set) {
+    if (prettyValue(value) !== undefined) {
       const text = describeValueType(value);
       return text.length > 160 ? `${text.slice(0, 157)}...` : text;
     }

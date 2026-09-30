@@ -4,7 +4,7 @@ import {inspectType} from './inspectType.js';
 import {diffValue, snip} from './explainMismatch.js';
 import {buildTypeTree} from './typeTree.js';
 import {formatCompare} from './humanizeExpect.js';
-import {Warning} from './Warning.js';
+import {captureMessages, dump, warningFor} from '../src-unittest/index.js';
 /**
  * The 12-entry shader map from issue #267.
  * @returns {Map} The fixture map.
@@ -77,22 +77,6 @@ function testFormatMapKey() {
     formatMapKey("a'b") === "'a\\'b'" &&
     formatMapKey(1) === '1' &&
     formatMapKey(null) === 'null';
-}
-/**
- * Captures posted RTI messages while `fn` runs, then restores `self`.
- * @param {Function} fn - Code triggering messages.
- * @returns {object[]} Captured messages.
- */
-function captureMessages(fn) {
-  const prevSelf = globalThis.self;
-  const captured = [];
-  globalThis.self = {addEventListener: () => {}, postMessage: (msg) => captured.push(msg)};
-  try {
-    fn();
-  } finally {
-    globalThis.self = prevSelf;
-  }
-  return captured.filter((_) => _?.type === 'rti' && _.action === 'addError');
 }
 function testInspectSummaryShowsMap() {
   // End to end: the `Argument of type …` summary reads TS-style instead of
@@ -207,109 +191,6 @@ function testPrettyValueShapes() {
 function testPrettyValueBounded() {
   const text = prettyValue(new Map(Array.from({length: 30}, (_, i) => [`k${i}`, i])));
   return text.includes('Map(30) {') && text.includes('...(+10 more)') && !text.includes('k29');
-}
-/**
- * Minimal DOM node for Warning/DisplayAnything rendering: props land as
- * plain fields, children append, `innerHTML` keeps its markup for dumps.
- */
-class FakeNode {
-  constructor() {
-    this.children = [];
-    this.style = {};
-    this.dataset = {};
-    this.classList = {add: () => {}, remove: () => {}};
-  }
-  append(...nodes) {
-    for (const node of nodes.flat(Infinity)) {
-      if (node === undefined || node === null || node === false) {
-        continue;
-      }
-      this.children.push(node);
-    }
-  }
-  appendChild(node) {
-    this.append(node);
-    return node;
-  }
-  set innerHTML(html) {
-    this.children = [];
-    this.html = String(html);
-  }
-  get innerHTML() {
-    return this.html ?? '';
-  }
-  addEventListener() {}
-  removeEventListener() {}
-  querySelector() {
-    return null;
-  }
-}
-class FakeText {
-  constructor(text) {
-    this.text = String(text);
-  }
-}
-class FakeElement extends FakeNode {}
-/**
- * Installs the fake browser globals `Warning` needs, returning a restore fn.
- * @returns {Function} Restore.
- */
-function installFakeBrowser() {
-  const savedDocument = globalThis.document;
-  const savedNode = globalThis.Node;
-  globalThis.Node = FakeNode;
-  globalThis.document = {
-    createElement: () => new FakeElement(),
-    createTextNode: (text) => new FakeText(text),
-  };
-  return () => {
-    if (savedDocument === undefined) {
-      delete globalThis.document;
-    } else {
-      globalThis.document = savedDocument;
-    }
-    if (savedNode === undefined) {
-      delete globalThis.Node;
-    } else {
-      globalThis.Node = savedNode;
-    }
-  };
-}
-/**
- * Dumps all text reachable from a fake node: text nodes, `textContent`
- * props and stored `innerHTML` markup (where `DisplayAnything` writes).
- * @param {*} node - Fake node, text node or string.
- * @returns {string} Concatenated text.
- */
-function dump(node) {
-  if (node === undefined || node === null) {
-    return '';
-  }
-  if (typeof node === 'string') {
-    return node;
-  }
-  let out = node.text ?? '';
-  if (typeof node.textContent === 'string') {
-    out += node.textContent;
-  }
-  if (typeof node.html === 'string') {
-    out += node.html;
-  }
-  for (const child of node.children ?? []) {
-    out += dump(child);
-  }
-  return out;
-}
-/**
- * Builds a warning row for `value` under the fake DOM.
- * @param {*} value - The value to display.
- * @returns {{warn: object, restore: Function}} Row and restore fn.
- */
-function warningFor(value) {
-  const restore = installFakeBrowser();
-  const warn = new Warning('msg', 'value', 'expect', 'loc', 'name');
-  warn.value = value;
-  return {warn, restore};
 }
 function testWarningMapCell() {
   const {warn, restore} = warningFor(new Map([['FOG', 'NONE'], ['GAMMA', 'SRGB']]));

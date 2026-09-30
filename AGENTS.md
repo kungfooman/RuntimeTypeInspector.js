@@ -40,11 +40,18 @@ When the user hands you tests (repro files, `/tmp` snippets, demo cases), make t
 - Prove the tests bite: stash the fix and show they fail, pop and show green.
 - Full gate before finishing: `npm test` + `npm run lint`.
 
+## Comment style
+
+Do not add issue-number references (e.g. `(issue #123)`) to code comments,
+JSDoc blocks, or specs. Describe the why in plain words instead; the commit
+message / PR is the place for issue links. Pre-existing references stay
+untouched — just don't introduce new ones.
+
 ## Test suite
 
 ```sh
 npm test  # test:update (gen_tests.js) + test.js + test_runtime.js + jsdoc/ts2js/wat suites
-npm run lint  # eslint over src-transpiler and src-runtime only
+npm run lint  # eslint over src-transpiler, src-runtime and src-unittest
 ```
 
 Note: `test.js` proves transpile parity only — a quiet `// warns` comment
