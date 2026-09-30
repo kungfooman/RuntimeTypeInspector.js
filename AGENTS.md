@@ -51,7 +51,7 @@ untouched — just don't introduce new ones.
 
 ```sh
 npm test  # test:update (gen_tests.js) + test.js + test_runtime.js + jsdoc/ts2js/wat suites
-npm run lint  # eslint over src-transpiler and src-runtime only
+npm run lint  # eslint over src-transpiler, src-runtime and src-unittest
 ```
 
 Note: `test.js` proves transpile parity only — a quiet `// warns` comment
