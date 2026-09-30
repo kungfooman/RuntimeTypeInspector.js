@@ -8,7 +8,7 @@ import {RTI_INFO} from "./version.js";
 import {formatCompare} from "./humanizeExpect.js";
 import {explainMismatch} from "./explainMismatch.js";
 import {buildTypeTree} from "./typeTree.js";
-import {Warning    } from "./Warning.js";
+import {Warning, renderCellValue} from "./Warning.js";
 import {Div, Span, Button, Input, Select, Option, H3, Pre, Details, Summary, genJsx} from "./jsx.js";
 /**
  * @typedef {MessageEvent<{action: string}>} MessageEventRTI
@@ -365,6 +365,49 @@ function niceDiv(div) {
     }
     .rti-tree summary {
       cursor: pointer;
+    }
+    .rti-line {
+      margin: 4px 0;
+      display: flex;
+      justify-content: flex-start;
+    }
+    .rti-line summary {
+      cursor: pointer;
+    }
+    .rti-key {
+      color: #a91479;
+      font-weight: bold;
+      margin-right: 4px;
+      margin-left: 4px;
+    }
+    .rti-type {
+      color: #a91479;
+      font-weight: bold;
+      margin-right: 4px;
+      margin-left: 4px;
+    }
+    .rti-number {
+      color: #132bff;
+    }
+    .rti-boolean {
+      color: #0d5483;
+    }
+    .rti-string {
+      color: #fd5246;
+    }
+    .rti-size {
+      margin-right: 4px;
+      margin-left: 4px;
+    }
+    .rti-separator {
+      color: rgba(0, 0, 0, 0.829);
+      font-weight: bold;
+      padding-right: 2px;
+    }
+    .rti-more {
+      cursor: pointer;
+      color: #0645ad;
+      margin: 4px 0 4px 4px;
     }
     .rti-pass {
       color: #060;
@@ -1329,12 +1372,20 @@ class TypePanel {
   }
   /**
    * Builds the comparison content (diagnosis, stub, type tree, panes).
+   * The Actual pane reuses the error table's value renderer, so every
+   * warning inspects through the same expandable tree.
    * @param {import('./Warning.js').Warning} warnObj - The row to inspect.
    * @returns {HTMLDivElement} Content element.
    */
   buildCompareContent(warnObj) {
     const body = Div({});
     const {expectPretty, actualPretty} = formatCompare(warnObj.expect, warnObj.value);
+    let actualNode;
+    try {
+      actualNode = renderCellValue(warnObj.value);
+    } catch {
+      actualNode = Pre({}, actualPretty);
+    }
     const Grid = genJsx('div');
     let diagnosis;
     try {
@@ -1371,7 +1422,7 @@ class TypePanel {
     body.append(
       Grid({className: 'rti-compare'},
            Div({}, H3({}, 'Expected'), Pre({}, expectPretty)),
-           Div({}, H3({}, 'Actual'), Pre({}, actualPretty)),
+           Div({}, H3({}, 'Actual'), actualNode),
       ),
     );
     if (warnObj.detailStrings?.length) {

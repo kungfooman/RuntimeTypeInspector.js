@@ -222,6 +222,130 @@ function testWarningPlainUnaffected() {
     restore();
   }
 }
+/**
+ * A `Window`-shaped host object: circular self links, nested host objects
+ * up front and hundreds of trailing keys.
+ * @returns {object} The fixture.
+ */
+function giantWindow() {
+  class FakeWindow {}
+  class FakeDocument {}
+  class FakeLocation {}
+  const win = new FakeWindow();
+  win.window = win;
+  win.self = win;
+  win.document = Object.assign(new FakeDocument(), {
+    location: Object.assign(new FakeLocation(), {href: 'https://x/', origin: 'https://x'}),
+  });
+  win.name = '';
+  win.location = win.document.location;
+  for (let i = 0; i < 200; i++) {
+    win[`prop${i}`] = i;
+  }
+  return win;
+}
+/**
+ * An instance with exactly `n` keys for pinning the collapse threshold.
+ * @param {number} n - Key count.
+ * @returns {object} The fixture.
+ */
+function sizedInstance(n) {
+  class Sized {}
+  const obj = new Sized();
+  for (let i = 0; i < n; i++) {
+    obj[`k${i}`] = i;
+  }
+  return obj;
+}
+function testDescribeGiantInstanceCollapsesToTag() {
+  return describeValueType(giantWindow()) === 'FakeWindow';
+}
+function testDescribeCollapseBoundary() {
+  // Anything beyond the Actual pane listing budget reads as its bare tag.
+  return describeValueType(sizedInstance(20)).startsWith('Sized {') &&
+    describeValueType(sizedInstance(21)) === 'Sized';
+}
+function testPrettyGiantInstanceCollapsesToTag() {
+  return prettyValue(giantWindow()) === 'FakeWindow' &&
+    prettyValue(sizedInstance(20)).startsWith('Sized {') &&
+    prettyValue(sizedInstance(21)) === 'Sized';
+}
+function testSnipGiantInstanceCollapsesToTag() {
+  return snip(giantWindow()) === 'FakeWindow';
+}
+function testNestedGiantCollapses() {
+  const outer = Object.assign(Object.create((class Box {}).prototype), {label: 'x', win: giantWindow()});
+  return describeValueType(outer) === 'Box {label: "x", win: FakeWindow}';
+}
+function testInspectSummaryShowsGiantTag() {
+  // End to end: the `Argument of type …` summary names the host instead of
+  // dumping its nested internals.
+  const msgs = captureMessages(() => {
+    inspectType(giantWindow(), 'number', 'loc', 'name');
+  });
+  if (msgs.length !== 1) {
+    return false;
+  }
+  const [summary] = msgs[0].strings;
+  return summary.includes('FakeWindow') && !summary.includes('$type') &&
+    !summary.includes('prop0') && summary.length < 200;
+}
+/**
+ * Simulates the worker-to-UI trip for unclonable values: snapshot, then a
+ * clone round trip like messaging performs.
+ * @param {*} value - The live value.
+ * @returns {*} The snapshot the comparator receives.
+ */
+function snapshotOf(value) {
+  return JSON.parse(JSON.stringify(stringifyValue(value)));
+}
+function testDescribeSnapshotWindow() {
+  return describeValueType(snapshotOf(giantWindow())) === 'FakeWindow';
+}
+function testPrettySnapshotWindowBlock() {
+  const text = prettyValue(snapshotOf(giantWindow()));
+  return text.startsWith('FakeWindow {') && text.includes('name') &&
+    text.includes('FakeDocument') && !text.includes('$type') &&
+    !text.includes('[object');
+}
+function testSnipSnapshotWindow() {
+  return snip(snapshotOf(giantWindow())) === 'FakeWindow';
+}
+function testFormatCompareSnapshotActual() {
+  const {actualPretty} = formatCompare('number', snapshotOf(giantWindow()));
+  return actualPretty.startsWith('FakeWindow {') && !actualPretty.includes('$type');
+}
+function testSnapshotMapWithFunction() {
+  // Containers holding functions cannot cross realms either: entries arrive
+  // recorded, sizes intact.
+  const snapshot = stringifyValue(new Map([['k', () => {}]]));
+  if (describeValueType(snapshot) !== 'Map(1)') {
+    return false;
+  }
+  const text = prettyValue(snapshot);
+  return text.startsWith('Map(1) {') && text.includes('=>');
+}
+function testSnapshotBigint() {
+  return describeValueType({$type: 'bigint', value: '123'}) === '123n' &&
+    prettyValue({$type: 'bigint', value: '123'}) === '123n';
+}
+function testSnapshotTypedArray() {
+  const snapshot = {$type: 'Uint8Array', length: 2, values: [1, 2]};
+  if (describeValueType(snapshot) !== 'Uint8Array(2)') {
+    return false;
+  }
+  const text = prettyValue(snapshot);
+  return text.startsWith('Uint8Array(2) [') && text.includes('1') && !text.includes('$type');
+}
+function testUserDataDollarTypeUnaffected() {
+  // Genuine data in the same shape (lowercase tags like query operators)
+  // keeps expanding instead of collapsing to a tag.
+  const data = {$type: 'string', a: 1};
+  return describeValueType(data).includes('a: 1') &&
+    describeValueType(data) !== 'string' &&
+    prettyValue(data) === undefined &&
+    snip(data).includes('a');
+}
 const tests = [
   testDescribeTypedArrays,
   testDescribeTypedArrayBounded,
@@ -247,5 +371,19 @@ const tests = [
   testWarningLeafCell,
   testWarningNestedTypedArray,
   testWarningPlainUnaffected,
+  testDescribeGiantInstanceCollapsesToTag,
+  testDescribeCollapseBoundary,
+  testPrettyGiantInstanceCollapsesToTag,
+  testSnipGiantInstanceCollapsesToTag,
+  testNestedGiantCollapses,
+  testInspectSummaryShowsGiantTag,
+  testDescribeSnapshotWindow,
+  testPrettySnapshotWindowBlock,
+  testSnipSnapshotWindow,
+  testFormatCompareSnapshotActual,
+  testSnapshotMapWithFunction,
+  testSnapshotBigint,
+  testSnapshotTypedArray,
+  testUserDataDollarTypeUnaffected,
 ];
 export {tests};

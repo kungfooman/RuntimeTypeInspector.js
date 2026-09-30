@@ -26,6 +26,28 @@ class FakeNode {
     this.append(node);
     return node;
   }
+  removeChild(node) {
+    this.children = this.children.filter((_) => _ !== node);
+    if (node instanceof FakeNode) {
+      node.parent = null;
+    }
+    return node;
+  }
+  insertBefore(node, ref) {
+    if (node === undefined || node === null || node === false) {
+      return node;
+    }
+    const at = ref ? this.children.indexOf(ref) : -1;
+    if (at === -1) {
+      this.children.push(node);
+    } else {
+      this.children.splice(at, 0, node);
+    }
+    if (node instanceof FakeNode) {
+      node.parent = this;
+    }
+    return node;
+  }
   remove() {
     if (this.parent) {
       this.parent.children = this.parent.children.filter((_) => _ !== this);
@@ -205,6 +227,62 @@ function stubWarn(loc, name) {
     loc, name, expect: {type: 'object', properties: {a: 'number'}}, value: {a: 1},
     msg: `${loc} ${name} broke`, hits: 1, detailStrings: ['boom'],
   };
+}
+/**
+ * Collects all text under a node: text nodes plus `textContent` props.
+ * @param {*} node - Fake node, text node or string.
+ * @returns {string} Concatenated text.
+ */
+function textOf(node) {
+  if (node === undefined || node === null) {
+    return '';
+  }
+  if (typeof node === 'string') {
+    return node;
+  }
+  let out = node.text ?? '';
+  if (typeof node.textContent === 'string') {
+    out += node.textContent;
+  }
+  for (const child of node.children ?? []) {
+    out += textOf(child);
+  }
+  return out;
+}
+/**
+ * Finds the first node carrying a class name, depth first.
+ * @param {*} node - The subtree to search.
+ * @param {string} cls - The class name.
+ * @returns {*} The node, or null.
+ */
+function findByClass(node, cls) {
+  if (!node || typeof node === 'string') {
+    return null;
+  }
+  const names = typeof node.className === 'string' ? node.className.split(' ') : [];
+  if (names.includes(cls)) {
+    return node;
+  }
+  for (const child of node.children ?? []) {
+    const found = findByClass(child, cls);
+    if (found) {
+      return found;
+    }
+  }
+  return null;
+}
+/**
+ * Returns the Actual pane body of freshly built compare content.
+ * @param {object} panel - The panel.
+ * @param {object} warnObj - The warning row.
+ * @returns {*} The Actual pane node.
+ */
+function actualPane(panel, warnObj) {
+  const body = panel.buildCompareContent(warnObj);
+  const grid = findByClass(body, 'rti-compare');
+  const [, actual] = grid.children;
+  const [, node] = actual.children;
+  return node;
 }
 function withPanel(fn) {
   const restore = installFakeBrowser();
@@ -802,6 +880,42 @@ function testClearResetsErrorCount() {
     }
   });
 }
+function testCompareActualShowsTree() {
+  // The Actual pane reuses the error table's value renderer: an expandable
+  // tree, not a flat snapshot dump.
+  return withPanel((panel) => {
+    const node = actualPane(panel, stubWarn('L1', 'a'));
+    if (!node.className.includes('rti-line') || node.tag === 'pre') {
+      return false;
+    }
+    const text = textOf(node);
+    if (!text.includes('a') || !text.includes('1')) {
+      return false;
+    }
+    const snap = actualPane(panel, {...stubWarn('L1', 'b'),
+      value: {$type: 'FakeWindow', name: '', location: {$type: 'FakeLocation'}}});
+    const snapText = textOf(snap);
+    return snap.className.includes('rti-line') && snapText.includes('FakeWindow') &&
+      snapText.includes('FakeLocation') && !snapText.includes('$type');
+  });
+}
+function testCompareActualBatches() {
+  // Wide Actual values batch like table cells: marker first, more on click.
+  return withPanel((panel) => {
+    const big = {};
+    for (let i = 0; i < 25; i++) {
+      big[`k${i}`] = i;
+    }
+    const node = actualPane(panel, {...stubWarn('L1', 'c'), value: big});
+    const marker = findByClass(node, 'rti-more');
+    if (!marker || !textOf(node).includes('...(+5 more)') || textOf(node).includes('k24')) {
+      return false;
+    }
+    marker.onclick();
+    const text = textOf(node);
+    return text.includes('k24') && !text.includes('...(+') && findByClass(node, 'rti-more') === null;
+  });
+}
 const tests = [
   testOpenFocusDedupe,
   testMinimizeRestoreTaskbar,
@@ -833,5 +947,7 @@ const tests = [
   testGrabActivatesWindow,
   testPointerdownFronts,
   testTaskbarAlwaysVisible,
+  testCompareActualShowsTree,
+  testCompareActualBatches,
 ];
 export {tests};
