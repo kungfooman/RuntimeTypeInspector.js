@@ -585,4 +585,34 @@ function explainMismatch(value, expect, rootPath) {
     '';
   return {findings, stub};
 }
-export {materializeExpect, diffValue, explainMismatch, expectSnip, snip, describeExcess};
+/**
+ * Collects the paths of real failures from a diagnosis: every finding path
+ * except informational ones (lenient extras pass validation, so they must
+ * never light up as failures). Union pinpoints live in `children` and are
+ * included by recursing. Never throws.
+ * @param {object[]} findings - Findings from `explainMismatch`.
+ * @returns {Set<string>} Failing paths, e.g. `config.get('apiKey')`.
+ */
+function collectFailPaths(findings) {
+  const out = new Set();
+  const walk = (list) => {
+    for (const finding of list ?? []) {
+      if (!finding || finding.info) {
+        continue;
+      }
+      if (typeof finding.path === 'string' && finding.path) {
+        out.add(finding.path);
+      }
+      if (finding.children) {
+        walk(finding.children);
+      }
+    }
+  };
+  try {
+    walk(findings);
+  } catch {
+    // Partial collection still beats no highlighting.
+  }
+  return out;
+}
+export {materializeExpect, diffValue, explainMismatch, expectSnip, snip, describeExcess, collectFailPaths};

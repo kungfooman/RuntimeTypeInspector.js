@@ -1,5 +1,9 @@
 import {TypePanel} from './TypePanel.js';
 import {options} from './options.js';
+import {expandType} from '../src-transpiler/expandType.js';
+import {collectFailPaths, explainMismatch} from './explainMismatch.js';
+import {registerClass, classes} from './registerClass.js';
+import {renderActualValue} from './Warning.js';
 /**
  * Fake DOM substantial enough for TypePanel + compare windows: elements
  * carry props/styles/dataset, listeners are storable and firievable, and
@@ -486,6 +490,249 @@ function testCompareMaximizeRestore() {
     panel.minimizeCompare(key);
     win.btnMax.onclick();
     return win.minimized && win.el.style.display === 'none';
+  });
+}
+/**
+ * Collects every node carrying a class name, depth first.
+ * @param {*} node - The subtree to search.
+ * @param {string} cls - The class name.
+ * @returns {Array} Matching nodes.
+ */
+function findAllByClass(node, cls) {
+  const out = [];
+  const walk = (current) => {
+    if (!current || typeof current === 'string') {
+      return;
+    }
+    const names = typeof current.className === 'string' ? current.className.split(' ') : [];
+    if (names.includes(cls)) {
+      out.push(current);
+    }
+    for (const child of current.children ?? []) {
+      walk(child);
+    }
+  };
+  walk(node);
+  return out;
+}
+/**
+ * Finds the branch disclosure behind a row key (`key : <details>`).
+ * @param {*} node - The subtree to search.
+ * @param {string} key - The row key.
+ * @returns {*} The details node, or null.
+ */
+function rowDetails(node, key) {
+  let found = null;
+  const walk = (current) => {
+    if (!current || typeof current === 'string' || found) {
+      return;
+    }
+    const kids = current.children ?? [];
+    if (kids.length === 3 && kids[0]?.textContent === key && kids[2]?.tag === 'details') {
+      found = kids[2];
+      return;
+    }
+    for (const child of kids) {
+      walk(child);
+    }
+  };
+  walk(node);
+  return found;
+}
+/**
+ * Renders an Actual-pane tree for a mismatched value, with diagnosis paths.
+ * @param {*} value - The failing value.
+ * @param {*} expect - The expected type.
+ * @param {string} name - The argument name.
+ * @returns {*} The rendered tree.
+ */
+function actualFor(value, expect, name) {
+  const {findings} = explainMismatch(value, expect, name);
+  return renderActualValue(value, name, collectFailPaths(findings));
+}
+/**
+ * The reported `Map` case: exactly the failing entry highlights, the
+ * passing entry does not, and the root starts open.
+ * @returns {boolean} True when only the failing entry carries the hit.
+ */
+function testActualMapFailureHighlighted() {
+  return withPanel(() => {
+    const node = actualFor(new Map([['apiKey', null], ['other', 'x']]),
+                           expandType('Map<string, string | number>'), 'config');
+    if (!node || node.children[0]?.open !== true) {
+      return false;
+    }
+    const hits = findAllByClass(node, 'rti-fail-hit');
+    return hits.length === 1 && textOf(hits[0]).includes('apiKey');
+  });
+}
+/**
+ * Nested failures expand themselves: the branch above the failure opens
+ * while the clean sibling stays closed, and only the failing row hits.
+ * @returns {boolean} True when expansion follows the failure.
+ */
+function testActualNestedFailureExpands() {
+  return withPanel(() => {
+    const node = actualFor({a: {b: 1}, z: {y: 2}},
+                           expandType('{a: {b: string}, z: {y: number}}'), 'config');
+    if (!node) {
+      return false;
+    }
+    const hits = findAllByClass(node, 'rti-fail-hit');
+    if (hits.length !== 1 || !textOf(hits[0]).includes('b')) {
+      return false;
+    }
+    return rowDetails(node, 'a')?.open === true && rowDetails(node, 'z')?.open !== true;
+  });
+}
+/**
+ * Failing `Set` members highlight by index, mirroring the differ paths.
+ * @returns {boolean} True when only the failing member carries the hit.
+ */
+function testActualSetFailureHighlighted() {
+  return withPanel(() => {
+    const node = actualFor(new Set([1, 'x']), expandType('Set<number>'), 'tags');
+    const hits = findAllByClass(node, 'rti-fail-hit');
+    return hits.length === 1 && textOf(hits[0]).includes('"x"');
+  });
+}
+/**
+ * Failures past the first batch auto-load: the bad row is visible without
+ * clicking and still highlighted.
+ * @returns {boolean} True when the late failure reveals itself.
+ */
+function testActualFailuresRevealPastBatch() {
+  return withPanel(() => {
+    const properties = {};
+    const value = {};
+    for (let i = 0; i < 30; i++) {
+      properties[`k${i}`] = 'number';
+      value[`k${i}`] = i;
+    }
+    value.k29 = 'x';
+    const node = actualFor(value, {type: 'object', properties}, 'v');
+    if (!node || !textOf(node).includes('k29')) {
+      return false;
+    }
+    const hits = findAllByClass(node, 'rti-fail-hit');
+    return hits.length === 1 && findByClass(node, 'rti-more') === null;
+  });
+}
+/**
+ * Recorded `Map` snapshots (worker crossings) highlight by entry path and
+ * never leak the `$type` envelope as a row.
+ * @returns {boolean} True when the recorded entry highlights.
+ */
+function testActualSnapshotMapHighlighted() {
+  return withPanel(() => {
+    const snapshot = {$type: 'Map', size: 1, entries: [['apiKey', null]]};
+    const node = renderActualValue(snapshot, 'config', new Set(["config.get('apiKey')"]));
+    if (!node || textOf(node).includes('$type')) {
+      return false;
+    }
+    const hits = findAllByClass(node, 'rti-fail-hit');
+    return hits.length === 1 && textOf(hits[0]).includes('apiKey');
+  });
+}
+/**
+ * Whole-value failures (no per-entry pinpoint) highlight the block itself.
+ * @returns {boolean} True when the typed-array block carries the hit.
+ */
+function testActualWholeBlockFailure() {
+  return withPanel(() => {
+    const node = actualFor(new Uint8Array([1, 2]), 'string', 'v');
+    if (!node || !textOf(node).includes('Uint8Array')) {
+      return false;
+    }
+    return findAllByClass(node, 'rti-fail-hit').length === 1;
+  });
+}
+/**
+ * Audit of the remaining common types: every leaf renders a sane one-liner
+ * without throwing and without false highlights.
+ * @returns {boolean} True when every shape reads correctly.
+ */
+function testActualOtherTypesRender() {
+  return withPanel(() => {
+    const cases = [
+      [new Date('2020-01-01T00:00:00.000Z'), 'Date'],
+      [/ab+i/, '/ab+i/'],
+      [new Error('boom'), 'boom'],
+      [Promise.resolve(1), 'Promise'],
+      [new WeakMap(), 'WeakMap'],
+      [new WeakSet(), 'WeakSet'],
+      [new URL('https://x.test/'), 'x.test'],
+      [10n, '10n'],
+      [Symbol('s'), 'Symbol'],
+      [new ArrayBuffer(8), 'ArrayBuffer(8)'],
+      [new DataView(new ArrayBuffer(4)), 'DataView(4)'],
+    ];
+    for (const [value, want] of cases) {
+      const node = renderActualValue(value, 'v', new Set());
+      if (!node || !textOf(node).includes(want) ||
+          findAllByClass(node, 'rti-fail-hit').length !== 0) {
+        return false;
+      }
+    }
+    return true;
+  });
+}
+/**
+ * Branch headers name the shape: live arrays read `array [n]`, recorded
+ * typed arrays keep their recorded tag instead of collapsing to `Object`.
+ * @returns {boolean} True when headers name both shapes.
+ */
+function testActualBranchHeaders() {
+  return withPanel(() => {
+    const live = renderActualValue([1, 2], 'v', new Set());
+    if (!live || !textOf(live).includes('array [2]')) {
+      return false;
+    }
+    const snap = renderActualValue({$type: 'Uint8Array', length: 2, values: [1, 2]}, 'v', new Set());
+    return !!snap && textOf(snap).includes('Uint8Array(2)') && !textOf(snap).includes('$type');
+  });
+}
+/**
+ * Custom classes (game-engine `Vec3` and friends) render under their own
+ * tag with one row per field, and differ-pinned fields highlight like any
+ * other row.
+ * @returns {boolean} True when the custom tag highlights its failure.
+ */
+function testActualCustomClassHighlighted() {
+  class Boss {
+    update() {}
+  }
+  registerClass(Boss);
+  try {
+    return withPanel(() => {
+      const bad = new Boss();
+      bad.hp = 1;
+      const node = actualFor(bad, 'Boss', 'boss');
+      if (!node || !textOf(node).includes('Boss {1}') || textOf(node).includes('$type')) {
+        return false;
+      }
+      const hits = findAllByClass(node, 'rti-fail-hit');
+      return hits.length === 1 && textOf(hits[0]).includes('hp');
+    });
+  } finally {
+    delete classes.Boss;
+  }
+}
+/**
+ * End to end through the comparator: the Actual pane of a `Map` mismatch
+ * carries exactly one highlighted entry row.
+ * @returns {boolean} True when the wired pane highlights the failure.
+ */
+function testActualCompareHighlightsMap() {
+  return withPanel((panel) => {
+    const warnObj = {loc: 'L1', name: 'config', expect: expandType('Map<string, string>'),
+      value: new Map([['apiKey', null]]), msg: 'm', hits: 1, detailStrings: []};
+    const node = actualPane(panel, warnObj);
+    if (node.tag === 'pre') {
+      return false;
+    }
+    const hits = findAllByClass(node, 'rti-fail-hit');
+    return hits.length === 1 && textOf(hits[0]).includes('apiKey');
   });
 }
 function testOpenFocusDedupe() {
@@ -1094,13 +1341,15 @@ function testCompareActualShowsTree() {
   });
 }
 function testCompareActualBatches() {
-  // Wide Actual values batch like table cells: marker first, more on click.
+  // Wide passing values batch: marker first, more on click. Failing rows
+  // always auto-load instead (see the reveal test below), so the fixture
+  // must pass its check — every excess key is a finding otherwise.
   return withPanel((panel) => {
     const big = {};
     for (let i = 0; i < 25; i++) {
       big[`k${i}`] = i;
     }
-    const node = actualPane(panel, {...stubWarn('L1', 'c'), value: big});
+    const node = actualPane(panel, {...stubWarn('L1', 'c'), value: big, expect: 'any'});
     const marker = findByClass(node, 'rti-more');
     if (!marker || !textOf(node).includes('...(+5 more)') || textOf(node).includes('k24')) {
       return false;
@@ -1147,5 +1396,15 @@ const tests = [
   testTaskbarAlwaysVisible,
   testCompareActualShowsTree,
   testCompareActualBatches,
+  testActualMapFailureHighlighted,
+  testActualNestedFailureExpands,
+  testActualSetFailureHighlighted,
+  testActualFailuresRevealPastBatch,
+  testActualSnapshotMapHighlighted,
+  testActualWholeBlockFailure,
+  testActualOtherTypesRender,
+  testActualBranchHeaders,
+  testActualCustomClassHighlighted,
+  testActualCompareHighlightsMap,
 ];
 export {tests};

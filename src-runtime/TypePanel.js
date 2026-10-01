@@ -6,9 +6,9 @@ import {createTable} from "./warnedTable.js";
 import {stringifyValue} from "./stringifyValue.js";
 import {RTI_INFO} from "./version.js";
 import {formatCompare} from "./humanizeExpect.js";
-import {explainMismatch} from "./explainMismatch.js";
+import {collectFailPaths, explainMismatch} from "./explainMismatch.js";
 import {buildTypeTree} from "./typeTree.js";
-import {Warning, renderCellValue} from "./Warning.js";
+import {Warning, renderActualValue, renderCellValue} from "./Warning.js";
 import {Div, Span, Button, Input, Select, Option, H3, Pre, Details, Summary, genJsx} from "./jsx.js";
 /**
  * @typedef {MessageEvent<{action: string}>} MessageEventRTI
@@ -435,6 +435,10 @@ function niceDiv(div) {
     .rti-fail {
       color: #d00;
       font-weight: bold;
+    }
+    .rti-fail-hit {
+      background-color: hotpink;
+      border-radius: 3px;
     }
     .rti-kind {
       display: inline-block;
@@ -1480,26 +1484,38 @@ class TypePanel {
   }
   /**
    * Builds the comparison content (diagnosis, stub, type tree, panes).
-   * The Actual pane reuses the error table's value renderer, so every
-   * warning inspects through the same expandable tree.
+   * The Actual pane renders the value as its own expandable tree with
+   * every failing row highlighted, so the mismatch is visible in place
+   * instead of only in the Diagnosis list above it.
    * @param {import('./Warning.js').Warning} warnObj - The row to inspect.
    * @returns {HTMLDivElement} Content element.
    */
   buildCompareContent(warnObj) {
     const body = Div({});
     const {expectPretty, actualPretty} = formatCompare(warnObj.expect, warnObj.value);
-    let actualNode;
-    try {
-      actualNode = renderCellValue(warnObj.value);
-    } catch {
-      actualNode = Pre({}, actualPretty);
-    }
     const Grid = genJsx('div');
     let diagnosis;
     try {
       diagnosis = explainMismatch(warnObj.value, warnObj.expect, warnObj.name);
     } catch {
       diagnosis = {findings: [], stub: ''};
+    }
+    let failPaths;
+    try {
+      failPaths = collectFailPaths(diagnosis.findings);
+    } catch {
+      failPaths = new Set();
+    }
+    let actualNode;
+    try {
+      actualNode = renderActualValue(warnObj.value, warnObj.name, failPaths) ??
+        renderCellValue(warnObj.value);
+    } catch {
+      try {
+        actualNode = renderCellValue(warnObj.value);
+      } catch {
+        actualNode = Pre({}, actualPretty);
+      }
     }
     body.append(
       Div({}, warnObj.msg || ''),

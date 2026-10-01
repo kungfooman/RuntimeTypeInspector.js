@@ -2,7 +2,7 @@ import {expandType} from '../src-transpiler/expandType.js';
 import {registerTypedef, typedefs, typedefTemplates} from './registerTypedef.js';
 import {registerClass, classes} from './registerClass.js';
 import {options} from './options.js';
-import {explainMismatch, materializeExpect} from './explainMismatch.js';
+import {collectFailPaths, explainMismatch, materializeExpect} from './explainMismatch.js';
 function reset() {
   Object.keys(typedefs).forEach((_) => delete typedefs[_]);
   Object.keys(typedefTemplates).forEach((_) => delete typedefTemplates[_]);
@@ -143,7 +143,44 @@ function testExtrasInformationalWhenLenient() {
     options.exactObjects = prev;
   }
 }
+/**
+ * Failure paths drive the Actual-pane highlight: every finding path lands
+ * in the set, union pinpoints recurse through `children`, informational
+ * extras stay out.
+ * @returns {boolean} True when only real failures are collected.
+ */
+function testCollectFailPaths() {
+  const paths = collectFailPaths([
+    {path: 'a', kind: 'wrong'},
+    {path: 'b', kind: 'extra', info: true},
+    {path: 'c', kind: 'union', children: [{path: 'c', kind: 'wrong', children: [{path: "c.get('k')", kind: 'wrong'}]}]},
+  ]);
+  return paths.has('a') && paths.has('c') && paths.has("c.get('k')") &&
+    !paths.has('b') && paths.size === 3;
+}
+/**
+ * Empty and absent findings collect to nothing, never throw.
+ * @returns {boolean} True when degenerate inputs stay empty.
+ */
+function testCollectFailPathsEmpty() {
+  return collectFailPaths([]).size === 0 && collectFailPaths(null).size === 0 &&
+    collectFailPaths(undefined).size === 0;
+}
+/**
+ * End to end: the entry pinpoint of a `Map` mismatch is collected.
+ * @returns {boolean} True when the `.get(…)` path is collected.
+ */
+function testCollectFailPathsMapMismatch() {
+  reset();
+  const {findings} = explainMismatch(new Map([['apiKey', null]]),
+                                     expandType('Map<string, string | number>'), 'config');
+  const paths = collectFailPaths(findings);
+  return paths.has("config.get('apiKey')");
+}
 const tests = [
+  testCollectFailPaths,
+  testCollectFailPathsEmpty,
+  testCollectFailPathsMapMismatch,
   testMissingKey,
   testWrongNestedType,
   testGenericReferenceResolves,
