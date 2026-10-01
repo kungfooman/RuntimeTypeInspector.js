@@ -436,6 +436,10 @@ function niceDiv(div) {
       color: #d00;
       font-weight: bold;
     }
+    .rti-warn {
+      color: #b06000;
+      font-weight: bold;
+    }
     .rti-fail-hit {
       background-color: hotpink;
       border-radius: 3px;
@@ -1420,7 +1424,8 @@ class TypePanel {
   /**
    * Renders one type-tree level as a climbable nested disclosure: hover any
    * row for the full type, expand to climb one level deeper. The actual value
-   * is probed per level so ✗ pinpoints the failing depth; keyof levels list
+   * is probed per level so ✗ pinpoints the failing depth (⚠ means the
+   * container shape matches and only its contents fail); keyof levels list
    * every allowed key with the value marked present/missing. Condition
    * branches carry entered/not-entered marks instead of hiding a branch.
    * @param {object} node - One `buildTypeTree` node.
@@ -1429,8 +1434,8 @@ class TypePanel {
    * @returns {HTMLElement} The tree element.
    */
   renderTypeNode(node, depth, dimmed = false) {
-    const mark = node.passes === true ? '✓' : node.passes === false ? '✗' : '?';
-    const markCls = node.passes === true ? 'rti-pass' : node.passes === false ? 'rti-fail' : '';
+    const mark = node.passes === true ? '✓' : node.passes === 'shape' ? '⚠' : node.passes === false ? '✗' : '?';
+    const markCls = node.passes === true ? 'rti-pass' : node.passes === 'shape' ? 'rti-warn' : node.passes === false ? 'rti-fail' : '';
     const head = Summary({title: node.full},
                          Span({className: markCls, textContent: `${mark} `}),
                          Span({className: 'rti-path', textContent: node.label}),
@@ -1444,7 +1449,7 @@ class TypePanel {
       head.append(Span({className: 'rti-skipped', textContent: 'not entered'}));
     }
     const box = Div({className: dimmed ? 'rti-tree rti-dimmed' : 'rti-tree'});
-    const open = Details({open: depth < 2 || node.passes === false}, head);
+    const open = Details({open: depth < 2 || node.passes === false || node.passes === 'shape'}, head);
     if (node.detail) {
       open.append(Div({textContent: node.detail}));
     }

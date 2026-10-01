@@ -2,6 +2,7 @@ import {TypePanel} from './TypePanel.js';
 import {options} from './options.js';
 import {expandType} from '../src-transpiler/expandType.js';
 import {collectFailPaths, explainMismatch} from './explainMismatch.js';
+import {buildTypeTree} from './typeTree.js';
 import {registerClass, classes} from './registerClass.js';
 import {renderActualValue} from './Warning.js';
 /**
@@ -719,6 +720,25 @@ function testActualCustomClassHighlighted() {
   }
 }
 /**
+ * The type tree admits container shapes: a `Set` with a bad member renders
+ * an amber ⚠ (not a red ✗) and starts open on the failure.
+ * @returns {boolean} True when the root warns instead of failing.
+ */
+function testTypeTreeSetRootWarns() {
+  return withPanel((panel) => {
+    const tree = buildTypeTree(expandType('Set<string | number>'), new Set(['admin', true]),
+                               'items', undefined, 'items');
+    if (tree.passes !== 'shape') {
+      return false;
+    }
+    const box = panel.renderTypeNode(tree, 0);
+    const details = box.children[0];
+    const mark = details?.children[0]?.children[0];
+    return mark?.textContent.includes('⚠') && mark?.className.includes('rti-warn') &&
+      findAllByClass(box, 'rti-warn').length === 1 && details?.open === true;
+  });
+}
+/**
  * End to end through the comparator: the Actual pane of a `Map` mismatch
  * carries exactly one highlighted entry row.
  * @returns {boolean} True when the wired pane highlights the failure.
@@ -1405,6 +1425,7 @@ const tests = [
   testActualOtherTypesRender,
   testActualBranchHeaders,
   testActualCustomClassHighlighted,
+  testTypeTreeSetRootWarns,
   testActualCompareHighlightsMap,
 ];
 export {tests};

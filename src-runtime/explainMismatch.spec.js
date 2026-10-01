@@ -177,10 +177,62 @@ function testCollectFailPathsMapMismatch() {
   const paths = collectFailPaths(findings);
   return paths.has("config.get('apiKey')");
 }
+/**
+ * A bad `Set` member admits the container matched first: the detail names
+ * the shape, the member path and the offending value instead of reporting
+ * one opaque union mismatch.
+ * @returns {boolean} True when the detail admits the shape first.
+ */
+function testSetMemberUnionAdmitsShape() {
+  reset();
+  const {findings} = explainMismatch(new Set(['admin', true]),
+                                     expandType('Set<string | number>'), 'items');
+  if (findings.length !== 1 || findings[0].kind !== 'union' || findings[0].path !== 'items[1]') {
+    return false;
+  }
+  const {detail} = findings[0];
+  return detail.includes('Set<string | number> has the right shape') &&
+    detail.includes('member `items[1]`') && detail.includes('`true`') &&
+    findings[0].children.length === 1;
+}
+/**
+ * A bad `Map` entry value admits the container matched first, same as sets.
+ * @returns {boolean} True when the detail admits the shape first.
+ */
+function testMapEntryUnionAdmitsShape() {
+  reset();
+  const {findings} = explainMismatch(new Map([['apiKey', null]]),
+                                     expandType('Map<string, string | number>'), 'config');
+  if (findings.length !== 1 || findings[0].kind !== 'union') {
+    return false;
+  }
+  const {detail} = findings[0];
+  return detail.includes('Map<string, string | number> has the right shape') &&
+    detail.includes("entry `config.get('apiKey')`") && detail.includes('`null`');
+}
+/**
+ * Plain property unions name their subject and path but claim no container:
+ * only collection members admit a shape.
+ * @returns {boolean} True when the detail names the subject only.
+ */
+function testPropertyUnionNamesSubject() {
+  reset();
+  const {findings} = explainMismatch({color: true},
+                                     expandType('{color: string | number}'), 'options');
+  if (findings.length !== 1 || findings[0].kind !== 'union') {
+    return false;
+  }
+  const {detail} = findings[0];
+  return detail.includes('`true` at `options.color` matches no union member') &&
+    !detail.includes('has the right shape');
+}
 const tests = [
   testCollectFailPaths,
   testCollectFailPathsEmpty,
   testCollectFailPathsMapMismatch,
+  testSetMemberUnionAdmitsShape,
+  testMapEntryUnionAdmitsShape,
+  testPropertyUnionNamesSubject,
   testMissingKey,
   testWrongNestedType,
   testGenericReferenceResolves,

@@ -339,12 +339,13 @@ function diffMapValue(value, mat, path, depth) {
   }
   const findings = [];
   let shown = 0;
+  const memberOf = {container: expectSnip(mat), noun: 'entry'};
   try {
     for (const [key, val] of value) {
       if (shown >= MAX_MAP_ENTRIES) {
         break;
       }
-      findings.push(...diffValue(val, mat.val, `${path}.get(${formatMapKey(key)})`, depth + 1));
+      findings.push(...diffValue(val, mat.val, `${path}.get(${formatMapKey(key)})`, depth + 1, memberOf));
       shown++;
     }
   } catch {
@@ -407,12 +408,13 @@ function diffSetValue(value, mat, path, depth) {
   }
   const findings = [];
   let i = 0;
+  const memberOf = {container: expectSnip(mat), noun: 'member'};
   try {
     for (const item of value) {
       if (i >= MAX_MAP_ENTRIES) {
         break;
       }
-      findings.push(...diffValue(item, mat.elementType, `${path}[${i}]`, depth + 1));
+      findings.push(...diffValue(item, mat.elementType, `${path}[${i}]`, depth + 1, memberOf));
       i++;
     }
   } catch {
@@ -446,16 +448,19 @@ function diffSetValue(value, mat, path, depth) {
  * @param {*} expect - The expected type.
  * @param {string} path - Dotted path, e.g. `options.clearColor`.
  * @param {number} depth - Recursion depth.
+ * @param {{container: string, noun: string}} [memberOf] - Collection context
+ * when diffing a `Set` member or `Map` entry, so union findings admit the
+ * container matched and only the member fails.
  * @returns {object[]} Findings (empty when the value satisfies the type).
  */
-function diffValue(value, expect, path, depth) {
+function diffValue(value, expect, path, depth, memberOf) {
   const mat = materializeExpect(expect);
   if (mat && typeof mat === 'object' && mat.type === 'union' && Array.isArray(mat.members)) {
     const members = mat.members.slice(0, MAX_UNION_MEMBERS);
     let best = null;
     const score = (/** @type {object[]} */ list) => list.length + (list.length === 1 && list[0].kind === 'wrong' && !list[0].children ? 0.5 : 0);
     for (const member of members) {
-      const sub = diffValue(value, member, path, depth + 1);
+      const sub = diffValue(value, member, path, depth + 1, memberOf);
       if (!sub.length) {
         return [];
       }
@@ -466,12 +471,18 @@ function diffValue(value, expect, path, depth) {
     if (!best) {
       return [];
     }
+    const actual = snip(value);
+    const closest = expectSnip(best.member);
+    const count = best.findings.length;
+    const tail = `closest is ${closest} with ${count} problem${count === 1 ? '' : 's'}.`;
     return [{
       path,
       kind: 'union',
       expected: expectSnip(mat),
-      actual: snip(value),
-      detail: `No union member matched; closest is ${expectSnip(best.member)} with ${best.findings.length} problem${best.findings.length === 1 ? '' : 's'}.`,
+      actual,
+      detail: memberOf ?
+        `${memberOf.container} has the right shape, but ${memberOf.noun} \`${path}\` (\`${actual}\`) matches no union member; ${tail}` :
+        `\`${actual}\` at \`${path}\` matches no union member; ${tail}`,
       children: best.findings,
     }];
   }

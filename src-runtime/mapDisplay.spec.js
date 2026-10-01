@@ -149,7 +149,7 @@ function testDiffSetNotASet() {
 function testTypeTreeMap() {
   const {mapExpect, bad} = apiKeyMismatch();
   const tree = buildTypeTree(mapExpect, bad, 'config', undefined, 'config');
-  if (tree.kind !== 'map' || tree.passes !== false || tree.children?.length !== 1) {
+  if (tree.kind !== 'map' || tree.passes !== 'shape' || tree.children?.length !== 1) {
     return false;
   }
   const [child] = tree.children;
