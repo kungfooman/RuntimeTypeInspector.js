@@ -37,7 +37,7 @@ try {
     ' * iframes, REPL, node tests, and foreign bundles that vendor RTI source\n' +
     ' * with their own pipeline.\n' +
     ' */\n' +
-    `const RTI_INFO = ${JSON.stringify(info)};\n` +
+    `const RTI_INFO = ${JSON.stringify(info, null, 2)};\n` +
     'export {RTI_INFO};\n');
   console.log(`sync-version: RTI_INFO.version=${version} commit=${info.commit}`);
 } catch (error) {
