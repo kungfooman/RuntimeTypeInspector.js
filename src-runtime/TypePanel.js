@@ -48,7 +48,7 @@ function niceDiv(div) {
   div.style.lineHeight = "25px";
   div.style.backgroundColor = "#F3F3F3";
   div.style.borderRadius = "8px 8px 4px 4px";
-  div.style.overflow = "hidden";
+  div.style.overflow = "visible";
   div.style.position = "relative";
   div.style.minWidth = "320px";
   div.style.minHeight = "120px";
@@ -153,6 +153,7 @@ function niceDiv(div) {
       min-height: 0;
       overflow: auto;
       padding: 0 8px 8px 8px;
+      border-radius: 0 0 4px 4px;
     }
     .rti-body table {
       width: 100%;
@@ -164,17 +165,19 @@ function niceDiv(div) {
       position: absolute;
       z-index: 5;
     }
+    /* Grips sit OUTSIDE the window frame (negative offsets): inside grips
+       overlay the body's scrollbars, leaving only a few pixels grabbable. */
     .rti-handle-e {
       cursor: e-resize;
       top: 8px;
-      right: 0;
+      right: -8px;
       width: 8px;
       bottom: 8px;
     }
     .rti-handle-w {
       cursor: w-resize;
       top: 8px;
-      left: 0;
+      left: -8px;
       width: 8px;
       bottom: 8px;
     }
@@ -182,47 +185,61 @@ function niceDiv(div) {
       cursor: s-resize;
       left: 8px;
       right: 8px;
-      bottom: 0;
+      bottom: -8px;
       height: 8px;
     }
     .rti-handle-n {
       cursor: n-resize;
       left: 8px;
       right: 8px;
-      top: 0;
+      top: -5px;
       height: 5px;
     }
     .rti-handle-se {
       cursor: se-resize;
-      right: 0;
-      bottom: 0;
+      right: -14px;
+      bottom: -14px;
       width: 14px;
       height: 14px;
       z-index: 6;
     }
     .rti-handle-sw {
       cursor: sw-resize;
-      left: 0;
-      bottom: 0;
+      left: -14px;
+      bottom: -14px;
       width: 14px;
       height: 14px;
       z-index: 6;
     }
     .rti-handle-ne {
       cursor: ne-resize;
-      right: 0;
-      top: 0;
+      right: -10px;
+      top: -10px;
       width: 10px;
       height: 10px;
       z-index: 6;
     }
     .rti-handle-nw {
       cursor: nw-resize;
-      left: 0;
-      top: 0;
+      left: -10px;
+      top: -10px;
       width: 10px;
       height: 10px;
       z-index: 6;
+    }
+    .rti-popped .rti-handle {
+      display: none;
+    }
+    /* Maximized windows fill the viewport: square corners and no grips
+       (dragging and resizing are disabled until restored). */
+    .rti-maximized {
+      border-radius: 0 !important;
+    }
+    .rti-maximized .rti-titlebar {
+      border-radius: 0 !important;
+    }
+    .rti-maximized .rti-handle {
+      display: none;
     }
     .rti-popped {
       left: 0 !important;
@@ -295,7 +312,8 @@ function niceDiv(div) {
       box-shadow: 3px 3px 12px rgba(0, 0, 0, 0.4);
       width: min(92vw, 760px);
       max-height: 85vh;
-      overflow: hidden;
+      /* Visible so the outside resize grips are not clipped away. */
+      overflow: visible;
     }
     .rti-compare-win .rti-titlebar {
       border-radius: 6px 6px 0 0;
@@ -304,6 +322,7 @@ function niceDiv(div) {
     .rti-compare-body {
       overflow: auto;
       padding: 4px 16px 16px 16px;
+      border-radius: 0 0 4px 4px;
     }
     .rti-compare {
       display: grid;
@@ -555,6 +574,8 @@ class TypePanel {
   buttonDownloadLog;
   /** @type {HTMLButtonElement} */
   buttonPopout;
+  /** @type {HTMLButtonElement} */
+  buttonMaximize;
   /** @type {HTMLDivElement} */
   titlebar;
   /** @type {HTMLSpanElement} */
@@ -585,7 +606,9 @@ class TypePanel {
   poppedBodyCss = null;
   /** @type {Window | null} */
   popoutWin = null;
-  /** @type {Map<string, {el: HTMLDivElement, minimized: boolean}>} */
+  /** @type {object | null} */
+  panelMaxGeo = null;
+  /** @type {Map<string, {el: HTMLDivElement, titlebar: HTMLDivElement, btnMax: HTMLButtonElement, minimized: boolean, prevGeo: object | null}>} */
   compareWins = new Map();
   /** @type {string[]} */
   compareFocus = [];
@@ -680,10 +703,11 @@ class TypePanel {
     this.buttonClear = Button({textContent: 'Clear', onclick: () => this.clear()});
     this.buttonDownloadLog = Button({textContent: 'Download log', onclick: () => this.downloadLog()});
     this.buttonPopout = Button({textContent: '⧉', title: 'Pop out to own window', onclick: () => this.popout()});
+    this.buttonMaximize = Button({textContent: '□', title: 'Maximize', onclick: () => this.togglePanelMaximize()});
     this.titleText = Span({className: 'rti-title', textContent: 'Runtime Type Inspector'});
     this.titlebar = Div({className: 'rti-titlebar', title: 'Drag to move panel'},
                         this.titleText,
-                        Div({className: 'rti-caption'}, this.buttonHide, this.buttonPopout));
+                        Div({className: 'rti-caption'}, this.buttonHide, this.buttonMaximize, this.buttonPopout));
     // Chrome-style overflow menu: status + frequent actions stay visible,
     // rare configuration lives behind `⋮` and costs zero lines when closed.
     this.menuButton = Button({
@@ -766,7 +790,9 @@ class TypePanel {
     } else {
       this.applyChosenPosition();
     }
-    this.makeDraggable(titlebar, divAll);
+    this.makeDraggable(titlebar, divAll,
+                       () => this.togglePanelMaximize(),
+                       () => this.div?.dataset?.maximized === 'true');
     this.observeGeometry(div);
     const finalFunc = () => {
       document.body.append(divAll);
@@ -885,6 +911,10 @@ class TypePanel {
    * @returns {boolean} True when a persisted position was restored.
    */
   applyGeometry() {
+    // A maximized window is viewport-sized, never persisted geometry.
+    if (this.div?.dataset?.maximized === 'true') {
+      return false;
+    }
     try {
       const raw = localStorage.getItem('rti-panel-geometry');
       if (!raw) {
@@ -965,8 +995,12 @@ class TypePanel {
   }
   /**
    * Persists current panel size/position for the next page load.
+   * Maximized size is viewport-derived and never persisted.
    */
   saveGeometry() {
+    if (this.div?.dataset?.maximized === 'true') {
+      return;
+    }
     try {
       const {divAll} = TypePanel;
       localStorage.setItem('rti-panel-geometry', JSON.stringify({
@@ -1081,16 +1115,22 @@ class TypePanel {
   }
   /**
    * Makes the panel movable by dragging the blue titlebar only.
-   * Clicks on caption buttons (`-`, pop-out) never start a drag. The
-   * caption is clamped into the viewport: it can never be dragged
-   * off-screen and lost.
+   * Clicks on caption buttons (`_`, `□`, pop-out) never start a drag, and
+   * maximized windows never drag until restored. Double-clicking the
+   * titlebar runs `onDblClick` (the maximize toggle). The caption is
+   * clamped into the viewport: it can never be dragged off-screen and lost.
    * @param {HTMLElement} handle - The titlebar to drag by.
    * @param {HTMLElement} root - The positioned wrapper to move.
+   * @param {Function} [onDblClick] - Called on titlebar double-click.
+   * @param {Function} [isMaximized] - True while the window is maximized.
    */
-  makeDraggable(handle, root) {
+  makeDraggable(handle, root, onDblClick, isMaximized) {
     handle.addEventListener('mousedown', (e) => {
       const target = /** @type {HTMLElement} */ (e.target);
       if (target.closest('button')) {
+        return;
+      }
+      if (isMaximized?.()) {
         return;
       }
       this.activateRoot(root);
@@ -1118,13 +1158,26 @@ class TypePanel {
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
     });
+    if (onDblClick) {
+      handle.addEventListener('dblclick', (e) => {
+        const target = /** @type {HTMLElement} */ (e.target);
+        const tag = target.tagName ?? target.tag;
+        if (target.closest?.('button') || (typeof tag === 'string' && tag.toLowerCase() === 'button')) {
+          return;
+        }
+        onDblClick();
+      });
+    }
   }
   /**
    * 8-direction resizing with matching resize cursors (see
    * `.rti-handle-*`). Only the edge/corner grips resize; the body/table area
-   * never does. The top (`n`) grip is a thin strip overlaying the titlebar's
-   * top pixels: it is a sibling of the titlebar (not a child), so grabbing
-   * the strip resizes while grabbing anywhere below it drags — no conflation.
+   * never does, and maximized windows ignore grabs until restored. The grips
+   * sit outside the window frame (negative offsets) so they never overlay
+   * the body's scrollbars; the window keeps `overflow: visible` so the
+   * outside grips are not clipped away.
+   * The top (`n`) grip is a thin strip above the titlebar: grabbing it
+   * resizes while grabbing the titlebar itself drags — no conflation.
    * West/north grips also move the wrapper, switching it from bottom/right
    * anchoring to explicit left/top just like dragging does.
    * @param {HTMLElement} handle - The edge/corner grip.
@@ -1135,6 +1188,9 @@ class TypePanel {
    */
   makeResizable(handle, dir, box, root, onDone) {
     handle.addEventListener('mousedown', (e) => {
+      if (box?.dataset?.maximized === 'true') {
+        return;
+      }
       this.activateRoot(root);
       e.preventDefault();
       e.stopPropagation();
@@ -1181,6 +1237,58 @@ class TypePanel {
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
     });
+  }
+  /**
+   * Maximizes the panel to fill the viewport, or restores the last saved
+   * size/position when already maximized. The pre-maximize geometry is
+   * stashed on the instance (like the pop-out styles), so restore brings
+   * back exactly the window that was maximized.
+   */
+  togglePanelMaximize() {
+    const {div} = this;
+    const {divAll} = TypePanel;
+    if (!div || !divAll) {
+      return;
+    }
+    if (div.dataset.maximized === 'true') {
+      const saved = this.panelMaxGeo;
+      if (saved) {
+        div.style.width = saved.width;
+        div.style.height = saved.height;
+        divAll.style.left = saved.left;
+        divAll.style.top = saved.top;
+        divAll.style.right = saved.right;
+        divAll.style.bottom = saved.bottom;
+        divAll.style.position = saved.position;
+      }
+      this.panelMaxGeo = null;
+      delete div.dataset.maximized;
+      div.classList.remove('rti-maximized');
+      this.buttonMaximize.textContent = '□';
+      this.buttonMaximize.title = 'Maximize';
+      return;
+    }
+    this.panelMaxGeo = {
+      width: div.style.width,
+      height: div.style.height,
+      left: divAll.style.left,
+      top: divAll.style.top,
+      right: divAll.style.right,
+      bottom: divAll.style.bottom,
+      position: divAll.style.position,
+    };
+    div.dataset.maximized = 'true';
+    div.classList.add('rti-maximized');
+    divAll.style.position = 'fixed';
+    divAll.style.left = '8px';
+    divAll.style.top = '8px';
+    divAll.style.right = 'auto';
+    divAll.style.bottom = 'auto';
+    div.style.width = 'calc(100vw - 16px)';
+    div.style.height = 'calc(100vh - 16px)';
+    this.buttonMaximize.textContent = '❐';
+    this.buttonMaximize.title = 'Restore';
+    this.frontPanel();
   }
   /**
    * Pops the panel into a separate window (e.g. a 2nd screen); toggles back.
@@ -1438,8 +1546,10 @@ class TypePanel {
   }
   /**
    * Opens one compare window per warning row (drag by the blue
-   * titlebar, `_` minimizes to the taskbar, `×` destroys, `Escape` closes
-   * the topmost). Reopening a live row focuses it instead of duplicating.
+   * titlebar, `_` minimizes to the taskbar, `□` maximizes (`❐` restores),
+   * double-clicking the titlebar toggles maximize, `×` destroys, `Escape`
+   * closes the topmost). Reopening a live row focuses it instead of
+   * duplicating.
    * @param {import('./Warning.js').Warning} warnObj - The row to inspect.
    */
   openComparator(warnObj) {
@@ -1472,9 +1582,10 @@ class TypePanel {
     el.style.top = `${pos.y}px`;
     const title = Span({className: 'rti-title', textContent: `Compare: ${warnObj.loc} / ${warnObj.name}`});
     const btnMin = Button({textContent: '_', title: 'Minimize to taskbar', onclick: () => this.minimizeCompare(key)});
+    const btnMax = Button({textContent: '□', title: 'Maximize', onclick: () => this.toggleCompareMaximize(key)});
     const btnClose = Button({textContent: '×', title: 'Close', onclick: () => this.closeCompare(key)});
     const titlebar = Div({className: 'rti-titlebar', title: 'Drag to move window'},
-                         title, Div({className: 'rti-caption'}, btnMin, btnClose));
+                         title, Div({className: 'rti-caption'}, btnMin, btnMax, btnClose));
     el.append(titlebar, Div({className: 'rti-compare-body'}, this.buildCompareContent(warnObj)));
     for (const dir of ['n', 'e', 's', 'w', 'ne', 'nw', 'se', 'sw']) {
       const handle = Div({className: `rti-handle rti-handle-${dir}`, dataset: {dir}});
@@ -1484,8 +1595,10 @@ class TypePanel {
     // No per-element focus listener: document-capture (ensureFocus) fronts
     // the window even when a subtree grip stops mousedown propagation.
     hostDoc.body.append(el);
-    this.compareWins.set(key, {el, titlebar, minimized: false});
-    this.makeDraggable(titlebar, el);
+    this.compareWins.set(key, {el, titlebar, btnMax, minimized: false, prevGeo: null});
+    this.makeDraggable(titlebar, el,
+                       () => this.toggleCompareMaximize(key),
+                       () => el.dataset?.maximized === 'true');
     this.ensureEsc(hostDoc);
     this.ensureFocus(hostDoc);
     this.refreshCompareTaskbar();
@@ -1578,6 +1691,47 @@ class TypePanel {
     win.el.style.display = '';
     this.refreshCompareTaskbar();
     this.updateTaskbarVisibility();
+    this.focusCompare(key);
+  }
+  /**
+   * Maximizes a compare window to fill the viewport, or restores the last
+   * saved size/position when already maximized. Minimized windows ignore
+   * the toggle; restore brings back exactly the window that was maximized.
+   * @param {string} key - The warning key.
+   */
+  toggleCompareMaximize(key) {
+    const win = this.compareWins.get(key);
+    if (!win || win.minimized) {
+      return;
+    }
+    const {el, btnMax} = win;
+    if (el.dataset.maximized === 'true') {
+      Object.assign(el.style, win.prevGeo);
+      win.prevGeo = null;
+      delete el.dataset.maximized;
+      el.classList.remove('rti-maximized');
+      btnMax.textContent = '□';
+      btnMax.title = 'Maximize';
+      return;
+    }
+    win.prevGeo = {
+      left: el.style.left,
+      top: el.style.top,
+      width: el.style.width,
+      height: el.style.height,
+      maxWidth: el.style.maxWidth,
+      maxHeight: el.style.maxHeight,
+    };
+    el.dataset.maximized = 'true';
+    el.classList.add('rti-maximized');
+    el.style.left = '8px';
+    el.style.top = '8px';
+    el.style.width = 'calc(100vw - 16px)';
+    el.style.height = 'calc(100vh - 16px)';
+    el.style.maxWidth = 'none';
+    el.style.maxHeight = 'none';
+    btnMax.textContent = '❐';
+    btnMax.title = 'Restore';
     this.focusCompare(key);
   }
   /**
