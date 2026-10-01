@@ -108,6 +108,26 @@ function probe(value, expect) {
   }
 }
 /**
+ * True when the value has the keyed-object shape: a non-null object that is
+ * not an indexed container (`Array`/`Map`/`Set` have their own shape).
+ * Never throws.
+ * @param {*} value - The actual value.
+ * @returns {boolean} True when the object shape matches.
+ */
+function objectShapeMatches(value) {
+  try {
+    if (value === null || typeof value !== 'object') {
+      return false;
+    }
+    if (Array.isArray(value) || value instanceof Map || value instanceof Set) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+/**
  * Climbable type tree: every node names what the level IS (alias, keyof,
  * intersection member, …), resolves one step deeper, and probes the actual
  * value so failures pinpoint their level. Depth is unlimited — levels you
@@ -116,6 +136,10 @@ function probe(value, expect) {
  * currently being expanded above this node. Breadth stays capped
  * (members/props/keys, all labeled with their remainder) plus a global node
  * budget against combinatorial fan-out.
+ *
+ * Marks read `passes`: true/false for validation, `'shape'` when the
+ * container shape matches but its contents fail (right `Set`, bad member),
+ * undefined when untestable.
  * @param {*} expect - The type at this level.
  * @param {*} value - The actual value (probed per level).
  * @param {string} label - Display name for this level.
@@ -239,7 +263,12 @@ function buildObjectNode(expect, value, node, sub) {
         `Must satisfy ALL ${members.length} members (✗ marks the failing one).` :
         `Must satisfy ANY member; ✗ marks failures, closest match first.`;
       node.children = members.map((_) => sub(_, treeSnip(_)));
-      node.children.sort((a, b) => (a.passes === false ? 0 : 1) - (b.passes === false ? 0 : 1));
+      // Failing members first — `'shape'` counts as failing (the member as
+      // a whole does not validate), preserving the closest-match order.
+      const failing = (/** @type {object} */ child) => {
+        return child.passes === false || child.passes === 'shape' ? 0 : 1;
+      };
+      node.children.sort((a, b) => failing(a) - failing(b));
       return node;
     }
     case 'reference': {
@@ -345,6 +374,10 @@ function buildObjectNode(expect, value, node, sub) {
       if (entries.length > shown.length) {
         node.truncated = true;
       }
+      // A real `Map` with failing entries: right shape, bad contents.
+      if (node.passes === false) {
+        node.passes = 'shape';
+      }
       return node;
     }
     case 'set': {
@@ -364,6 +397,10 @@ function buildObjectNode(expect, value, node, sub) {
       node.children = shown.map((item, i) => sub(expect.elementType, `[${i}]: ${treeSnip(expect.elementType)}`, item, node.path ? `${node.path}[${i}]` : `[${i}]`));
       if (items.length > shown.length) {
         node.truncated = true;
+      }
+      // A real `Set` with failing members: right shape, bad contents.
+      if (node.passes === false) {
+        node.passes = 'shape';
       }
       return node;
     }
@@ -397,6 +434,10 @@ function buildObjectNode(expect, value, node, sub) {
           detail: rendered.detail + (exact ? '' : ' (informational: Exact objects is off, so this passes validation)'),
           fix: exact ? rendered.fix : undefined,
         });
+      }
+      // A real object with failing properties: right shape, bad contents.
+      if (node.passes === false && objectShapeMatches(value)) {
+        node.passes = 'shape';
       }
       return node;
     }

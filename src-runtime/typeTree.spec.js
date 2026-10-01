@@ -91,7 +91,7 @@ function testConditionDescends() {
     return false;
   }
   const branch = tree.children[0];
-  return branch.kind === 'object' && branch.passes === false &&
+  return branch.kind === 'object' && branch.passes === 'shape' &&
     branch.children.some((_) => _.label.startsWith('fov:') && _.passes === false);
 }
 function testTransparentWrapperUnwraps() {
@@ -228,12 +228,61 @@ function testTreeExtrasUnmarkedWhenLenient() {
     options.exactObjects = prev;
   }
 }
+/**
+ * A `Set` with a failing member admits its shape: the root reads `'shape'`
+ * while the bad member stays a hard failure.
+ * @returns {boolean} True when the root admits the shape.
+ */
+function testSetRootAdmitsShape() {
+  reset();
+  const tree = buildTypeTree(expandType('Set<string | number>'), new Set(['admin', true]), 'items', undefined, 'items');
+  return tree.kind === 'set' && tree.passes === 'shape' &&
+    tree.children?.length === 2 &&
+    tree.children[0].passes === true && tree.children[1].passes === false;
+}
+/**
+ * A non-`Set` value against a `Set` type stays a hard failure: there is no
+ * shape to admit.
+ * @returns {boolean} True when the root stays red.
+ */
+function testSetRootStaysRedWhenNotASet() {
+  reset();
+  const tree = buildTypeTree(expandType('Set<number>'), [1], 'tags', undefined, 'tags');
+  return tree.kind === 'set' && tree.passes === false;
+}
+/**
+ * An object with a failing property admits its shape; an array against an
+ * object type does not (indexed is not keyed).
+ * @returns {boolean} True when only the real object admits its shape.
+ */
+function testObjectRootAdmitsShape() {
+  reset();
+  const bad = buildTypeTree(expandType('{fov: number}'), {fov: 'x'}, 'options', undefined, 'options');
+  const arr = buildTypeTree(expandType('{fov: number}'), [1], 'options', undefined, 'options');
+  return bad.kind === 'object' && bad.passes === 'shape' && arr.passes === false;
+}
+/**
+ * Failing union members sort first, with shape-mismatches counting as
+ * failures so the closest match still leads.
+ * @returns {boolean} True when the failing `Set` member sorts first.
+ */
+function testUnionSortKeepsShapeMemberFirst() {
+  reset();
+  const tree = buildTypeTree(expandType('Set<string> | number'), new Set([1]), 'v', undefined, 'v');
+  return tree.kind === 'union' && tree.children?.length === 2 &&
+    tree.children[0].kind === 'set' && tree.children[0].passes === 'shape';
+}
 const tests = [
+  testSetRootAdmitsShape,
+  testSetRootStaysRedWhenNotASet,
+  testObjectRootAdmitsShape,
+  testUnionSortKeepsShapeMemberFirst,
   testKeyofListsKeys,
   testDidYouMean,
   testAliasClimb,
   testUnionMarks,
   testUnlimitedDepth,
+  testConditionDescends,
   testRecursiveTypedefTerminates,
   testTransparentWrapperUnwraps,
   testIndexedAccessDirect,
