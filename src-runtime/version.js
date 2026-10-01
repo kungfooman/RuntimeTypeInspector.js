@@ -6,8 +6,8 @@
  * with their own pipeline.
  */
 const RTI_INFO = {
-  "version": "5.0.6",
-  "commit": "ddec872a4f01bd72de31833abf12a30293f1104c",
-  "subject": "Improve resizing and Maximize button to windows (#274)"
+  "version": "5.0.7",
+  "commit": "395fc29e247bfe3c0a93e60ebb2de64f311b5798",
+  "subject": "UI update (#277)"
 };
 export {RTI_INFO};
