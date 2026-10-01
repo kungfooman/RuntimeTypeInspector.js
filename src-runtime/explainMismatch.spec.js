@@ -178,53 +178,55 @@ function testCollectFailPathsMapMismatch() {
   return paths.has("config.get('apiKey')");
 }
 /**
- * A bad `Set` member admits the container matched first: the detail names
- * the shape, the member path and the offending value instead of reporting
- * one opaque union mismatch.
- * @returns {boolean} True when the detail admits the shape first.
+ * A bad `Set` member carries its matched container: structure (not prose)
+ * proves the shape was admitted — kind, path, expected, actual, container
+ * and the closest-match child.
+ * @returns {boolean} True when the finding carries its container.
  */
 function testSetMemberUnionAdmitsShape() {
   reset();
   const {findings} = explainMismatch(new Set(['admin', true]),
                                      expandType('Set<string | number>'), 'items');
-  if (findings.length !== 1 || findings[0].kind !== 'union' || findings[0].path !== 'items[1]') {
+  if (findings.length !== 1) {
     return false;
   }
-  const {detail} = findings[0];
-  return detail.includes('Set<string | number> has the right shape') &&
-    detail.includes('member `items[1]`') && detail.includes('`true`') &&
-    findings[0].children.length === 1;
+  const [finding] = findings;
+  return finding.kind === 'union' && finding.path === 'items[1]' &&
+    finding.expected === 'string | number' && finding.actual === 'true' &&
+    finding.container === 'Set<string | number>' && finding.children.length === 1;
 }
 /**
- * A bad `Map` entry value admits the container matched first, same as sets.
- * @returns {boolean} True when the detail admits the shape first.
+ * A bad `Map` entry value carries its matched container, same as sets.
+ * @returns {boolean} True when the finding carries its container.
  */
 function testMapEntryUnionAdmitsShape() {
   reset();
   const {findings} = explainMismatch(new Map([['apiKey', null]]),
                                      expandType('Map<string, string | number>'), 'config');
-  if (findings.length !== 1 || findings[0].kind !== 'union') {
+  if (findings.length !== 1) {
     return false;
   }
-  const {detail} = findings[0];
-  return detail.includes('Map<string, string | number> has the right shape') &&
-    detail.includes("entry `config.get('apiKey')`") && detail.includes('`null`');
+  const [finding] = findings;
+  return finding.kind === 'union' && finding.path === "config.get('apiKey')" &&
+    finding.expected === 'string | number' && finding.actual === 'null' &&
+    finding.container === 'Map<string, string | number>' && finding.children.length === 1;
 }
 /**
- * Plain property unions name their subject and path but claim no container:
- * only collection members admit a shape.
- * @returns {boolean} True when the detail names the subject only.
+ * Plain property unions carry no container: only collection members admit
+ * a shape. The subject is still pinned by path, expected and actual.
+ * @returns {boolean} True when the finding names its subject structurally.
  */
 function testPropertyUnionNamesSubject() {
   reset();
   const {findings} = explainMismatch({color: true},
                                      expandType('{color: string | number}'), 'options');
-  if (findings.length !== 1 || findings[0].kind !== 'union') {
+  if (findings.length !== 1) {
     return false;
   }
-  const {detail} = findings[0];
-  return detail.includes('`true` at `options.color` matches no union member') &&
-    !detail.includes('has the right shape');
+  const [finding] = findings;
+  return finding.kind === 'union' && finding.path === 'options.color' &&
+    finding.expected === 'string | number' && finding.actual === 'true' &&
+    finding.container === undefined && finding.children.length === 1;
 }
 const tests = [
   testCollectFailPaths,

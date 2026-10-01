@@ -40,6 +40,21 @@ When the user hands you tests (repro files, `/tmp` snippets, demo cases), make t
 - Prove the tests bite: stash the fix and show they fail, pop and show green.
 - Full gate before finishing: `npm test` + `npm run lint`.
 
+## Test style
+
+Never assert exact human-readable prose (diagnosis sentences, detail
+messages, log hints, one-line descriptions). Prose is presentation: pinning
+it turns every reword into a failing suite without any behavioral
+regression. Assert machine-readable structure instead: finding
+kind/path/expected/actual/children, node kinds/marks/paths, DOM
+classes and presence — not sentences.
+
+If the semantic you need is only visible in prose, add a structured field
+first and test the field (e.g. a union finding carries `container:
+'Set<string | number>'`; the sentence is then free to change). Locating a
+row by its text to check *which* row highlights is fine — that tests
+behavior, not wording.
+
 ## Comment style
 
 Do not add issue-number references (e.g. `(issue #123)`) to code comments,

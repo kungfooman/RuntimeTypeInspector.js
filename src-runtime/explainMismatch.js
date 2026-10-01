@@ -449,8 +449,9 @@ function diffSetValue(value, mat, path, depth) {
  * @param {string} path - Dotted path, e.g. `options.clearColor`.
  * @param {number} depth - Recursion depth.
  * @param {{container: string, noun: string}} [memberOf] - Collection context
- * when diffing a `Set` member or `Map` entry, so union findings admit the
- * container matched and only the member fails.
+ * when diffing a `Set` member or `Map` entry: the finding carries the
+ * matched container type in `container`, so reporters can admit the shape
+ * matched without parsing prose.
  * @returns {object[]} Findings (empty when the value satisfies the type).
  */
 function diffValue(value, expect, path, depth, memberOf) {
@@ -475,7 +476,7 @@ function diffValue(value, expect, path, depth, memberOf) {
     const closest = expectSnip(best.member);
     const count = best.findings.length;
     const tail = `closest is ${closest} with ${count} problem${count === 1 ? '' : 's'}.`;
-    return [{
+    const finding = {
       path,
       kind: 'union',
       expected: expectSnip(mat),
@@ -484,7 +485,11 @@ function diffValue(value, expect, path, depth, memberOf) {
         `${memberOf.container} has the right shape, but ${memberOf.noun} \`${path}\` (\`${actual}\`) matches no union member; ${tail}` :
         `\`${actual}\` at \`${path}\` matches no union member; ${tail}`,
       children: best.findings,
-    }];
+    };
+    if (memberOf) {
+      finding.container = memberOf.container;
+    }
+    return [finding];
   }
   if (mat && typeof mat === 'object' && mat.type === 'map') {
     return diffMapValue(value, mat, path, depth);
