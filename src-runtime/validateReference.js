@@ -3,7 +3,7 @@ import {classes} from "./registerClass.js";
 import {validators, recurse} from "./validators.js";
 import {replaceType} from "./replaceType.js";
 import {createTypeFromMapping} from "./createTypeFromMapping.js";
-import {getTypeKeys} from "./getTypeKeys.js";
+import {getTypeKeys, resolveUtilityShape, instantiateReference} from "./getTypeKeys.js";
 import {extendsCheck, resolveForExtends, stripLiteral, deepEqualType} from "./evaluateCondition.js";
 /**
  * Follows strings through typedefs (and materializes mappings) to object
@@ -26,6 +26,30 @@ function resolveObjectArgs(type, warn) {
     if (current && current.type === 'mapping') {
       current = createTypeFromMapping(current, warn);
       continue;
+    }
+    if (current && current.type === 'reference') {
+      const {name, args} = current;
+      if ((name === 'NonNullable' || name === 'Readonly' || name === 'NoInfer') && args?.length) {
+        current = args[0];
+        continue;
+      }
+      if ((name === 'Partial' || name === 'Pick' || name === 'Omit' || name === 'Required') && args?.length) {
+        // Nested utilities (e.g. `Partial<Pick<...>>` inside
+        // `ComponentOptionsOf`): materialize to shapes, then fall through
+        // to the union/object handling below so homomorphic distribution
+        // over unions is preserved.
+        current = resolveUtilityShape(name, args, warn);
+        break;
+      }
+      if (typedefs[name]) {
+        const instance = instantiateReference(current, warn);
+        if (!instance || instance === current) {
+          return [];
+        }
+        current = instance;
+        continue;
+      }
+      return [];
     }
     break;
   }

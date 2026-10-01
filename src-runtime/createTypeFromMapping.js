@@ -52,16 +52,29 @@ function applyQuestionModifier(type, question) {
     return type;
   }
   if (question === '-') {
-    // Stripping needs something to strip: resolve references so the flag
-    // removal lands on a struct. Cloned, the registry is never mutated.
-    let current = type;
-    for (let i = 0; i < 10 && typeof current === 'string' && typedefs[current]; i++) {
-      current = structuredClone(typedefs[current]);
+    // Stripping resolves references only when there is a flag to strip:
+    // expanding unconditionally (e.g. `Color` -> `{r, g, b, a}`) changes
+    // identity and breaks structural comparisons like `IfEquals`, which
+    // must see the same spelling on both sides when neither side is
+    // optional. Cloned, the registry is never mutated.
+    if (typeof type === 'string') {
+      let current = type;
+      for (let i = 0; i < 10 && typeof current === 'string' && typedefs[current]; i++) {
+        current = structuredClone(typedefs[current]);
+        if (typeof current !== 'string') {
+          break;
+        }
+      }
+      if (current && typeof current === 'object' && current.optional) {
+        delete current.optional;
+        return current;
+      }
+      return type;
     }
-    if (current && typeof current === 'object') {
-      delete current.optional;
+    if (type && typeof type === 'object') {
+      delete type.optional;
     }
-    return current;
+    return type;
   }
   if (type && typeof type === 'object') {
     type.optional = true;
@@ -82,14 +95,24 @@ function applyReadonlyModifier(type, modifier) {
     return type;
   }
   if (modifier === '-') {
-    let current = type;
-    for (let i = 0; i < 10 && typeof current === 'string' && typedefs[current]; i++) {
-      current = structuredClone(typedefs[current]);
+    if (typeof type === 'string') {
+      let current = type;
+      for (let i = 0; i < 10 && typeof current === 'string' && typedefs[current]; i++) {
+        current = structuredClone(typedefs[current]);
+        if (typeof current !== 'string') {
+          break;
+        }
+      }
+      if (current && typeof current === 'object' && current.readonly) {
+        delete current.readonly;
+        return current;
+      }
+      return type;
     }
-    if (current && typeof current === 'object') {
-      delete current.readonly;
+    if (type && typeof type === 'object') {
+      delete type.readonly;
     }
-    return current;
+    return type;
   }
   if (type && typeof type === 'object') {
     type.readonly = true;

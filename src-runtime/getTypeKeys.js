@@ -273,7 +273,9 @@ function instantiateReference(type, warn) {
 }
 /**
  * Resolves a type to an object shape for key reading. Narrower than full
- * materialization: unions, utilities and unresolvable shapes yield undefined.
+ * materialization: multi-member unions and unresolvable shapes yield
+ * undefined. A union of a single object with nullish members (the
+ * `NonNullable<Entity[K]>` shape) resolves to that object.
  * @param {*} type - The type to resolve.
  * @param {console["warn"]} warn - Function to warn with.
  * @param {number} depth - The depth to detect recursion.
@@ -300,6 +302,17 @@ function resolveObject(type, warn, depth) {
   }
   if (type.type === 'object') {
     return type;
+  }
+  if (type.type === 'union' && Array.isArray(type.members)) {
+    // `NonNullable<T>` unwraps above, but a bare indexed access like
+    // `Entity["camera"]` can still denote `Camera | undefined`: a single
+    // object beside nullish members resolves to that object, anything
+    // wider stays unresolvable rather than guessing a member.
+    const kept = type.members.filter((member) => member !== 'null' && member !== 'undefined');
+    if (kept.length === 1) {
+      return resolveObject(kept[0], warn, depth + 1);
+    }
+    return;
   }
   if (type.type === 'mapping') {
     const materialize = validators.materializeMapping;
@@ -662,6 +675,17 @@ function getTypeKeys(expect, warn, depth = 0) {
       args
     } = expect;
     if ((name === 'NonNullable' || name === 'Readonly' || name === 'NoInfer') && args?.length) {
+      if (name === 'NonNullable') {
+        // `NonNullable<Entity["camera"]>` denotes `CameraComponent`, not the
+        // union members: resolve single-object-plus-nullish unions to the
+        // object's keys instead of returning member names like
+        // `["CameraComponent", "undefined"]`, which would poison downstream
+        // `keyof` / `Extract` / `Pick` computations.
+        const shape = resolveObject(args[0], warn, depth + 1);
+        if (shape && shape.properties) {
+          return Object.keys(shape.properties);
+        }
+      }
       return getTypeKeys(args[0], warn, depth + 1);
     }
     if (name === 'Omit' || name === 'Pick' || name === 'Partial') {

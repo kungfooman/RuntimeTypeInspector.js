@@ -367,6 +367,33 @@ function extendsCheck(check, target) {
           return undefined;
       }
     }
+    if (typeof target === 'string' && classes[target] && check && typeof check === 'object') {
+      // Nominal classes: only (sub)class instances extend them (decided in
+      // the class-target handling below for name checks). Concrete value
+      // shapes (plain objects, arrays, records, functions, ...) are never
+      // class instances at runtime (`instanceof` fails), so they
+      // decisively do not extend. Deferred forms (references, conditions,
+      // indexed access, keyof, unions handled above, ...) stay undecidable
+      // rather than failing closed.
+      if (check.type === 'reference' && (check.name === 'Array' || check.name === 'ReadonlyArray')) {
+        return false;
+      }
+      switch (check.type) {
+        case 'object':
+        case 'array':
+        case 'tuple':
+        case 'record':
+        case 'map':
+        case 'set':
+        case 'promise':
+        case 'function':
+        case 'new':
+        case 'templateLiteral':
+          return false;
+        default:
+          break;
+      }
+    }
     return undefined;
   }
   // Quoted literals extend their primitive base ('"camera"' extends string);
