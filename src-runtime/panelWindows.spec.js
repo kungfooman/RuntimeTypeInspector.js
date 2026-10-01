@@ -294,6 +294,200 @@ function withPanel(fn) {
     restore();
   }
 }
+/**
+ * Concatenated CSS text of every `<style>` node the panel injected.
+ * @returns {string} Raw stylesheet text.
+ */
+function injectedCss() {
+  return globalThis.document.head.children.map(textOf).join('\n');
+}
+/**
+ * Extracts the declaration block for one selector from raw CSS.
+ * @param {string} css - Raw stylesheet text.
+ * @param {string} selector - The selector, including its opening brace.
+ * @returns {string|null} Block without braces, or null.
+ */
+function cssBlock(css, selector) {
+  const at = css.indexOf(selector);
+  if (at === -1) {
+    return null;
+  }
+  const open = css.indexOf('{', at);
+  const close = css.indexOf('}', open);
+  if (open === -1 || close === -1) {
+    return null;
+  }
+  return css.slice(open + 1, close);
+}
+/**
+ * Grips must sit outside the window frame: inside grips overlay the body's
+ * scrollbars, leaving only a few pixels grabbable. The window itself stays
+ * `overflow: visible` so the outside grips are not clipped away, while the
+ * scrollable body keeps its own `overflow: auto`.
+ * @returns {boolean} True when every grip offset points outside.
+ */
+function testPanelResizersSitOutside() {
+  return withPanel((panel) => {
+    if (panel.div.style.overflow !== 'visible') {
+      return false;
+    }
+    const css = injectedCss();
+    const body = cssBlock(css, '.rti-body {');
+    if (!body || !body.includes('overflow: auto')) {
+      return false;
+    }
+    const want = {
+      '.rti-handle-e {': 'right: -8px',
+      '.rti-handle-w {': 'left: -8px',
+      '.rti-handle-s {': 'bottom: -8px',
+      '.rti-handle-n {': 'top: -5px',
+      '.rti-handle-se {': ['right: -14px', 'bottom: -14px'],
+      '.rti-handle-sw {': ['left: -14px', 'bottom: -14px'],
+      '.rti-handle-ne {': ['right: -10px', 'top: -10px'],
+      '.rti-handle-nw {': ['left: -10px', 'top: -10px'],
+    };
+    for (const [selector, props] of Object.entries(want)) {
+      const block = cssBlock(css, selector);
+      if (!block) {
+        return false;
+      }
+      for (const prop of Array.isArray(props) ? props : [props]) {
+        if (!block.includes(prop)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  });
+}
+/**
+ * Compare windows reuse the same outside grips, so their frame must not
+ * clip them away; popped-out panels hide grips instead of sticking them
+ * out past the viewport edges.
+ * @returns {boolean} True when compare frames stay visible and popped hides.
+ */
+function testCompareWindowAllowsOutsideResizers() {
+  return withPanel((panel) => {
+    const css = injectedCss();
+    const win = cssBlock(css, '.rti-compare-win {');
+    if (!win || !win.includes('overflow: visible')) {
+      return false;
+    }
+    const popped = cssBlock(css, '.rti-popped .rti-handle {');
+    return !!popped && popped.includes('display: none');
+  });
+}
+/**
+ * Reads the caption button labels of a titlebar, left to right.
+ * @param {*} titlebar - The titlebar node.
+ * @returns {string[]} Button labels.
+ */
+function captionLabels(titlebar) {
+  return titlebar.children[1].children.map((_) => _.textContent);
+}
+/**
+ * The panel carries desktop window buttons (`_` minimize, `□` maximize,
+ * pop-out kept last): maximizing fills the viewport and flips to `❐`,
+ * restoring brings back the exact pre-maximize size. Maximized windows
+ * ignore drags, resizes and caption-button double-clicks, titlebar
+ * double-click restores, and maximized size is never persisted.
+ * @returns {boolean} True when maximize/restore round-trips exactly.
+ */
+function testPanelMaximizeRestore() {
+  return withPanel((panel) => {
+    if (JSON.stringify(captionLabels(panel.titlebar)) !== JSON.stringify(['_', '□', '⧉'])) {
+      return false;
+    }
+    if (panel.div.style.width !== '640px') {
+      return false;
+    }
+    panel.buttonMaximize.onclick();
+    if (panel.div.dataset.maximized !== 'true' || panel.buttonMaximize.textContent !== '❐') {
+      return false;
+    }
+    if (!String(panel.div.style.width).includes('calc') || !panel.div.classList.contains('rti-maximized')) {
+      return false;
+    }
+    const {divAll} = TypePanel;
+    panel.titlebar.fire('mousedown', {clientX: 100, clientY: 100, target: panel.titlebar});
+    globalThis.document.fire('mousemove', {clientX: 500, clientY: 500});
+    globalThis.document.fire('mouseup', {});
+    if (divAll.style.left !== '8px' || divAll.style.top !== '8px') {
+      return false;
+    }
+    const grip = panel.div.children.find((_) => _?.dataset?.dir === 'e');
+    grip.fire('mousedown', {clientX: 100, clientY: 100, target: grip});
+    globalThis.document.fire('mousemove', {clientX: 500, clientY: 100});
+    globalThis.document.fire('mouseup', {});
+    if (!String(panel.div.style.width).includes('calc')) {
+      return false;
+    }
+    panel.titlebar.fire('dblclick', {target: panel.buttonMaximize});
+    if (panel.div.dataset.maximized !== 'true') {
+      return false;
+    }
+    panel.saveGeometry();
+    if (globalThis.localStorage.getItem('rti-panel-geometry') !== null) {
+      return false;
+    }
+    panel.titlebar.fire('dblclick', {target: panel.titlebar});
+    if (panel.div.dataset.maximized === 'true' || panel.buttonMaximize.textContent !== '□') {
+      return false;
+    }
+    if (panel.div.style.width !== '640px' || panel.div.classList.contains('rti-maximized')) {
+      return false;
+    }
+    panel.saveGeometry();
+    const stored = globalThis.localStorage.getItem('rti-panel-geometry') || '';
+    return stored.includes('640px') && !stored.includes('calc');
+  });
+}
+/**
+ * Compare windows carry desktop buttons (`_` minimize, `□` maximize, `×`
+ * close): maximizing fills the viewport and flips to `❐`, restoring
+ * brings back the exact pre-maximize size. Maximized windows ignore
+ * drags, survive minimize/restore still maximized, and ignore the toggle
+ * while minimized.
+ * @returns {boolean} True when maximize/restore round-trips exactly.
+ */
+function testCompareMaximizeRestore() {
+  return withPanel((panel) => {
+    panel.openComparator(stubWarn('L1', 'a'));
+    const key = 'L1-a';
+    const win = panel.compareWins.get(key);
+    if (JSON.stringify(captionLabels(win.titlebar)) !== JSON.stringify(['_', '□', '×'])) {
+      return false;
+    }
+    win.btnMax.onclick();
+    if (win.el.dataset.maximized !== 'true' || win.btnMax.textContent !== '❐') {
+      return false;
+    }
+    if (!String(win.el.style.width).includes('calc')) {
+      return false;
+    }
+    win.titlebar.fire('mousedown', {clientX: 100, clientY: 100, target: win.titlebar});
+    globalThis.document.fire('mousemove', {clientX: 500, clientY: 500});
+    globalThis.document.fire('mouseup', {});
+    if (win.el.style.left !== '8px' || win.el.style.top !== '8px') {
+      return false;
+    }
+    panel.minimizeCompare(key);
+    panel.restoreCompare(key);
+    if (win.el.dataset.maximized !== 'true' || win.el.style.display !== '') {
+      return false;
+    }
+    win.btnMax.onclick();
+    if (win.el.dataset.maximized === 'true' || win.btnMax.textContent !== '□') {
+      return false;
+    }
+    if (String(win.el.style.width).includes('calc')) {
+      return false;
+    }
+    panel.minimizeCompare(key);
+    win.btnMax.onclick();
+    return win.minimized && win.el.style.display === 'none';
+  });
+}
 function testOpenFocusDedupe() {
   return withPanel((panel) => {
     panel.openComparator(stubWarn('L1', 'a'));
@@ -944,6 +1138,10 @@ const tests = [
   testPanelClickFrontsOverCompares,
   testActiveTitleFollowsClick,
   testCompareWindowsResizable,
+  testPanelResizersSitOutside,
+  testCompareWindowAllowsOutsideResizers,
+  testPanelMaximizeRestore,
+  testCompareMaximizeRestore,
   testGrabActivatesWindow,
   testPointerdownFronts,
   testTaskbarAlwaysVisible,
