@@ -1,6 +1,6 @@
 import {classes} from "./registerClass.js";
 import {variables, variableKinds} from "./registerVariable.js";
-import {lookupGlobalConstructor} from "./lookupGlobalConstructor.js";
+import {validators} from "./validators.js";
 /**
  * True for values tsc keeps as literal types behind a `const` binding
  * (`typeof MOTION_FREE` is `'free'`, `typeof ANSWER` is `42`): strings,
@@ -35,7 +35,8 @@ function isConstLiteral(ref) {
  */
 export function validateTypeof(value, expect, loc, name, critical, warn, depth) {
   const target = expect.argument;
-  const ctor = classes[target] ?? (typeof target === 'string' ? lookupGlobalConstructor(target) : undefined);
+  // Read through the table so userland overrides take effect.
+  const ctor = classes[target] ?? (typeof target === 'string' ? validators.lookupGlobalConstructor(target) : undefined);
   if (typeof ctor === 'function') {
     if (value === ctor) {
       return true;

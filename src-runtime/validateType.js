@@ -3,7 +3,7 @@ import {customValidations   } from "./customValidations.js";
 import {options             } from "./options.js";
 import {classes             } from "./registerClass.js";
 import {typedefs            } from "./registerTypedef.js";
-import {lookupGlobalConstructor} from "./lookupGlobalConstructor.js";
+import "./lookupGlobalConstructor.js";
 import {validateArray       } from "./validateArray.js";
 import {validateArrayLike   } from "./validateArrayLike.js";
 import {validateCondition   } from "./validateCondition.js";
@@ -290,8 +290,9 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
   // Unregistered platform constructors: the `window` lookup below only
   // covers browsers. Resolve through `globalThis` as well, so e.g. a
   // Float32Array subclass validates in workers/Node too. Name equality
-  // above stays as the cross-realm last resort.
-  const globalCtor = typeof type === 'string' ? lookupGlobalConstructor(type) : undefined;
+  // above stays as the cross-realm last resort. Read through the table so
+  // userland overrides take effect.
+  const globalCtor = typeof type === 'string' ? validators.lookupGlobalConstructor(type) : undefined;
   if (typeof globalCtor === 'function') {
     let passes = false;
     try {
