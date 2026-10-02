@@ -317,17 +317,6 @@ function diffMapValue(value, mat, path, depth) {
       fix: `Change \`${path}\` to ${expectSnip(mat)}.`,
     }];
   }
-  if (mat.key !== 'string') {
-    // Mirrors validateMap: only string keys are supported.
-    return passes(value, mat) ? [] : [{
-      path,
-      kind: 'wrong',
-      expected: expectSnip(mat),
-      actual: snip(value),
-      detail: 'Value does not satisfy the type.',
-      fix: `Change \`${path}\` to ${expectSnip(mat)}.`,
-    }];
-  }
   if (depth >= MAX_DEPTH) {
     return passes(value, mat) ? [] : [{
       path,
@@ -340,12 +329,19 @@ function diffMapValue(value, mat, path, depth) {
   const findings = [];
   let shown = 0;
   const memberOf = {container: expectSnip(mat), noun: 'entry'};
+  const keyOf = {container: expectSnip(mat), noun: 'key'};
   try {
     for (const [key, val] of value) {
       if (shown >= MAX_MAP_ENTRIES) {
         break;
       }
-      findings.push(...diffValue(val, mat.val, `${path}.get(${formatMapKey(key)})`, depth + 1, memberOf));
+      const entryPath = `${path}.get(${formatMapKey(key)})`;
+      if (mat.key !== undefined) {
+        findings.push(...diffValue(key, mat.key, entryPath, depth + 1, keyOf));
+      }
+      if (mat.val !== undefined) {
+        findings.push(...diffValue(val, mat.val, entryPath, depth + 1, memberOf));
+      }
       shown++;
     }
   } catch {
