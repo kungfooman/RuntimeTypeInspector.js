@@ -20,6 +20,7 @@ export * from './explainMismatch.js';
 export * from './typeTree.js';
 export * from './humanizeExpect.js';
 export * from './jsx.js';
+export * from './lookupGlobalConstructor.js';
 export * from './makeJSDoc.js';
 export * from './options.js';
 export * from './partition.js';

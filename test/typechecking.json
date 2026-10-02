@@ -168,6 +168,10 @@
     "output": "./test/typechecking/member-expression-positions-output.mjs"
   },
   {
+    "input": "./test/typechecking/named-subclass-input.mjs",
+    "output": "./test/typechecking/named-subclass-output.mjs"
+  },
+  {
     "input": "./test/typechecking/new-computed-callee-input.mjs",
     "output": "./test/typechecking/new-computed-callee-output.mjs"
   },

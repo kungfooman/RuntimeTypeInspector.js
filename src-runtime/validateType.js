@@ -3,6 +3,7 @@ import {customValidations   } from "./customValidations.js";
 import {options             } from "./options.js";
 import {classes             } from "./registerClass.js";
 import {typedefs            } from "./registerTypedef.js";
+import {lookupGlobalConstructor} from "./lookupGlobalConstructor.js";
 import {validateArray       } from "./validateArray.js";
 import {validateArrayLike   } from "./validateArrayLike.js";
 import {validateCondition   } from "./validateCondition.js";
@@ -285,6 +286,22 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
   } else if (classes[type]) {
     // Inheritance check, allow Application for AppBase, allow Entity for GraphNode etc.
     return value instanceof classes[type];
+  }
+  // Unregistered platform constructors: the `window` lookup below only
+  // covers browsers. Resolve through `globalThis` as well, so e.g. a
+  // Float32Array subclass validates in workers/Node too. Name equality
+  // above stays as the cross-realm last resort.
+  const globalCtor = typeof type === 'string' ? lookupGlobalConstructor(type) : undefined;
+  if (typeof globalCtor === 'function') {
+    let passes = false;
+    try {
+      passes = value instanceof globalCtor;
+    } catch {
+      passes = false;
+    }
+    if (passes) {
+      return true;
+    }
   }
   if (typeof window !== 'undefined') {
     const windowClass = window[type];
