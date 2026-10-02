@@ -8,6 +8,7 @@ import {validateArray       } from "./validateArray.js";
 import {validateArrayLike   } from "./validateArrayLike.js";
 import {validateCondition   } from "./validateCondition.js";
 import {validateIntersection} from "./validateIntersection.js";
+import {validateGlobalConstructor} from "./validateGlobalConstructor.js";
 import {validateIndexedAccess} from "./validateIndexedAccess.js";
 import {validateIArguments   } from "./validateIArguments.js";
 import {validateKeyof       } from "./validateKeyof.js";
@@ -47,6 +48,7 @@ Object.assign(validators, {
   validateMapping,
   validateArray,
   validateIntersection,
+  validateGlobalConstructor,
   validateIndexedAccess,
   validateIArguments,
   validateKeyof,
@@ -274,21 +276,10 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
     return value instanceof classes[type];
   }
   // Unregistered platform constructors: the `window` lookup below only
-  // covers browsers. Resolve through `globalThis` as well, so e.g. a
-  // Float32Array subclass validates in workers/Node too. Name equality
-  // above stays as the cross-realm last resort. Read through the table so
-  // userland overrides take effect.
-  const globalCtor = typeof type === 'string' ? validators.lookupGlobalConstructor(type) : undefined;
-  if (typeof globalCtor === 'function') {
-    let passes = false;
-    try {
-      passes = value instanceof globalCtor;
-    } catch {
-      passes = false;
-    }
-    if (passes) {
-      return true;
-    }
+  // covers browsers, so a `Float32Array` subclass would fail in
+  // workers/Node without this environment-independent probe.
+  if (validators.validateGlobalConstructor(value, expect, loc, name, critical, warn, depth)) {
+    return true;
   }
   if (typeof window !== 'undefined') {
     const windowClass = window[type];
