@@ -29,6 +29,10 @@ class TypeofUnrelated {
 function TypeofLegacy() {}
 TypeofLegacy.prototype = Object.create(TypeofBase.prototype);
 TypeofLegacy.prototype.constructor = TypeofLegacy;
+function TypeofModern() {}
+TypeofModern.prototype = Object.create(TypeofBase.prototype);
+TypeofModern.prototype.constructor = TypeofModern;
+Object.setPrototypeOf(TypeofModern, TypeofBase);
 /**
  * Registers scratch classes/variables, runs the check, then removes them
  * so later specs observe a clean registry.
@@ -41,6 +45,7 @@ function withTypeofTargets(check) {
   registerClass(TypeofGrandChild);
   registerClass(TypeofUnrelated);
   registerClass(TypeofLegacy);
+  registerClass(TypeofModern);
   try {
     return check();
   } finally {
@@ -49,6 +54,7 @@ function withTypeofTargets(check) {
     delete classes.TypeofGrandChild;
     delete classes.TypeofUnrelated;
     delete classes.TypeofLegacy;
+    delete classes.TypeofModern;
     delete variables.typeofPrimitives;
     delete variables.typeofOptions;
     delete variables.typeofFactory;
@@ -88,6 +94,12 @@ function testIndirectSubclassPasses() {
 function testPrototypeLinkedPasses() {
   // `typeof Base` accepts createScript-style prototype linkage (no extends).
   return withTypeofTargets(() => validateType(TypeofLegacy,
+                                              {type: 'typeof', argument: 'TypeofBase'}, 'loc', 'name', true, warn, 0) === true);
+}
+function testStaticAndPrototypeLinkedPasses() {
+  // Newer `createScript` shape (prototype linkage plus static inheritance)
+  // still satisfies `typeof Base` through the prototype chain.
+  return withTypeofTargets(() => validateType(TypeofModern,
                                               {type: 'typeof', argument: 'TypeofBase'}, 'loc', 'name', true, warn, 0) === true);
 }
 function testUnrelatedClassFails() {
@@ -190,6 +202,7 @@ const tests = [
   testDirectSubclassPasses,
   testIndirectSubclassPasses,
   testPrototypeLinkedPasses,
+  testStaticAndPrototypeLinkedPasses,
   testUnrelatedClassFails,
   testInstanceFails,
   testNonFunctionFails,

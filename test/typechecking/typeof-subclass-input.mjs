@@ -40,6 +40,12 @@ class Unrelated {
 function LegacyScript() {}
 LegacyScript.prototype = Object.create(Script.prototype);
 LegacyScript.prototype.constructor = LegacyScript;
+// Newer `createScript` shape: prototype-linked like above, with the static
+// side inheriting too, mirroring `extends`.
+function ModernScript() {}
+ModernScript.prototype = Object.create(Script.prototype);
+ModernScript.prototype.constructor = ModernScript;
+Object.setPrototypeOf(ModernScript, Script);
 /**
  * @param {typeof Script} script - The script class to register.
  */
@@ -53,6 +59,10 @@ registerScript(TurboPlayer); // ok: indirect subclass
 // not `new () => Script`), but at runtime LegacyScript.prototype is a
 // Script and RTI accepts it — the createScript case from the issue.
 registerScript(LegacyScript); // ok for RTI
+// @ts-expect-error: tsc cannot see either linkage (`Object.setPrototypeOf`
+// is opaque to it), but at runtime ModernScript is a Script on both the
+// instance and the static side and RTI accepts it.
+registerScript(ModernScript); // ok for RTI
 // @ts-expect-error: Unrelated is not a Script subclass
 registerScript(Unrelated);
 // @ts-expect-error: instances are not constructors
