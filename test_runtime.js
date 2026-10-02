@@ -55,6 +55,7 @@ const tests = [
   ...(await import('./src-runtime/validateReference.spec.js'       )).tests,
   ...(await import('./src-runtime/componentMap.spec.js'            )).tests,
   ...(await import('./src-runtime/componentOptions.spec.js'        )).tests,
+  ...(await import('./src-runtime/componentTowerStress.spec.js'     )).tests,
   ...(await import('./src-runtime/templateNarrowing.spec.js'       )).tests,
   ...(await import('./src-runtime/collectCandidates.spec.js'      )).tests,
   ...(await import('./src-runtime/strictNullChecks.spec.js'        )).tests,
