@@ -184,6 +184,22 @@
     "output": "./test/typechecking/playcanvas-component-options-output.mjs"
   },
   {
+    "input": "./test/typechecking/playcanvas-tower-conditions-input.mjs",
+    "output": "./test/typechecking/playcanvas-tower-conditions-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/playcanvas-tower-modifiers-input.mjs",
+    "output": "./test/typechecking/playcanvas-tower-modifiers-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/playcanvas-tower-nonnullable-input.mjs",
+    "output": "./test/typechecking/playcanvas-tower-nonnullable-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/playcanvas-tower-utilities-input.mjs",
+    "output": "./test/typechecking/playcanvas-tower-utilities-output.mjs"
+  },
+  {
     "input": "./test/typechecking/setter-no-type-getter-no-type-input.mjs",
     "output": "./test/typechecking/setter-no-type-getter-no-type-output.mjs"
   },

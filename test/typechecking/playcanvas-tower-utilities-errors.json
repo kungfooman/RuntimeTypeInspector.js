@@ -1,0 +1,10 @@
+{
+  "throws": [
+    {"loc": "takePartial", "name": "o"},
+    {"loc": "takeDeep", "name": "o"},
+    {"loc": "takeRequired", "name": "o"},
+    {"loc": "takeOmitUnion", "name": "o"},
+    {"loc": "takeOmitUnion", "name": "o"},
+    {"loc": "takeGeneric", "name": "o"}
+  ]
+}

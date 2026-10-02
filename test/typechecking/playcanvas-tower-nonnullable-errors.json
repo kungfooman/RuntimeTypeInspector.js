@@ -1,0 +1,7 @@
+{
+  "throws": [
+    {"loc": "takeCameraProp", "name": "prop"},
+    {"loc": "takeCameraProp", "name": "prop"},
+    {"loc": "takeNullName", "name": "name"}
+  ]
+}

@@ -1,5 +1,12 @@
 # AGENTS.md
 
+## Scratch files
+
+Always use the repo-local `./tmp/` directory for scratch, repro and
+throwaway files — never the system `/tmp` (it triggers permission flow
+blockers). `./tmp/` is git-ignored, so nothing there can leak into commits.
+Create it on demand (`mkdir -p tmp`); do not store anything permanent there.
+
 ## Checking JSDoc types like `tsc`
 
 `node run-jsdoc.js [--emit] <file.mjs>` transpiles `<file>` with the RTI
@@ -26,7 +33,7 @@ node run-jsdoc.js test/typechecking/noinfer-templates-input.mjs
 
 ## Making repro tests permanent
 
-When the user hands you tests (repro files, `/tmp` snippets, demo cases), make them permanent instead of leaving them in `/tmp` — plus your own creative variants:
+When the user hands you tests (repro files, `./tmp` snippets, demo cases), make them permanent instead of leaving them in `./tmp` — plus your own creative variants:
 
 - Fixture: `test/typechecking/<name>-input.mjs` (+ `-output.mjs`,
   generated with the same pipeline as `test.js`) with `// ok` / `// warns:`
@@ -37,6 +44,11 @@ When the user hands you tests (repro files, `/tmp` snippets, demo cases), make t
   Cover the transpiler output AND creative variants of your own: edge cases
   the repro didn't show (export wrappers, template shadowing, bare
   templates, widening vs warns at runtime).
+- Expectation file: `test/typechecking/<name>-errors.json`
+  (`{"throws": [{loc, name}, ...]}` in call order) pins exactly which calls
+  must throw; `test/jsdoc-expect/run.mjs` (`npm run test:jsdoc-expect`,
+  part of `npm test`) compares it against `run-jsdoc.js` output, failing on
+  any missing or extra error. Fixture inputs stay clean JS with no markers.
 - Prove the tests bite: stash the fix and show they fail, pop and show green.
 - Full gate before finishing: `npm test` + `npm run lint`.
 
@@ -65,11 +77,14 @@ untouched — just don't introduce new ones.
 ## Test suite
 
 ```sh
-npm test  # test:update (gen_tests.js) + test.js + test_runtime.js + jsdoc/ts2js/wat suites
+npm test  # test:update (gen_tests.js) + test.js + test_runtime.js + jsdoc-expect + jsdoc/ts2js/wat suites
 npm run lint  # eslint over src-transpiler, src-runtime and src-unittest
 ```
 
 Note: `test.js` proves transpile parity only — a quiet `// warns` comment
 passes it. Runtime behavior of fixtures is covered by `test_runtime.js`
 specs (e.g. `src-runtime/templateNarrowing.spec.js`,
-`src-runtime/collectCandidates.spec.js`).
+`src-runtime/collectCandidates.spec.js`) and by `test/jsdoc-expect/run.mjs`:
+a `<stem>-input.mjs` fixture with a sibling `<stem>-errors.json` states
+exactly which calls must throw (`[{loc, name}, ...]` in execution order —
+never message prose), and the runner fails on any missing or extra error.
