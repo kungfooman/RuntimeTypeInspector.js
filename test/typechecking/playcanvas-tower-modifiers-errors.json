@@ -1,0 +1,8 @@
+{
+  "throws": [
+    {"loc": "takeCameraKey", "name": "key", "value": "label"},
+    {"loc": "takeCameraKey", "name": "key", "value": "nope"},
+    {"loc": "takeRequired", "name": "opts", "value": {}},
+    {"loc": "takeRequired", "name": "opts", "value": {"a": 1}}
+  ]
+}

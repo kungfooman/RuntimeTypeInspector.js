@@ -112,6 +112,24 @@ function testIntersectionTarget() {
   return true;
 }
 /**
+ * Intersection targets keep scanning past undecidable members: a later
+ * definitive `false` still decides the whole check `false` (member order
+ * matters — the undecidable one comes first here).
+ * @returns {boolean} True when documented behavior holds.
+ */
+function testIntersectionTargetSkipsUndecidable() {
+  clearTypedefs();
+  const decided = {type: 'intersection', members: ['Foo', '"b"']};
+  if (evaluateCondition('"a"', decided, warn) !== false) {
+    return false;
+  }
+  const open = {type: 'intersection', members: ['Foo', 'Bar']};
+  if (evaluateCondition('"a"', open, warn) !== undefined) {
+    return false;
+  }
+  return true;
+}
+/**
  * Intersection checks decide by disjunction: either member suffices.
  * @returns {boolean} True when documented behavior holds.
  */
@@ -228,6 +246,7 @@ export const tests = [
   testTemplateTarget,
   testOverridesOf,
   testIntersectionTarget,
+  testIntersectionTargetSkipsUndecidable,
   testIntersectionCheck,
   testKeyofTarget,
   testComponentNameCondition,

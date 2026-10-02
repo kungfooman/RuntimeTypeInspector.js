@@ -128,6 +128,10 @@
     "output": "./test/typechecking/inline-param-types-output.mjs"
   },
   {
+    "input": "./test/typechecking/intersection-target-input.mjs",
+    "output": "./test/typechecking/intersection-target-output.mjs"
+  },
+  {
     "input": "./test/typechecking/jsdoc-param-end-detection-input.mjs",
     "output": "./test/typechecking/jsdoc-param-end-detection-output.mjs"
   },
@@ -176,8 +180,36 @@
     "output": "./test/typechecking/only-description-output.mjs"
   },
   {
+    "input": "./test/typechecking/playcanvas-camera-options-input.mjs",
+    "output": "./test/typechecking/playcanvas-camera-options-output.mjs"
+  },
+  {
     "input": "./test/typechecking/playcanvas-component-options-input.mjs",
     "output": "./test/typechecking/playcanvas-component-options-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/playcanvas-tower-conditions-input.mjs",
+    "output": "./test/typechecking/playcanvas-tower-conditions-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/playcanvas-tower-modifiers-input.mjs",
+    "output": "./test/typechecking/playcanvas-tower-modifiers-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/playcanvas-tower-nonnullable-input.mjs",
+    "output": "./test/typechecking/playcanvas-tower-nonnullable-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/playcanvas-tower-nullable-input.mjs",
+    "output": "./test/typechecking/playcanvas-tower-nullable-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/playcanvas-tower-strictnull-input.mjs",
+    "output": "./test/typechecking/playcanvas-tower-strictnull-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/playcanvas-tower-utilities-input.mjs",
+    "output": "./test/typechecking/playcanvas-tower-utilities-output.mjs"
   },
   {
     "input": "./test/typechecking/setter-no-type-getter-no-type-input.mjs",

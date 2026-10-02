@@ -1,0 +1,5 @@
+{
+  "throws": [
+    {"loc": "acceptDirectMaybeCameraResult", "name": "value", "value": "component"}
+  ]
+}

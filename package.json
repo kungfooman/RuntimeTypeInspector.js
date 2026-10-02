@@ -11,7 +11,8 @@
     "docs": "jsdoc -c jsdoc.json",
     "lint": "eslint --ext .js,.mjs,.cjs src-transpiler src-runtime src-unittest",
     "watch": "rollup -c -w",
-    "test": "npm run test:update && node test.js && node test_runtime.js && node test/jsdoc-annotation/run.js && node test/ts2js.mjs && node test/wat-converter.mjs && npm run test:parity",
+    "test": "npm run test:update && node test.js && node test_runtime.js && node test/jsdoc-expect/run.mjs && node test/jsdoc-annotation/run.js && node test/ts2js.mjs && node test/wat-converter.mjs && npm run test:parity",
+    "test:jsdoc-expect": "node test/jsdoc-expect/run.mjs",
     "test:parity": "node test/parity/run.mjs",
     "test:update": "node gen_tests.js > test/typechecking.json"
   },

@@ -1,0 +1,15 @@
+{
+  "throws": [
+    {"loc": "takeDoubleNonNullableProp", "name": "prop", "value": "name"},
+    {"loc": "takeTripleNullableProp", "name": "prop", "value": "name"},
+    {"loc": "takeCameraSlotProp", "name": "prop", "value": "name"},
+    {"loc": "takeNestedComponentProp", "name": "prop", "value": "name"},
+    {"loc": "takeDeepCameraProp", "name": "prop", "value": "name"},
+    {"loc": "takeOptionalNullName", "name": "name", "value": "name"},
+    {"loc": "takeInstanceKey", "name": "key", "value": "CameraComponent"},
+    {"loc": "takeInstanceKey", "name": "key", "value": "name"},
+    {"loc": "takeMultipleComponentName", "name": "name", "value": "missing"},
+    {"loc": "takeOnlyActualCameraKeys", "name": "key", "value": "CameraComponent"},
+    {"loc": "takeOnlyActualCameraKeys", "name": "key", "value": "name"}
+  ]
+}
