@@ -1,5 +1,5 @@
 {
   "throws": [
-    {"loc": "acceptDirectMaybeCameraResult", "name": "value"}
+    {"loc": "acceptDirectMaybeCameraResult", "name": "value", "value": "component"}
   ]
 }

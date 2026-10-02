@@ -128,6 +128,10 @@
     "output": "./test/typechecking/inline-param-types-output.mjs"
   },
   {
+    "input": "./test/typechecking/intersection-target-input.mjs",
+    "output": "./test/typechecking/intersection-target-output.mjs"
+  },
+  {
     "input": "./test/typechecking/jsdoc-param-end-detection-input.mjs",
     "output": "./test/typechecking/jsdoc-param-end-detection-output.mjs"
   },

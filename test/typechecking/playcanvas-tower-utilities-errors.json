@@ -1,12 +1,12 @@
 {
   "throws": [
-    {"loc": "takePartial", "name": "o"},
-    {"loc": "takeDeep", "name": "o"},
-    {"loc": "takeRequired", "name": "o"},
-    {"loc": "takeOmit", "name": "o"},
-    {"loc": "takeOmit", "name": "o"},
-    {"loc": "takeRequiredUnion", "name": "o"},
-    {"loc": "takeGeneric", "name": "o"},
-    {"loc": "takeGeneric", "name": "o"}
+    {"loc": "takePartial", "name": "o", "value": {"a": "x"}},
+    {"loc": "takeDeep", "name": "o", "value": {"a": "x"}},
+    {"loc": "takeRequired", "name": "o", "value": {}},
+    {"loc": "takeOmit", "name": "o", "value": {"a": 1}},
+    {"loc": "takeOmit", "name": "o", "value": {"b": 1}},
+    {"loc": "takeRequiredUnion", "name": "o", "value": {}},
+    {"loc": "takeGeneric", "name": "o", "value": {"c": 1}},
+    {"loc": "takeGeneric", "name": "o", "value": {"a": "x"}}
   ]
 }

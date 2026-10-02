@@ -54,10 +54,12 @@ When the user hands you tests (repro files, `./tmp` snippets, demo cases), make 
   the repro didn't show (export wrappers, template shadowing, bare
   templates, widening vs warns at runtime).
 - Expectation file: `test/typechecking/<name>-errors.json`
-  (`{"throws": [{loc, name}, ...]}` in call order) pins exactly which calls
-  must throw; `test/jsdoc-expect/run.mjs` (`npm run test:jsdoc-expect`,
-  part of `npm test`) compares it against `run-jsdoc.js` output, failing on
-  any missing or extra error. Fixture inputs stay clean JS with no markers.
+  (`{"throws": [{loc, name[, value]}, ...]}` in call order) pins exactly
+  which calls must throw; the optional `value` is the offending argument
+  (canonical JSON), so repeated calls to one function stay distinguishable
+  by what they threw, not just by order. `test/jsdoc-expect/run.mjs`
+  (`npm run test:jsdoc-expect`, part of `npm test`) compares it against
+  `run-jsdoc.js` output, failing on any missing or extra error. Fixture inputs stay clean JS with no markers.
   Call lines may additionally carry `// Expected: ...` notes for humans
   (e.g. for TypeScript-playground counter-checks); they are documentation
   only and ignored by the runner. Newer fixtures mark throwing calls with
@@ -68,6 +70,9 @@ When the user hands you tests (repro files, `./tmp` snippets, demo cases), make 
   `playcanvas-tower-strictnull-input.mjs` with per-setting expectations
   in comments.
 - Prove the tests bite: stash the fix and show they fail, pop and show green.
+- Every unit test gets a comment stating its expectation up front; then
+  verify it (mutation: break the code, watch it fail) and fix whatever is
+  wrong — test or code — until the expectation holds for the right reason.
 - Full gate before finishing: `npm test` + `npm run lint`.
 
 ## Test style
