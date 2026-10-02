@@ -121,9 +121,6 @@ function toSourceBabelTS(node) {
       } else if (name === 'Set' && typeArguments?.length === 1) {
         const elementType = toSourceBabelTS(typeArguments[0]);
         return {type: 'set', elementType};
-      } else if (name === 'Class' && typeArguments?.length === 1) {
-        const elementType = toSourceBabelTS(typeArguments[0]);
-        return {type: 'class', elementType};
       }
       // Parity with expandType(): generic references like ArrayLike<T>,
       // ReadonlyArray<T>, NodeListOf<T> or user typedefs like MyBox<T>.

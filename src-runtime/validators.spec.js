@@ -1,9 +1,11 @@
 import {validateType} from './validateType.js';
 import {validators, recurse} from './validators.js';
+import {lookupGlobalConstructor} from './lookupGlobalConstructor.js';
 const warn = () => undefined;
+class Float32ArraySub extends Float32Array {}
 // Every validator is registered in the dispatch table.
 function testTableComplete() {
-  for (const key of ['validateType', 'validateCondition', 'validateObject', 'validateRecord', 'validateReference', 'validateMap', 'validateMapping', 'validateArray', 'validateIntersection', 'validateIndexedAccess', 'validateKeyof', 'validateUnion', 'validateSet', 'validateTemplateLiteral', 'validateTuple', 'validateTypeof', 'validateNumber', 'validatePromise', 'validateArrayLike', 'validateTypedef', 'validateString', 'validateBoolean', 'validateNull', 'validateUndefined', 'validateSymbol', 'validateBigint', 'validateVoid', 'materializeMapping', 'evaluateCondition', 'decideIfEquals']) {
+  for (const key of ['validateType', 'validateCondition', 'validateObject', 'validateRecord', 'validateReference', 'validateMap', 'validateMapping', 'validateArray', 'validateIntersection', 'validateIndexedAccess', 'validateKeyof', 'validateUnion', 'validateSet', 'validateTemplateLiteral', 'validateTuple', 'validateTypeof', 'validateNumber', 'validatePromise', 'validateArrayLike', 'validateTypedef', 'validateString', 'validateBoolean', 'validateNull', 'validateUndefined', 'validateSymbol', 'validateBigint', 'validateVoid', 'materializeMapping', 'evaluateCondition', 'decideIfEquals', 'lookupGlobalConstructor', 'validateIArguments', 'validateGlobalConstructor']) {
     if (typeof validators[key] !== 'function') {
       return false;
     }
@@ -98,10 +100,28 @@ function testPrimitiveOverrideTakesEffect() {
   }
   return true;
 }
+// The global-constructor lookup is overridable through the table, e.g. to
+// bisect a resolution-related false positive without rebuilding.
+function testLookupOverrideTakesEffect() {
+  // Blinded lookup: an unregistered subclass no longer resolves and fails.
+  validators.lookupGlobalConstructor = () => undefined;
+  let blind;
+  try {
+    blind = validateType(new Float32ArraySub(), 'Float32Array', 'loc', 'name', true, warn, 0);
+  } finally {
+    validators.lookupGlobalConstructor = lookupGlobalConstructor;
+  }
+  if (blind !== false) {
+    return false;
+  }
+  // Restored lookup resolves again (subclass passes).
+  return validateType(new Float32ArraySub(), 'Float32Array', 'loc', 'name', true, warn, 0) === true;
+}
 export const tests = [
   testTableComplete,
   testOverrideTakesEffect,
   testOverrideRestored,
+  testLookupOverrideTakesEffect,
   testRecurseGuard,
   testRecurseMatchesValidateType,
   testPrimitiveOverrideTakesEffect,

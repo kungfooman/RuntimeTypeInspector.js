@@ -3,11 +3,14 @@ import {customValidations   } from "./customValidations.js";
 import {options             } from "./options.js";
 import {classes             } from "./registerClass.js";
 import {typedefs            } from "./registerTypedef.js";
+import "./lookupGlobalConstructor.js";
 import {validateArray       } from "./validateArray.js";
 import {validateArrayLike   } from "./validateArrayLike.js";
 import {validateCondition   } from "./validateCondition.js";
 import {validateIntersection} from "./validateIntersection.js";
+import {validateGlobalConstructor} from "./validateGlobalConstructor.js";
 import {validateIndexedAccess} from "./validateIndexedAccess.js";
+import {validateIArguments   } from "./validateIArguments.js";
 import {validateKeyof       } from "./validateKeyof.js";
 import {validateMap         } from "./validateMap.js";
 import {validateMapping     } from "./validateMapping.js";
@@ -45,7 +48,9 @@ Object.assign(validators, {
   validateMapping,
   validateArray,
   validateIntersection,
+  validateGlobalConstructor,
   validateIndexedAccess,
+  validateIArguments,
   validateKeyof,
   validateUnion,
   validateSet,
@@ -235,24 +240,8 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
       return typeof value === 'function';
     case 'ObjectConstructor':
       return typeof value.constructor === 'function';
-    case 'class':
-      /** @todo PlayCanvas specific, move into custom validations */
-      if (value && expect.elementType === 'ScriptType') {
-        if (value.name === 'scriptType') {
-          return true;
-        }
-        const proto = Object.getPrototypeOf(value);
-        if (proto?.name === 'ScriptType') {
-          return true;
-        }
-      }
-      warn(`${loc}> validateType> class> expected object, not '${value}'`);
-      return false;
     case 'IArguments':
-      // Used in playcanvas-engine/src/core/tags.js
-      // Testable via physics/offset-collision example.
-      /** @todo unit tests */
-      return value[Symbol.iterator] instanceof Function;
+      return validators.validateIArguments(value, expect, loc, name, critical, warn, depth + 1);
     case 'ArrayBufferView':
       /**
        * @todo unit tests + TS Lib object like customObjects...
@@ -285,6 +274,12 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
   } else if (classes[type]) {
     // Inheritance check, allow Application for AppBase, allow Entity for GraphNode etc.
     return value instanceof classes[type];
+  }
+  // Unregistered platform constructors: the `window` lookup below only
+  // covers browsers, so a `Float32Array` subclass would fail in
+  // workers/Node without this environment-independent probe.
+  if (validators.validateGlobalConstructor(value, expect, loc, name, critical, warn, depth)) {
+    return true;
   }
   if (typeof window !== 'undefined') {
     const windowClass = window[type];

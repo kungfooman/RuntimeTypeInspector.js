@@ -52,6 +52,10 @@
     "output": "./test/typechecking/ParenthesizedExpression-singleline-output.mjs"
   },
   {
+    "input": "./test/typechecking/arguments-input.mjs",
+    "output": "./test/typechecking/arguments-output.mjs"
+  },
+  {
     "input": "./test/typechecking/callbacks-input.mjs",
     "output": "./test/typechecking/callbacks-output.mjs"
   },
@@ -166,6 +170,10 @@
   {
     "input": "./test/typechecking/member-expression-positions-input.mjs",
     "output": "./test/typechecking/member-expression-positions-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/named-subclass-input.mjs",
+    "output": "./test/typechecking/named-subclass-output.mjs"
   },
   {
     "input": "./test/typechecking/new-computed-callee-input.mjs",
@@ -302,6 +310,14 @@
   {
     "input": "./test/typechecking/typedef-template-strings-input.mjs",
     "output": "./test/typechecking/typedef-template-strings-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/typeof-const-literal-input.mjs",
+    "output": "./test/typechecking/typeof-const-literal-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/typeof-subclass-input.mjs",
+    "output": "./test/typechecking/typeof-subclass-output.mjs"
   },
   {
     "input": "./test/typechecking/utility-types-input.mjs",

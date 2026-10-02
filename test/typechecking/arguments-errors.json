@@ -1,0 +1,6 @@
+{
+  "throws": [
+    {"loc": "takeArgs", "name": "args", "value": null},
+    {"loc": "takeArgs", "name": "args", "value": {}}
+  ]
+}

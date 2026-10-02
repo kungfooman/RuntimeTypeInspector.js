@@ -1,0 +1,6 @@
+{
+  "throws": [
+    {"loc": "takeFloat", "name": "data", "value": {"length": 4}},
+    {"loc": "takeFloat", "name": "data", "value": "nope"}
+  ]
+}

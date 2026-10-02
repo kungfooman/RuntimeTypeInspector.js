@@ -18,10 +18,13 @@ const obj = {
   b: 2,
   c: 3
 };
-registerVariable('obj', obj);
+registerVariable('obj', obj, 'const');
+
+
 /**
  * @typedef {keyof typeof obj} ObjKey - Will be: "a" | "b" | "c"
  */
+
 const DataTypeMap = Object.freeze({
   float32: Float32Array,
   float64: Float64Array,
@@ -36,7 +39,10 @@ const DataTypeMap = Object.freeze({
   uint64: BigUint64Array,
   bool: Uint8Array,
 });
-registerVariable('DataTypeMap', DataTypeMap);
+registerVariable('DataTypeMap', DataTypeMap, 'const');
+
+
 /**
  * @typedef {keyof typeof DataTypeMap} DataType
  */
+
