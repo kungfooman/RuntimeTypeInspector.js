@@ -60,7 +60,13 @@ When the user hands you tests (repro files, `./tmp` snippets, demo cases), make 
   any missing or extra error. Fixture inputs stay clean JS with no markers.
   Call lines may additionally carry `// Expected: ...` notes for humans
   (e.g. for TypeScript-playground counter-checks); they are documentation
-  only and ignored by the runner.
+  only and ignored by the runner. Newer fixtures mark throwing calls with
+  `// @ts-expect-error` instead, which doubles as a tsc-strict
+  self-check — but a `//` line starting with it is live to tsc, so prose
+  must never start a line with that token. Cases that flip with
+  `strictNullChecks` live apart in
+  `playcanvas-tower-strictnull-input.mjs` with per-setting expectations
+  in comments.
 - Prove the tests bite: stash the fix and show they fail, pop and show green.
 - Full gate before finishing: `npm test` + `npm run lint`.
 

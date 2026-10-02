@@ -314,6 +314,19 @@ function resolveObject(type, warn, depth) {
     }
     return;
   }
+  if (type.type === 'intersection' && Array.isArray(type.members)) {
+    // Mirrors resolveObjectSide: merge member shapes, fail closed when any
+    // member is unresolvable. Bare `{}` members contribute no keys.
+    const properties = {};
+    for (const member of type.members) {
+      const resolved = resolveObject(member, warn, depth + 1);
+      if (!resolved) {
+        return;
+      }
+      Object.assign(properties, resolved.properties ?? {});
+    }
+    return {type: 'object', properties};
+  }
   if (type.type === 'mapping') {
     const materialize = validators.materializeMapping;
     if (!materialize) {
@@ -361,6 +374,13 @@ function resolveObject(type, warn, depth) {
       return;
     }
     return resolveObject(instance, warn, depth + 1);
+  }
+  if (typeof type.type === 'string' && (classes[type.type] || typedefs[type.type])) {
+    // Named-type wrappers `{type: Name, optional?, readonly?}` (from
+    // `Partial`, harvest, etc.): resolve the name for shape reading; the
+    // flags don't affect keys. Placed last so every structural kind keeps
+    // its dedicated handling above.
+    return resolveObject(type.type, warn, depth + 1);
   }
 }
 /**

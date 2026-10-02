@@ -27,6 +27,23 @@ function extractCurlyContent(line) {
   return {content, nextIndex: k + 1};
 }
 /**
+ * Counts unbalanced opening braces, so `@typedef {{...}}` types split
+ * across lines can be re-joined before parsing.
+ * @param {string} text - Text to scan.
+ * @returns {number} Open braces minus close braces.
+ */
+function braceDepth(text) {
+  let depth = 0;
+  for (const c of text) {
+    if (c === '{') {
+      depth++;
+    } else if (c === '}') {
+      depth--;
+    }
+  }
+  return depth;
+}
+/**
  * Parses JSDoc comments to extract and expand typedefs and their associated properties.
  *
  * It iterates through the lines of a `CommentBlock` from the Babel AST, looking for `@typedef` and `@property`
@@ -69,16 +86,28 @@ function parseJSDocTypedef(typedefs, typedefTemplates, warn, comment, expandType
     }
     return false;
   }
-  for (let line of lines) {
-    line = line.trim();
+  const stripped = lines.map((raw) => {
+    let line = raw.trim();
     if (line[0] === '*') {
       line = line.slice(1).trim();
     }
+    return line;
+  });
+  for (let i = 0; i < stripped.length; i++) {
+    const line = stripped[i];
     if (line.startsWith('@template')) {
       harvestTemplate(line);
     } else if (line.startsWith('@typedef')) {
-      const {content: def, nextIndex} = extractCurlyContent(line);
-      let name = line.substring(nextIndex).trim();
+      // Inline types may span lines: keep appending continuation lines
+      // until the braces balance (the name follows the closing brace,
+      // possibly lines later). Stop at the next tag, so `@property` and
+      // friends keep their own meaning.
+      let buf = line;
+      while (braceDepth(buf) > 0 && i + 1 < stripped.length && !stripped[i + 1].startsWith('@')) {
+        buf += '\n' + stripped[++i];
+      }
+      const {content: def, nextIndex} = extractCurlyContent(buf);
+      let name = buf.substring(nextIndex).trim();
       // Drop description
       name = name.split(' ')[0];
       lastTypedef = expandType(def);

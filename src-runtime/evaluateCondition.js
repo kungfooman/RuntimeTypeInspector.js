@@ -393,6 +393,15 @@ function extendsCheck(check, target) {
         default:
           break;
       }
+      if (typeof check.type === 'string' && (classes[check.type] || typedefs[check.type])) {
+        // Named-type wrappers `{type: Name, optional?, readonly?}` (from
+        // `Partial`, harvest, etc.): decide on the name, so class checks
+        // stay nominal instead of degrading to undecidable. Only the
+        // decision reads through the wrapper — materialization keeps the
+        // flags, which identity comparisons like `IfEquals` rely on.
+        // Structural kind names never resolve here (nothing registers them).
+        return extendsCheck(check.type, target);
+      }
     }
     return undefined;
   }
