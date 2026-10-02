@@ -304,6 +304,10 @@
     "output": "./test/typechecking/typedef-template-strings-output.mjs"
   },
   {
+    "input": "./test/typechecking/typeof-const-literal-input.mjs",
+    "output": "./test/typechecking/typeof-const-literal-output.mjs"
+  },
+  {
     "input": "./test/typechecking/typeof-subclass-input.mjs",
     "output": "./test/typechecking/typeof-subclass-output.mjs"
   },

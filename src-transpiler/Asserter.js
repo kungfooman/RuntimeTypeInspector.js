@@ -12,6 +12,22 @@ import {parseJSDocTypedef  } from './parseJSDocTypedef.js';
 import {simplifyTypeToSource} from './simplifyTypeToSource.js';
 import {statReset          } from './stat.js';
 import {Stringifier        } from './Stringifier.js';
+/**
+ * Pre-marks every `typeof Name` value query inside a JSDoc comment so the
+ * later `VariableDeclaration` pass emits its `registerVariable` in source
+ * order (before any runtime use). Previously only `@typedef` comments were
+ * pre-scanned, so a direct `@param {typeof X}` never registered `X` and
+ * every such check failed closed. Marks without a same-named declaration
+ * never emit anything and are harmless.
+ * @param {string} text - The comment text.
+ */
+function markTypeofRequirements(text) {
+  for (const match of text.matchAll(/\btypeof\s+([A-Za-z_$][\w$]*)/g)) {
+    if (!requiredTypeofs[match[1]]) {
+      requiredTypeofs[match[1]] = 'missing';
+    }
+  }
+}
 /** @typedef {import('@babel/types').Node              } Node               */
 /** @typedef {import('@babel/types').ClassMethod       } ClassMethod        */
 /** @typedef {import('@babel/types').ClassPrivateMethod} ClassPrivateMethod */
@@ -1033,6 +1049,7 @@ class Asserter extends Stringifier {
       for (const comment of comments) {
         const warn = this.warn.bind(this);
         parseJSDocTypedef(this.typedefs, this.typedefTemplates, warn, comment, this.expandType);
+        markTypeofRequirements(comment.value ?? '');
       }
     }
     //console.log("this.typedefs", this.typedefs);
@@ -1053,12 +1070,17 @@ class Asserter extends Stringifier {
    * @returns {string} Stringification of the node.
    */
   VariableDeclaration(node) {
-    const {declarations} = node;
+    const {declarations, kind} = node;
     let ret = super.VariableDeclaration(node);
     for (const {id} of declarations) {
       const name = this.toSource(id);
       if (requiredTypeofs[name] === 'missing') {
-        ret += `\n${this.spaces}registerVariable('${name}', ${name});\n`;
+        // The declaration kind travels along: `const` bindings keep tsc
+        // literal types (`typeof MOTION_FREE` is `'free'`), `let`/`var`
+        // widen (`typeof count` is `number`), and the runtime checks each
+        // accordingly. `kind` is parser vocabulary (`const`/`let`/`var`),
+        // never user input, so interpolation is safe.
+        ret += `\n${this.spaces}registerVariable('${name}', ${name}, '${kind}');\n`;
         requiredTypeofs[name] = 'found';
       } else if (requiredTypeofs[name] === 'found') {
         console.warn(`Already registered variable named ${name} for typeof validation`);

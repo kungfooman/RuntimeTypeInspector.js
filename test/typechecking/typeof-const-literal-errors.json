@@ -1,0 +1,8 @@
+{
+  "throws": [
+    {"loc": "setMotion", "name": "motion", "value": "bogus"},
+    {"loc": "setMotion", "name": "motion", "value": 1},
+    {"loc": "takeAnswer", "name": "value", "value": 43},
+    {"loc": "takeCount", "name": "value", "value": "6"}
+  ]
+}

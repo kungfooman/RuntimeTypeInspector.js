@@ -1,6 +1,6 @@
 import {validateType} from './validateType.js';
 import {classes, registerClass} from './registerClass.js';
-import {variables, registerVariable} from './registerVariable.js';
+import {variables, variableKinds, registerVariable} from './registerVariable.js';
 import {expandType} from '../src-transpiler/expandType.js';
 const warn = () => undefined;
 class TypeofBase {
@@ -52,6 +52,17 @@ function withTypeofTargets(check) {
     delete variables.typeofPrimitives;
     delete variables.typeofOptions;
     delete variables.typeofFactory;
+    delete variables.typeofConstMotion;
+    delete variables.typeofConstAnswer;
+    delete variables.typeofConstNan;
+    delete variables.typeofLetCount;
+    delete variableKinds.typeofPrimitives;
+    delete variableKinds.typeofOptions;
+    delete variableKinds.typeofFactory;
+    delete variableKinds.typeofConstMotion;
+    delete variableKinds.typeofConstAnswer;
+    delete variableKinds.typeofConstNan;
+    delete variableKinds.typeofLetCount;
   }
 }
 function testExpandsToTypeof() {
@@ -116,11 +127,44 @@ function testGlobalConstructorFallback() {
     validateType(Uint8Array, {type: 'typeof', argument: 'Float32Array'}, 'loc', 'name', true, warn, 0) === false;
 }
 function testTypeofValuePrimitive() {
-  // `typeof someLet` (registered value): same primitive kind passes.
+  // `typeof someLet` without a recorded kind widens (legacy registrations).
   return withTypeofTargets(() => {
     registerVariable('typeofPrimitives', 5);
     return validateType(6, {type: 'typeof', argument: 'typeofPrimitives'}, 'loc', 'name', true, warn, 0) === true &&
       validateType('6', {type: 'typeof', argument: 'typeofPrimitives'}, 'loc', 'name', true, warn, 0) === false;
+  });
+}
+function testTypeofLetWidens() {
+  // `let count = 5` widens: `typeof count` is `number`, any number passes.
+  return withTypeofTargets(() => {
+    registerVariable('typeofLetCount', 5, 'let');
+    return validateType(6, {type: 'typeof', argument: 'typeofLetCount'}, 'loc', 'name', true, warn, 0) === true &&
+      validateType('6', {type: 'typeof', argument: 'typeofLetCount'}, 'loc', 'name', true, warn, 0) === false;
+  });
+}
+function testTypeofConstStringIsLiteral() {
+  // `const MOTION = 'free'`: `typeof MOTION` is `'free'` — exact match only.
+  return withTypeofTargets(() => {
+    registerVariable('typeofConstMotion', 'free', 'const');
+    return validateType('free', {type: 'typeof', argument: 'typeofConstMotion'}, 'loc', 'name', true, warn, 0) === true &&
+      validateType('limited', {type: 'typeof', argument: 'typeofConstMotion'}, 'loc', 'name', true, warn, 0) === false &&
+      validateType(5, {type: 'typeof', argument: 'typeofConstMotion'}, 'loc', 'name', true, warn, 0) === false;
+  });
+}
+function testTypeofConstNumberIsLiteral() {
+  // `const ANSWER = 42`: `typeof ANSWER` is `42`, other numbers fail.
+  return withTypeofTargets(() => {
+    registerVariable('typeofConstAnswer', 42, 'const');
+    return validateType(42, {type: 'typeof', argument: 'typeofConstAnswer'}, 'loc', 'name', true, warn, 0) === true &&
+      validateType(43, {type: 'typeof', argument: 'typeofConstAnswer'}, 'loc', 'name', true, warn, 0) === false;
+  });
+}
+function testTypeofConstNanWidens() {
+  // `const X = NaN` widens like tsc (`NaN` is no literal): numbers pass.
+  return withTypeofTargets(() => {
+    registerVariable('typeofConstNan', NaN, 'const');
+    return validateType(1, {type: 'typeof', argument: 'typeofConstNan'}, 'loc', 'name', true, warn, 0) === true &&
+      validateType('1', {type: 'typeof', argument: 'typeofConstNan'}, 'loc', 'name', true, warn, 0) === false;
   });
 }
 function testTypeofValueObject() {
@@ -153,6 +197,10 @@ const tests = [
   testUnknownTargetFailsClosedWithUnchecked,
   testGlobalConstructorFallback,
   testTypeofValuePrimitive,
+  testTypeofLetWidens,
+  testTypeofConstStringIsLiteral,
+  testTypeofConstNumberIsLiteral,
+  testTypeofConstNanWidens,
   testTypeofValueObject,
   testTypeofValueConstructor,
 ];

@@ -97,6 +97,10 @@ JSDoc blocks, or specs. Describe the why in plain words instead; the commit
 message / PR is the place for issue links. Pre-existing references stay
 untouched — just don't introduce new ones.
 
+## Markdown style
+
+In every Markdown file you write, never hard-wrap prose with `\n`: each paragraph is a single line and each list item is a single line — text-wrapping is the reader's job (soft-wrap), not the file's. Hard-wrapped lines force manual re-wrapping on every edit and noise up diffs. Code blocks keep their line breaks; nothing else gets any.
+
 ## Test suite
 
 ```sh

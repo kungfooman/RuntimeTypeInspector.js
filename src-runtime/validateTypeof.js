@@ -1,5 +1,5 @@
 import {classes} from "./registerClass.js";
-import {variables} from "./registerVariable.js";
+import {variables, variableKinds} from "./registerVariable.js";
 /**
  * Looks up a constructor by name beyond the class registry: engine builds
  * keep platform constructors (e.g. `Float32Array`) unregistered, but they
@@ -35,6 +35,28 @@ function lookupGlobalConstructor(name) {
   return undefined;
 }
 /**
+ * True for values tsc keeps as literal types behind a `const` binding
+ * (`typeof MOTION_FREE` is `'free'`, `typeof ANSWER` is `42`): strings,
+ * booleans, bigints, symbols (`unique symbol`), `null` and `undefined`.
+ * Numbers count except `NaN`, which tsc widens to `number` since it is no
+ * literal. Anything else (objects, functions) widens like `let` does.
+ * @param {*} ref - The registered value.
+ * @returns {boolean} True when the value stays literal under `const`.
+ */
+function isConstLiteral(ref) {
+  if (ref === null || ref === undefined) {
+    return true;
+  }
+  const kind = typeof ref;
+  if (kind === 'string' || kind === 'boolean' || kind === 'bigint' || kind === 'symbol') {
+    return true;
+  }
+  if (kind === 'number') {
+    return !Number.isNaN(ref);
+  }
+  return false;
+}
+/**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
  * @param {string} loc - String like `BoundingBox#compute`
@@ -67,9 +89,9 @@ export function validateTypeof(value, expect, loc, name, critical, warn, depth) 
     return false;
   }
   // `typeof someValue`: the argument names a registered value rather than a
-  // class. A constructor value behaves like the class case above; otherwise
-  // the parameter must share the value's apparent type (primitives compare
-  // by `typeof`, objects by constructor so subclass instances still pass).
+  // class. A constructor value behaves like the class case above; objects
+  // pass by constructor; primitives follow tsc widening (`const` keeps
+  // literal types, `let`/`var`/unknown widen to the primitive).
   if (typeof target === 'string' && Object.prototype.hasOwnProperty.call(variables, target)) {
     const ref = variables[target];
     if (typeof ref === 'function') {
@@ -89,6 +111,13 @@ export function validateTypeof(value, expect, loc, name, critical, warn, depth) 
       return false;
     }
     if ((ref === null || typeof ref !== 'object') && (value === null || typeof value !== 'object')) {
+      if (variableKinds[target] === 'const' && isConstLiteral(ref)) {
+        if (value === ref) {
+          return true;
+        }
+        warn(`Expected typeof ${target}.`, {value, expect});
+        return false;
+      }
       if (typeof value === typeof ref) {
         return true;
       }
