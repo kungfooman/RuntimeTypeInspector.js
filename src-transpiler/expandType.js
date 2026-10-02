@@ -284,9 +284,6 @@ function toSourceTS(node) {
       } else if (typeName.text === 'Set' && typeArguments?.length === 1) {
         const elementType = toSourceTS(typeArguments[0]);
         return {type: 'set', elementType};
-      } else if (typeName.text === 'Class' && typeArguments?.length === 1) {
-        const elementType = toSourceTS(typeArguments[0]);
-        return {type: 'class', elementType};
       }
       if (!typeArguments) {
         return typeName.getText();

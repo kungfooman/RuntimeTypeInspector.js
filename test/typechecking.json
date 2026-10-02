@@ -52,6 +52,10 @@
     "output": "./test/typechecking/ParenthesizedExpression-singleline-output.mjs"
   },
   {
+    "input": "./test/typechecking/arguments-input.mjs",
+    "output": "./test/typechecking/arguments-output.mjs"
+  },
+  {
     "input": "./test/typechecking/callbacks-input.mjs",
     "output": "./test/typechecking/callbacks-output.mjs"
   },

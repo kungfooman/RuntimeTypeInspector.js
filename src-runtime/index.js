@@ -39,6 +39,7 @@ export * from './validateCondition.js';
 export * from './validateDivision.js';
 export * from './validateIntersection.js';
 export * from './validateIndexedAccess.js';
+export * from './validateIArguments.js';
 export * from './validateKeyof.js';
 export * from './validateMap.js';
 export * from './validateMapping.js';

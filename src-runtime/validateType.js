@@ -9,6 +9,7 @@ import {validateArrayLike   } from "./validateArrayLike.js";
 import {validateCondition   } from "./validateCondition.js";
 import {validateIntersection} from "./validateIntersection.js";
 import {validateIndexedAccess} from "./validateIndexedAccess.js";
+import {validateIArguments   } from "./validateIArguments.js";
 import {validateKeyof       } from "./validateKeyof.js";
 import {validateMap         } from "./validateMap.js";
 import {validateMapping     } from "./validateMapping.js";
@@ -47,6 +48,7 @@ Object.assign(validators, {
   validateArray,
   validateIntersection,
   validateIndexedAccess,
+  validateIArguments,
   validateKeyof,
   validateUnion,
   validateSet,
@@ -236,24 +238,8 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
       return typeof value === 'function';
     case 'ObjectConstructor':
       return typeof value.constructor === 'function';
-    case 'class':
-      /** @todo PlayCanvas specific, move into custom validations */
-      if (value && expect.elementType === 'ScriptType') {
-        if (value.name === 'scriptType') {
-          return true;
-        }
-        const proto = Object.getPrototypeOf(value);
-        if (proto?.name === 'ScriptType') {
-          return true;
-        }
-      }
-      warn(`${loc}> validateType> class> expected object, not '${value}'`);
-      return false;
     case 'IArguments':
-      // Used in playcanvas-engine/src/core/tags.js
-      // Testable via physics/offset-collision example.
-      /** @todo unit tests */
-      return value[Symbol.iterator] instanceof Function;
+      return validators.validateIArguments(value, expect, loc, name, critical, warn, depth + 1);
     case 'ArrayBufferView':
       /**
        * @todo unit tests + TS Lib object like customObjects...
