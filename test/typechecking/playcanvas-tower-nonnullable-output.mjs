@@ -65,11 +65,22 @@ registerTypedef('NullMap', {
  * `NonNullable` key reads: `keyof NonNullable<Holder["camera"]>` denotes the
  * component keys, not the union member names, through single, doubled and
  * `| null` wrappers. A conditional map over a `| null` slot keeps working.
+ * (`Component` is intentionally non-empty: tsc reads an empty base class
+ * structurally, so every member would extend it.)
  */
 class Component {
-
+  constructor() {
+    /** @type {boolean} */
+    this.enabled = true;
+  }
 }
 registerClass(Component);
+registerTypedef('Component', {
+  "type": "object",
+  "properties": {
+    "enabled": "boolean"
+  }
+});
 class Color {
   constructor() {
     this.r = 0.5;
@@ -89,10 +100,20 @@ registerTypedef('Color', {
   }
 });
 class CameraComponent extends Component {
+  constructor() {
+    super();
+    /** @type {Color} */
+
+    this._clearColor = new Color();
+    /** @type {number} */
+
+    this._fov = 45;
+  }
   
   /**
    * @type {Color}
    */
+
   get clearColor() {
     return this._clearColor;
   }
@@ -126,7 +147,9 @@ registerTypedef('CameraComponent', {
   "type": "object",
   "properties": {
     "clearColor": "Color",
-    "fov": "number"
+    "fov": "number",
+    "_clearColor": "Color",
+    "_fov": "number"
   }
 });
 
@@ -167,10 +190,14 @@ function takeCameraProp(prop) {
   }
   return prop;
 }
-takeCameraProp('clearColor');
-takeCameraProp('fov');
-takeCameraProp('CameraComponent');
-takeCameraProp('name');
+takeCameraProp('clearColor'); // Expected: no issue
+
+takeCameraProp('fov'); // Expected: no issue
+
+takeCameraProp('CameraComponent'); // Expected: error — a type name, not a property key
+
+takeCameraProp('name'); // Expected: error — not a camera property
+
 
 /**
  * @param {keyof NonNullable<NonNullable<Holder["camera"]>|null>} prop
@@ -208,7 +235,8 @@ function takeDeepProp(prop) {
   }
   return prop;
 }
-takeDeepProp('fov');
+takeDeepProp('fov'); // Expected: no issue
+
 
 /**
  * @typedef {{ camera: CameraComponent|null, name: string }} NullHolder
@@ -252,8 +280,10 @@ function takeNullName(name) {
   }
   return name;
 }
-takeNullName('camera');
-takeNullName('name');
+takeNullName('camera'); // Expected: no issue
+
+takeNullName('name'); // Expected: error — not a component name
+
 
 /**
  * @param {keyof NullMap["camera"]} prop
@@ -273,4 +303,5 @@ function takeNullProp(prop) {
   }
   return prop;
 }
-takeNullProp('fov');
+takeNullProp('fov'); // Expected: no issue
+

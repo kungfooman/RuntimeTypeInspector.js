@@ -112,10 +112,29 @@ registerTypedef('Color', {
  */
 
 class CameraComponent extends Component {
+  constructor() {
+    super();
+    /** @type {Color} */
+
+    this._clearColor = new Color();
+    /** @type {Tint} */
+
+    this._tint = new Color();
+    /** @type {Color|number[]} */
+
+    this._blend = [0, 0, 0, 1];
+    /** @type {number} */
+
+    this._fov = 45;
+    /** @type {string} */
+
+    this._label = 'camera';
+  }
   
   /**
    * @type {Color}
    */
+
   get clearColor() {
     return this._clearColor;
   }
@@ -204,7 +223,21 @@ registerTypedef('CameraComponent', {
     "label": {
       "type": "string",
       "readonly": true
-    }
+    },
+    "_clearColor": "Color",
+    "_tint": "Tint",
+    "_blend": {
+      "type": "union",
+      "members": [
+        "Color",
+        {
+          "type": "array",
+          "elementType": "number"
+        }
+      ]
+    },
+    "_fov": "number",
+    "_label": "string"
   }
 });
 
@@ -261,12 +294,18 @@ function takeCameraKey(key) {
   }
   return key;
 }
-takeCameraKey('clearColor');
-takeCameraKey('tint');
-takeCameraKey('blend');
-takeCameraKey('fov');
-takeCameraKey('label');
-takeCameraKey('nope');
+takeCameraKey('clearColor'); // Expected: no issue — writable class-typed prop is a key
+
+takeCameraKey('tint'); // Expected: no issue — aliased class type is a key
+
+takeCameraKey('blend'); // Expected: no issue — union prop is a key
+
+takeCameraKey('fov'); // Expected: no issue
+
+takeCameraKey('label'); // Expected: error — getter-only props aren't writable keys
+
+takeCameraKey('nope'); // Expected: error — unknown key
+
 
 /**
  * @typedef {{ a: number, b: string }} Box
@@ -303,8 +342,11 @@ function takeRequired(opts) {
 takeRequired({
   a: 1,
   b: 's'
-});
-takeRequired({});
+}); // Expected: no issue
+
+takeRequired({}); // Expected: error — 'a' and 'b' are required
+
 takeRequired({
   a: 1
-});
+}); // Expected: error — 'b' is required
+

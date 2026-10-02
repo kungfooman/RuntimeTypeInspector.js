@@ -66,12 +66,22 @@ registerTypedef('OptionsByName', {
  * Conditional tower over a noisy entity: record, array, method and primitive
  * members are not components, so `ComponentName` rejects them while the
  * `K extends ComponentName ? ... : object` dispatch keeps typing known
- * components.
+ * components. (`Component` is intentionally non-empty: tsc reads an empty
+ * base class structurally, so every member would extend it.)
  */
 class Component {
-
+  constructor() {
+    /** @type {boolean} */
+    this.enabled = true;
+  }
 }
 registerClass(Component);
+registerTypedef('Component', {
+  "type": "object",
+  "properties": {
+    "enabled": "boolean"
+  }
+});
 class Color {
   constructor() {
     this.r = 0.5;
@@ -91,10 +101,17 @@ registerTypedef('Color', {
   }
 });
 class CameraComponent extends Component {
+  constructor() {
+    super();
+    /** @type {Color} */
+
+    this._clearColor = new Color();
+  }
   
   /**
    * @type {Color}
    */
+
   get clearColor() {
     return this._clearColor;
   }
@@ -111,14 +128,22 @@ registerClass(CameraComponent);
 registerTypedef('CameraComponent', {
   "type": "object",
   "properties": {
-    "clearColor": "Color"
+    "clearColor": "Color",
+    "_clearColor": "Color"
   }
 });
 class LightComponent extends Component {
+  constructor() {
+    super();
+    /** @type {number} */
+
+    this._intensity = 1;
+  }
   
   /**
    * @type {number}
    */
+
   get intensity() {
     return this._intensity;
   }
@@ -135,7 +160,8 @@ registerClass(LightComponent);
 registerTypedef('LightComponent', {
   "type": "object",
   "properties": {
-    "intensity": "number"
+    "intensity": "number",
+    "_intensity": "number"
   }
 });
 class Entity {
@@ -294,19 +320,28 @@ function addByName(name) {
   }
   return name;
 }
-addByName('camera');
-addByName('light');
-addByName('c');
-addByName('tags');
-addByName('name');
-addByName('nope');
+addByName('camera'); // Expected: no issue
+
+addByName('light'); // Expected: no issue
+
+addByName('c'); // Expected: error — a record, not a component
+
+addByName('tags'); // Expected: error — an array, not a component
+
+addByName('name'); // Expected: error — not a component
+
+addByName('nope'); // Expected: error — unknown component
+
 const e = new Entity();
 e.addComponent('camera', {
   clearColor: new Color()
-});
+}); // Expected: no issue
+
 e.addComponent('light', {
   intensity: 2
-});
+}); // Expected: no issue
+
 e.addComponent('camera', {
   clearColor: 'x'
-});
+}); // Expected: error — clearColor must be a Color
+

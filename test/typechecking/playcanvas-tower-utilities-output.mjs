@@ -21,7 +21,23 @@ registerTypedef('OptA', {
       "name": "Pick",
       "args": [
         "T",
-        "\"a\""
+        {
+          "type": "reference",
+          "name": "Extract",
+          "args": [
+            {
+              "type": "union",
+              "members": [
+                "\"a\"",
+                "\"b\""
+              ]
+            },
+            {
+              "type": "keyof",
+              "argument": "T"
+            }
+          ]
+        }
       ]
     }
   ]
@@ -57,13 +73,16 @@ function takePartial(o) {
   }
   return o;
 }
-takePartial({});
+takePartial({}); // Expected: no issue — all props optional
+
 takePartial({
   a: 1
-});
+}); // Expected: no issue
+
 takePartial({
   a: 'x'
-});
+}); // Expected: error — 'a' must be a number
+
 
 /**
  * @param {Partial<Partial<Box>>} o
@@ -88,13 +107,16 @@ function takeDeep(o) {
   }
   return o;
 }
-takeDeep({});
+takeDeep({}); // Expected: no issue
+
 takeDeep({
   a: 1
-});
+}); // Expected: no issue
+
 takeDeep({
   a: 'x'
-});
+}); // Expected: error — 'a' must be a number
+
 
 /**
  * @param {Required<Partial<Box>>} o
@@ -122,17 +144,56 @@ function takeRequired(o) {
 takeRequired({
   a: 1,
   b: 's'
-});
-takeRequired({});
+}); // Expected: no issue
+
+takeRequired({}); // Expected: error — 'a' and 'b' are required
+
 
 /**
- * @param {Omit<Partial<Box|Box2>, 'a'>} o
+ * @param {Omit<Partial<Box>, 'a'>} o
  */
 
-function takeOmitUnion(o) {
+function takeOmit(o) {
   if (!inspectType(o, {
     "type": "reference",
     "name": "Omit",
+    "args": [
+      {
+        "type": "reference",
+        "name": "Partial",
+        "args": [
+          "Box"
+        ]
+      },
+      "'a'"
+    ],
+    "optional": false
+  }, 'takeOmit', 'o')) {
+    youCanAddABreakpointHere();
+  }
+  return o;
+}
+takeOmit({
+  b: 's'
+}); // Expected: no issue
+
+takeOmit({
+  a: 1
+}); // Expected: error — 'a' was omitted
+
+takeOmit({
+  b: 1
+}); // Expected: error — 'b' must be a string
+
+
+/**
+ * @param {Required<Partial<Box|Box2>>} o
+ */
+
+function takeRequiredUnion(o) {
+  if (!inspectType(o, {
+    "type": "reference",
+    "name": "Required",
     "args": [
       {
         "type": "reference",
@@ -146,31 +207,30 @@ function takeOmitUnion(o) {
             ]
           }
         ]
-      },
-      "'a'"
+      }
     ],
     "optional": false
-  }, 'takeOmitUnion', 'o')) {
+  }, 'takeRequiredUnion', 'o')) {
     youCanAddABreakpointHere();
   }
   return o;
 }
-takeOmitUnion({
+takeRequiredUnion({
+  a: 1,
   b: 's'
-});
-takeOmitUnion({
+}); // Expected: no issue
+
+takeRequiredUnion({
+  a: 1,
   c: true
-});
-takeOmitUnion({
-  a: 1
-});
-takeOmitUnion({
-  b: 1
-});
+}); // Expected: no issue
+
+takeRequiredUnion({}); // Expected: error — 'a' is required
+
 
 /**
  * @template T
- * @typedef {Partial<Pick<T, "a">>} OptA
+ * @typedef {Partial<Pick<T, Extract<"a"|"b", keyof T>>>} OptA
  */
 
 
@@ -181,7 +241,7 @@ takeOmitUnion({
 
 /**
  * @template T
- * @typedef {Partial<Pick<T, "a">>} OptA
+ * @typedef {Partial<Pick<T, Extract<"a"|"b", keyof T>>>} OptA
  */
 
 /**
@@ -202,8 +262,17 @@ function takeGeneric(o) {
 }
 takeGeneric({
   a: 1
-});
-takeGeneric({});
+}); // Expected: no issue
+
+takeGeneric({
+  b: 's'
+}); // Expected: no issue
+
+takeGeneric({
+  c: 1
+}); // Expected: error — 'c' is unknown
+
 takeGeneric({
   a: 'x'
-});
+}); // Expected: error — 'a' must be a number
+

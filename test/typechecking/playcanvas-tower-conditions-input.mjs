@@ -2,9 +2,15 @@
  * Conditional tower over a noisy entity: record, array, method and primitive
  * members are not components, so `ComponentName` rejects them while the
  * `K extends ComponentName ? ... : object` dispatch keeps typing known
- * components.
+ * components. (`Component` is intentionally non-empty: tsc reads an empty
+ * base class structurally, so every member would extend it.)
  */
-class Component {}
+class Component {
+  constructor() {
+    /** @type {boolean} */
+    this.enabled = true;
+  }
+}
 class Color {
   constructor() {
     this.r = 0.5;
@@ -14,6 +20,11 @@ class Color {
   }
 }
 class CameraComponent extends Component {
+  constructor() {
+    super();
+    /** @type {Color} */
+    this._clearColor = new Color();
+  }
   /**
    * @type {Color}
    */
@@ -28,6 +39,11 @@ class CameraComponent extends Component {
   }
 }
 class LightComponent extends Component {
+  constructor() {
+    super();
+    /** @type {number} */
+    this._intensity = 1;
+  }
   /**
    * @type {number}
    */
@@ -89,13 +105,13 @@ class Entity {
 function addByName(name) {
   return name;
 }
-addByName('camera');
-addByName('light');
-addByName('c');
-addByName('tags');
-addByName('name');
-addByName('nope');
+addByName('camera'); // Expected: no issue
+addByName('light'); // Expected: no issue
+addByName('c'); // Expected: error — a record, not a component
+addByName('tags'); // Expected: error — an array, not a component
+addByName('name'); // Expected: error — not a component
+addByName('nope'); // Expected: error — unknown component
 const e = new Entity();
-e.addComponent('camera', {clearColor: new Color()});
-e.addComponent('light', {intensity: 2});
-e.addComponent('camera', {clearColor: 'x'});
+e.addComponent('camera', {clearColor: new Color()}); // Expected: no issue
+e.addComponent('light', {intensity: 2}); // Expected: no issue
+e.addComponent('camera', {clearColor: 'x'}); // Expected: error — clearColor must be a Color

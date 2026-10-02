@@ -5,9 +5,16 @@
  * base options, system overrides accepting arrays, and the conditional
  * `addComponent` data parameter. Passing a `Color` instance used to fail
  * with `validateIndexedAccess: unresolvable indexed access` and a spurious
- * `calculateProjection` complaint.
+ * `calculateProjection` complaint. (`Component` is intentionally non-empty:
+ * tsc reads an empty base class structurally, so every member would
+ * extend it.)
  */
-class Component {}
+class Component {
+  constructor() {
+    /** @type {boolean} */
+    this.enabled = true;
+  }
+}
 class Color {
   constructor() {
     this.r = 0.5;
@@ -17,6 +24,13 @@ class Color {
   }
 }
 class CameraComponent extends Component {
+  constructor() {
+    super();
+    /** @type {Color} */
+    this._clearColor = new Color();
+    /** @type {number} */
+    this._fov = 45;
+  }
   /**
    * @type {Color}
    */

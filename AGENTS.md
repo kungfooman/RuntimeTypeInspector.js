@@ -24,6 +24,11 @@ npx tsc --noEmit --allowJs --checkJs --strict test/typechecking/noinfer-template
 node run-jsdoc.js test/typechecking/noinfer-templates-input.mjs
 ```
 
+For playground counter-checks, enable `checkJs` plus `Strict` *and*
+`strictNullChecks` explicitly (the Strict toggle alone has been observed
+not to imply it). The tower fixtures reproduce either way — verified with
+`--strict`, without it, and with `--strict --strictNullChecks false`.
+
 ## Runnables / demos
 
 - `test/typechecking/noinfer-templates-input.mjs` (+ `-output.mjs`) —
@@ -38,7 +43,11 @@ When the user hands you tests (repro files, `./tmp` snippets, demo cases), make 
 - Fixture: `test/typechecking/<name>-input.mjs` (+ `-output.mjs`,
   generated with the same pipeline as `test.js`) with `// ok` / `// warns:`
   runtime contracts; regenerate `test/typechecking.json` via `gen_tests.js`.
-  E.g. `class-templates-input.mjs` for issue #265.
+  E.g. `class-templates-input.mjs` for issue #265. Keep fixture base
+  classes realistic (non-empty, like the engine's): tsc reads an empty
+  `class C {}` structurally, so every member would extend it and
+  TypeScript-playground counter-checks would diverge from RTI's nominal
+  class checks.
 - Spec: `src-transpiler/<name>.spec.js` (or `src-runtime/`) in repo style
   (sync boolean tests, `export const tests`), wired into `test_runtime.js`.
   Cover the transpiler output AND creative variants of your own: edge cases
@@ -49,6 +58,9 @@ When the user hands you tests (repro files, `./tmp` snippets, demo cases), make 
   must throw; `test/jsdoc-expect/run.mjs` (`npm run test:jsdoc-expect`,
   part of `npm test`) compares it against `run-jsdoc.js` output, failing on
   any missing or extra error. Fixture inputs stay clean JS with no markers.
+  Call lines may additionally carry `// Expected: ...` notes for humans
+  (e.g. for TypeScript-playground counter-checks); they are documentation
+  only and ignored by the runner.
 - Prove the tests bite: stash the fix and show they fail, pop and show green.
 - Full gate before finishing: `npm test` + `npm run lint`.
 
