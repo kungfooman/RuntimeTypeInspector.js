@@ -159,6 +159,36 @@ function testModeChangeRepostsFull() {
     reportedKeys.clear();
   }
 }
+function testFirstPostsStack() {
+  // A first-seen key carries the checking-side stack: frames name both the
+  // reporting machinery and the real user-code call site (lost by the time
+  // the panel handles the async message).
+  try {
+    const posted = capturePosts(() => {
+      inspectType(['a'], expandType('Array<number>'), 'repeatStack', 'x');
+    });
+    if (posted.length !== 1 || !Array.isArray(posted[0].stack) || !posted[0].stack.length) {
+      return false;
+    }
+    const text = posted[0].stack.join('\n');
+    return text.includes('inspectType') && text.includes('testFirstPostsStack');
+  } finally {
+    reportedKeys.clear();
+  }
+}
+function testRepeatSkipsStack() {
+  // Repeats skip the capture cost along with the previews: key-only ticks
+  // carry no stack.
+  try {
+    const posted = capturePosts(() => {
+      inspectType(['a'], expandType('Array<number>'), 'repeatNoStack', 'x');
+      inspectType(['b'], expandType('Array<number>'), 'repeatNoStack', 'x');
+    });
+    return posted.length === 2 && Array.isArray(posted[0].stack) && !('stack' in posted[1]);
+  } finally {
+    reportedKeys.clear();
+  }
+}
 function testRepeatsStayCheap() {
   // Timing guard for the hot-loop path: N repeats must stay a small
   // fraction of N full reports for the same value. Same process back to
@@ -201,6 +231,8 @@ const tests = [
   testBreakpointFiresOnRepeat,
   testDistinctArgsEachReportFull,
   testModeChangeRepostsFull,
+  testFirstPostsStack,
+  testRepeatSkipsStack,
   testRepeatsStayCheap,
 ];
 export {tests};

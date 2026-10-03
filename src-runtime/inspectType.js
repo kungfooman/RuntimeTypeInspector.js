@@ -11,6 +11,7 @@ import {importNamespaceSpecifiers} from './registerImportNamespaceSpecifier.js';
 import {isClonable               } from './isClonable.js';
 import {reportedKeys             } from './reportedKeys.js';
 import {tagValue                 } from './tagValue.js';
+import {captureStackLines        } from './captureStack.js';
 const breakpoints = new Set();
 /**
  * Snapshot budgets for panel-bound values: the tree batches rows on click,
@@ -180,6 +181,10 @@ function inspectType(value, expect, loc, name, critical = true) {
     // eagerly — `value` may be "repaired" by later calculations, and vectors
     // with NaN components only show in the snapshot.
     const valueToString = previewValue(value);
+    // Call-site stack, captured synchronously here: by the time the panel
+    // handles the posted message the site is gone (async delivery, worker
+    // hops). First reports only — repeats and ticks skip the capture cost.
+    const stack = captureStackLines();
     // Nytaralyxe: options.warns where each warn callback supports one system (node, div/dom etc.)
     // Don't post `value` when it can't be transmitted cross-context (just stringify it instead).
     // Unclonable values (functions, DOM, class instances with methods) become
@@ -198,7 +203,7 @@ function inspectType(value, expect, loc, name, critical = true) {
         }
       }
     }
-    const msg = {type: 'rti', action: 'addError', destination: 'ui', value, expect, loc, name, valueToString, strings, extras, key};
+    const msg = {type: 'rti', action: 'addError', destination: 'ui', value, expect, loc, name, valueToString, strings, extras, key, stack};
     try {
       crossContextPostMessage(msg);
     } catch (e) {
