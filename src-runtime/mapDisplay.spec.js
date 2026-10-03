@@ -82,7 +82,7 @@ function testInspectSummaryShowsMap() {
   // End to end: the `Argument of type …` summary reads TS-style instead of
   // `Map(1){"apiKey" => null}` or `Map {}`.
   const msgs = captureMessages(() => {
-    inspectType(new Map([['apiKey', null]]), 'number', 'loc', 'name');
+    inspectType(new Map([['apiKey', null]]), 'number', 'loc', 'mapValue');
   });
   if (msgs.length !== 1) {
     return false;

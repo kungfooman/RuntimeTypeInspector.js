@@ -9,7 +9,7 @@ function testUnclonableStaysStructured() {
   let msgs;
   try {
     msgs = captureMessages(() => {
-      inspectType({type: 'sphere', material: {name: 'Untitled', update() {}}, castShadows: false}, 'number', 'loc', 'name');
+      inspectType({type: 'sphere', material: {name: 'Untitled', update() {}}, castShadows: false}, 'number', 'loc', 'unclonable');
     });
   } finally {
     options.exactObjects = prev;
@@ -23,7 +23,7 @@ function testUnclonableStaysStructured() {
 }
 function testPreviewNeverBareObject() {
   const msgs = captureMessages(() => {
-    inspectType({a: 1}, 'number', 'loc', 'name');
+    inspectType({a: 1}, 'number', 'loc', 'preview');
   });
   return msgs.length === 1 && msgs[0].valueToString !== '[object Object]' &&
     msgs[0].valueToString.includes('"a"');
@@ -34,7 +34,7 @@ function testExtrasSnapshotted() {
   let msgs;
   try {
     msgs = captureMessages(() => {
-      inspectType({a: 1, f: () => {}}, {type: 'object', properties: {a: 'number'}}, 'loc', 'name');
+      inspectType({a: 1, f: () => {}}, {type: 'object', properties: {a: 'number'}}, 'loc', 'extras');
     });
   } finally {
     options.exactObjects = prev;

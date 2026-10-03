@@ -31,6 +31,7 @@ export * from './registerImportNamespaceSpecifier.js';
 export * from './registerTypedef.js';
 export * from './registerVariable.js';
 export * from './replaceType.js';
+export * from './reportedKeys.js';
 export * from './resolveType.js';
 export * from './stringifyType.js';
 export * from './stringifyValue.js';

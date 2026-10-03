@@ -27,6 +27,10 @@ async function checkWithRti(absIn, opts = {}) {
     addEventListener: () => {},
     postMessage: (msg) => captured.push(msg),
   };
+  // Observation needs every error in full: `once` dedups repeats to
+  // key-only ticks, which would hide per-call values from the comparison.
+  const {options} = await import('../../src-runtime/options.js');
+  options.mode = 'spam';
   const base = basename(absIn).replace(/\.[^.]+$/u, '');
   const absOut = join(dirname(absIn), `${base}.rti.mjs`);
   const asserter = new Asserter({expandType, filename: basename(absIn)});
@@ -58,9 +62,11 @@ async function resetRuntimeState() {
   const {typedefs, typedefTemplates} = await import('../../src-runtime/registerTypedef.js');
   const {classes} = await import('../../src-runtime/registerClass.js');
   const {options} = await import('../../src-runtime/options.js');
+  const {reportedKeys} = await import('../../src-runtime/reportedKeys.js');
   Object.keys(typedefs).forEach((_) => delete typedefs[_]);
   Object.keys(typedefTemplates).forEach((_) => delete typedefTemplates[_]);
   Object.keys(classes).forEach((_) => delete classes[_]);
   options.count = 0;
+  reportedKeys.clear();
 }
 export {checkWithRti, resetRuntimeState, repoRoot};

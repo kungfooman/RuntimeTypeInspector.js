@@ -150,7 +150,7 @@ function testInspectSummaryShowsTypedArray() {
   // End to end: the `Argument of type …` summary reads console-style
   // instead of `{"$type": "Uint8Array", …}` JSON.
   const msgs = captureMessages(() => {
-    inspectType(new Uint8Array([1, 2, 3]), 'number', 'loc', 'name');
+    inspectType(new Uint8Array([1, 2, 3]), 'number', 'loc', 'typedArray');
   });
   if (msgs.length !== 1) {
     return false;
@@ -281,7 +281,7 @@ function testInspectSummaryShowsGiantTag() {
   // End to end: the `Argument of type …` summary names the host instead of
   // dumping its nested internals.
   const msgs = captureMessages(() => {
-    inspectType(giantWindow(), 'number', 'loc', 'name');
+    inspectType(giantWindow(), 'number', 'loc', 'giant');
   });
   if (msgs.length !== 1) {
     return false;
@@ -354,7 +354,7 @@ function testPanelSnapshotCapturesBeyondLogBreadth() {
     wide[`k${i}`] = i;
   }
   const msgs = captureMessages(() => {
-    inspectType(wide, 'number', 'loc', 'name');
+    inspectType(wide, 'number', 'loc', 'wide');
   });
   if (msgs.length !== 1) {
     return false;

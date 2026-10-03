@@ -1,5 +1,6 @@
 import {TypePanel} from './TypePanel.js';
 import {options} from './options.js';
+import {reportedKeys} from './reportedKeys.js';
 import {expandType} from '../src-transpiler/expandType.js';
 import {collectFailPaths, explainMismatch} from './explainMismatch.js';
 import {buildTypeTree} from './typeTree.js';
@@ -1379,6 +1380,51 @@ function testCompareActualBatches() {
     return text.includes('k24') && !text.includes('...(+') && findByClass(node, 'rti-more') === null;
   });
 }
+function testRepeatBumpsHitsWithoutLogChurn() {
+  // A checking-side repeat tick carries only the key: the row's hit count
+  // advances but the event log keeps just the first full occurrence.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError',
+        value: 1, expect: 'string', loc: 'L2', name: 'b', valueToString: '1',
+        strings: ['boom'], extras: [], key: 'L2-b'}});
+      panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError', key: 'L2-b', repeat: true}});
+      const warnObj = panel.warnings['L2-b'];
+      return !!warnObj && warnObj.hits === 2 && panel.eventLog.length === 1;
+    } finally {
+      options.mode = prevMode;
+    }
+  });
+}
+function testRepeatUnknownKeyDropped() {
+  // A repeat for a key the panel never saw (reloaded after the report) has
+  // no row to bump and no payload to build one from: it lands nowhere.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError', key: 'nope-x', repeat: true}});
+      return !panel.warnings['nope-x'] && panel.eventLog.length === 0;
+    } finally {
+      options.mode = prevMode;
+    }
+  });
+}
+function testClearResetsReportedKeys() {
+  // Clear starts a fresh session checking-side too: the next failure after
+  // it must report in full, not as a key-only repeat for a wiped row.
+  return withPanel((panel) => {
+    try {
+      reportedKeys.set('L3-c', 'string');
+      panel.clear();
+      return !reportedKeys.has('L3-c');
+    } finally {
+      reportedKeys.clear();
+    }
+  });
+}
 const tests = [
   testOpenFocusDedupe,
   testMinimizeRestoreTaskbar,
@@ -1425,6 +1471,9 @@ const tests = [
   testActualOtherTypesRender,
   testActualBranchHeaders,
   testActualCustomClassHighlighted,
+  testRepeatBumpsHitsWithoutLogChurn,
+  testRepeatUnknownKeyDropped,
+  testClearResetsReportedKeys,
   testTypeTreeSetRootWarns,
   testActualCompareHighlightsMap,
 ];

@@ -169,8 +169,8 @@ function testNestedStaysPrecise() {
 function testMessageMatchesTscTriple() {
   const msg = captureMessage(() => {
     const templates = {T: 'any'};
-    captureWarns(() => inspectTypeWithTemplates('x', 'T', 'loc', 'b', templates));
-    inspectTypeWithTemplates(1, 'T', 'loc', 'b', templates);
+    captureWarns(() => inspectTypeWithTemplates('x', 'T', 'loc', 'triple', templates));
+    inspectTypeWithTemplates(1, 'T', 'loc', 'triple', templates);
   });
   if (!msg || !Array.isArray(msg.strings) || !msg.strings.length) {
     return false;
@@ -184,7 +184,7 @@ function testMessageMatchesTscTriple() {
     return false;
   }
   // ...and the RTI deep detail is kept after the summary.
-  return msg.strings.length > 1 && msg.name === 'b';
+  return msg.strings.length > 1 && msg.name === 'triple';
 }
 export const tests = [
   testOptionalBareInstantiates,
