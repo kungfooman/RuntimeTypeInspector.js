@@ -83,13 +83,20 @@ function applyQuestionModifier(type, question) {
       return type;
     }
     if (type && typeof type === 'object') {
-      delete type.optional;
+      if (!('optional' in type)) {
+        return type;
+      }
+      const out = {...type};
+      delete out.optional;
+      return out;
     }
     return type;
   }
   if (type && typeof type === 'object') {
-    type.optional = true;
-    return type;
+    if (type.optional === true) {
+      return type;
+    }
+    return {...type, optional: true};
   }
   return {type, optional: true};
 }
@@ -121,13 +128,20 @@ function applyReadonlyModifier(type, modifier) {
       return type;
     }
     if (type && typeof type === 'object') {
-      delete type.readonly;
+      if (!('readonly' in type)) {
+        return type;
+      }
+      const out = {...type};
+      delete out.readonly;
+      return out;
     }
     return type;
   }
   if (type && typeof type === 'object') {
-    type.readonly = true;
-    return type;
+    if (type.readonly === true) {
+      return type;
+    }
+    return {...type, readonly: true};
   }
   return {type, readonly: true};
 }
@@ -213,14 +227,14 @@ function instantiateMapping(expect, warn) {
   const properties = {};
   for (const typeKey of typeKeys) {
     const keyType = literalType(typeKey);
-    let propType = flattenRest(replaceType(structuredClone(result), element, keyType, warn));
+    let propType = flattenRest(replaceType(result, element, keyType, warn));
     if (propType && propType.type === 'indexedAccess') {
       // Eagerly resolve concrete indexed access so flags (readonly etc.)
       // live on the materialized type instead of behind lazy references.
-      // Shared registry refs are cloned, never mutated.
+      // Pure substitution never mutates shared inputs, so no clone first.
       const resolved = resolveForExtends(propType, warn);
       if (resolved !== undefined) {
-        propType = structuredClone(resolved);
+        propType = resolved;
       }
     }
     propType = applyQuestionModifier(propType, question);
@@ -228,17 +242,18 @@ function instantiateMapping(expect, warn) {
     let propKey = stripQuotes(typeKey);
     if (nameType !== undefined) {
       // `as` key remapping: evaluate the (substituted) condition per key.
-      const cloneCond = structuredClone(nameType);
-      replaceType(cloneCond, element, keyType, warn);
-      if (!cloneCond || cloneCond.type !== 'condition') {
-        warn('validateMapping: nameType is not a condition after substitution', cloneCond);
+      // Pure substitution returns the new tree (nothing is modified in
+      // place anymore), so no clone is needed first.
+      const substitutedCond = replaceType(nameType, element, keyType, warn);
+      if (!substitutedCond || substitutedCond.type !== 'condition') {
+        warn('validateMapping: nameType is not a condition after substitution', substitutedCond);
       } else {
-        const decision = evaluateCondition(cloneCond.checkType, cloneCond.extendsType, warn);
+        const decision = evaluateCondition(substitutedCond.checkType, substitutedCond.extendsType, warn);
         if (decision === false) {
           continue;
         }
         if (decision === true) {
-          const trueName = branchName(cloneCond.trueType, warn);
+          const trueName = branchName(substitutedCond.trueType, warn);
           if (trueName !== undefined) {
             propKey = trueName;
           } else {

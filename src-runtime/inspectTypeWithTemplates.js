@@ -28,7 +28,8 @@ const inferenceState = new WeakMap();
 const substitutedCache = new Map();
 /**
  * Substitutes template bindings into a pristine expect tree, memoized by
- * call site plus bindings.
+ * call site plus bindings. Pure substitution shares unchanged subtrees
+ * with the pristine tree instead of cloning it first.
  * @param {*} expect - Pristine expect tree (never mutated).
  * @param {string} loc - String like `BoundingBox#compute`.
  * @param {string} name - Name of the argument.
@@ -41,7 +42,9 @@ function substitutedFor(expect, loc, name, templates, warn) {
   const key = `${loc}\n${name}\n${dictKey}`;
   let sub = substitutedCache.get(key);
   if (sub === undefined) {
-    sub = structuredClone(expect);
+    // Pure substitution never mutates its input, so no pre-clone: the
+    // result shares every unchanged subtree with the pristine tree.
+    sub = expect;
     for (const k in templates) {
       sub = replaceType(sub, k, templates[k], warn);
     }
@@ -96,7 +99,9 @@ function mergeCandidate(templates, state, key, literal, value, loc, name, probin
   if (!state.pinned.has(key)) {
     if (!probing) {
       state.pinned.add(key);
-      state.constraints[key] = structuredClone(templates[key]);
+      // Aliased, not cloned: pure substitution never mutates dict values,
+      // and validation only reads them, so the snapshot cannot corrupt.
+      state.constraints[key] = templates[key];
       templates[key] = literal;
     }
     return;

@@ -1,4 +1,5 @@
 import {inspectTypeWithTemplates, substitutedCache} from './inspectTypeWithTemplates.js';
+import {replaceType} from './replaceType.js';
 import {createTypeFromMapping} from './createTypeFromMapping.js';
 import {mergedClassShape} from './classShape.js';
 import {registerTypedef, typedefs} from './registerTypedef.js';
@@ -94,7 +95,17 @@ function testNegZeroDistinctFromZero() {
     substitutedCache.clear();
   }
 }
+function testReplaceNeverMutates() {
+  // Pure substitution: the input tree is byte-identical afterwards, matched
+  // subtrees are shared by identity, and only the rewrite path allocates.
+  const input = {type: 'object', properties: {a: 'K', b: {type: 'array', elementType: 'number'}}};
+  const before = JSON.stringify(input);
+  const out = replaceType(input, 'K', '"x"', () => {});
+  return JSON.stringify(input) === before && out !== input &&
+    out.properties.b === input.properties.b && out.properties.a === '"x"';
+}
 const tests = [
+  testReplaceNeverMutates,
   testMemoStableAcrossRepeats,
   testBindingsDistinguishEntries,
   testMappingReflectsReregistration,

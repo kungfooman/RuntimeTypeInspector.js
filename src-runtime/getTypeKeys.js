@@ -265,7 +265,9 @@ function instantiateReference(type, warn) {
   if (!params?.length || !args?.length) {
     return typedefs[name];
   }
-  let instance = structuredClone(typedefs[name]);
+  // Pure substitution never mutates its input, so the registry object is
+  // substituted directly instead of cloned first (read-only downstream).
+  let instance = typedefs[name];
   params.forEach((param, i) => {
     instance = replaceType(instance, param, i < args.length ? args[i] : 'any', warn);
   });
@@ -426,8 +428,7 @@ function keysOfConditionalMapping(access, from, warn, depth) {
   }
   const kept = [];
   for (const key of candidates) {
-    const result = structuredClone(mapping.result);
-    replaceType(result, element, `"${key}"`, warn);
+    const result = replaceType(mapping.result, element, `"${key}"`, warn);
     if (result?.type === 'reference' && result.name === 'IfEquals') {
       if (!decide) {
         return;
