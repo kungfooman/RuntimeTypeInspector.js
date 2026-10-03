@@ -59,14 +59,20 @@ async function checkWithRti(absIn, opts = {}) {
  * leak typedefs/classes into each other in one process.
  */
 async function resetRuntimeState() {
+  // Some runtime modules require a message global at import time; provide
+  // the inert stub `checkWithRti` replaces with its capture per fixture.
+  globalThis.self ??= {addEventListener: () => {}, postMessage: () => {}};
   const {typedefs, typedefTemplates} = await import('../../src-runtime/registerTypedef.js');
   const {classes} = await import('../../src-runtime/registerClass.js');
   const {options} = await import('../../src-runtime/options.js');
   const {reportedKeys} = await import('../../src-runtime/reportedKeys.js');
+  const {substitutedCache} = await import('../../src-runtime/inspectTypeWithTemplates.js');
   Object.keys(typedefs).forEach((_) => delete typedefs[_]);
   Object.keys(typedefTemplates).forEach((_) => delete typedefTemplates[_]);
   Object.keys(classes).forEach((_) => delete classes[_]);
   options.count = 0;
   reportedKeys.clear();
+  // Same-spelled sites in different files may carry different shapes.
+  substitutedCache.clear();
 }
 export {checkWithRti, resetRuntimeState, repoRoot};

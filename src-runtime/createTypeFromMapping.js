@@ -1,9 +1,20 @@
 import {replaceType} from "./replaceType.js";
+import {deepFreeze} from "./deepFreeze.js";
 import {getTypeKeys} from "./getTypeKeys.js";
-import {typedefs   } from "./registerTypedef.js";
+import {typedefs, typedefVersion   } from "./registerTypedef.js";
+import {classVersion} from "./registerClass.js";
 import {evaluateCondition, literalType, resolveForExtends} from "./evaluateCondition.js";
 import {validators} from "./validators.js";
 validators.materializeMapping = createTypeFromMapping;
+/**
+ * Instantiated mappings by source node: instantiation re-derives keys,
+ * conditions and indexed access per call, but nodes from the substituted
+ * cache (and registry typedefs) are stable across calls, so repeats hit.
+ * WeakMap: dead nodes vanish instead of leaking. Entries carry the
+ * registry versions they were derived under; re-registration (or new
+ * typedefs mid-run) recomputes instead of serving stale shapes.
+ */
+const mappingCache = new WeakMap();
 /**
  * Profile (#256, Node 22, dev machine): 500-key mapping materializes in
  * ~2ms and validates in ~1ms; 1000x small 3-key mapping validations take
@@ -175,6 +186,23 @@ function createTypeFromMapping(expect, warn) {
   if (typeof expect === 'string' && typedefs[expect]) {
     expect = typedefs[expect];
   }
+  if (expect !== null && typeof expect === 'object') {
+    const cached = mappingCache.get(expect);
+    if (cached && cached.typedefVersion === typedefVersion && cached.classVersion === classVersion) {
+      return cached.result;
+    }
+    const result = deepFreeze(instantiateMapping(expect, warn));
+    mappingCache.set(expect, {typedefVersion, classVersion, result});
+    return result;
+  }
+  return deepFreeze(instantiateMapping(expect, warn));
+}
+/**
+ * @param {import('./validateMapping.js').Mapping} expect - The mapping node.
+ * @param {console["warn"]} warn - Function to warn with.
+ * @returns {import('./validateType.js').TypeObject|undefined} - New type that can be used for validation.
+ */
+function instantiateMapping(expect, warn) {
   const {iterable, element, result, nameType, question, readonly} = expect;
   const typeKeys = getTypeKeys(iterable, warn);
   if (!typeKeys) {
