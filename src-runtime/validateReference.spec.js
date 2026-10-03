@@ -1,4 +1,5 @@
 import {validateType} from './validateType.js';
+import {validators} from './validators.js';
 import {replaceType} from './replaceType.js';
 import {registerTypedef, typedefs} from './registerTypedef.js';
 import {expandType} from '../src-transpiler/expandType.js';
@@ -181,6 +182,27 @@ function testArrayLikeHolesFail() {
   }
   return true;
 }
+function testArrayLikeDirectContract() {
+  // Direct calls take the reference node (valid, invalid, bare-args
+  // shape-only); a bare element means a stale direct call under the old
+  // contract and fails loudly instead of passing everything as `any`.
+  const direct = validators.validateArrayLike;
+  const node = expandType('ArrayLike<number>');
+  if (direct([1, 2], node, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  if (direct([1, '2'], node, 'loc', 'name', true, warn, 0) !== false) {
+    return false;
+  }
+  if (direct([1, '2'], {type: 'reference', name: 'ArrayLike', args: []}, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  const warnings = [];
+  if (direct([1], 'number', 'loc', 'name', true, (...args) => warnings.push(args[0]), 0) !== false) {
+    return false;
+  }
+  return warnings.includes('unchecked');
+}
 export const tests = [
   testIssue241ArrayLikeValid,
   testIssue241ArrayLikeInvalid,
@@ -195,4 +217,5 @@ export const tests = [
   testReplaceTypeHandlesReference,
   testExpandTypeDepFreeReference,
   testArrayLikeHolesFail,
+  testArrayLikeDirectContract,
 ];

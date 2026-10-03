@@ -3,7 +3,7 @@ import {options     } from "./options.js";
 import {isObject    } from "./isObject.js";
 /**
  * @param {*} value - The actual value that we need to validate.
- * @param {*} properties - The properties.
+ * @param {*} expect - The supposed type information of said value.
  * @param {string} loc - String like `BoundingBox#compute`
  * @param {string} name - Name of the argument
  * @param {boolean} critical - Only `false` for unions.
@@ -11,7 +11,22 @@ import {isObject    } from "./isObject.js";
  * @param {number} depth - The depth to detect recursion.
  * @returns {boolean} Boolean indicating if a type is correct.
  */
-function validateObject(value, properties, loc, name, critical, warn, depth) {
+function validateObject(value, expect, loc, name, critical, warn, depth) {
+  // Object nodes only: a bare properties bag means a stale direct call
+  // under the old contract — fail loudly instead of misreading it.
+  if (!expect || expect.type !== 'object') {
+    warn('unchecked', {value, type: 'object', loc, name, expect});
+    return false;
+  }
+  const properties = expect.properties;
+  if (properties === undefined && !expect.indexSignatures) {
+    // Bare `{}`/`object`: accepts every non-nullish value, like TS
+    // (`1 extends {}`). Nullish values fall into the guard below for
+    // its diagnostic instead of passing silently.
+    if (value !== null && value !== undefined) {
+      return true;
+    }
+  }
   if (!isObject(value)) {
     warn('Given value is not an object.');
     return false;

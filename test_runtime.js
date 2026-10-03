@@ -67,6 +67,7 @@ const tests = [
   ...(await import('./src-runtime/validateArguments.spec.js'         )).tests,
   ...(await import('./src-runtime/validateMap.spec.js'               )).tests,
   ...(await import('./src-runtime/validateArray.spec.js'             )).tests,
+  ...(await import('./src-runtime/validateObject.spec.js'            )).tests,
   ...(await import('./src-runtime/ignoreChecks.spec.js'              )).tests,
   ...(await import('./src-runtime/customChecks.spec.js'              )).tests,
   ...(await import('./src-runtime/validateArrayLikeSparse.spec.js'     )).tests,

@@ -1,7 +1,9 @@
 import {recurse} from "./validators.js";
 /**
  * @param {*} value - The actual value that we need to validate.
- * @param {*} elementType - The element type each indexed entry must satisfy.
+ * @param {*} expect - The supposed type information of said value: an
+ * `ArrayLike` reference node, its first argument being the element type
+ * (bare `ArrayLike` without arguments checks shape only).
  * @param {string} loc - String like `BoundingBox#compute`
  * @param {string} name - Name of the argument
  * @param {boolean} critical - Only `false` for unions.
@@ -9,7 +11,15 @@ import {recurse} from "./validators.js";
  * @param {number} depth - The depth to detect recursion.
  * @returns {boolean} Boolean indicating if a type is correct.
  */
-function validateArrayLike(value, elementType, loc, name, critical, warn, depth) {
+function validateArrayLike(value, expect, loc, name, critical, warn, depth) {
+  // Reference nodes only: a bare element type here means a stale direct
+  // call under the old contract — fail loudly instead of validating
+  // everything against a defaulted `any`.
+  if (!expect || expect.type !== 'reference') {
+    warn('unchecked', {value, type: 'arrayLike', loc, name, expect});
+    return false;
+  }
+  const elementType = Array.isArray(expect.args) ? (expect.args[0] ?? 'any') : 'any';
   if (value === null || value === undefined) {
     warn(`Expected ArrayLike, got ${value}.`, {value, expect: elementType});
     return false;
