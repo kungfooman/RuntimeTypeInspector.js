@@ -1,5 +1,6 @@
 import {validateType} from './validateType.js';
 import {classes, registerClass} from './registerClass.js';
+import {registerTypedef} from './registerTypedef.js';
 import {expandType} from '../src-transpiler/expandType.js';
 const warn = () => undefined;
 class MapKeyBase {
@@ -82,6 +83,27 @@ function testEmptyMapPasses() {
   return validateType(new Map(), expandType('Map<number, string>'), 'loc', 'name', true, warn, 0) === true &&
     validateType(new Map(), expandType('Map<MapKeyBase, number>'), 'loc', 'name', true, warn, 0) === true;
 }
+function testUnionKeysValidate() {
+  // Union keys check each runtime key: members pass, others fail.
+  const expect = expandType('Map<"admin" | "user", boolean>');
+  return validateType(new Map([['admin', true]]), expect, 'loc', 'name', true, warn, 0) === true &&
+    validateType(new Map([['root', false]]), expect, 'loc', 'name', true, warn, 0) === false;
+}
+function testTypedefKeysValidate() {
+  // Typedef keys resolve through the registry.
+  registerTypedef('MapRole', expandType('"admin" | "user" | "guest"'));
+  const expect = expandType('Map<MapRole, boolean>');
+  return validateType(new Map([['guest', false]]), expect, 'loc', 'name', true, warn, 0) === true &&
+    validateType(new Map([['root', false]]), expect, 'loc', 'name', true, warn, 0) === false;
+}
+function testLiteralKeyValidates() {
+  // Literal keys match exactly, including numeric ones (map keys are real
+  // values, so no canonical-string detour is needed).
+  return validateType(new Map([['a', 1]]), expandType('Map<"a", number>'), 'loc', 'name', true, warn, 0) === true &&
+    validateType(new Map([['b', 1]]), expandType('Map<"a", number>'), 'loc', 'name', true, warn, 0) === false &&
+    validateType(new Map([[1, 'x']]), expandType('Map<1 | 2, string>'), 'loc', 'name', true, warn, 0) === true &&
+    validateType(new Map([[3, 'x']]), expandType('Map<1 | 2, string>'), 'loc', 'name', true, warn, 0) === false;
+}
 const tests = [
   testStringKeysStillWork,
   testNumberKeysPass,
@@ -90,5 +112,8 @@ const tests = [
   testClassKeysRejectOthers,
   testNonMapFails,
   testEmptyMapPasses,
+  testUnionKeysValidate,
+  testTypedefKeysValidate,
+  testLiteralKeyValidates,
 ];
 export {tests};

@@ -110,7 +110,7 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
       optional: false
     };
   }
-  const {type, optional, properties} = expect;
+  const {type, optional} = expect;
   if (optional) {
     if (value === undefined) {
       return true;
@@ -166,16 +166,7 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
       return validators.validateUndefined(value, expect, loc, name, critical, warn, depth + 1);
     }
     case 'object':
-      // `{}` accepts every non-nullish value, like TS (`1 extends {}`).
-      // Only the bare literal shape (no `properties` key at all, no index
-      // signatures): `object`/`Object` and empty mappings carry
-      // `properties: {}`, and still reject primitives like before.
-      if (expect.properties === undefined && !expect.indexSignatures) {
-        if (value !== null && value !== undefined) {
-          return true;
-        }
-      }
-      return validators.validateObject(value, properties, loc, name, critical, warn, depth + 1);
+      return validators.validateObject(value, expect, loc, name, critical, warn, depth + 1);
     case 'promise':
       return validators.validatePromise(value, expect, loc, name, critical, warn, depth + 1);
     case 'record':
@@ -239,7 +230,7 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
     case 'new':
       return typeof value === 'function';
     case 'ObjectConstructor':
-      return typeof value.constructor === 'function';
+      return value !== null && value !== undefined && typeof value.constructor === 'function';
     case 'IArguments':
       return validators.validateIArguments(value, expect, loc, name, critical, warn, depth + 1);
     case 'ArrayBufferView':

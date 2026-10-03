@@ -1,0 +1,6 @@
+{
+  "throws": [
+    {"loc": "compute", "name": "used", "value": "x"},
+    {"loc": "computeStrict", "name": "vertices"}
+  ]
+}

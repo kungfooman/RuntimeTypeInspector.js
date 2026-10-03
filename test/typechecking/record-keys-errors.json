@@ -1,0 +1,8 @@
+{
+  "throws": [
+    {"loc": "takeIndexed", "name": "byIndex", "value": {"a": "x"}},
+    {"loc": "takeIndexed", "name": "byIndex", "value": {"0": 1}},
+    {"loc": "takeNamed", "name": "byName", "value": {"a": "x"}},
+    {"loc": "takeRoles", "name": "permissions", "value": {"admin": true, "root": false}}
+  ]
+}

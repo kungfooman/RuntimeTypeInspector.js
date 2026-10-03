@@ -28,6 +28,22 @@ function markTypeofRequirements(text) {
     }
   }
 }
+/**
+ * Parameter names listed after `@ignoreRTI` in a leading JSDoc comment
+ * (`@ignoreRTI vertices` skips only that check; bare `@ignoreRTI` skips
+ * the whole function). Names are matched against JSDoc parameter names.
+ * @param {string} text - The comment text.
+ * @returns {Set<string>|'all'|null} Ignored names, `'all'`, or nothing.
+ */
+function ignoredParamsIn(text) {
+  const at = text.search(/@ignoreRTI(?![\w$])/);
+  if (at === -1) {
+    return null;
+  }
+  const line = text.slice(at).split('\n', 1)[0];
+  const names = line.slice('@ignoreRTI'.length).split(/[\s,]+/).filter(Boolean);
+  return names.length ? new Set(names) : 'all';
+}
 /** @typedef {import('@babel/types').Node              } Node               */
 /** @typedef {import('@babel/types').ClassMethod       } ClassMethod        */
 /** @typedef {import('@babel/types').ClassPrivateMethod} ClassPrivateMethod */
@@ -350,7 +366,7 @@ class Asserter extends Stringifier {
     if (comment.includes('@event')) {
       return;
     }
-    if (comment.includes('@ignoreRTI')) {
+    if (ignoredParamsIn(comment) === 'all') {
       return;
     }
     // Need to do same resolving as in: this.getLeadingComment(node)
@@ -595,6 +611,15 @@ class Asserter extends Stringifier {
     if (node.type === 'BlockStatement' && !nodeIsFunctionLike(parent)) {
       return '';
     }
+    // Scoped suppression lives here (not in `getJSDoc`, which only knows
+    // the bare whole-function form): listed params emit no checks while
+    // the rest validate normally. Bare `@ignoreRTI` silences everything,
+    // including default-inferred checks.
+    const leading = this.getLeadingComment(node);
+    const ignored = leading ? ignoredParamsIn(leading) : null;
+    if (ignored === 'all') {
+      return '';
+    }
     const jsdoc = this.getJSDoc(node);
     // return '// ' + JSON.stringify(jsdoc) + '\n';
     const stat = this.getStatsForNode(node);
@@ -648,6 +673,9 @@ class Asserter extends Stringifier {
       const type = params[name];
       // Copy name for warnings, `name` may become `arguments[${paramIndex}]`.
       const nameFancy = name;
+      if (ignored instanceof Set && ignored.has(nameFancy)) {
+        continue;
+      }
       const hasParam = this.nodeHasParamName(node, name);
       if (!hasParam) {
         let testNode = node;
@@ -782,8 +810,9 @@ class Asserter extends Stringifier {
       out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
     }
     // Params without JSDoc but with inferable defaults get synthesized
-    // optional checks; JSDoc types always win on conflict.
-    out += this.emitDefaultChecks(node, this.collectDefaultChecks(node, new Set(Object.keys(params))), out === '');
+    // optional checks; JSDoc types always win on conflict. Suppressed
+    // params stay out of the synthesis pool like documented ones do.
+    out += this.emitDefaultChecks(node, this.collectDefaultChecks(node, new Set([...Object.keys(params), ...(ignored instanceof Set ? ignored : [])])), out === '');
     return out;
   }
   /**

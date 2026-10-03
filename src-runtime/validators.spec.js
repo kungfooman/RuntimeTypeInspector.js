@@ -5,7 +5,7 @@ const warn = () => undefined;
 class Float32ArraySub extends Float32Array {}
 // Every validator is registered in the dispatch table.
 function testTableComplete() {
-  for (const key of ['validateType', 'validateCondition', 'validateObject', 'validateRecord', 'validateReference', 'validateMap', 'validateMapping', 'validateArray', 'validateIntersection', 'validateIndexedAccess', 'validateKeyof', 'validateUnion', 'validateSet', 'validateTemplateLiteral', 'validateTuple', 'validateTypeof', 'validateNumber', 'validatePromise', 'validateArrayLike', 'validateTypedef', 'validateString', 'validateBoolean', 'validateNull', 'validateUndefined', 'validateSymbol', 'validateBigint', 'validateVoid', 'materializeMapping', 'evaluateCondition', 'decideIfEquals', 'lookupGlobalConstructor', 'validateIArguments', 'validateGlobalConstructor']) {
+  for (const key of ['validateType', 'validateCondition', 'validateObject', 'validateRecord', 'validateReference', 'validateMap', 'validateMapping', 'validateArray', 'validateIntersection', 'validateIndexedAccess', 'validateKeyof', 'validateUnion', 'validateSet', 'validateTemplateLiteral', 'validateTuple', 'validateTypeof', 'validateNumber', 'validatePromise', 'validateArrayLike', 'validateTypedef', 'validateString', 'validateBoolean', 'validateNull', 'validateUndefined', 'validateSymbol', 'validateBigint', 'validateVoid', 'materializeMapping', 'evaluateCondition', 'decideIfEquals', 'lookupGlobalConstructor', 'validateIArguments', 'validateGlobalConstructor', 'validateArrayLikeSparse']) {
     if (typeof validators[key] !== 'function') {
       return false;
     }
