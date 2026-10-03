@@ -1,4 +1,5 @@
 import {collectCandidates} from "./collectCandidates.js";
+import {deepFreeze} from "./deepFreeze.js";
 import {extendsCheck} from "./evaluateCondition.js";
 import {inspectType} from "./inspectType.js";
 import {options} from "./options.js";
@@ -13,6 +14,44 @@ import {recurse} from "./validators.js";
  * @type {WeakMap<object, {pinned: Set<string>, constraints: Record<string, *>>}>}
  */
 const inferenceState = new WeakMap();
+/**
+ * Substituted expect trees by call site plus template bindings. The expect
+ * tree is static per site (inline literal from the transpiler); bindings
+ * vary per call — pre-pinned literals and constraints alike land in the
+ * key, so repeats hit instead of cloning and re-walking the tree, while
+ * different bindings never share. Cleared with the session (fixture
+ * resets), since same-spelled sites in different files may carry different
+ * shapes. Trees are deep-frozen: validation is read-only over expects, so
+ * a future mutator fails loudly instead of corrupting shared cache entries.
+ * @type {Map<string, *>}
+ */
+const substitutedCache = new Map();
+/**
+ * Substitutes template bindings into a pristine expect tree, memoized by
+ * call site plus bindings. Pure substitution shares unchanged subtrees
+ * with the pristine tree instead of cloning it first.
+ * @param {*} expect - Pristine expect tree (never mutated).
+ * @param {string} loc - String like `BoundingBox#compute`.
+ * @param {string} name - Name of the argument.
+ * @param {Record<string, *>} templates - Per-call template bindings.
+ * @param {console["warn"]} warn - Function to warn with.
+ * @returns {*} Substituted (frozen, shared) tree.
+ */
+function substitutedFor(expect, loc, name, templates, warn) {
+  const dictKey = Object.keys(templates).sort().map((key) => `${key}:${JSON.stringify(templates[key])}`).join(',');
+  const key = `${loc}\n${name}\n${dictKey}`;
+  let sub = substitutedCache.get(key);
+  if (sub === undefined) {
+    // Pure substitution never mutates its input, so no pre-clone: the
+    // result shares every unchanged subtree with the pristine tree.
+    sub = expect;
+    for (const k in templates) {
+      sub = replaceType(sub, k, templates[k], warn);
+    }
+    substitutedCache.set(key, deepFreeze(sub));
+  }
+  return sub;
+}
 /**
  * Widens a literal to its base type, mirroring TypeScript's literal widening
  * for freshly inferred candidates (`"a"` -> `string`, `1` -> `number`).
@@ -60,13 +99,17 @@ function mergeCandidate(templates, state, key, literal, value, loc, name, probin
   if (!state.pinned.has(key)) {
     if (!probing) {
       state.pinned.add(key);
-      state.constraints[key] = structuredClone(templates[key]);
+      // Aliased, not cloned: pure substitution never mutates dict values,
+      // and validation only reads them, so the snapshot cannot corrupt.
+      state.constraints[key] = templates[key];
       templates[key] = literal;
     }
     return;
   }
   const members = unionMembers(templates[key]);
-  if (members.some((member) => JSON.stringify(member) === JSON.stringify(literal))) {
+  // Members are always literals (primitives): identity compares, with
+  // `Object.is` so NaN candidates dedupe instead of accumulating forever.
+  if (members.some((member) => Object.is(member, literal))) {
     return;
   }
   const constraint = state.constraints[key];
@@ -129,10 +172,7 @@ function inspectInferred(value, expect, rawExpect, loc, name, templates) {
   for (const candidate of collectCandidates(value, rawExpect)) {
     mergeCandidate(templates, state, candidate.key, candidate.literal, candidate.value, loc, name, true, noop);
   }
-  let sub = structuredClone(rawExpect);
-  for (const key in templates) {
-    sub = replaceType(sub, key, templates[key], noop);
-  }
+  const sub = substitutedFor(rawExpect, loc, name, templates, noop);
   if (recurse(value, sub, loc, name, true, noop, 0)) {
     return true;
   }
@@ -145,10 +185,7 @@ function inspectTypeWithTemplates(value, expect, loc, name, templates) {
   // console.log("new expect", expect);
   // Substitute into a clone: the pristine tree is needed below for candidate
   // collection (template refs intact) and for rebuilding after widening.
-  let sub = structuredClone(expect);
-  for (const key in templates) {
-    sub = replaceType(sub, key, templates[key], console.warn);
-  }
-  return inspectInferred(value, sub, expect, loc, name, templates);
+  // Memoized by site plus bindings (see substitutedCache).
+  return inspectInferred(value, substitutedFor(expect, loc, name, templates, console.warn), expect, loc, name, templates);
 }
-export {inspectTypeWithTemplates};
+export {inspectTypeWithTemplates, substitutedCache};

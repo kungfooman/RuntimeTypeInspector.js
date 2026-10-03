@@ -1,9 +1,20 @@
 import {replaceType} from "./replaceType.js";
+import {deepFreeze} from "./deepFreeze.js";
 import {getTypeKeys} from "./getTypeKeys.js";
-import {typedefs   } from "./registerTypedef.js";
+import {typedefs, typedefVersion   } from "./registerTypedef.js";
+import {classVersion} from "./registerClass.js";
 import {evaluateCondition, literalType, resolveForExtends} from "./evaluateCondition.js";
 import {validators} from "./validators.js";
 validators.materializeMapping = createTypeFromMapping;
+/**
+ * Instantiated mappings by source node: instantiation re-derives keys,
+ * conditions and indexed access per call, but nodes from the substituted
+ * cache (and registry typedefs) are stable across calls, so repeats hit.
+ * WeakMap: dead nodes vanish instead of leaking. Entries carry the
+ * registry versions they were derived under; re-registration (or new
+ * typedefs mid-run) recomputes instead of serving stale shapes.
+ */
+const mappingCache = new WeakMap();
 /**
  * Profile (#256, Node 22, dev machine): 500-key mapping materializes in
  * ~2ms and validates in ~1ms; 1000x small 3-key mapping validations take
@@ -72,13 +83,20 @@ function applyQuestionModifier(type, question) {
       return type;
     }
     if (type && typeof type === 'object') {
-      delete type.optional;
+      if (!('optional' in type)) {
+        return type;
+      }
+      const out = {...type};
+      delete out.optional;
+      return out;
     }
     return type;
   }
   if (type && typeof type === 'object') {
-    type.optional = true;
-    return type;
+    if (type.optional === true) {
+      return type;
+    }
+    return {...type, optional: true};
   }
   return {type, optional: true};
 }
@@ -110,13 +128,20 @@ function applyReadonlyModifier(type, modifier) {
       return type;
     }
     if (type && typeof type === 'object') {
-      delete type.readonly;
+      if (!('readonly' in type)) {
+        return type;
+      }
+      const out = {...type};
+      delete out.readonly;
+      return out;
     }
     return type;
   }
   if (type && typeof type === 'object') {
-    type.readonly = true;
-    return type;
+    if (type.readonly === true) {
+      return type;
+    }
+    return {...type, readonly: true};
   }
   return {type, readonly: true};
 }
@@ -175,6 +200,23 @@ function createTypeFromMapping(expect, warn) {
   if (typeof expect === 'string' && typedefs[expect]) {
     expect = typedefs[expect];
   }
+  if (expect !== null && typeof expect === 'object') {
+    const cached = mappingCache.get(expect);
+    if (cached && cached.typedefVersion === typedefVersion && cached.classVersion === classVersion) {
+      return cached.result;
+    }
+    const result = deepFreeze(instantiateMapping(expect, warn));
+    mappingCache.set(expect, {typedefVersion, classVersion, result});
+    return result;
+  }
+  return deepFreeze(instantiateMapping(expect, warn));
+}
+/**
+ * @param {import('./validateMapping.js').Mapping} expect - The mapping node.
+ * @param {console["warn"]} warn - Function to warn with.
+ * @returns {import('./validateType.js').TypeObject|undefined} - New type that can be used for validation.
+ */
+function instantiateMapping(expect, warn) {
   const {iterable, element, result, nameType, question, readonly} = expect;
   const typeKeys = getTypeKeys(iterable, warn);
   if (!typeKeys) {
@@ -185,14 +227,14 @@ function createTypeFromMapping(expect, warn) {
   const properties = {};
   for (const typeKey of typeKeys) {
     const keyType = literalType(typeKey);
-    let propType = flattenRest(replaceType(structuredClone(result), element, keyType, warn));
+    let propType = flattenRest(replaceType(result, element, keyType, warn));
     if (propType && propType.type === 'indexedAccess') {
       // Eagerly resolve concrete indexed access so flags (readonly etc.)
       // live on the materialized type instead of behind lazy references.
-      // Shared registry refs are cloned, never mutated.
+      // Pure substitution never mutates shared inputs, so no clone first.
       const resolved = resolveForExtends(propType, warn);
       if (resolved !== undefined) {
-        propType = structuredClone(resolved);
+        propType = resolved;
       }
     }
     propType = applyQuestionModifier(propType, question);
@@ -200,17 +242,18 @@ function createTypeFromMapping(expect, warn) {
     let propKey = stripQuotes(typeKey);
     if (nameType !== undefined) {
       // `as` key remapping: evaluate the (substituted) condition per key.
-      const cloneCond = structuredClone(nameType);
-      replaceType(cloneCond, element, keyType, warn);
-      if (!cloneCond || cloneCond.type !== 'condition') {
-        warn('validateMapping: nameType is not a condition after substitution', cloneCond);
+      // Pure substitution returns the new tree (nothing is modified in
+      // place anymore), so no clone is needed first.
+      const substitutedCond = replaceType(nameType, element, keyType, warn);
+      if (!substitutedCond || substitutedCond.type !== 'condition') {
+        warn('validateMapping: nameType is not a condition after substitution', substitutedCond);
       } else {
-        const decision = evaluateCondition(cloneCond.checkType, cloneCond.extendsType, warn);
+        const decision = evaluateCondition(substitutedCond.checkType, substitutedCond.extendsType, warn);
         if (decision === false) {
           continue;
         }
         if (decision === true) {
-          const trueName = branchName(cloneCond.trueType, warn);
+          const trueName = branchName(substitutedCond.trueType, warn);
           if (trueName !== undefined) {
             propKey = trueName;
           } else {
