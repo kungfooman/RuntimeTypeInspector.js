@@ -9,6 +9,8 @@ import {validateType             } from './validateType.js';
 import {partition                } from './partition.js';
 import {importNamespaceSpecifiers} from './registerImportNamespaceSpecifier.js';
 import {isClonable               } from './isClonable.js';
+import {reportedKeys             } from './reportedKeys.js';
+import {tagValue                 } from './tagValue.js';
 const breakpoints = new Set();
 /**
  * Snapshot budgets for panel-bound values: the tree batches rows on click,
@@ -132,6 +134,28 @@ function inspectType(value, expect, loc, name, critical = true) {
     validateType(value, expect, loc, name, critical, innerWarn, 0);
   if (!ret && critical) {
     options.count++;
+    const key = `${loc}-${name}`;
+    if (breakpoints.has(key)) {
+      // console.log("breakpoints", breakpoints);
+      debugger;
+      breakpoints.delete(key); // trigger only once to quickly get app running again
+      crossContextPostMessage({type: 'rti', action: 'deleteBreakpoint', destination: 'ui', key});
+    }
+    // Hot-loop repeat: the panel already holds this key's full report, so
+    // rebuilding previews, probing clonability and reposting the value buys
+    // nothing — send only the key for the hits counter. Validation above
+    // still runs every time; only the report is skipped. A mode change for
+    // one argument (string then object) reports in full again, so the row
+    // follows the latest failure instead of freezing on the first. `spam`
+    // bypasses: every message is the point there.
+    if (options.mode !== 'spam') {
+      const tag = tagValue(value);
+      if (reportedKeys.get(key) === tag) {
+        crossContextPostMessage({type: 'rti', action: 'addError', destination: 'ui', key, repeat: true});
+        return ret;
+      }
+      reportedKeys.set(key, tag);
+    }
     // let expectStr = ', expected: ' + JSON.stringify(expect);
     // if (expectStr.length < 40) {
     //   //expectStr = ', expected: ';
@@ -156,13 +180,6 @@ function inspectType(value, expect, loc, name, critical = true) {
     // eagerly — `value` may be "repaired" by later calculations, and vectors
     // with NaN components only show in the snapshot.
     const valueToString = previewValue(value);
-    const key = `${loc}-${name}`;
-    if (breakpoints.has(key)) {
-      // console.log("breakpoints", breakpoints);
-      debugger;
-      breakpoints.delete(key); // trigger only once to quickly get app running again
-      crossContextPostMessage({type: 'rti', action: 'deleteBreakpoint', destination: 'ui', key});
-    }
     // Nytaralyxe: options.warns where each warn callback supports one system (node, div/dom etc.)
     // Don't post `value` when it can't be transmitted cross-context (just stringify it instead).
     // Unclonable values (functions, DOM, class instances with methods) become

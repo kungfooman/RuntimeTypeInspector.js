@@ -2,6 +2,7 @@ import {assertMode } from "./assertMode.js";
 import {decodeBase64 } from "./base64.js";
 import {encodeBase64 } from "./base64.js";
 import {options    } from "./options.js";
+import {reportedKeys} from "./reportedKeys.js";
 import {createTable} from "./warnedTable.js";
 import {stringifyValue} from "./stringifyValue.js";
 import {RTI_INFO} from "./version.js";
@@ -1974,6 +1975,10 @@ class TypePanel {
     options.count = 0;
     this.updateErrorCount();
     this.closeAllCompares();
+    // Fresh session, fresh reports: without this the checking side keeps
+    // sending key-only repeats for cleared rows, which have no row to land
+    // on and would never report in full again.
+    reportedKeys.clear();
   }
   /**
    * Captures the current stack like the console shows it for warnings,
@@ -2130,7 +2135,18 @@ class TypePanel {
    * @param {MessageEventRTI} event - The event from Worker, IFrame or own window.
    */
   addError(event) {
-    const {value, expect, loc, name, valueToString, strings, extras = [], key} = event.data;
+    const {value, expect, loc, name, valueToString, strings, extras = [], key, repeat} = event.data;
+    if (repeat) {
+      // Checking-side dedup: the full report already sits under this key,
+      // so only the hit count and totals advance — no value, no log churn.
+      // Unknown keys (panel reloaded after the report) have no row to bump.
+      const known = this.warnings[key];
+      if (known) {
+        known.hits++;
+      }
+      this.updateErrorCount();
+      return;
+    }
     // Item 1: Loc/Name already have their own table columns, so the Message
     // column shows only the detail (`strings`) instead of repeating them.
     const detail = strings.join(' ').trim();
