@@ -168,6 +168,10 @@
     "output": "./test/typechecking/literal-numbers-output.mjs"
   },
   {
+    "input": "./test/typechecking/map-keys-input.mjs",
+    "output": "./test/typechecking/map-keys-output.mjs"
+  },
+  {
     "input": "./test/typechecking/member-expression-positions-input.mjs",
     "output": "./test/typechecking/member-expression-positions-output.mjs"
   },

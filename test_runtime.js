@@ -65,6 +65,7 @@ const tests = [
   ...(await import('./src-runtime/validateTypeof.spec.js'          )).tests,
   ...(await import('./src-runtime/validateNamedType.spec.js'        )).tests,
   ...(await import('./src-runtime/validateArguments.spec.js'         )).tests,
+  ...(await import('./src-runtime/validateMap.spec.js'               )).tests,
   ...(await import('./src-runtime/validatePromise.spec.js'         )).tests,
   ...(await import('./src-runtime/validateNumber.spec.js'         )).tests,
   ...(await import('./src-runtime/checkInfinity.spec.js'          )).tests,

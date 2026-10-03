@@ -1,6 +1,6 @@
 import {recurse} from "./validators.js";
+import {formatMapKey} from "./describeValue.js";
 /**
- * @todo Implement checking all possible key/val types
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
  * @param {string} loc - String like `BoundingBox#compute`
@@ -12,25 +12,27 @@ import {recurse} from "./validators.js";
  */
 function validateMap(value, expect, loc, name, critical, warn, depth) {
   const {key, val} = expect;
-  if (key !== 'string') {
-    warn(`validateMap> unhandled key '${key}'.`);
-    return false;
-  }
   if (!(value instanceof Map)) {
     warn(`validateMap> value isn't an instance of Map.`);
     return false;
   }
-  // if (val !== 'any') {
-  //   warn(`${loc}> validateType> map> expected any, not '${value}'`);
-  //   return false;
-  // }
   for (const [k, v] of value) {
-    const nameKey = `${name}.get('${k}')`;
-    const good = recurse(v, val, loc, nameKey, critical, warn, depth + 1);
-    if (!good) {
-      const info = {expect: val, value: v};
-      warn(`Element ${nameKey} has wrong type.`, info);
-      return false;
+    const nameKey = `${name}.get(${formatMapKey(k)})`;
+    if (key !== undefined) {
+      const goodKey = recurse(k, key, loc, nameKey, critical, warn, depth + 1);
+      if (!goodKey) {
+        const info = {expect: key, value: k};
+        warn(`Map key ${formatMapKey(k)} has wrong type.`, info);
+        return false;
+      }
+    }
+    if (val !== undefined) {
+      const good = recurse(v, val, loc, nameKey, critical, warn, depth + 1);
+      if (!good) {
+        const info = {expect: val, value: v};
+        warn(`Element ${nameKey} has wrong type.`, info);
+        return false;
+      }
     }
   }
   return true;
