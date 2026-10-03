@@ -634,6 +634,15 @@ class TypePanel {
   eventLog = [];
   maxEventLogSize = 1000;
   maxStackFrames = 20;
+  /**
+   * Last message object delivered: the same object twice means two listeners
+   * on one target (e.g. a host forwarding `parent` when `parent === window`),
+   * never two genuine failures — `postMessage` clones per call.
+   * @type {object|null}
+   */
+  lastEvent = null;
+  /** @type {boolean} */
+  warnedDuplicate = false;
   constructor() {
     // Single panel by design (one shared wrapper, one message stream):
     // re-evaluating `new TypePanel()` (REPL Shift-Enter) refreshes and
@@ -823,10 +832,10 @@ class TypePanel {
     // In the simplest case RTI sends its errors onto `window` to update UI state.
     // If you start a Worker, you have to attach RTI yourself.
     window.addEventListener('message', (e) => {
-      const {data} = e;
-      const {type, destination} = data;
+      // Foreign traffic (analytics, devtools, other libs) posts here too,
+      // sometimes without any payload — only `rti`-shaped mail proceeds.
+      const {type, destination} = e.data ?? {};
       // console.log("TypePanel Message event", e);
-      // console.log("TypePanel Message data", data);
       if (type !== 'rti') {
         return;
       }
@@ -2199,7 +2208,25 @@ class TypePanel {
     if (TypePanel.instance !== this) {
       return;
     }
-    const {action} = event.data;
+    // Same object twice is miswiring, not news: say so once (warn, don't
+    // change delivery — the sender owns the fix, like the fork's redundant
+    // `parent` forward), then process normally.
+    if (event === this.lastEvent) {
+      if (!this.warnedDuplicate) {
+        this.warnedDuplicate = true;
+        console.warn('TypePanel#handleEvent> duplicate delivery: one message arrived twice, check for a redundant message forward (e.g. parent === window).');
+      }
+    }
+    this.lastEvent = event;
+    const {action} = event.data ?? {};
+    // Unknown actions used to throw `this[action] is not a function`, taking
+    // down the whole dispatch (e.g. worker-destined settings forwarded by a
+    // host): warn and ignore instead, like the checking side already does
+    // for unhandled action/destination combos.
+    if (typeof this[action] !== 'function') {
+      console.warn('TypePanel#handleEvent> unknown action, ignoring.', {action});
+      return;
+    }
     this[action](event);
     // Could be anywhere we know that a new worker is sending RTI messages.
     this.sendEnabledDisabledStateToWorker();
