@@ -192,6 +192,10 @@
     "output": "./test/typechecking/noinfer-templates-output.mjs"
   },
   {
+    "input": "./test/typechecking/object-constructor-input.mjs",
+    "output": "./test/typechecking/object-constructor-output.mjs"
+  },
+  {
     "input": "./test/typechecking/only-description-input.mjs",
     "output": "./test/typechecking/only-description-output.mjs"
   },
@@ -226,6 +230,10 @@
   {
     "input": "./test/typechecking/playcanvas-tower-utilities-input.mjs",
     "output": "./test/typechecking/playcanvas-tower-utilities-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/record-keys-input.mjs",
+    "output": "./test/typechecking/record-keys-output.mjs"
   },
   {
     "input": "./test/typechecking/setter-no-type-getter-no-type-input.mjs",

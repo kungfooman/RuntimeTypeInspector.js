@@ -71,6 +71,7 @@ const tests = [
   ...(await import('./src-runtime/ignoreChecks.spec.js'              )).tests,
   ...(await import('./src-runtime/customChecks.spec.js'              )).tests,
   ...(await import('./src-runtime/validateArrayLikeSparse.spec.js'     )).tests,
+  ...(await import('./src-runtime/validateRecord.spec.js'              )).tests,
   ...(await import('./src-runtime/validatePromise.spec.js'         )).tests,
   ...(await import('./src-runtime/validateNumber.spec.js'         )).tests,
   ...(await import('./src-runtime/checkInfinity.spec.js'          )).tests,

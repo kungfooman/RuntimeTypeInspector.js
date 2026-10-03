@@ -1,0 +1,6 @@
+{
+  "throws": [
+    {"loc": "takeBuilt", "name": "ctor", "value": null},
+    {"loc": "takeBuilt", "name": "ctor"}
+  ]
+}
