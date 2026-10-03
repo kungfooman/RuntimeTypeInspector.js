@@ -72,6 +72,7 @@ const tests = [
   ...(await import('./src-runtime/customChecks.spec.js'              )).tests,
   ...(await import('./src-runtime/reportedKeys.spec.js'              )).tests,
   ...(await import('./src-runtime/tagValue.spec.js'                 )).tests,
+  ...(await import('./src-runtime/captureStack.spec.js'             )).tests,
   ...(await import('./src-runtime/validateArrayLikeSparse.spec.js'     )).tests,
   ...(await import('./src-runtime/validateRecord.spec.js'              )).tests,
   ...(await import('./src-runtime/validatePromise.spec.js'         )).tests,

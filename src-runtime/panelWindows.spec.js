@@ -1495,6 +1495,41 @@ function testDatalessMessageIgnored() {
     return warns.length === 0 && Object.keys(panel.warnings).length === 0;
   });
 }
+function testTransmittedStackPreferred() {
+  // The checking-side stack (real call site) lands in the log verbatim;
+  // the panel must not overwrite it with its own message-handling frames.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      const stack = ['Error', 'at ValFn (app.js:10:5)', 'at tick (app.js:20:3)'];
+      panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError',
+        value: 1, expect: 'string', loc: 'L4', name: 's', valueToString: '1',
+        strings: ['boom'], extras: [], key: 'L4-s', stack}});
+      return panel.eventLog.length === 1 && panel.eventLog[0].stack !== undefined &&
+        JSON.stringify(panel.eventLog[0].stack) === JSON.stringify(stack);
+    } finally {
+      options.mode = prevMode;
+    }
+  });
+}
+function testMissingStackFallsBack() {
+  // Senders without a stack (indexed-access/division warnings, older
+  // runtimes) still get a locally captured one instead of an empty slot.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError',
+        value: 1, expect: 'string', loc: 'L5', name: 't', valueToString: '1',
+        strings: ['boom'], extras: [], key: 'L5-t'}});
+      const logged = panel.eventLog.length === 1 ? panel.eventLog[0].stack : undefined;
+      return Array.isArray(logged) && logged.length >= 1;
+    } finally {
+      options.mode = prevMode;
+    }
+  });
+}
 const tests = [
   testOpenFocusDedupe,
   testMinimizeRestoreTaskbar,
@@ -1547,6 +1582,8 @@ const tests = [
   testUnknownActionWarnsInsteadOfThrowing,
   testDuplicateDeliveryWarnsOnce,
   testDatalessMessageIgnored,
+  testTransmittedStackPreferred,
+  testMissingStackFallsBack,
   testTypeTreeSetRootWarns,
   testActualCompareHighlightsMap,
 ];

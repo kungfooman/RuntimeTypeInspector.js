@@ -3,6 +3,7 @@ import {decodeBase64 } from "./base64.js";
 import {encodeBase64 } from "./base64.js";
 import {options    } from "./options.js";
 import {reportedKeys} from "./reportedKeys.js";
+import {captureStackLines} from "./captureStack.js";
 import {createTable} from "./warnedTable.js";
 import {stringifyValue} from "./stringifyValue.js";
 import {RTI_INFO} from "./version.js";
@@ -1991,15 +1992,13 @@ class TypePanel {
   }
   /**
    * Captures the current stack like the console shows it for warnings,
-   * bounded so deep stacks can't bloat the log.
+   * bounded so deep stacks can't bloat the log. Fallback only: first
+   * reports carry the checking-side stack (real call site), which
+   * `addError` prefers.
    * @returns {string[]} Stack lines, oldest dropped past the cap.
    */
   captureStack() {
-    const lines = (new Error().stack ?? '').split('\n');
-    if (lines.length > this.maxStackFrames + 1) {
-      return [...lines.slice(0, this.maxStackFrames + 1), `... (+${lines.length - this.maxStackFrames - 1} more frames)`];
-    }
-    return lines;
+    return captureStackLines(this.maxStackFrames);
   }
   /**
    * Human- and LLM-oriented header for the downloaded log: not every entry is
@@ -2144,7 +2143,7 @@ class TypePanel {
    * @param {MessageEventRTI} event - The event from Worker, IFrame or own window.
    */
   addError(event) {
-    const {value, expect, loc, name, valueToString, strings, extras = [], key, repeat} = event.data;
+    const {value, expect, loc, name, valueToString, strings, extras = [], key, repeat, stack} = event.data;
     if (repeat) {
       // Checking-side dedup: the full report already sits under this key,
       // so only the hit count and totals advance — no value, no log churn.
@@ -2165,7 +2164,10 @@ class TypePanel {
     // first so a UI rendering failure below can't lose the error. Values
     // are snapshotted bounded instead of referenced, so later mutation and
     // unserializable shapes can't corrupt the log.
-    this.eventLog.push({timestamp: Date.now(), loc, name, key, expect, value: stringifyValue(value), valueToString, messages: [...strings], detail, message: msg, stack: this.captureStack()});
+    // Prefer the checking-side stack (real call site, captured synchronously
+    // at the check); fall back to a local capture for senders that predate
+    // it (indexed-access/division warnings) or run older runtimes.
+    this.eventLog.push({timestamp: Date.now(), loc, name, key, expect, value: stringifyValue(value), valueToString, messages: [...strings], detail, message: msg, stack: stack ?? this.captureStack()});
     if (this.eventLog.length > this.maxEventLogSize) {
       this.eventLog.splice(0, this.eventLog.length - this.maxEventLogSize);
     }
