@@ -1425,6 +1425,76 @@ function testClearResetsReportedKeys() {
     }
   });
 }
+/**
+ * Runs code with `console.warn` recording calls instead of printing.
+ * @param {Function} fn - The code to run.
+ * @returns {any[]} The recorded call argument lists.
+ */
+function recordWarns(fn) {
+  const calls = [];
+  const orig = console.warn;
+  console.warn = (...args) => {
+    calls.push(args);
+  };
+  try {
+    fn();
+    return calls;
+  } finally {
+    console.warn = orig;
+  }
+}
+function testUnknownActionWarnsInsteadOfThrowing() {
+  // A miswired sender (e.g. worker-destined settings forwarded to the
+  // panel) must diagnose, not crash the dispatch with `this[action]`.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      const sink = {postMessage: () => {}};
+      const warns = recordWarns(() => {
+        globalThis.window.fire('message', {source: null, srcElement: sink,
+          data: {type: 'rti', destination: 'ui', action: 'bogus', key: 'x'}});
+      });
+      return warns.length === 1 && Object.keys(panel.warnings).length === 0;
+    } finally {
+      options.mode = prevMode;
+    }
+  });
+}
+function testDuplicateDeliveryWarnsOnce() {
+  // One object twice is two listeners on one target (e.g. a redundant
+  // `parent` forward when `parent === window`), never two failures:
+  // warn once, process unchanged (no silent drops).
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      const sink = {postMessage: () => {}};
+      const event = {source: null, srcElement: sink,
+        data: {type: 'rti', destination: 'ui', action: 'addError',
+          value: 1, expect: 'string', loc: 'L9', name: 'dup', valueToString: '1',
+          strings: ['boom'], extras: [], key: 'L9-dup'}};
+      const warns = recordWarns(() => {
+        globalThis.window.fire('message', event);
+        globalThis.window.fire('message', event);
+      });
+      const warnObj = panel.warnings['L9-dup'];
+      return warns.length === 1 && !!warnObj && warnObj.hits === 2 && panel.eventLog.length === 2;
+    } finally {
+      options.mode = prevMode;
+    }
+  });
+}
+function testDatalessMessageIgnored() {
+  // Foreign traffic sometimes posts without any payload: ignore it
+  // silently (warning per foreign message would spam), don't crash.
+  return withPanel((panel) => {
+    const warns = recordWarns(() => {
+      globalThis.window.fire('message', {});
+    });
+    return warns.length === 0 && Object.keys(panel.warnings).length === 0;
+  });
+}
 const tests = [
   testOpenFocusDedupe,
   testMinimizeRestoreTaskbar,
@@ -1474,6 +1544,9 @@ const tests = [
   testRepeatBumpsHitsWithoutLogChurn,
   testRepeatUnknownKeyDropped,
   testClearResetsReportedKeys,
+  testUnknownActionWarnsInsteadOfThrowing,
+  testDuplicateDeliveryWarnsOnce,
+  testDatalessMessageIgnored,
   testTypeTreeSetRootWarns,
   testActualCompareHighlightsMap,
 ];
