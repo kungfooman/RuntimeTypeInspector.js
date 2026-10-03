@@ -1,5 +1,7 @@
 import {crossContextPostMessage  } from './crossContextPostMessage.js';
 import {options                  } from './options.js';
+import {ignoredChecks            } from './ignoredChecks.js';
+import {customChecks             } from './customChecks.js';
 import {describeValueType        } from './describeValue.js';
 import {stringifyType            } from './stringifyType.js';
 import {previewValue, stringifyValue} from './stringifyValue.js';
@@ -86,6 +88,11 @@ function inspectType(value, expect, loc, name, critical = true) {
     console.warn("inspectType> 'expect' always should be set");
     return false;
   }
+  // Host-suppressed checks pass silently before any validation or preview
+  // work runs (suppression also skips the expensive snapshotting below).
+  if (ignoredChecks.has(loc) || ignoredChecks.has(`${loc}.${name}`)) {
+    return true;
+  }
   if (typeof expect === 'string' && expect.includes('.')) {
     // Quoted literals (e.g. narrowed `"a.b.c"`) are values, not namespace
     // paths: rewriting them misfires `unhandled` noise on the next check.
@@ -117,7 +124,12 @@ function inspectType(value, expect, loc, name, critical = true) {
   const innerWarn = (...args) => {
     warnings.push(...args);
   };
-  const ret = validateType(value, expect, loc, name, critical, innerWarn, 0);
+  // Host-controlled checks fully replace standard validation (approve or
+  // deny); failures flow through the standard error pipeline below.
+  const custom = customChecks.get(`${loc}.${name}`) ?? customChecks.get(loc);
+  const ret = custom ?
+    custom(value, expect, loc, name, critical, innerWarn, 0) :
+    validateType(value, expect, loc, name, critical, innerWarn, 0);
   if (!ret && critical) {
     options.count++;
     // let expectStr = ', expected: ' + JSON.stringify(expect);

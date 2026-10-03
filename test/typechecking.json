@@ -108,6 +108,10 @@
     "output": "./test/typechecking/ifequals-output.mjs"
   },
   {
+    "input": "./test/typechecking/ignore-rti-scoped-input.mjs",
+    "output": "./test/typechecking/ignore-rti-scoped-output.mjs"
+  },
+  {
     "input": "./test/typechecking/import-as-input.mjs",
     "output": "./test/typechecking/import-as-output.mjs"
   },

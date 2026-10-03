@@ -167,6 +167,20 @@ function testExpandTypeDepFreeReference() {
   }
   return true;
 }
+function testArrayLikeHolesFail() {
+  // Holes read as `undefined`, not numbers: missing indices fail, and so
+  // does the text-element shape (length-extended plain array, all holes).
+  const expect = expandType('ArrayLike<number>');
+  if (validateType({length: 2, 0: 1}, expect, 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  const positions = [];
+  positions.length = 12;
+  if (validateType(positions, expect, 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  return true;
+}
 export const tests = [
   testIssue241ArrayLikeValid,
   testIssue241ArrayLikeInvalid,
@@ -180,4 +194,5 @@ export const tests = [
   testReferenceToTypedef,
   testReplaceTypeHandlesReference,
   testExpandTypeDepFreeReference,
+  testArrayLikeHolesFail,
 ];
