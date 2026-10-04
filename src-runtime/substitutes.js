@@ -1,5 +1,5 @@
 /**
- * Dispatch table breaking the substituteType <-> substituteArray/Record/Descriptors import cycles.
+ * Dispatch table breaking the substituteType <-> substituteArray/Record/Descriptors/List import cycles.
  * Leaf module by design: it imports nothing, so every edge points at it
  * and Rollup reports no circular dependencies.
  * `substituteType.js` populates the table at module scope, so importing it

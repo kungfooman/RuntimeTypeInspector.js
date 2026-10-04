@@ -1,23 +1,29 @@
-import {substituteList} from "./substituteList.js";
-import {substituteRecord} from "./substituteRecord.js";
-import {substituteDescriptors} from "./substituteDescriptors.js";
-import {substituteArray} from "./substituteArray.js";
-import {substituteAtom} from "./substituteAtom.js";
-import {substituteObject} from "./substituteObject.js";
-import {substituteIndexSignature} from "./substituteIndexSignature.js";
-import {substituteTuple} from "./substituteTuple.js";
-import {substituteReference} from "./substituteReference.js";
-import {substitutePromise} from "./substitutePromise.js";
-import {substituteUnion} from "./substituteUnion.js";
-import {substituteTemplateLiteral} from "./substituteTemplateLiteral.js";
-import {substituteRest} from "./substituteRest.js";
-import {substituteIndexedAccess} from "./substituteIndexedAccess.js";
-import {substituteMapping} from "./substituteMapping.js";
-import {substituteIntersection} from "./substituteIntersection.js";
-import {substituteKeyof} from "./substituteKeyof.js";
-import {substituteCondition} from "./substituteCondition.js";
-import {substituteTupleMember} from "./substituteTupleMember.js";
-import {substituteFunction} from "./substituteFunction.js";
+import {substituteList            } from "./substituteList.js";
+import {substituteRecord          } from "./substituteRecord.js";
+import {substituteDescriptors     } from "./substituteDescriptors.js";
+import {substituteArray           } from "./substituteArray.js";
+import {substituteAtom            } from "./substituteAtom.js";
+import {substituteObject          } from "./substituteObject.js";
+import {substituteIndexSignature  } from "./substituteIndexSignature.js";
+import {substituteTuple           } from "./substituteTuple.js";
+import {substituteReference       } from "./substituteReference.js";
+import {substitutePromise         } from "./substitutePromise.js";
+import {substituteSet             } from "./substituteSet.js";
+import {substituteClass           } from "./substituteClass.js";
+import {substituteUnion           } from "./substituteUnion.js";
+import {substituteTemplateLiteral } from "./substituteTemplateLiteral.js";
+import {substituteRest            } from "./substituteRest.js";
+import {substituteIndexedAccess   } from "./substituteIndexedAccess.js";
+import {substituteMapping         } from "./substituteMapping.js";
+import {substituteIntersection    } from "./substituteIntersection.js";
+import {substituteKeyof           } from "./substituteKeyof.js";
+import {substituteCondition       } from "./substituteCondition.js";
+import {substituteTupleMember     } from "./substituteTupleMember.js";
+import {substituteRecordNode      } from "./substituteRecordNode.js";
+import {substituteMapNode         } from "./substituteMapNode.js";
+import {substituteTypeof          } from "./substituteTypeof.js";
+import {substituteNew             } from "./substituteNew.js";
+import {substituteFunction        } from "./substituteFunction.js";
 import {substitutes, recurseSubstitute} from "./substitutes.js";
 /**
  * Populates the dispatch table: every edge points outward from here, so the
@@ -36,6 +42,8 @@ Object.assign(substitutes, {
   substituteTuple,
   substituteReference,
   substitutePromise,
+  substituteSet,
+  substituteClass,
   substituteUnion,
   substituteTemplateLiteral,
   substituteRest,
@@ -45,6 +53,10 @@ Object.assign(substitutes, {
   substituteKeyof,
   substituteCondition,
   substituteTupleMember,
+  substituteRecordNode,
+  substituteMapNode,
+  substituteTypeof,
+  substituteNew,
   substituteFunction,
 });
 /**
@@ -85,7 +97,7 @@ function substituteType(type, search, replace, warn) {
     case 'indexSignature':
       return substitutes.substituteIndexSignature(type, search, replace, warn);
     case 'typeof':
-      return type;
+      return substitutes.substituteTypeof(type, search, replace, warn);
     case 'tuple':
       return substitutes.substituteTuple(type, search, replace, warn);
     case 'array':
@@ -93,9 +105,11 @@ function substituteType(type, search, replace, warn) {
     case 'reference':
       return substitutes.substituteReference(type, search, replace, warn);
     case 'promise':
-    case 'set':
-    case 'class':
       return substitutes.substitutePromise(type, search, replace, warn);
+    case 'set':
+      return substitutes.substituteSet(type, search, replace, warn);
+    case 'class':
+      return substitutes.substituteClass(type, search, replace, warn);
     case 'union':
       return substitutes.substituteUnion(type, search, replace, warn);
     case 'templateLiteral':
@@ -105,11 +119,9 @@ function substituteType(type, search, replace, warn) {
     case 'indexedAccess':
       return substitutes.substituteIndexedAccess(type, search, replace, warn);
     case 'record':
-    case 'map': {
-      const key = recurseSubstitute(type.key, search, replace, warn);
-      const val = recurseSubstitute(type.val, search, replace, warn);
-      return key === type.key && val === type.val ? type : {...type, key, val};
-    }
+      return substitutes.substituteRecordNode(type, search, replace, warn);
+    case 'map':
+      return substitutes.substituteMapNode(type, search, replace, warn);
     case 'mapping':
       return substitutes.substituteMapping(type, search, replace, warn);
     case 'intersection':
@@ -121,6 +133,7 @@ function substituteType(type, search, replace, warn) {
     case 'tupleMember':
       return substitutes.substituteTupleMember(type, search, replace, warn);
     case 'new':
+      return substitutes.substituteNew(type, search, replace, warn);
     case 'function':
       return substitutes.substituteFunction(type, search, replace, warn);
     default:
