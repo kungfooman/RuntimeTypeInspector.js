@@ -15,6 +15,7 @@ export * from './customChecks.js';
 export * from './describeValue.js';
 export * from './DisplayAnything.js';
 export * from './evaluateCondition.js';
+export * from './firstBadIndex.js';
 export * from './getTypeKeys.js';
 export * from './inspectIndexedAccess.js';
 export * from './inspectType.js';

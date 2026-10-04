@@ -1,4 +1,5 @@
 import {recurse} from "./validators.js";
+import {firstBadIndex} from "./firstBadIndex.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -18,7 +19,14 @@ function validateArray(value, expect, loc, name, critical, warn, depth) {
   const n = value.length;
   // some that not validate -> type error
   // todo unit test for arrays with holes
-  for (let i = 0; i < n; i++) {
+  // Primitive fast path: skip the proven-clean prefix without per-element
+  // names or recursion; the loop below still runs from the first suspect,
+  // so results and warnings are identical.
+  const firstBad = firstBadIndex(value, n, elementType);
+  if (firstBad === -1) {
+    return true;
+  }
+  for (let i = firstBad; i < n; i++) {
     const valueIndex = value[i];
     const nameIndex = `${name}[${i}]`;
     const ret = recurse(valueIndex, elementType, loc, nameIndex, critical, warn, depth + 1);

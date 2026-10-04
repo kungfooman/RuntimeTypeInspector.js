@@ -1,4 +1,5 @@
 import {recurse} from "./validators.js";
+import {firstBadIndex} from "./firstBadIndex.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value: an
@@ -34,7 +35,14 @@ function validateArrayLike(value, expect, loc, name, critical, warn, depth) {
     warn('Expected ArrayLike to have an integer length >= 0.', {value});
     return false;
   }
-  for (let i = 0; i < length; i++) {
+  // Primitive fast path: skip the proven-clean prefix without per-element
+  // names or recursion; the loop below still runs from the first suspect,
+  // so results and warnings are identical.
+  const firstBad = firstBadIndex(value, length, elementType);
+  if (firstBad === -1) {
+    return true;
+  }
+  for (let i = firstBad; i < length; i++) {
     const valueIndex = value[i];
     const nameIndex = `${name}[${i}]`;
     const ret = recurse(valueIndex, elementType, loc, nameIndex, critical, warn, depth + 1);

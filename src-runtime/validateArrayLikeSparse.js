@@ -1,5 +1,6 @@
 import {recurse} from "./validators.js";
 import {validators} from "./validators.js";
+import {firstBadIndex} from "./firstBadIndex.js";
 /**
  * Holes-tolerant container validation for proven over-allocation: like
  * `validateArray` for `{type: 'array', ...}` and like the `ArrayLike`
@@ -57,7 +58,15 @@ function validateArrayLikeSparse(value, expect, loc, name, critical, warn, depth
   // Only real containers are probed for absence: strings have no holes,
   // and the `in` operator throws on primitives.
   const checkAbsent = typeof value !== 'string';
-  for (let i = 0; i < length; i++) {
+  // Primitive fast path: skip the proven-clean prefix without per-element
+  // names or recursion; the loop below still runs from the first suspect
+  // (holes included — the `in` test below skips them), so results and
+  // warnings are identical.
+  const firstBad = firstBadIndex(value, length, elementType);
+  if (firstBad === -1) {
+    return true;
+  }
+  for (let i = firstBad; i < length; i++) {
     if (checkAbsent && !(i in value)) {
       continue;
     }
