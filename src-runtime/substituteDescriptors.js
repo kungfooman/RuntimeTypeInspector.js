@@ -1,4 +1,4 @@
-import {substituteType} from "./substituteType.js";
+import {recurseSubstitute} from "./substitutes.js";
 /**
  * Substitutes parameter descriptors (`{type, name}`), touching only each
  * descriptor's `.type` position and preserving identity when unchanged.
@@ -19,7 +19,7 @@ function substituteDescriptors(parameters, search, replace, warn) {
   for (let i = 0; i < parameters.length; i++) {
     const parameter = parameters[i];
     if (parameter && typeof parameter === 'object' && parameter.type !== undefined) {
-      const next = substituteType(parameter.type, search, replace, warn);
+      const next = recurseSubstitute(parameter.type, search, replace, warn);
       if (next !== parameter.type) {
         if (out === parameters) {
           out = parameters.slice();

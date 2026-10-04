@@ -1,5 +1,18 @@
 import {typedefs} from "./registerTypedef.js";
-import {templateLiteralValues} from "./templateLiteralValues.js";
+import {resolveTemplateLiteralValues} from "./resolveTemplateLiteralValues.js";
+import {templateCandidates, recurseCandidates} from "./templateCandidates.js";
+/**
+ * Populates the dispatch table: every edge points outward from here, so the
+ * module graph stays acyclic. Importing this module (or the package index)
+ * guarantees a full table. The table stays writable on purpose: overriding
+ * entries from userland (e.g. candidate enumeration for a custom
+ * interpolation kind) takes effect immediately, without forking RTI or
+ * waiting for a release. Keys mirror the export names.
+ */
+Object.assign(templateCandidates, {
+  resolveTemplateLiteralCandidates,
+  resolveTemplateLiteralValues,
+});
 /**
  * Enumerates all concrete string candidates of a template literal interpolation.
  *
@@ -27,7 +40,7 @@ function resolveTemplateLiteralCandidates(expect, warn, depth = 0) {
   }
   if (typeof expect === 'string') {
     if (typedefs[expect]) {
-      return resolveTemplateLiteralCandidates(typedefs[expect], warn, depth + 1);
+      return recurseCandidates(typedefs[expect], warn, depth + 1);
     }
     if (expect[0] === '"' && expect[expect.length - 1] === '"') {
       return [expect.slice(1, -1)];
@@ -47,7 +60,7 @@ function resolveTemplateLiteralCandidates(expect, warn, depth = 0) {
       /** @type {string[]} */
       const out = [];
       for (const member of expect.members) {
-        const candidates = resolveTemplateLiteralCandidates(member, warn, depth + 1);
+        const candidates = recurseCandidates(member, warn, depth + 1);
         if (!candidates) {
           return;
         }
@@ -56,7 +69,7 @@ function resolveTemplateLiteralCandidates(expect, warn, depth = 0) {
       return out;
     }
     case 'templateLiteral':
-      return templateLiteralValues(expect, warn, depth + 1);
+      return templateCandidates.resolveTemplateLiteralValues(expect, warn, depth + 1);
     default:
       warn(`validateTemplateLiteral: Cannot enumerate type '${expect.type}'.`);
   }

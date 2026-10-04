@@ -7,7 +7,7 @@
  */
 const RTI_INFO = {
   "version": "5.0.7",
-  "commit": "c1218222178582df07ce61806719453bea6db484",
-  "subject": "Fix panel Diagnosis: mapped optionality, array/tuple pinpoints, `$type` snapshots (#291)"
+  "commit": "0a2318bfe1eb5dc3701eb457a546647ab34568a3",
+  "subject": "Consumer sync script (#294)"
 };
 export {RTI_INFO};

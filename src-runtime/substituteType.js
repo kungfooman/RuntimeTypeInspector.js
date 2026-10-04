@@ -1,6 +1,18 @@
 import {substituteArray} from "./substituteArray.js";
 import {substituteRecord} from "./substituteRecord.js";
 import {substituteDescriptors} from "./substituteDescriptors.js";
+import {substitutes, recurseSubstitute} from "./substitutes.js";
+/**
+ * Populates the dispatch table: every edge points outward from here, so the
+ * module graph stays acyclic. Importing this module (or the package index)
+ * guarantees a full table. Shorthand keys mirror the export names.
+ */
+Object.assign(substitutes, {
+  substituteType,
+  substituteArray,
+  substituteRecord,
+  substituteDescriptors,
+});
 /**
  * Substitutes template references, purely: never mutates its input, and
  * unchanged subtrees are shared by identity with the input, so only the
@@ -39,15 +51,15 @@ function substituteType(type, search, replace, warn) {
   if (typeof type.type === 'string' || typeof type.type === 'number' || typeof type.type === 'boolean') {
     const keys = Object.keys(type);
     if (keys.every((key) => key === 'type' || key === 'optional' || key === 'readonly')) {
-      const inner = substituteType(type.type, search, replace, warn);
+      const inner = recurseSubstitute(type.type, search, replace, warn);
       return inner === type.type ? type : {...type, type: inner};
     }
   }
   switch (type.type) {
     case 'object': {
       const {properties} = type;
-      const next = substituteRecord(properties, search, replace, warn);
-      const signatures = substituteArray(type.indexSignatures, search, replace, warn);
+      const next = substitutes.substituteRecord(properties, search, replace, warn);
+      const signatures = substitutes.substituteArray(type.indexSignatures, search, replace, warn);
       if (next === properties && signatures === type.indexSignatures) {
         return type;
       }
@@ -62,8 +74,8 @@ function substituteType(type, search, replace, warn) {
       return out;
     }
     case 'indexSignature': {
-      const indexType = type.indexType === undefined ? undefined : substituteType(type.indexType, search, replace, warn);
-      const indexParameters = substituteDescriptors(type.indexParameters, search, replace, warn);
+      const indexType = type.indexType === undefined ? undefined : recurseSubstitute(type.indexType, search, replace, warn);
+      const indexParameters = substitutes.substituteDescriptors(type.indexParameters, search, replace, warn);
       if (indexType === type.indexType && indexParameters === type.indexParameters) {
         return type;
       }
@@ -76,11 +88,11 @@ function substituteType(type, search, replace, warn) {
       // templated function that merely had a typeof-typed param).
       return type;
     case 'tuple': {
-      const elements = substituteArray(type.elements, search, replace, warn);
+      const elements = substitutes.substituteArray(type.elements, search, replace, warn);
       return elements === type.elements ? type : {...type, elements};
     }
     case 'array': {
-      const elementType = substituteType(type.elementType, search, replace, warn);
+      const elementType = recurseSubstitute(type.elementType, search, replace, warn);
       return elementType === type.elementType ? type : {...type, elementType};
     }
     case 'reference': {
@@ -88,36 +100,36 @@ function substituteType(type, search, replace, warn) {
       if (!Array.isArray(args)) {
         return type;
       }
-      const next = substituteArray(args, search, replace, warn);
+      const next = substitutes.substituteArray(args, search, replace, warn);
       return next === args ? type : {...type, args: next};
     }
     case 'promise':
     case 'set':
     case 'class': {
-      const elementType = substituteType(type.elementType, search, replace, warn);
+      const elementType = recurseSubstitute(type.elementType, search, replace, warn);
       return elementType === type.elementType ? type : {...type, elementType};
     }
     case 'union': {
-      const members = substituteArray(type.members, search, replace, warn);
+      const members = substitutes.substituteArray(type.members, search, replace, warn);
       return members === type.members ? type : {...type, members};
     }
     case 'templateLiteral': {
-      const types = substituteArray(type.types, search, replace, warn);
+      const types = substitutes.substituteArray(type.types, search, replace, warn);
       return types === type.types ? type : {...type, types};
     }
     case 'rest': {
-      const annotation = substituteType(type.annotation, search, replace, warn);
+      const annotation = recurseSubstitute(type.annotation, search, replace, warn);
       return annotation === type.annotation ? type : {...type, annotation};
     }
     case 'indexedAccess': {
-      const index = substituteType(type.index, search, replace, warn);
-      const object = substituteType(type.object, search, replace, warn);
+      const index = recurseSubstitute(type.index, search, replace, warn);
+      const object = recurseSubstitute(type.object, search, replace, warn);
       return index === type.index && object === type.object ? type : {...type, index, object};
     }
     case 'record':
     case 'map': {
-      const key = substituteType(type.key, search, replace, warn);
-      const val = substituteType(type.val, search, replace, warn);
+      const key = recurseSubstitute(type.key, search, replace, warn);
+      const val = recurseSubstitute(type.val, search, replace, warn);
       return key === type.key && val === type.val ? type : {...type, key, val};
     }
     case 'mapping': {
@@ -126,27 +138,27 @@ function substituteType(type, search, replace, warn) {
       if (type.element === search) {
         return type;
       }
-      const iterable = substituteType(type.iterable, search, replace, warn);
-      const result = substituteType(type.result, search, replace, warn);
-      const nameType = type.nameType === undefined ? undefined : substituteType(type.nameType, search, replace, warn);
+      const iterable = recurseSubstitute(type.iterable, search, replace, warn);
+      const result = recurseSubstitute(type.result, search, replace, warn);
+      const nameType = type.nameType === undefined ? undefined : recurseSubstitute(type.nameType, search, replace, warn);
       if (iterable === type.iterable && result === type.result && nameType === type.nameType) {
         return type;
       }
       return {...type, iterable, result, nameType};
     }
     case 'intersection': {
-      const members = substituteArray(type.members, search, replace, warn);
+      const members = substitutes.substituteArray(type.members, search, replace, warn);
       return members === type.members ? type : {...type, members};
     }
     case 'keyof': {
-      const argument = substituteType(type.argument, search, replace, warn);
+      const argument = recurseSubstitute(type.argument, search, replace, warn);
       return argument === type.argument ? type : {...type, argument};
     }
     case 'condition': {
-      const checkType = substituteType(type.checkType, search, replace, warn);
-      const extendsType = substituteType(type.extendsType, search, replace, warn);
-      const trueType = substituteType(type.trueType, search, replace, warn);
-      const falseType = substituteType(type.falseType, search, replace, warn);
+      const checkType = recurseSubstitute(type.checkType, search, replace, warn);
+      const extendsType = recurseSubstitute(type.extendsType, search, replace, warn);
+      const trueType = recurseSubstitute(type.trueType, search, replace, warn);
+      const falseType = recurseSubstitute(type.falseType, search, replace, warn);
       if (checkType === type.checkType && extendsType === type.extendsType &&
         trueType === type.trueType && falseType === type.falseType) {
         return type;
@@ -154,13 +166,13 @@ function substituteType(type, search, replace, warn) {
       return {...type, checkType, extendsType, trueType, falseType};
     }
     case 'tupleMember': {
-      const elementType = substituteType(type.elementType, search, replace, warn);
+      const elementType = recurseSubstitute(type.elementType, search, replace, warn);
       return elementType === type.elementType ? type : {...type, elementType};
     }
     case 'new':
     case 'function': {
-      const parameters = substituteDescriptors(type.parameters, search, replace, warn);
-      const ret = type.ret === undefined ? undefined : substituteType(type.ret, search, replace, warn);
+      const parameters = substitutes.substituteDescriptors(type.parameters, search, replace, warn);
+      const ret = type.ret === undefined ? undefined : recurseSubstitute(type.ret, search, replace, warn);
       if (parameters === type.parameters && ret === type.ret) {
         return type;
       }

@@ -1,4 +1,4 @@
-import {substituteType} from "./substituteType.js";
+import {recurseSubstitute} from "./substitutes.js";
 /**
  * Substitutes a record of types (e.g. object properties), returning the
  * original when nothing changed.
@@ -17,7 +17,7 @@ function substituteRecord(record, search, replace, warn) {
   }
   let out = record;
   for (const prop in record) {
-    const next = substituteType(record[prop], search, replace, warn);
+    const next = recurseSubstitute(record[prop], search, replace, warn);
     if (next !== record[prop]) {
       if (out === record) {
         out = {...record};

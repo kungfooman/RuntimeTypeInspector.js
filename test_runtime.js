@@ -59,6 +59,8 @@ const tests = [
   ...(await import('./src-runtime/templateNarrowing.spec.js'       )).tests,
   ...(await import('./src-runtime/templateMemo.spec.js'            )).tests,
   ...(await import('./src-runtime/substituteType.spec.js'         )).tests,
+  ...(await import('./src-runtime/substitutes.spec.js'            )).tests,
+  ...(await import('./src-runtime/templateCandidates.spec.js'     )).tests,
   ...(await import('./src-runtime/firstBadIndex.spec.js'           )).tests,
   ...(await import('./src-runtime/mappedOptionality.spec.js'       )).tests,
   ...(await import('./src-runtime/tagSnapshot.spec.js'              )).tests,

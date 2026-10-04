@@ -1,4 +1,4 @@
-import {resolveTemplateLiteralCandidates} from "./resolveTemplateLiteralCandidates.js";
+import {recurseCandidates} from "./templateCandidates.js";
 /**
  * Computes all concrete strings a structured `templateLiteral` type can produce.
  * @param {object} expect - The structured `templateLiteral` type.
@@ -8,14 +8,14 @@ import {resolveTemplateLiteralCandidates} from "./resolveTemplateLiteralCandidat
  * @param {number} [depth] - The depth to detect recursion.
  * @returns {string[]|undefined} All possible strings or `undefined` if not enumerable.
  * @example
- * templateLiteralValues({quasis: ['a', 'b'], types: ['"x"']}, console.warn); // ['axb']
+ * resolveTemplateLiteralValues({quasis: ['a', 'b'], types: ['"x"']}, console.warn); // ['axb']
  */
-function templateLiteralValues(expect, warn, depth = 0) {
+function resolveTemplateLiteralValues(expect, warn, depth = 0) {
   const {quasis, types} = expect;
   /** @type {string[]} */
   let values = [quasis[0]];
   for (let i = 0; i < types.length; i++) {
-    const candidates = resolveTemplateLiteralCandidates(types[i], warn, depth);
+    const candidates = recurseCandidates(types[i], warn, depth);
     if (!candidates) {
       return;
     }
@@ -30,4 +30,4 @@ function templateLiteralValues(expect, warn, depth = 0) {
   }
   return values;
 }
-export {templateLiteralValues};
+export {resolveTemplateLiteralValues};

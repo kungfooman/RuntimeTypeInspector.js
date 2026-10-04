@@ -1,4 +1,4 @@
-import {substituteType} from "./substituteType.js";
+import {recurseSubstitute} from "./substitutes.js";
 /**
  * Substitutes an array of types, returning the original when nothing
  * changed so unchanged subtrees keep their identity for downstream memos.
@@ -17,7 +17,7 @@ function substituteArray(items, search, replace, warn) {
   }
   let out = items;
   for (let i = 0; i < items.length; i++) {
-    const next = substituteType(items[i], search, replace, warn);
+    const next = recurseSubstitute(items[i], search, replace, warn);
     if (next !== items[i]) {
       if (out === items) {
         out = items.slice(0, i);
