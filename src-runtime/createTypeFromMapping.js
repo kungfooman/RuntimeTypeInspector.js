@@ -133,12 +133,21 @@ function instantiateMapping(expect, warn) {
     const keyType = literalType(typeKey);
     let propType = flattenRest(substituteType(result, element, keyType, warn));
     if (propType && propType.type === 'indexedAccess') {
-      // Eagerly resolve concrete indexed access so flags (readonly etc.)
-      // live on the materialized type instead of behind lazy references.
-      // Pure substitution never mutates shared inputs, so no clone first.
-      const resolved = resolveForExtends(propType, warn);
-      if (resolved !== undefined) {
-        propType = resolved;
+      // Eagerly resolve concrete indexed access so flags (`optional`,
+      // `readonly`) live on the materialized type instead of behind lazy
+      // references: the lazy path keeps them on union members for
+      // validation, but the differ reads flags off the materialized prop
+      // itself. Silent probe — unresolvable props stay lazy and warn at
+      // validation time, exactly as before.
+      const createIndexed = validators.createTypeFromIndexedAccess;
+      const created = createIndexed ? createIndexed(propType, () => undefined) : undefined;
+      if (created !== undefined) {
+        propType = created;
+      } else {
+        const resolved = resolveForExtends(propType, warn);
+        if (resolved !== undefined) {
+          propType = resolved;
+        }
       }
     }
     propType = applyQuestionModifier(propType, question);

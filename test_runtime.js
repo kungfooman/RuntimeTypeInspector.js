@@ -60,6 +60,7 @@ const tests = [
   ...(await import('./src-runtime/templateMemo.spec.js'            )).tests,
   ...(await import('./src-runtime/substituteType.spec.js'         )).tests,
   ...(await import('./src-runtime/firstBadIndex.spec.js'           )).tests,
+  ...(await import('./src-runtime/mappedOptionality.spec.js'       )).tests,
   ...(await import('./src-runtime/collectCandidates.spec.js'      )).tests,
   ...(await import('./src-runtime/strictNullChecks.spec.js'        )).tests,
   ...(await import('./src-runtime/stringifyValue.spec.js'          )).tests,

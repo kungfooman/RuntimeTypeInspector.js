@@ -166,6 +166,11 @@ function createTypeFromIndexedAccess(expect, warn) {
     warn('validateIndexedAccess: unresolvable indexed access', {expect});
     return;
   }
+  if (members.length === 1) {
+    // Single property: return it directly so source flags (`optional`,
+    // `readonly`) survive instead of hiding behind a required wrapper.
+    return members[0];
+  }
   return {type: 'union', members, optional: false};
 }
 export {createTypeFromIndexedAccess};
