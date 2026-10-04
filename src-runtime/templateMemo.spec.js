@@ -1,4 +1,5 @@
-import {inspectTypeWithTemplates, substitutedCache} from './inspectTypeWithTemplates.js';
+import {inspectTypeWithTemplates} from './inspectTypeWithTemplates.js';
+import {substitutedCache} from './substitutedFor.js';
 import {substituteType} from './substituteType.js';
 import {createTypeFromMapping} from './createTypeFromMapping.js';
 import {mergedClassShape} from './classShape.js';

@@ -1,3 +1,4 @@
+import {unwrapMember} from "./unwrapMember.js";
 /**
  * Collects template inference candidates by walking a runtime value alongside
  * its UNSUBSTITUTED expected type. Only positions TypeScript itself infers
@@ -151,19 +152,6 @@ function collectCandidates(value, expect, out = []) {
     default:
       return out;
   }
-}
-/**
- * Unwraps tuple element decorations (`tupleMember`, `rest`) to the inner type.
- * @param {*} element - Raw tuple element.
- * @returns {*} Unwrapped type.
- * @example
- * unwrapMember({type: 'rest', annotation: 'K'}); // 'K'
- */
-function unwrapMember(element) {
-  if (element && typeof element === 'object' && (element.type === 'tupleMember' || element.type === 'rest')) {
-    return element.elementType ?? element.annotation;
-  }
-  return element;
 }
 /**
  * Narrows a runtime value to its literal type, e.g. `camera` becomes

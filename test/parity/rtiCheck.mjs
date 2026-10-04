@@ -66,7 +66,7 @@ async function resetRuntimeState() {
   const {classes} = await import('../../src-runtime/registerClass.js');
   const {options} = await import('../../src-runtime/options.js');
   const {reportedKeys} = await import('../../src-runtime/reportedKeys.js');
-  const {substitutedCache} = await import('../../src-runtime/inspectTypeWithTemplates.js');
+  const {substitutedCache} = await import('../../src-runtime/substitutedFor.js');
   Object.keys(typedefs).forEach((_) => delete typedefs[_]);
   Object.keys(typedefTemplates).forEach((_) => delete typedefTemplates[_]);
   Object.keys(classes).forEach((_) => delete classes[_]);

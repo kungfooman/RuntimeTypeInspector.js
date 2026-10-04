@@ -1,3 +1,6 @@
+import {substituteArray} from "./substituteArray.js";
+import {substituteRecord} from "./substituteRecord.js";
+import {substituteDescriptors} from "./substituteDescriptors.js";
 /**
  * Substitutes template references, purely: never mutates its input, and
  * unchanged subtrees are shared by identity with the input, so only the
@@ -168,94 +171,5 @@ function substituteType(type, search, replace, warn) {
       break;
   }
   return type;
-}
-/**
- * Substitutes an array of types, returning the original when nothing
- * changed so unchanged subtrees keep their identity for downstream memos.
- * @param {any[]|undefined} items - Type array or undefined.
- * @param {*} search - The search.
- * @param {*} replace - The replace.
- * @param {console["warn"]} warn - Function to warn with.
- * @returns {any[]|undefined} Substituted array or the original.
- * @example
- * substituteArray(['K', 'string'], 'K', '"a"', console.warn);
- * // ['"a"', 'string']
- */
-function substituteArray(items, search, replace, warn) {
-  if (!Array.isArray(items)) {
-    return items;
-  }
-  let out = items;
-  for (let i = 0; i < items.length; i++) {
-    const next = substituteType(items[i], search, replace, warn);
-    if (next !== items[i]) {
-      if (out === items) {
-        out = items.slice(0, i);
-      }
-      out.push(next);
-    } else if (out !== items) {
-      out.push(items[i]);
-    }
-  }
-  return out;
-}
-/**
- * Substitutes a record of types (e.g. object properties), returning the
- * original when nothing changed.
- * @param {Record<string, *>|undefined} record - Type record or undefined.
- * @param {*} search - The search.
- * @param {*} replace - The replace.
- * @param {console["warn"]} warn - Function to warn with.
- * @returns {Record<string, *>|undefined} Substituted record or the original.
- * @example
- * substituteRecord({a: 'K'}, 'K', '"a"', console.warn);
- * // {a: '"a"'}
- */
-function substituteRecord(record, search, replace, warn) {
-  if (record === null || typeof record !== 'object') {
-    return record;
-  }
-  let out = record;
-  for (const prop in record) {
-    const next = substituteType(record[prop], search, replace, warn);
-    if (next !== record[prop]) {
-      if (out === record) {
-        out = {...record};
-      }
-      out[prop] = next;
-    }
-  }
-  return out;
-}
-/**
- * Substitutes parameter descriptors (`{type, name}`), touching only each
- * descriptor's `.type` position and preserving identity when unchanged.
- * @param {any[]|undefined} parameters - Descriptors or undefined.
- * @param {*} search - The search.
- * @param {*} replace - The replace.
- * @param {console["warn"]} warn - Function to warn with.
- * @returns {any[]|undefined} Substituted descriptors or the original.
- * @example
- * substituteDescriptors([{type: 'K', name: 'x'}], 'K', '"a"', console.warn);
- * // [{type: '"a"', name: 'x'}]
- */
-function substituteDescriptors(parameters, search, replace, warn) {
-  if (!Array.isArray(parameters)) {
-    return parameters;
-  }
-  let out = parameters;
-  for (let i = 0; i < parameters.length; i++) {
-    const parameter = parameters[i];
-    if (parameter && typeof parameter === 'object' && parameter.type !== undefined) {
-      const next = substituteType(parameter.type, search, replace, warn);
-      if (next !== parameter.type) {
-        if (out === parameters) {
-          out = parameters.slice();
-        }
-        out[i] = {...parameter, type: next};
-      }
-    }
-  }
-  return out;
 }
 export {substituteType};

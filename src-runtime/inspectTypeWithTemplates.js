@@ -1,9 +1,8 @@
 import {collectCandidates} from "./collectCandidates.js";
-import {deepFreeze} from "./deepFreeze.js";
-import {extendsCheck} from "./evaluateCondition.js";
 import {inspectType} from "./inspectType.js";
+import {mergeCandidate} from "./mergeCandidate.js";
 import {options} from "./options.js";
-import {substituteType} from "./substituteType.js";
+import {substitutedFor} from "./substitutedFor.js";
 import {recurse} from "./validators.js";
 /**
  * Per-call inference state, keyed by the per-invocation templates dict (fresh
@@ -14,140 +13,6 @@ import {recurse} from "./validators.js";
  * @type {WeakMap<object, {pinned: Set<string>, constraints: Record<string, *>>}>}
  */
 const inferenceState = new WeakMap();
-/**
- * Substituted expect trees by call site plus template bindings. The expect
- * tree is static per site (inline literal from the transpiler); bindings
- * vary per call — pre-pinned literals and constraints alike land in the
- * key, so repeats hit instead of cloning and re-walking the tree, while
- * different bindings never share. Cleared with the session (fixture
- * resets), since same-spelled sites in different files may carry different
- * shapes. Trees are deep-frozen: validation is read-only over expects, so
- * a future mutator fails loudly instead of corrupting shared cache entries.
- * @type {Map<string, *>}
- */
-const substitutedCache = new Map();
-/**
- * Substitutes template bindings into a pristine expect tree, memoized by
- * call site plus bindings. Pure substitution shares unchanged subtrees
- * with the pristine tree instead of cloning it first.
- * @param {*} expect - Pristine expect tree (never mutated).
- * @param {string} loc - String like `BoundingBox#compute`.
- * @param {string} name - Name of the argument.
- * @param {Record<string, *>} templates - Per-call template bindings.
- * @param {console["warn"]} warn - Function to warn with.
- * @returns {*} Substituted (frozen, shared) tree.
- * @example
- * substitutedFor({type: 'object', properties: {a: 'K'}}, 'C#m', 'arg', {K: '"a"'}, console.warn);
- * // frozen {type: 'object', properties: {a: '"a"'}}
- */
-function substitutedFor(expect, loc, name, templates, warn) {
-  const dictKey = Object.keys(templates).sort().map((key) => `${key}:${JSON.stringify(templates[key])}`).join(',');
-  const key = `${loc}\n${name}\n${dictKey}`;
-  let sub = substitutedCache.get(key);
-  if (sub === undefined) {
-    // Pure substitution never mutates its input, so no pre-clone: the
-    // result shares every unchanged subtree with the pristine tree.
-    sub = expect;
-    for (const k in templates) {
-      sub = substituteType(sub, k, templates[k], warn);
-    }
-    substitutedCache.set(key, deepFreeze(sub));
-  }
-  return sub;
-}
-/**
- * Widens a literal to its base type, mirroring TypeScript's literal widening
- * for freshly inferred candidates (`"a"` -> `string`, `1` -> `number`).
- * @param {string|number|boolean} literal - The pinned literal.
- * @returns {string} Widened base type.
- * @example
- * widenLiteral('"a"'); // 'string'
- * widenLiteral(1); // 'number'
- */
-function widenLiteral(literal) {
-  return typeof literal === 'string' ? 'string' : typeof literal === 'number' ? 'number' : 'boolean';
-}
-/**
- * Flattens a pinned template type to its member list: plain literals yield a
- * single member, widened unions yield theirs.
- * @param {*} type - Pinned literal or literal union.
- * @returns {*[]} Flat member list.
- * @example
- * unionMembers({type: 'union', members: ['"a"', '"b"']});
- * // ['"a"', '"b"']
- */
-function unionMembers(type) {
-  if (type && typeof type === 'object' && type.type === 'union' && Array.isArray(type.members)) {
-    return [...type.members];
-  }
-  return [type];
-}
-/**
- * Merges one candidate into the call's bindings. The first candidate pins the
- * literal; a later distinct literal widens the pin to the first pin's base
- * type when that base still satisfies the declared constraint (e.g. `any`,
- * `string`), or unions the literals when the constraint itself holds literals
- * (e.g. `"a"|"b"`). Anything undecidable keeps the pin: precision over
- * guesswork. Failing values never pin (a value must validate before it may
- * contribute); their union appends are probed against the constraint first,
- * while widen decisions stand like tsc's fixing even when reporting.
- * @param {Record<string, *>} templates - Per-call template bindings.
- * @param {{pinned: Set<string>, constraints: Record<string, *}} state - Per-call inference state.
- * @param {string} key - Template key.
- * @param {string|number|boolean} literal - Fresh literal candidate.
- * @param {*} value - Candidate value (for probe validations).
- * @param {string} loc - String like `BoundingBox#compute`.
- * @param {string} name - Name of the argument.
- * @param {boolean} probing - False on passing values (bookkeeping only).
- * @param {console["warn"]} warn - Function to warn with.
- * @example
- * const templates = {K: 'string'};
- * const state = {pinned: new Set(), constraints: {}};
- * mergeCandidate(templates, state, 'K', '"a"', 'a', 'C#m', 'arg', false, console.warn);
- * // templates.K === '"a"' (pinned)
- * mergeCandidate(templates, state, 'K', '"b"', 'b', 'C#m', 'arg', false, console.warn);
- * // templates.K === 'string' (widened: the base still satisfies the constraint)
- */
-function mergeCandidate(templates, state, key, literal, value, loc, name, probing, warn) {
-  if (!Object.prototype.hasOwnProperty.call(templates, key)) {
-    return;
-  }
-  if (!state.pinned.has(key)) {
-    if (!probing) {
-      state.pinned.add(key);
-      // Aliased, not cloned: pure substitution never mutates dict values,
-      // and validation only reads them, so the snapshot cannot corrupt.
-      state.constraints[key] = templates[key];
-      templates[key] = literal;
-    }
-    return;
-  }
-  const members = unionMembers(templates[key]);
-  // Members are always literals (primitives): identity compares, with
-  // `Object.is` so NaN candidates dedupe instead of accumulating forever.
-  if (members.some((member) => Object.is(member, literal))) {
-    return;
-  }
-  const constraint = state.constraints[key];
-  const widened = widenLiteral(members[0]);
-  const baseExtends = extendsCheck(widened, constraint, warn);
-  if (baseExtends === true) {
-    // Widened base still satisfies the constraint (`any`, `string`, ...):
-    // e.g. `g('x', 1)` warns on `1` with the pin fixed to `string`, and
-    // `f('a', {sub: 'b'})` passes, both matching tsc.
-    templates[key] = widened;
-    return;
-  }
-  if (baseExtends === false) {
-    // Constraint itself holds literals (`"a"|"b"`): union them, but only for
-    // values the constraint accepts, e.g. `hD('a', 'b')` passes like tsc.
-    if (!probing || recurse(value, constraint, loc, name, true, warn, 0)) {
-      members.push(literal);
-      templates[key] = members.length === 1 ? members[0] : {type: 'union', members};
-    }
-  }
-  // Undecidable: keep the pin (fail-closed precision).
-}
 /**
  * Validates one templated occurrence with joint inference across the call.
  * The value is validated against the current bindings; candidates collected
@@ -204,4 +69,4 @@ function inspectTypeWithTemplates(value, expect, loc, name, templates) {
   // Memoized by site plus bindings (see substitutedCache).
   return inspectInferred(value, substitutedFor(expect, loc, name, templates, console.warn), expect, loc, name, templates);
 }
-export {inspectTypeWithTemplates, substitutedCache};
+export {inspectTypeWithTemplates};
