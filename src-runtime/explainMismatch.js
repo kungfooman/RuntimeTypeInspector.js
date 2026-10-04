@@ -5,12 +5,18 @@ import {keyNames, resolveObject, resolveUtilityShape} from './getTypeKeys.js';
 import {classes} from './registerClass.js';
 import {mergedClassShape} from './classShape.js';
 import {recurse, validators} from './validators.js';
+import {tupleEffective} from './tupleEffective.js';
+import {tupleOptional} from './tupleOptional.js';
+import {expandTupleElements} from './expandTupleElements.js';
 import {options} from './options.js';
 import './validateType.js';
 import './evaluateCondition.js';
 import {stringifyType} from './stringifyType.js';
-import {previewValue, stringifyValue} from './stringifyValue.js';
-import {describeValueType, formatMapKey, prettyValue} from './describeValue.js';
+import {stringifyValue} from './stringifyValue.js';
+import {previewValue} from './previewValue.js';
+import {describeValueType, prettyValue} from './describeValue.js';
+import {formatMapKey} from './formatMapKey.js';
+import {snapshotTag} from './snapshotTag.js';
 const MAX_DEPTH = 6;
 const MAX_UNION_MEMBERS = 12;
 const MAX_MAP_ENTRIES = 20;
@@ -171,6 +177,54 @@ function passes(value, expect) {
   } catch {
     return false;
   }
+}
+/**
+ * Whether a snapshot tag names the expected class: exact match or a
+ * registered subclass, walked by identity so aliases stay correct. The
+ * tag proves instance-hood across messaging (prototypes don't survive),
+ * which is what lets the differ below tell transport-stripped methods
+ * from genuinely missing ones. Never throws.
+ * @param {string|undefined} tag - Snapshot tag of the value.
+ * @param {string|undefined} className - Expected class name.
+ * @returns {boolean} True on a nominal match.
+ */
+function classMatches(tag, className) {
+  try {
+    if (typeof tag !== 'string' || typeof className !== 'string') {
+      return false;
+    }
+    const target = classes[className];
+    if (typeof target !== 'function') {
+      return false;
+    }
+    if (tag === className) {
+      return true;
+    }
+    let ctor = classes[tag];
+    for (let i = 0; i < 32 && typeof ctor === 'function' && ctor !== Object; i++) {
+      if (ctor === target) {
+        return true;
+      }
+      ctor = Object.getPrototypeOf(ctor);
+    }
+  } catch {
+    // Unreadable registry or exotic prototype: stay strict.
+  }
+  return false;
+}
+/**
+ * Whether an expected prop is function-typed: such props can never
+ * survive messaging, so their absence on a nominally matched snapshot
+ * is transport, not defect.
+ * @param {*} prop - Property type.
+ * @returns {boolean} True for function-typed props.
+ */
+function isFunctionProp(prop) {
+  if (prop === 'Function') {
+    return true;
+  }
+  return !!prop && typeof prop === 'object' &&
+    (prop.type === 'function' || prop.type === 'new' || prop.type === 'Function');
 }
 /**
  * @param {*} prop - A property type.
@@ -436,6 +490,208 @@ function diffSetValue(value, mat, path, depth) {
   return findings;
 }
 /**
+ * Structural diff of an array value against an `array` type, element by
+ * element (`path[0]`, …): without it, arrays fell through to one opaque
+ * whole-value mismatch, so a single bad (or holey) element blamed the
+ * whole array instead of its index. Mirrors the map/set branches
+ * (budget, pinpoint, fallback).
+ * @param {*} value - The actual value.
+ * @param {*} mat - The materialized `{type: 'array', elementType}` type.
+ * @param {string} path - Dotted path, e.g. `tags`.
+ * @param {number} depth - Recursion depth.
+ * @returns {object[]} Findings (empty when the value satisfies the type).
+ */
+function diffArrayValue(value, mat, path, depth) {
+  if (!(value instanceof Array)) {
+    return [{
+      path,
+      kind: 'wrong',
+      expected: expectSnip(mat),
+      actual: snip(value),
+      detail: `Expected an array (${expectSnip(mat)}), got ${snip(value)}.`,
+      fix: `Change \`${path}\` to ${expectSnip(mat)}.`,
+    }];
+  }
+  if (depth >= MAX_DEPTH) {
+    return passes(value, mat) ? [] : [{
+      path,
+      kind: 'wrong',
+      expected: expectSnip(mat),
+      actual: snip(value),
+      detail: 'Nested too deep to break down further.',
+    }];
+  }
+  const findings = [];
+  let shown = 0;
+  const memberOf = {container: expectSnip(mat), noun: 'element'};
+  try {
+    for (let i = 0; i < value.length; i++) {
+      if (shown >= MAX_MAP_ENTRIES) {
+        break;
+      }
+      findings.push(...diffValue(value[i], mat.elementType, `${path}[${i}]`, depth + 1, memberOf));
+      shown++;
+    }
+  } catch {
+    return passes(value, mat) ? [] : [{
+      path,
+      kind: 'wrong',
+      expected: expectSnip(mat),
+      actual: snip(value),
+      detail: 'Array elements are unreadable.',
+      fix: `Change \`${path}\` to ${expectSnip(mat)}.`,
+    }];
+  }
+  if (!findings.length && !passes(value, mat)) {
+    findings.push({
+      path,
+      kind: 'wrong',
+      expected: expectSnip(mat),
+      actual: snip(value),
+      detail: `First ${shown} elements match; the problem is in a later element.`,
+      fix: `Change \`${path}\` to ${expectSnip(mat)}.`,
+    });
+  }
+  return findings;
+}
+/**
+ * Structural diff of an array value against a `tuple` type, position by
+ * position exactly like validation does (shared expansion, optional
+ * skipping, before/middle/after for variadic rest): same whole-value
+ * mush problem as arrays (see `diffArrayValue`).
+ * @param {*} value - The actual value.
+ * @param {*} mat - The materialized `{type: 'tuple', elements}` type.
+ * @param {string} path - Dotted path, e.g. `pair`.
+ * @param {number} depth - Recursion depth.
+ * @returns {object[]} Findings (empty when the value satisfies the type).
+ */
+function diffTupleValue(value, mat, path, depth) {
+  if (!(value instanceof Array)) {
+    return [{
+      path,
+      kind: 'wrong',
+      expected: expectSnip(mat),
+      actual: snip(value),
+      detail: `Expected a tuple (${expectSnip(mat)}), got ${snip(value)}.`,
+      fix: `Change \`${path}\` to ${expectSnip(mat)}.`,
+    }];
+  }
+  if (depth >= MAX_DEPTH) {
+    return passes(value, mat) ? [] : [{
+      path,
+      kind: 'wrong',
+      expected: expectSnip(mat),
+      actual: snip(value),
+      detail: 'Nested too deep to break down further.',
+    }];
+  }
+  const elements = Array.isArray(mat.elements) ? mat.elements : [];
+  const {expanded, variadic, variadicPos, error} = expandTupleElements(elements);
+  if (error) {
+    return passes(value, mat) ? [] : [{
+      path,
+      kind: 'wrong',
+      expected: expectSnip(mat),
+      actual: snip(value),
+      detail: 'Multiple variadic rest elements are not supported.',
+    }];
+  }
+  const findings = [];
+  let shown = 0;
+  const memberOf = {container: expectSnip(mat), noun: 'element'};
+  const push = (val, type, idx) => {
+    if (shown >= MAX_MAP_ENTRIES) {
+      return false;
+    }
+    findings.push(...diffValue(val, type, `${path}[${idx}]`, depth + 1, memberOf));
+    shown++;
+    return true;
+  };
+  try {
+    if (variadic) {
+      const before = expanded.slice(0, variadicPos);
+      const after = expanded.slice(variadicPos);
+      const minLength = before.filter((el) => !tupleOptional(el)).length + after.filter((el) => !tupleOptional(el)).length;
+      if (value.length < minLength) {
+        return [{
+          path,
+          kind: 'wrong',
+          expected: expectSnip(mat),
+          actual: snip(value),
+          detail: `Expected a tuple of at least length ${minLength}, got length ${value.length}.`,
+        }];
+      }
+      for (let i = 0; i < before.length; i++) {
+        if (value[i] === undefined && tupleOptional(before[i])) {
+          continue;
+        }
+        if (!push(value[i], tupleEffective(before[i]), i)) {
+          break;
+        }
+      }
+      const middleCount = value.length - before.length - after.length;
+      for (let i = 0; i < middleCount; i++) {
+        const idx = before.length + i;
+        if (!push(value[idx], variadic.elementType, idx)) {
+          break;
+        }
+      }
+      for (let i = 0; i < after.length; i++) {
+        const idx = before.length + middleCount + i;
+        if (value[idx] === undefined && tupleOptional(after[i])) {
+          continue;
+        }
+        if (!push(value[idx], tupleEffective(after[i]), idx)) {
+          break;
+        }
+      }
+    } else {
+      let required = expanded.length;
+      while (required > 0 && tupleOptional(expanded[required - 1])) {
+        required--;
+      }
+      if (value.length < required || value.length > expanded.length) {
+        return [{
+          path,
+          kind: 'wrong',
+          expected: expectSnip(mat),
+          actual: snip(value),
+          detail: `Expected a tuple of length ${required === expanded.length ? required : `${required} to ${expanded.length}`}, got length ${value.length}.`,
+        }];
+      }
+      for (let i = 0; i < expanded.length; i++) {
+        // Missing tail is optional (length checked above): nothing to diff.
+        if (i >= value.length) {
+          break;
+        }
+        if (!push(value[i], tupleEffective(expanded[i]), i)) {
+          break;
+        }
+      }
+    }
+  } catch {
+    return passes(value, mat) ? [] : [{
+      path,
+      kind: 'wrong',
+      expected: expectSnip(mat),
+      actual: snip(value),
+      detail: 'Tuple elements are unreadable.',
+      fix: `Change \`${path}\` to ${expectSnip(mat)}.`,
+    }];
+  }
+  if (!findings.length && !passes(value, mat)) {
+    findings.push({
+      path,
+      kind: 'wrong',
+      expected: expectSnip(mat),
+      actual: snip(value),
+      detail: `First ${shown} elements match; the problem is in a later element.`,
+      fix: `Change \`${path}\` to ${expectSnip(mat)}.`,
+    });
+  }
+  return findings;
+}
+/**
  * Structural diff producing path-pinned findings. Objects compare key by
  * key (missing required, wrong-typed, unexpected extras); unions probe every
  * member and keep the closest match's findings; anything else is a silent
@@ -452,6 +708,17 @@ function diffSetValue(value, mat, path, depth) {
  */
 function diffValue(value, expect, path, depth, memberOf) {
   const mat = materializeExpect(expect);
+  if (mat === expect && typeof expect === 'string') {
+    const tag = snapshotTag(value);
+    if (tag !== undefined && tag === expect) {
+      // Nominal match across messaging where nothing resolved: the tag IS
+      // the transported constructor name, mirroring validateReference's
+      // name check, which accepts on the name alone without consulting
+      // the registry. Resolved shapes diff structurally below instead,
+      // so data stays checked wherever resolution works.
+      return [];
+    }
+  }
   if (mat && typeof mat === 'object' && mat.type === 'union' && Array.isArray(mat.members)) {
     const members = mat.members.slice(0, MAX_UNION_MEMBERS);
     let best = null;
@@ -493,6 +760,12 @@ function diffValue(value, expect, path, depth, memberOf) {
   if (mat && typeof mat === 'object' && mat.type === 'set') {
     return diffSetValue(value, mat, path, depth);
   }
+  if (mat && typeof mat === 'object' && mat.type === 'array') {
+    return diffArrayValue(value, mat, path, depth);
+  }
+  if (mat && typeof mat === 'object' && mat.type === 'tuple') {
+    return diffTupleValue(value, mat, path, depth);
+  }
   if (mat && typeof mat === 'object' && mat.type === 'object' && mat.properties) {
     if (value === null || typeof value !== 'object') {
       return [{
@@ -513,19 +786,32 @@ function diffValue(value, expect, path, depth, memberOf) {
       }];
     }
     const findings = [];
+    // Snapshot envelope: transport metadata, never data (mirrors displays).
+    // Nominal match for the method check below: a tagged snapshot that
+    // names the expected class lost its methods in transit, so their
+    // absence is transport, not defect. Untagged values stay strict.
+    const snapshot = snapshotTag(value);
+    const className = typeof expect === 'string' ? expect :
+      (expect && typeof expect === 'object' && typeof expect.type === 'string' ? expect.type : undefined);
+    const matched = snapshot !== undefined && classMatches(snapshot, className);
     for (const key of Object.keys(mat.properties)) {
+      if (key === '$type' && snapshot !== undefined) {
+        continue;
+      }
       const prop = mat.properties[key];
       const subPath = path ? `${path}.${key}` : key;
       if (!(key in Object(value))) {
         if (!isOptionalProp(prop)) {
-          findings.push({
-            path: subPath,
-            kind: 'missing',
-            expected: expectSnip(prop && typeof prop === 'object' && prop.optional ? {...prop, optional: false} : prop),
-            actual: '(absent)',
-            detail: `Required key \`${subPath}\` is missing.`,
-            fix: `Add \`${key}: <${expectSnip(prop)}>\`.`,
-          });
+          if (!(matched && isFunctionProp(prop))) {
+            findings.push({
+              path: subPath,
+              kind: 'missing',
+              expected: expectSnip(prop && typeof prop === 'object' && prop.optional ? {...prop, optional: false} : prop),
+              actual: '(absent)',
+              detail: `Required key \`${subPath}\` is missing.`,
+              fix: `Add \`${key}: <${expectSnip(prop)}>\`.`,
+            });
+          }
         }
         continue;
       }
@@ -535,6 +821,9 @@ function diffValue(value, expect, path, depth, memberOf) {
       findings.push(...diffValue(value[key], present, subPath, depth + 1));
     }
     for (const key of Object.keys(value)) {
+      if (key === '$type' && snapshot !== undefined) {
+        continue;
+      }
       if (!mat.properties[key]) {
         // Excess keys fail validation only with Exact objects on — but the
         // Diagnosis lists everything known, marking lenient extras as

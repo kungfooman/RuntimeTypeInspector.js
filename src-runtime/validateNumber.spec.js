@@ -1,5 +1,6 @@
 import {validateType} from './validateType.js';
-import {validateNumber, validateNumberInObject} from './validateNumber.js';
+import {validateNumber} from './validateNumber.js';
+import {validateNumberInObject} from './validateNumberInObject.js';
 const warn = () => undefined;
 const expectNumber = 'number';
 function testValidNumbers() {

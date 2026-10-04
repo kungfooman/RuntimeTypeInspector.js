@@ -3,7 +3,8 @@ import {classes} from "./registerClass.js";
 import {validators, recurse} from "./validators.js";
 import {substituteType} from "./substituteType.js";
 import {createTypeFromMapping} from "./createTypeFromMapping.js";
-import {getTypeKeys, resolveUtilityShape, instantiateReference} from "./getTypeKeys.js";
+import {getTypeKeys, resolveUtilityShape} from "./getTypeKeys.js";
+import {instantiateReference} from "./instantiateReference.js";
 import {extendsCheck, resolveForExtends, stripLiteral, deepEqualType} from "./evaluateCondition.js";
 /**
  * Follows strings through typedefs (and materializes mappings) to object

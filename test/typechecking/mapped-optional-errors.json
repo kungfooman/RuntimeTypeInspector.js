@@ -1,0 +1,10 @@
+{
+  "throws": [
+    {"loc": "takeOptions", "name": "data", "value": {"pos": "x"}},
+    {"loc": "takeMerged", "name": "data"},
+    {"loc": "takeStrict", "name": "data", "value": {}},
+    {"loc": "takeStrict", "name": "data", "value": {"count": 1, "pos": "x"}},
+    {"loc": "takePos", "name": "pos"},
+    {"loc": "takeOptions", "name": "data", "value": {"pos": [1, "x"]}}
+  ]
+}

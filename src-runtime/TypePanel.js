@@ -1,13 +1,13 @@
 import {assertMode } from "./assertMode.js";
-import {decodeBase64 } from "./base64.js";
-import {encodeBase64 } from "./base64.js";
+import {decodeBase64 } from "./decodeBase64.js";
+import {encodeBase64 } from "./encodeBase64.js";
 import {options    } from "./options.js";
 import {reportedKeys} from "./reportedKeys.js";
 import {captureStackLines} from "./captureStack.js";
 import {createTable} from "./warnedTable.js";
 import {stringifyValue} from "./stringifyValue.js";
 import {RTI_INFO} from "./version.js";
-import {formatCompare} from "./humanizeExpect.js";
+import {formatCompare} from "./formatCompare.js";
 import {collectFailPaths, explainMismatch} from "./explainMismatch.js";
 import {buildTypeTree} from "./typeTree.js";
 import {Warning, renderActualValue, renderCellValue} from "./Warning.js";

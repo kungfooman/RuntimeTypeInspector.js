@@ -1,4 +1,6 @@
-import {getTypeKeys, instantiateReference, resolveObject, stripKey} from "./getTypeKeys.js";
+import {getTypeKeys, resolveObject} from "./getTypeKeys.js";
+import {instantiateReference} from "./instantiateReference.js";
+import {stripKey} from "./stripKey.js";
 import {classes} from "./registerClass.js";
 import {typedefs} from "./registerTypedef.js";
 import {validators} from "./validators.js";
@@ -165,6 +167,11 @@ function createTypeFromIndexedAccess(expect, warn) {
   if (!members.length) {
     warn('validateIndexedAccess: unresolvable indexed access', {expect});
     return;
+  }
+  if (members.length === 1) {
+    // Single property: return it directly so source flags (`optional`,
+    // `readonly`) survive instead of hiding behind a required wrapper.
+    return members[0];
   }
   return {type: 'union', members, optional: false};
 }

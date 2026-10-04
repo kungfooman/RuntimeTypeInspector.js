@@ -4,11 +4,13 @@ import {ignoredChecks            } from './ignoredChecks.js';
 import {customChecks             } from './customChecks.js';
 import {describeValueType        } from './describeValue.js';
 import {stringifyType            } from './stringifyType.js';
-import {previewValue, stringifyValue} from './stringifyValue.js';
+import {previewValue} from './previewValue.js';
+import {stringifyValue} from './stringifyValue.js';
 import {validateType             } from './validateType.js';
 import {partition                } from './partition.js';
 import {importNamespaceSpecifiers} from './registerImportNamespaceSpecifier.js';
 import {isClonable               } from './isClonable.js';
+import {tagSnapshot              } from './tagSnapshot.js';
 import {reportedKeys             } from './reportedKeys.js';
 import {tagValue                 } from './tagValue.js';
 import {captureStackLines        } from './captureStack.js';
@@ -193,6 +195,12 @@ function inspectType(value, expect, loc, name, critical = true) {
     // batches on click, so capture roomy enough that batches yield data.
     if (!isClonable(value)) {
       value = stringifyValue(value, {maxBreadth: PANEL_SNAPSHOT_BREADTH, maxNodes: PANEL_SNAPSHOT_NODES});
+    } else {
+      // Record class identity the post would otherwise strip: messaging
+      // structured-clones, so instances arrive as plain data. Plain values
+      // return untouched (no extra clone); the differ tells tagged snapshots
+      // from never-was instances by the tag.
+      value = tagSnapshot(value);
     }
     for (const extra of extras) {
       if (!isClonable(extra)) {

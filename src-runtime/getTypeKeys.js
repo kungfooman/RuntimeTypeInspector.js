@@ -1,8 +1,10 @@
 import {variables} from "./registerVariable.js";
+import {stripKey} from "./stripKey.js";
 import {typedefs, typedefTemplates} from "./registerTypedef.js";
 import {classes} from "./registerClass.js";
 import {mergedClassShape} from "./classShape.js";
 import {substituteType} from "./substituteType.js";
+import {instantiateReference} from "./instantiateReference.js";
 import {validators} from "./validators.js";
 import {stringifyType} from "./stringifyType.js";
 /**
@@ -21,9 +23,6 @@ import {stringifyType} from "./stringifyType.js";
  */
 /** Module-local nesting guard: materialize funnels back through here. */
 let mappingDepth = 0;
-function stripKey(key) {
-  return typeof key === 'string' && key.length >= 2 && (key[0] === "'" && key[key.length - 1] === "'" || key[0] === '"' && key[key.length - 1] === '"') ? key.slice(1, -1) : key;
-}
 /**
  * Key NAMES for object-ish types. Indexed access resolves to keys of the
  * denoted value (e.g. `Map["camera"]` yields shape keys, not prop types).
@@ -248,34 +247,6 @@ function resolveUtilityShape(name, args, warn, depth = 0) {
   });
   const out = members.length === 1 ? members[0] : {type: 'union', members};
   return tagProvenance(out, name, args);
-}
-/**
- * Instantiates a generic typedef reference by substituting arguments for
- * template parameters. Shared by reference resolution paths.
- * @param {object} type - Reference with name and args.
- * @param {console["warn"]} warn - Function to warn with.
- * @returns {object|undefined} Instantiated struct or undefined when N/A.
- * @example
- * registerTypedef('Box', {type: 'object', properties: {value: 'T'}}, ['T']);
- * instantiateReference({name: 'Box', args: ['"a"']}, console.warn);
- * // {type: 'object', properties: {value: '"a"'}}
- */
-function instantiateReference(type, warn) {
-  const {name, args} = type;
-  if (!typedefs[name]) {
-    return;
-  }
-  const params = typedefTemplates[name];
-  if (!params?.length || !args?.length) {
-    return typedefs[name];
-  }
-  // Pure substitution never mutates its input, so the registry object is
-  // substituted directly instead of cloned first (read-only downstream).
-  let instance = typedefs[name];
-  params.forEach((param, i) => {
-    instance = substituteType(instance, param, i < args.length ? args[i] : 'any', warn);
-  });
-  return instance;
 }
 /**
  * Resolves a type to an object shape for key reading. Narrower than full
@@ -831,4 +802,4 @@ function getTypeKeys(expect, warn, depth = 0) {
   }
   warn(`Couldn't get keys for type`, expect);
 }
-export {getTypeKeys, instantiateReference, resolveObject, resolveUtilityShape, keyNames, stripKey};
+export {getTypeKeys, resolveObject, resolveUtilityShape, keyNames};

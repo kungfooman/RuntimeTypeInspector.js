@@ -1,4 +1,5 @@
-import {decodeBase64, encodeBase64} from './base64.js';
+import {decodeBase64} from './decodeBase64.js';
+import {encodeBase64} from './encodeBase64.js';
 const tests = [
   // ASCII stays byte-identical to the plain btoa output
   () => encodeBase64('hello world') === 'aGVsbG8gd29ybGQ=',

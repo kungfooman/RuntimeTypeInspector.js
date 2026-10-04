@@ -1,11 +1,5 @@
-import {Table, Tr, Th} from './jsx.js';
-/**
- * @param {string} text - The text.
- * @returns {HTMLTableCellElement} - The header cell.
- */
-function createTableHead(text) {
-  return Th({}, text);
-}
+import {Table, Tr} from './jsx.js';
+import {createTableHead} from './createTableHead.js';
 function createTable() {
   if (typeof document === 'undefined') {
     return null;
@@ -15,4 +9,4 @@ function createTable() {
                Tr({}, ...descs.map(createTableHead))
   );
 }
-export {createTableHead, createTable};
+export {createTable};

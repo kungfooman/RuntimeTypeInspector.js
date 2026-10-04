@@ -1,9 +1,10 @@
 import {expandType} from '../src-transpiler/expandType.js';
-import {describeValueType, formatMapKey, prettyValue} from './describeValue.js';
+import {describeValueType, prettyValue} from './describeValue.js';
+import {formatMapKey} from './formatMapKey.js';
 import {inspectType} from './inspectType.js';
 import {diffValue, snip} from './explainMismatch.js';
 import {buildTypeTree} from './typeTree.js';
-import {formatCompare} from './humanizeExpect.js';
+import {formatCompare} from './formatCompare.js';
 import {captureMessages, dump, warningFor} from '../src-unittest/index.js';
 /**
  * The 12-entry shader map from issue #267.

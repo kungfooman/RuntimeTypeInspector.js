@@ -32,6 +32,7 @@ import {validateTuple       } from "./validateTuple.js";
 import {validateTypeof      } from "./validateTypeof.js";
 import {validateTypedef     } from "./validateTypedef.js";
 import {validateUnion       } from "./validateUnion.js";
+import {createTypeFromIndexedAccess} from "./createTypeFromIndexedAccess.js";
 import {validators          } from "./validators.js";
 /**
  * Populates the dispatch table: every edge points outward from here, so the
@@ -61,6 +62,7 @@ Object.assign(validators, {
   validatePromise,
   validateArrayLike,
   validateTypedef,
+  createTypeFromIndexedAccess,
   validateString,
   validateBoolean,
   validateNull,

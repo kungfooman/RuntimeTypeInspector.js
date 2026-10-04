@@ -97,6 +97,13 @@ JSDoc blocks, or specs. Describe the why in plain words instead; the commit
 message / PR is the place for issue links. Pre-existing references stay
 untouched — just don't introduce new ones.
 
+## One function per file
+
+Each `src-runtime/` helper module holds exactly one function, named after its file (e.g. `stripKey` lives in `src-runtime/stripKey.js`), plus only the module-local constants that function directly needs (e.g. its memoization cache).
+- Every extracted helper carries a JSDoc block with a runnable `@example` showing a representative call and its result, so each module documents itself.
+- When extracting: move the function as-is (no behavior changes), point the old module's import at the new file, add an `export * from './<name>.js';` line to `src-runtime/index.js`, update any specs importing from the old path, and finish with the full gate (`npm test` + `npm run lint`).
+- Exception: `src-runtime/jsx.js` stays whole (`genJsx`, `appendChildren` and the tag factories live together) because the factories call `appendChildren` and splitting them only trades a working module for a circular import.
+
 ## Markdown style
 
 In every Markdown file you write, never hard-wrap prose with `\n`: each paragraph is a single line and each list item is a single line — text-wrapping is the reader's job (soft-wrap), not the file's. Hard-wrapped lines force manual re-wrapping on every edit and noise up diffs. Code blocks keep their line breaks; nothing else gets any.
