@@ -15,13 +15,10 @@
  * @returns {{has: Function, get: Function, set: Function}} The cache. Check
  * `has` before `get`: cached `undefined` results are valid entries.
  * @example
- * const mappingCache = versionedCache(() => typedefVersion, () => classVersion);
- * if (mappingCache.has(node)) {
- *   return mappingCache.get(node);
- * }
- * const result = instantiateMapping(node, warn);
- * mappingCache.set(node, result);
- * return result;
+ * const cache = versionedCache(() => 0);
+ * const node = {type: 'object'};
+ * cache.set(node, ['a']);
+ * cache.get(node); // ['a']
  */
 function versionedCache(...versionFns) {
   const map = new WeakMap();

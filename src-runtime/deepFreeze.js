@@ -7,7 +7,8 @@
  * @param {*} value - The tree to freeze.
  * @returns {*} The frozen tree.
  * @example
- * substitutedCache.set(key, deepFreeze(substituted));
+ * const tree = deepFreeze({a: {b: 1}});
+ * Object.isFrozen(tree) && Object.isFrozen(tree.a); // true
  */
 function deepFreeze(value) {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {

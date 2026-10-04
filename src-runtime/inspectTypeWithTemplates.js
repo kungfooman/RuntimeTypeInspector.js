@@ -36,6 +36,9 @@ const substitutedCache = new Map();
  * @param {Record<string, *>} templates - Per-call template bindings.
  * @param {console["warn"]} warn - Function to warn with.
  * @returns {*} Substituted (frozen, shared) tree.
+ * @example
+ * substitutedFor({type: 'object', properties: {a: 'K'}}, 'C#m', 'arg', {K: '"a"'}, console.warn);
+ * // frozen {type: 'object', properties: {a: '"a"'}}
  */
 function substitutedFor(expect, loc, name, templates, warn) {
   const dictKey = Object.keys(templates).sort().map((key) => `${key}:${JSON.stringify(templates[key])}`).join(',');
@@ -57,6 +60,9 @@ function substitutedFor(expect, loc, name, templates, warn) {
  * for freshly inferred candidates (`"a"` -> `string`, `1` -> `number`).
  * @param {string|number|boolean} literal - The pinned literal.
  * @returns {string} Widened base type.
+ * @example
+ * widenLiteral('"a"'); // 'string'
+ * widenLiteral(1); // 'number'
  */
 function widenLiteral(literal) {
   return typeof literal === 'string' ? 'string' : typeof literal === 'number' ? 'number' : 'boolean';
@@ -66,6 +72,9 @@ function widenLiteral(literal) {
  * single member, widened unions yield theirs.
  * @param {*} type - Pinned literal or literal union.
  * @returns {*[]} Flat member list.
+ * @example
+ * unionMembers({type: 'union', members: ['"a"', '"b"']});
+ * // ['"a"', '"b"']
  */
 function unionMembers(type) {
   if (type && typeof type === 'object' && type.type === 'union' && Array.isArray(type.members)) {
@@ -91,6 +100,13 @@ function unionMembers(type) {
  * @param {string} name - Name of the argument.
  * @param {boolean} probing - False on passing values (bookkeeping only).
  * @param {console["warn"]} warn - Function to warn with.
+ * @example
+ * const templates = {K: 'string'};
+ * const state = {pinned: new Set(), constraints: {}};
+ * mergeCandidate(templates, state, 'K', '"a"', 'a', 'C#m', 'arg', false, console.warn);
+ * // templates.K === '"a"' (pinned)
+ * mergeCandidate(templates, state, 'K', '"b"', 'b', 'C#m', 'arg', false, console.warn);
+ * // templates.K === 'string' (widened: the base still satisfies the constraint)
  */
 function mergeCandidate(templates, state, key, literal, value, loc, name, probing, warn) {
   if (!Object.prototype.hasOwnProperty.call(templates, key)) {

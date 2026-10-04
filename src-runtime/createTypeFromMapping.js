@@ -55,6 +55,11 @@ function branchName(type) {
  * @param {*} type - Materialized property type.
  * @param {string|undefined} question - Normalized modifier or undefined.
  * @returns {*} Property type, possibly wrapped.
+ * @example
+ * applyQuestionModifier('string', '+');
+ * // {type: 'string', optional: true}
+ * applyQuestionModifier({type: 'string', optional: true}, '-');
+ * // {type: 'string'}
  */
 function applyQuestionModifier(type, question) {
   if (question === undefined) {
@@ -105,6 +110,11 @@ function applyQuestionModifier(type, question) {
  * @param {*} type - Materialized property type.
  * @param {string|undefined} modifier - Normalized modifier or undefined.
  * @returns {*} Property type, possibly wrapped.
+ * @example
+ * applyReadonlyModifier('string', '+readonly');
+ * // {type: 'string', readonly: true}
+ * applyReadonlyModifier({type: 'string', readonly: true}, '-');
+ * // {type: 'string'}
  */
 function applyReadonlyModifier(type, modifier) {
   if (modifier === undefined) {

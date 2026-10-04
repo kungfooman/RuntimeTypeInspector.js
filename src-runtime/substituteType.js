@@ -177,6 +177,9 @@ function substituteType(type, search, replace, warn) {
  * @param {*} replace - The replace.
  * @param {console["warn"]} warn - Function to warn with.
  * @returns {any[]|undefined} Substituted array or the original.
+ * @example
+ * substituteArray(['K', 'string'], 'K', '"a"', console.warn);
+ * // ['"a"', 'string']
  */
 function substituteArray(items, search, replace, warn) {
   if (!Array.isArray(items)) {
@@ -204,6 +207,9 @@ function substituteArray(items, search, replace, warn) {
  * @param {*} replace - The replace.
  * @param {console["warn"]} warn - Function to warn with.
  * @returns {Record<string, *>|undefined} Substituted record or the original.
+ * @example
+ * substituteRecord({a: 'K'}, 'K', '"a"', console.warn);
+ * // {a: '"a"'}
  */
 function substituteRecord(record, search, replace, warn) {
   if (record === null || typeof record !== 'object') {
@@ -229,6 +235,9 @@ function substituteRecord(record, search, replace, warn) {
  * @param {*} replace - The replace.
  * @param {console["warn"]} warn - Function to warn with.
  * @returns {any[]|undefined} Substituted descriptors or the original.
+ * @example
+ * substituteDescriptors([{type: 'K', name: 'x'}], 'K', '"a"', console.warn);
+ * // [{type: '"a"', name: 'x'}]
  */
 function substituteDescriptors(parameters, search, replace, warn) {
   if (!Array.isArray(parameters)) {

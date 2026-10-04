@@ -7,7 +7,7 @@
  * @returns {string[]} Stack lines, oldest dropped past the cap.
  * @example
  * const stack = captureStackLines();
- * crossContextPostMessage({type: 'rti', action: 'addError', key, stack});
+ * stack[0]; // 'Error'
  */
 function captureStackLines(maxFrames = 20) {
   const lines = (new Error().stack ?? '').split('\n');

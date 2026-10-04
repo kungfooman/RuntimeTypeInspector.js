@@ -255,6 +255,10 @@ function resolveUtilityShape(name, args, warn, depth = 0) {
  * @param {object} type - Reference with name and args.
  * @param {console["warn"]} warn - Function to warn with.
  * @returns {object|undefined} Instantiated struct or undefined when N/A.
+ * @example
+ * registerTypedef('Box', {type: 'object', properties: {value: 'T'}}, ['T']);
+ * instantiateReference({name: 'Box', args: ['"a"']}, console.warn);
+ * // {type: 'object', properties: {value: '"a"'}}
  */
 function instantiateReference(type, warn) {
   const {name, args} = type;
@@ -620,10 +624,17 @@ function keysOfUtility(name, args, warn, depth) {
 }
 /**
  * @example
- * getTypeKeys({type: 'typeof', argument: 'DataTypeMap'}, console.warn);
+ * getTypeKeys({type: 'object', properties: {a: 'string', b: 'number'}}, console.warn);
+ * // ['a', 'b']
  * // Or simpler:
- * getTypeKeys(expandType("typeof DataTypeMap"));
- * getTypeKeys(expandType("1|2|3"));
+ * getTypeKeys(expandType('{a: string, b: number}'), console.warn);
+ * // ['a', 'b']
+ * getTypeKeys(expandType('1|2|3'), console.warn);
+ * // [1, 2, 3]
+ * // Typedef names resolve through the registry:
+ * registerTypedef('Box', expandType('{a: number, b: string}'));
+ * getTypeKeys('Box', console.warn);
+ * // ['a', 'b']
  * @param {*} expect - The type.
  * @param {console["warn"]} warn - Function to warn with.
  * @param {number} depth - The depth to detect recursion.
