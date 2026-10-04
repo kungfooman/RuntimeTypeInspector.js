@@ -283,3 +283,8 @@ takePos(new Vec3()); // ok
 
 // @ts-expect-error: string is neither Vec3 nor number[]
 takePos('x');
+// @ts-expect-error: mixed array has a string element
+
+takeOptions({
+  pos: [1, 'x']
+});

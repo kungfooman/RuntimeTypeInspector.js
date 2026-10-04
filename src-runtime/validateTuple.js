@@ -1,26 +1,40 @@
 import {recurse} from "./validators.js";
 /**
- * @param {*} value - The actual value that we need to validate.
- * @param {*} expect - The supposed type information of said value.
- * @param {string} loc - String like `BoundingBox#compute`
- * @param {string} name - Name of the argument
- * @param {boolean} critical - Only `false` for unions.
- * @param {console["warn"]} warn - Function to warn with.
- * @param {number} depth - The depth to detect recursion.
- * @returns {boolean} Boolean indicating if a type is correct.
+ * Effective type of a tuple element: `tupleMember` decorations unwrap to
+ * the inner type, everything else passes through. Shared with the
+ * explainer so breakdowns agree with validation by construction.
+ * @param {*} el - Raw tuple element.
+ * @returns {*} Effective element type.
+ * @example
+ * tupleEffective({type: 'tupleMember', elementType: 'number'}); // 'number'
  */
-function validateTuple(value, expect, loc, name, critical, warn, depth) {
-  if (!(value instanceof Array)) {
-    warn('Given value for tuple must be an array.');
-    return false;
-  }
-  const {elements} = expect;
-  const getEffective = (el) => {
-    if (el && typeof el === 'object' && el.type === 'tupleMember') return el.elementType;
-    return el;
-  };
-  const isOptional = (el) => !!(el && typeof el === 'object' && el.type === 'tupleMember' && el.optional);
-  const isDotDot = (el) => !!(el && typeof el === 'object' && ((el.type === 'tupleMember' && el.dotDot) || el.type === 'rest'));
+function tupleEffective(el) {
+  if (el && typeof el === 'object' && el.type === 'tupleMember') return el.elementType;
+  return el;
+}
+/**
+ * Whether a tuple element may be absent: `tupleMember` with `optional`.
+ * Shared with the explainer (see `tupleEffective`).
+ * @param {*} el - Raw tuple element.
+ * @returns {boolean} True when absence is allowed.
+ * @example
+ * tupleOptional({type: 'tupleMember', elementType: 'number', optional: true}); // true
+ */
+function tupleOptional(el) {
+  return !!(el && typeof el === 'object' && el.type === 'tupleMember' && el.optional);
+}
+/**
+ * Expands rest elements like validation does: `...[1,2,3]` spreads,
+ * `...T[]` becomes the single variadic (with its position), anything else
+ * stays one element; named `...b: T[]` (`tupleMember` with `dotDot`)
+ * converts first. Shared with the explainer (see `tupleEffective`).
+ * @param {any[]} elements - Raw tuple elements.
+ * @returns {{expanded: any[], variadic: *, variadicPos: number, error: *}} Expanded list plus variadic slot, or an error for multiple variadics.
+ * @example
+ * expandTupleElements(['number', {type: 'rest', annotation: {type: 'array', elementType: 'string'}}]);
+ * // {expanded: ['number'], variadic: {type: 'array', elementType: 'string'}, variadicPos: 1, error: undefined}
+ */
+function expandTupleElements(elements) {
   // Expand rest elements: ...[1,2,3] -> 1,2,3 ; ...T[] -> variadic ; ...b: T[] -> variadic
   const expanded = [];
   let variadic = null;
@@ -37,8 +51,7 @@ function validateTuple(value, expect, loc, name, critical, warn, depth) {
         expanded.push(...ann.elements);
       } else if (ann && ann.type === 'array') {
         if (variadic) {
-          warn('Multiple variadic rest elements not supported');
-          return false;
+          return {expanded, variadic, variadicPos, error: 'multiple-variadic'};
         }
         variadic = ann;
         variadicPos = expanded.length;
@@ -48,6 +61,32 @@ function validateTuple(value, expect, loc, name, critical, warn, depth) {
     } else {
       expanded.push(el);
     }
+  }
+  return {expanded, variadic, variadicPos, error: undefined};
+}
+/**
+ * @param {*} value - The actual value that we need to validate.
+ * @param {*} expect - The supposed type information of said value.
+ * @param {string} loc - String like `BoundingBox#compute`
+ * @param {string} name - Name of the argument
+ * @param {boolean} critical - Only `false` for unions.
+ * @param {console["warn"]} warn - Function to warn with.
+ * @param {number} depth - The depth to detect recursion.
+ * @returns {boolean} Boolean indicating if a type is correct.
+ */
+function validateTuple(value, expect, loc, name, critical, warn, depth) {
+  if (!(value instanceof Array)) {
+    warn('Given value for tuple must be an array.');
+    return false;
+  }
+  const {elements} = expect;
+  const getEffective = tupleEffective;
+  const isOptional = tupleOptional;
+  const isDotDot = (el) => !!(el && typeof el === 'object' && ((el.type === 'tupleMember' && el.dotDot) || el.type === 'rest'));
+  const {expanded, variadic, variadicPos, error} = expandTupleElements(elements);
+  if (error) {
+    warn('Multiple variadic rest elements not supported');
+    return false;
   }
   if (variadic) {
     // Variadic array rest must be last logical element for now; handle before/after split
@@ -111,4 +150,4 @@ function validateTuple(value, expect, loc, name, critical, warn, depth) {
   }
   return true;
 }
-export {validateTuple};
+export {validateTuple, tupleEffective, tupleOptional, expandTupleElements};

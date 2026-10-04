@@ -228,6 +228,132 @@ function testPropertyUnionNamesSubject() {
     finding.expected === 'string | number' && finding.actual === 'true' &&
     finding.container === undefined && finding.children.length === 1;
 }
+function testArrayBadElementPinpoints() {
+  // A bad element blames its index, not the whole array.
+  reset();
+  const {findings} = explainMismatch([1, 'x', 3], {type: 'array', elementType: 'number'}, 'v');
+  return findings.length === 1 && findings[0].path === 'v[1]' && findings[0].kind === 'wrong';
+}
+function testArrayValidEmpty() {
+  // Valid arrays (direct and through unions) explain clean.
+  reset();
+  const arr = {type: 'array', elementType: 'number'};
+  const union = {type: 'union', members: ['Nope', arr]};
+  return explainMismatch([0, 0, 1, 1], arr, 'v').findings.length === 0 &&
+    explainMismatch([0, 0, 1, 1], union, 'v').findings.length === 0;
+}
+function testArrayNonArray() {
+  // Non-arrays blame the whole value, like map/set branches do.
+  reset();
+  const {findings} = explainMismatch('nope', {type: 'array', elementType: 'number'}, 'v');
+  return findings.length === 1 && findings[0].path === 'v' && findings[0].kind === 'wrong';
+}
+function testArrayHolesPinpointed() {
+  // Holes read as undefined and pinpoint, matching strict validation.
+  reset();
+  const grown = [1, 2, 3];
+  grown.length = 5;
+  const {findings} = explainMismatch(grown, {type: 'array', elementType: 'number'}, 'v');
+  return findings.length === 2 && findings[0].path === 'v[3]' && findings[1].path === 'v[4]';
+}
+function testArrayBudgetFallback() {
+  // Past the entry budget, one generic finding names the array (map/set parity).
+  reset();
+  const big = new Array(25).fill(1);
+  big[24] = 'x';
+  const {findings} = explainMismatch(big, {type: 'array', elementType: 'number'}, 'v');
+  return findings.length === 1 && findings[0].path === 'v' && findings[0].kind === 'wrong';
+}
+function testTupleBadMemberPinpoints() {
+  // A bad tuple member blames its position.
+  reset();
+  const {findings} = explainMismatch([1, 2], expandType('[number, string]'), 'v');
+  return findings.length === 1 && findings[0].path === 'v[1]' && findings[0].kind === 'wrong';
+}
+function testTupleLengthMismatch() {
+  // Short tuples blame the whole value with a length detail, like validation.
+  reset();
+  const {findings} = explainMismatch([1], expandType('[number, string]'), 'v');
+  return findings.length === 1 && findings[0].path === 'v' && findings[0].kind === 'wrong';
+}
+function testTupleOptionalTail() {
+  // A missing optional tail is fine; a present-but-wrong one pinpoints.
+  reset();
+  const optional = {type: 'tuple', elements: ['number', {type: 'tupleMember', elementType: 'string', optional: true}]};
+  return explainMismatch([1], optional, 'v').findings.length === 0 &&
+    explainMismatch([1, 2], optional, 'v').findings.length === 1;
+}
+function testTupleRestVariadic() {
+  // Rest consumes the tail positionally; multiple variadics fail closed.
+  reset();
+  const rest = {type: 'tuple', elements: ['number', {type: 'rest', annotation: {type: 'array', elementType: 'string'}}]};
+  const multi = {type: 'tuple', elements: [{type: 'rest', annotation: {type: 'array', elementType: 'string'}}, {type: 'rest', annotation: {type: 'array', elementType: 'number'}}]};
+  const {findings: bad} = explainMismatch(['a', 'b'], rest, 'v');
+  return explainMismatch([1, 'a', 'b'], rest, 'v').findings.length === 0 &&
+    bad.length === 1 && bad[0].path === 'v[0]' &&
+    explainMismatch([1], multi, 'v').findings.length === 1;
+}
+function testTupleNonArray() {
+  // Non-arrays blame the whole value.
+  reset();
+  const {findings} = explainMismatch('nope', expandType('[number]'), 'v');
+  return findings.length === 1 && findings[0].path === 'v' && findings[0].kind === 'wrong';
+}
+class SnapWidget {
+  constructor() {
+    this.w = 1;
+  }
+}
+class SnapSubWidget extends SnapWidget {}
+function prepareSnap() {
+  reset();
+  registerClass(SnapWidget);
+  registerTypedef('SnapWidget', {type: 'object', properties: {w: 'number', run: 'Function'}});
+}
+function testTaggedSnapshotSkipsMethods() {
+  // A tagged snapshot lost its methods in transit: absent methods are not defects.
+  prepareSnap();
+  const {findings} = explainMismatch({$type: 'SnapWidget', w: 1}, 'SnapWidget', 'v');
+  return findings.length === 0;
+}
+function testUntaggedStaysStrictOnMethods() {
+  // Without a tag there is no transport story: missing methods still report.
+  prepareSnap();
+  const {findings} = explainMismatch({w: 1}, 'SnapWidget', 'v');
+  return findings.length === 1 && findings[0].kind === 'missing' && findings[0].path === 'v.run';
+}
+function testMismatchedTagStaysStrict() {
+  // A tag naming another class does not excuse anything.
+  prepareSnap();
+  const {findings} = explainMismatch({$type: 'Nope', w: 1}, 'SnapWidget', 'v');
+  return findings.length === 1 && findings[0].kind === 'missing' && findings[0].path === 'v.run';
+}
+function testSubclassTagMatches() {
+  // Registered subclasses match nominally through the tag.
+  prepareSnap();
+  registerClass(SnapSubWidget);
+  const {findings} = explainMismatch({$type: 'SnapSubWidget', w: 1}, 'SnapWidget', 'v');
+  return findings.length === 0;
+}
+function testTaggedDataStillChecked() {
+  // The tag excuses methods, not data: wrong data still pinpoints.
+  prepareSnap();
+  const {findings} = explainMismatch({$type: 'SnapWidget', w: 'x'}, 'SnapWidget', 'v');
+  return findings.length === 1 && findings[0].kind === 'wrong' && findings[0].path === 'v.w';
+}
+function testDollarTypeNeverExcess() {
+  // The envelope tag is metadata: present data excess still reports, `$type` never does.
+  prepareSnap();
+  const {findings} = explainMismatch({$type: 'SnapWidget', w: 1, bogus: 2}, 'SnapWidget', 'v');
+  return findings.length === 1 && findings[0].path === 'v.bogus';
+}
+function testNominalTagShortCircuits() {
+  // A tag naming an unresolvable class matches nominally instead of
+  // failing closed: the class was proven at check time.
+  prepareSnap();
+  const {findings} = explainMismatch({$type: 'Ghost', w: 'wrong'}, 'Ghost', 'v');
+  return findings.length === 0;
+}
 const tests = [
   testCollectFailPaths,
   testCollectFailPathsEmpty,
@@ -250,5 +376,22 @@ const tests = [
   testPickExcessNamesSelection,
   testPlainExcessStillSuspectsTypo,
   testExtrasInformationalWhenLenient,
+  testArrayBadElementPinpoints,
+  testArrayValidEmpty,
+  testArrayNonArray,
+  testArrayHolesPinpointed,
+  testArrayBudgetFallback,
+  testTupleBadMemberPinpoints,
+  testTupleLengthMismatch,
+  testTupleOptionalTail,
+  testTupleRestVariadic,
+  testTupleNonArray,
+  testTaggedSnapshotSkipsMethods,
+  testUntaggedStaysStrictOnMethods,
+  testMismatchedTagStaysStrict,
+  testSubclassTagMatches,
+  testTaggedDataStillChecked,
+  testDollarTypeNeverExcess,
+  testNominalTagShortCircuits,
 ];
 export {tests};

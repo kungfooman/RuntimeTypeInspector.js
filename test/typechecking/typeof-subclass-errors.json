@@ -1,7 +1,7 @@
 {
   "throws": [
     {"loc": "registerScript", "name": "script", "value": "[Function Unrelated]"},
-    {"loc": "registerScript", "name": "script", "value": {"enabled": true, "speed": 1}},
+    {"loc": "registerScript", "name": "script", "value": {"$type": "PlayerController", "enabled": true, "speed": 1}},
     {"loc": "create", "name": "nameOrType", "value": "[Function Unrelated]"}
   ]
 }

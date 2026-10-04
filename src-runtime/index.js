@@ -39,6 +39,7 @@ export * from './registerImportNamespaceSpecifier.js';
 export * from './registerTypedef.js';
 export * from './registerVariable.js';
 export * from './substituteType.js';
+export * from './tagSnapshot.js';
 export * from './substituteArray.js';
 export * from './substituteDescriptors.js';
 export * from './substituteRecord.js';

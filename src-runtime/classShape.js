@@ -105,4 +105,4 @@ function mergedClassShape(name) {
   }
   return {type: 'object', properties};
 }
-export {mergedClassShape};
+export {mergedClassShape, registeredNameOf};
