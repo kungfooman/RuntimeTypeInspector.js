@@ -7,7 +7,7 @@
  */
 const RTI_INFO = {
   "version": "5.0.7",
-  "commit": "395fc29e247bfe3c0a93e60ebb2de64f311b5798",
-  "subject": "UI update (#277)"
+  "commit": "c1218222178582df07ce61806719453bea6db484",
+  "subject": "Fix panel Diagnosis: mapped optionality, array/tuple pinpoints, `$type` snapshots (#291)"
 };
 export {RTI_INFO};
