@@ -8,16 +8,19 @@
  * proxies, throwing getters) falls back to `'object'`.
  * @param {*} value - The failed value.
  * @returns {string} The shape tag.
+ * @example
+ * tagValue('x'); // 'string'
+ * tagValue(new Map()); // 'Map'
  */
 function tagValue(value) {
+  if (value === null) {
+    return 'null';
+  }
+  const t = typeof value;
+  if (t !== 'object' && t !== 'function') {
+    return t;
+  }
   try {
-    if (value === null) {
-      return 'null';
-    }
-    const t = typeof value;
-    if (t !== 'object' && t !== 'function') {
-      return t;
-    }
     return value.constructor?.name || 'object';
   } catch {
     return 'object';

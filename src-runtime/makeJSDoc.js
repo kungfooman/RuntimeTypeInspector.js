@@ -4,7 +4,8 @@ const jsdocCache = {};
  * @todo
  * update jsdoc cache if it changes or keep all possible version to generate maybe multiple function signatures
  * @example
- * pc.makeJSDoc('VignetteEffect#render', ["inputTarget", "outputTarget", "rect"], [inputTarget, outputTarget, rect])
+ * makeJSDoc('render', ['rect'], [{x: 1}]);
+ * // logs 'render' plus `* @param {Object} rect - todo/jsdoc` (browser only)
  * @param {string} loc - The location.
  * @param {string[]} names - The names
  * @param {any[]} values - The values

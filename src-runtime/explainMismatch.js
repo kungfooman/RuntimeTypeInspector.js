@@ -1,5 +1,5 @@
 import {typedefs, typedefTemplates} from './registerTypedef.js';
-import {replaceType} from './replaceType.js';
+import {substituteType} from './substituteType.js';
 import {createTypeFromMapping} from './createTypeFromMapping.js';
 import {keyNames, resolveObject, resolveUtilityShape} from './getTypeKeys.js';
 import {classes} from './registerClass.js';
@@ -144,7 +144,7 @@ function materializeExpect(expect) {
           let instance = structuredClone(typedefs[name]);
           if (args?.length && params?.length) {
             params.forEach((param, j) => {
-              instance = replaceType(instance, param, j < args.length ? args[j] : 'any', noop);
+              instance = substituteType(instance, param, j < args.length ? args[j] : 'any', noop);
             });
             current = instance;
             continue;
@@ -237,7 +237,7 @@ function removalInfo(expect, key, seen = []) {
       if (args?.length && params?.length) {
         instance = structuredClone(instance);
         params.forEach((param, j) => {
-          instance = replaceType(instance, param, j < args.length ? args[j] : 'any', noop);
+          instance = substituteType(instance, param, j < args.length ? args[j] : 'any', noop);
         });
       }
       return removalInfo(instance, key, [...seen, expect]);

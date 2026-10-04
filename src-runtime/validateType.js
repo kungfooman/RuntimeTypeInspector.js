@@ -88,7 +88,6 @@ Object.assign(validators, {
 /**
  * @param {*} value - The actual value which we need to check.
  * @param {Type} expect - Expected type structure.
- * @todo Split array/class.
  * @param {string} loc - String like `BoundingBox#compute`
  * @param {string} name - Name of the argument.
  * @param {boolean} critical - Only false for unions.

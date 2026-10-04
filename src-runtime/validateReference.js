@@ -1,7 +1,7 @@
 import {typedefs, typedefTemplates} from "./registerTypedef.js";
 import {classes} from "./registerClass.js";
 import {validators, recurse} from "./validators.js";
-import {replaceType} from "./replaceType.js";
+import {substituteType} from "./substituteType.js";
 import {createTypeFromMapping} from "./createTypeFromMapping.js";
 import {getTypeKeys, resolveUtilityShape, instantiateReference} from "./getTypeKeys.js";
 import {extendsCheck, resolveForExtends, stripLiteral, deepEqualType} from "./evaluateCondition.js";
@@ -406,7 +406,7 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
       // Generic typedef: instantiate by substituting arguments for parameters.
       let instance = structuredClone(typedefs[refName]);
       params.forEach((param, i) => {
-        instance = replaceType(instance, param, i < args.length ? args[i] : 'any', warn);
+        instance = substituteType(instance, param, i < args.length ? args[i] : 'any', warn);
       });
       return recurse(value, instance, loc, name, critical, warn, depth + 1);
     }

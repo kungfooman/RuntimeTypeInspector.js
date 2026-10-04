@@ -1,3 +1,4 @@
+import {unwrapMember} from "./unwrapMember.js";
 /**
  * Collects template inference candidates by walking a runtime value alongside
  * its UNSUBSTITUTED expected type. Only positions TypeScript itself infers
@@ -14,6 +15,12 @@
  * @param {*} expect - Unsubstituted expected type (template refs intact).
  * @param {{key: string, literal: string|number|boolean, value: *}[]} out - Collected candidates.
  * @returns {{key: string, literal: string|number|boolean, value: *}[]} The `out` array.
+ * @example
+ * collectCandidates('a', 'K');
+ * // [{key: 'K', literal: '"a"', value: 'a'}]
+ * // Generic reference arguments contribute too:
+ * collectCandidates('x', {type: 'reference', name: 'Box', args: ['T']});
+ * // [{key: 'T', literal: '"x"', value: 'x'}]
  */
 function collectCandidates(value, expect, out = []) {
   if (typeof expect === 'string') {
@@ -147,21 +154,13 @@ function collectCandidates(value, expect, out = []) {
   }
 }
 /**
- * Unwraps tuple element decorations (`tupleMember`, `rest`) to the inner type.
- * @param {*} element - Raw tuple element.
- * @returns {*} Unwrapped type.
- */
-function unwrapMember(element) {
-  if (element && typeof element === 'object' && (element.type === 'tupleMember' || element.type === 'rest')) {
-    return element.elementType ?? element.annotation;
-  }
-  return element;
-}
-/**
  * Narrows a runtime value to its literal type, e.g. `camera` becomes
  * `"camera"`. Only literals narrow: objects keep the declared constraint.
  * @param {*} value - The actual value that was validated.
  * @returns {string|number|boolean|undefined} Literal type or undefined.
+ * @example
+ * literalOf('hi'); // '"hi"'
+ * literalOf(7); // 7
  */
 function literalOf(value) {
   if (typeof value === 'string') {

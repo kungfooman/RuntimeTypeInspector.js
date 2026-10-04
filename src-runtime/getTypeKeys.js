@@ -2,7 +2,7 @@ import {variables} from "./registerVariable.js";
 import {typedefs, typedefTemplates} from "./registerTypedef.js";
 import {classes} from "./registerClass.js";
 import {mergedClassShape} from "./classShape.js";
-import {replaceType} from "./replaceType.js";
+import {substituteType} from "./substituteType.js";
 import {validators} from "./validators.js";
 import {stringifyType} from "./stringifyType.js";
 /**
@@ -255,6 +255,10 @@ function resolveUtilityShape(name, args, warn, depth = 0) {
  * @param {object} type - Reference with name and args.
  * @param {console["warn"]} warn - Function to warn with.
  * @returns {object|undefined} Instantiated struct or undefined when N/A.
+ * @example
+ * registerTypedef('Box', {type: 'object', properties: {value: 'T'}}, ['T']);
+ * instantiateReference({name: 'Box', args: ['"a"']}, console.warn);
+ * // {type: 'object', properties: {value: '"a"'}}
  */
 function instantiateReference(type, warn) {
   const {name, args} = type;
@@ -265,9 +269,11 @@ function instantiateReference(type, warn) {
   if (!params?.length || !args?.length) {
     return typedefs[name];
   }
-  let instance = structuredClone(typedefs[name]);
+  // Pure substitution never mutates its input, so the registry object is
+  // substituted directly instead of cloned first (read-only downstream).
+  let instance = typedefs[name];
   params.forEach((param, i) => {
-    instance = replaceType(instance, param, i < args.length ? args[i] : 'any', warn);
+    instance = substituteType(instance, param, i < args.length ? args[i] : 'any', warn);
   });
   return instance;
 }
@@ -426,8 +432,7 @@ function keysOfConditionalMapping(access, from, warn, depth) {
   }
   const kept = [];
   for (const key of candidates) {
-    const result = structuredClone(mapping.result);
-    replaceType(result, element, `"${key}"`, warn);
+    const result = substituteType(mapping.result, element, `"${key}"`, warn);
     if (result?.type === 'reference' && result.name === 'IfEquals') {
       if (!decide) {
         return;
@@ -619,10 +624,17 @@ function keysOfUtility(name, args, warn, depth) {
 }
 /**
  * @example
- * getTypeKeys({type: 'typeof', argument: 'DataTypeMap'}, console.warn);
+ * getTypeKeys({type: 'object', properties: {a: 'string', b: 'number'}}, console.warn);
+ * // ['a', 'b']
  * // Or simpler:
- * getTypeKeys(expandType("typeof DataTypeMap"));
- * getTypeKeys(expandType("1|2|3"));
+ * getTypeKeys(expandType('{a: string, b: number}'), console.warn);
+ * // ['a', 'b']
+ * getTypeKeys(expandType('1|2|3'), console.warn);
+ * // [1, 2, 3]
+ * // Typedef names resolve through the registry:
+ * registerTypedef('Box', expandType('{a: number, b: string}'));
+ * getTypeKeys('Box', console.warn);
+ * // ['a', 'b']
  * @param {*} expect - The type.
  * @param {console["warn"]} warn - Function to warn with.
  * @param {number} depth - The depth to detect recursion.
