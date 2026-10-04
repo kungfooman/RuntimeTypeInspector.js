@@ -1,5 +1,5 @@
 import {recurse} from "./validators.js";
-import {formatMapKey} from "./describeValue.js";
+import {formatMapKey} from "./formatMapKey.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.

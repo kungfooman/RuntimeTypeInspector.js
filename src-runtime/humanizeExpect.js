@@ -29,29 +29,4 @@ function humanizeExpect(expect) {
   const summary = flat.length > 140 ? `${flat.slice(0, 137)}...` : flat;
   return {summary, notes};
 }
-/**
- * Pretty side-by-side texts for the comparator modal (issue #134 item 3).
- * Pure (no DOM) so it is unit-testable. Values with a dedicated display
- * rendering (`Map`/`Set` as an entry listing, typed arrays, dates, errors,
- * bigints, class instances, …) render through it instead of the raw
- * `{"$type": …}` snapshot (issue #267).
- * @param {*} expect - The expected type.
- * @param {*} value - The actual value.
- * @returns {{expectPretty: string, actualPretty: string}} Formatted texts.
- */
-function formatCompare(expect, value) {
-  let expectPretty;
-  try {
-    expectPretty = stringifyType(expect, null, 2);
-  } catch {
-    expectPretty = String(expect?.type ?? expect);
-  }
-  let actualPretty;
-  try {
-    actualPretty = prettyValue(value) ?? JSON.stringify(stringifyValue(value), null, 2) ?? String(value);
-  } catch {
-    actualPretty = String(value?.toString?.() ?? value);
-  }
-  return {expectPretty, actualPretty};
-}
-export {humanizeExpect, formatCompare};
+export {humanizeExpect};

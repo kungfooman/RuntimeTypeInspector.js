@@ -1,5 +1,5 @@
 import {describeValueType, prettyValue} from './describeValue.js';
-import {formatCompare} from './humanizeExpect.js';
+import {formatCompare} from './formatCompare.js';
 import {snip} from './explainMismatch.js';
 import {stringifyValue} from './stringifyValue.js';
 import {inspectType} from './inspectType.js';

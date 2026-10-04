@@ -1,7 +1,8 @@
 import {registerTypedef} from './registerTypedef.js';
 import {typedefs       } from './registerTypedef.js';
 import {validateType   } from './validateType.js';
-import {templateLiteralValues, resolveTemplateLiteralCandidates} from './validateTemplateLiteral.js';
+import {templateLiteralValues} from './templateLiteralValues.js';
+import {resolveTemplateLiteralCandidates} from './resolveTemplateLiteralCandidates.js';
 import {expandType     } from '../src-transpiler/expandType.js';
 /**
  * @param {Object<string, any>} obj - The object to clear.

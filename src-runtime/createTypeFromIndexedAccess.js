@@ -1,4 +1,6 @@
-import {getTypeKeys, instantiateReference, resolveObject, stripKey} from "./getTypeKeys.js";
+import {getTypeKeys, resolveObject} from "./getTypeKeys.js";
+import {instantiateReference} from "./instantiateReference.js";
+import {stripKey} from "./stripKey.js";
 import {classes} from "./registerClass.js";
 import {typedefs} from "./registerTypedef.js";
 import {validators} from "./validators.js";

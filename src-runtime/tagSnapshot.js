@@ -1,5 +1,5 @@
 import {classes} from "./registerClass.js";
-import {registeredNameOf} from "./classShape.js";
+import {registeredNameOf} from "./registeredNameOf.js";
 /**
  * Whether a node needs a `$type` tag: a registered class instance
  * (nominal identity messaging strips) or a typed array / `DataView`

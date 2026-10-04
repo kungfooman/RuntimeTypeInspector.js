@@ -1,61 +1,25 @@
 import {typedefs} from './registerTypedef.js';
-import {getTypeKeys, instantiateReference, resolveObject, resolveUtilityShape, stripKey} from './getTypeKeys.js';
+import {getTypeKeys, resolveObject, resolveUtilityShape} from './getTypeKeys.js';
+import {instantiateReference} from "./instantiateReference.js";
+import {stripKey} from "./stripKey.js";
 import {classes} from './registerClass.js';
 import {mergedClassShape} from './classShape.js';
 import {createTypeFromMapping} from './createTypeFromMapping.js';
 import {recurse, validators} from './validators.js';
 import {options} from './options.js';
 import {describeExcess, snip} from './explainMismatch.js';
-import {formatMapKey} from './describeValue.js';
+import {formatMapKey} from './formatMapKey.js';
 import './validateType.js';
 import './evaluateCondition.js';
 import {stringifyType} from './stringifyType.js';
+import {editDistance} from "./editDistance.js";
+import {suggestKey} from "./suggestKey.js";
 const MAX_MEMBERS = 12;
 const MAX_PROPS = 20;
 const MAX_ENTRIES = 20;
 const MAX_KEYS = 60;
 const MAX_NODES = 200;
 const noop = () => undefined;
-/**
- * Edit distance for "did you mean …?" key suggestions.
- * @param {string} a - First string.
- * @param {string} b - Second string.
- * @returns {number} Levenshtein distance.
- */
-function editDistance(a, b) {
-  const prev = Array.from({length: b.length + 1}, (_, j) => j);
-  for (let i = 1; i <= a.length; i++) {
-    let diag = prev[0];
-    prev[0] = i;
-    for (let j = 1; j <= b.length; j++) {
-      const keep = prev[j];
-      prev[j] = Math.min(prev[j] + 1, prev[j - 1] + 1, diag + (a[i - 1] === b[j - 1] ? 0 : 1));
-      diag = keep;
-    }
-  }
-  return prev[b.length];
-}
-/**
- * Closest allowed key to a mistyped value, if close enough to suggest.
- * @param {string} value - The actual (wrong) key.
- * @param {string[]} keys - Allowed keys.
- * @returns {string|undefined} Suggestion or undefined.
- */
-function suggestKey(value, keys) {
-  if (typeof value !== 'string' || !keys.length) {
-    return;
-  }
-  let best;
-  for (const key of keys) {
-    const dist = editDistance(value, key);
-    if (best === undefined || dist < best.dist) {
-      best = {key, dist};
-    }
-  }
-  if (best && best.dist <= Math.max(1, Math.floor(best.key.length / 3))) {
-    return best.key;
-  }
-}
 /**
  * Short one-line type summary.
  * @param {*} expect - The type.
@@ -445,4 +409,4 @@ function buildObjectNode(expect, value, node, sub) {
       return node;
   }
 }
-export {buildTypeTree, suggestKey, editDistance};
+export {buildTypeTree};

@@ -1,3 +1,4 @@
+import {snapshotTag} from "./snapshotTag.js";
 /**
  * Human-readable one-line descriptions of runtime values (issue #267).
  *
@@ -292,39 +293,6 @@ function describeValueType(value, depth = 2) {
   return `{${shown.join(', ')}${Object.keys(value).length > 5 ? ', ...' : ''}}`;
 }
 /**
- * Names `stringifyValue` snapshots: values that cannot cross into the UI
- * (host objects, instances with methods, containers holding functions)
- * arrive as plain objects carrying their recorded constructor tag, since
- * the live reference cannot survive messaging. Only constructor-style tags
- * count, so genuine data keys in the same shape keep expanding normally.
- * @param {*} value - The value to inspect.
- * @returns {string|undefined} Snapshot tag, or undefined for live values.
- */
-function snapshotTag(value) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return undefined;
-  }
-  let proto;
-  try {
-    proto = Object.getPrototypeOf(value);
-  } catch {
-    return undefined;
-  }
-  if (proto !== Object.prototype && proto !== null) {
-    return undefined;
-  }
-  let tag;
-  try {
-    tag = value.$type;
-  } catch {
-    return undefined;
-  }
-  if (typeof tag !== 'string' || (tag !== 'bigint' && !/^[A-Z]/.test(tag))) {
-    return undefined;
-  }
-  return tag;
-}
-/**
  * One-line rendering of a snapshot by its recorded tag: hosts read as
  * their bare tag, containers and buffers add their recorded size.
  * Never throws.
@@ -418,24 +386,6 @@ function prettySnapshot(snapshot, tag) {
     return lines.join('\n');
   } catch {
     return tag;
-  }
-}
-/**
- * Short display form of a `Map` key for `.get(…)` paths and labels:
- * strings stay readable (`'apiKey'`), anything else falls back to a
- * depth-capped one-liner. Never throws.
- * @param {*} key - The map key.
- * @returns {string} Key label.
- */
-function formatMapKey(key) {
-  if (typeof key === 'string') {
-    return `'${key.replace(/'/g, "\\'")}'`;
-  }
-  try {
-    const text = describeValueType(key, 1);
-    return text.length > 60 ? `${text.slice(0, 57)}...` : text;
-  } catch {
-    return '?';
   }
 }
 /**
@@ -654,4 +604,4 @@ function prettyValue(value) {
     return undefined;
   }
 }
-export {describeValueType, formatMapKey, oneLine, prettyValue, snapshotTag};
+export {describeValueType, oneLine, prettyValue};

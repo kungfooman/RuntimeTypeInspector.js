@@ -1,5 +1,6 @@
 import {Details, Div, Span, Summary} from './jsx.js';
-import {oneLine, snapshotTag} from './describeValue.js';
+import {oneLine} from './describeValue.js';
+import {snapshotTag} from './snapshotTag.js';
 /**
  * Rows rendered per branch before a `...(+N more)` marker offers the next
  * batch on click. Breadth lives here (not in the clone layer), so hidden
