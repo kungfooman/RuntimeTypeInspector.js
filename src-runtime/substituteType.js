@@ -1,22 +1,25 @@
 /**
- * @todo
- *  - To prevent circularity, check that "search" isn't in "replace" in the first place?
- *  - add depth argument
- *  - add bunch of unit tests to test all possible cases
- *  - add intersection type replacements for instance: 'fixed' & Key
- * Pure (never mutates its input): unchanged subtrees are shared by identity
- * with the input, so only the rewrite path allocates — and downstream
- * identity memos keep hitting across substitutions. Callers must use the
- * return value; nothing is modified in place.
+ * Substitutes template references, purely: never mutates its input, and
+ * unchanged subtrees are shared by identity with the input, so only the
+ * rewrite path allocates — downstream identity memos keep hitting across
+ * substitutions. Callers must use the return value. Single-pass (an
+ * inserted replacement is never re-scanned), so a search occurring inside
+ * its own replacement cannot loop; inputs must still be finite trees,
+ * which holds for transpiled expects by construction. Per-branch contract:
+ * substituteType.spec.js (including intersection members like `'fixed'`
+ * alongside the key).
  * @param {*} type - The type.
  * @param {*} search - The search.
  * @param {*} replace - The replace.
  * @param {*} warn - The warn.
  * @returns {any} - Substituted copy, sharing every unchanged subtree.
+ * @example
+ * substituteType({type: 'object', properties: {a: 'K'}}, 'K', '"a"', console.warn);
+ * // {type: 'object', properties: {a: '"a"'}}
  */
-function replaceType(type, search, replace, warn) {
+function substituteType(type, search, replace, warn) {
   if (type === search) {
-    // console.log("replaceType", {type, search, replace, warn});
+    // console.log("substituteType", {type, search, replace, warn});
     return replace;
   }
   if (type === null || typeof type !== 'object') {
@@ -33,15 +36,15 @@ function replaceType(type, search, replace, warn) {
   if (typeof type.type === 'string' || typeof type.type === 'number' || typeof type.type === 'boolean') {
     const keys = Object.keys(type);
     if (keys.every((key) => key === 'type' || key === 'optional' || key === 'readonly')) {
-      const inner = replaceType(type.type, search, replace, warn);
+      const inner = substituteType(type.type, search, replace, warn);
       return inner === type.type ? type : {...type, type: inner};
     }
   }
   switch (type.type) {
     case 'object': {
       const {properties} = type;
-      const next = replaceRecord(properties, search, replace, warn);
-      const signatures = replaceArray(type.indexSignatures, search, replace, warn);
+      const next = substituteRecord(properties, search, replace, warn);
+      const signatures = substituteArray(type.indexSignatures, search, replace, warn);
       if (next === properties && signatures === type.indexSignatures) {
         return type;
       }
@@ -56,8 +59,8 @@ function replaceType(type, search, replace, warn) {
       return out;
     }
     case 'indexSignature': {
-      const indexType = type.indexType === undefined ? undefined : replaceType(type.indexType, search, replace, warn);
-      const indexParameters = replaceDescriptors(type.indexParameters, search, replace, warn);
+      const indexType = type.indexType === undefined ? undefined : substituteType(type.indexType, search, replace, warn);
+      const indexParameters = substituteDescriptors(type.indexParameters, search, replace, warn);
       if (indexType === type.indexType && indexParameters === type.indexParameters) {
         return type;
       }
@@ -70,11 +73,11 @@ function replaceType(type, search, replace, warn) {
       // templated function that merely had a typeof-typed param).
       return type;
     case 'tuple': {
-      const elements = replaceArray(type.elements, search, replace, warn);
+      const elements = substituteArray(type.elements, search, replace, warn);
       return elements === type.elements ? type : {...type, elements};
     }
     case 'array': {
-      const elementType = replaceType(type.elementType, search, replace, warn);
+      const elementType = substituteType(type.elementType, search, replace, warn);
       return elementType === type.elementType ? type : {...type, elementType};
     }
     case 'reference': {
@@ -82,36 +85,36 @@ function replaceType(type, search, replace, warn) {
       if (!Array.isArray(args)) {
         return type;
       }
-      const next = replaceArray(args, search, replace, warn);
+      const next = substituteArray(args, search, replace, warn);
       return next === args ? type : {...type, args: next};
     }
     case 'promise':
     case 'set':
     case 'class': {
-      const elementType = replaceType(type.elementType, search, replace, warn);
+      const elementType = substituteType(type.elementType, search, replace, warn);
       return elementType === type.elementType ? type : {...type, elementType};
     }
     case 'union': {
-      const members = replaceArray(type.members, search, replace, warn);
+      const members = substituteArray(type.members, search, replace, warn);
       return members === type.members ? type : {...type, members};
     }
     case 'templateLiteral': {
-      const types = replaceArray(type.types, search, replace, warn);
+      const types = substituteArray(type.types, search, replace, warn);
       return types === type.types ? type : {...type, types};
     }
     case 'rest': {
-      const annotation = replaceType(type.annotation, search, replace, warn);
+      const annotation = substituteType(type.annotation, search, replace, warn);
       return annotation === type.annotation ? type : {...type, annotation};
     }
     case 'indexedAccess': {
-      const index = replaceType(type.index, search, replace, warn);
-      const object = replaceType(type.object, search, replace, warn);
+      const index = substituteType(type.index, search, replace, warn);
+      const object = substituteType(type.object, search, replace, warn);
       return index === type.index && object === type.object ? type : {...type, index, object};
     }
     case 'record':
     case 'map': {
-      const key = replaceType(type.key, search, replace, warn);
-      const val = replaceType(type.val, search, replace, warn);
+      const key = substituteType(type.key, search, replace, warn);
+      const val = substituteType(type.val, search, replace, warn);
       return key === type.key && val === type.val ? type : {...type, key, val};
     }
     case 'mapping': {
@@ -120,27 +123,27 @@ function replaceType(type, search, replace, warn) {
       if (type.element === search) {
         return type;
       }
-      const iterable = replaceType(type.iterable, search, replace, warn);
-      const result = replaceType(type.result, search, replace, warn);
-      const nameType = type.nameType === undefined ? undefined : replaceType(type.nameType, search, replace, warn);
+      const iterable = substituteType(type.iterable, search, replace, warn);
+      const result = substituteType(type.result, search, replace, warn);
+      const nameType = type.nameType === undefined ? undefined : substituteType(type.nameType, search, replace, warn);
       if (iterable === type.iterable && result === type.result && nameType === type.nameType) {
         return type;
       }
       return {...type, iterable, result, nameType};
     }
     case 'intersection': {
-      const members = replaceArray(type.members, search, replace, warn);
+      const members = substituteArray(type.members, search, replace, warn);
       return members === type.members ? type : {...type, members};
     }
     case 'keyof': {
-      const argument = replaceType(type.argument, search, replace, warn);
+      const argument = substituteType(type.argument, search, replace, warn);
       return argument === type.argument ? type : {...type, argument};
     }
     case 'condition': {
-      const checkType = replaceType(type.checkType, search, replace, warn);
-      const extendsType = replaceType(type.extendsType, search, replace, warn);
-      const trueType = replaceType(type.trueType, search, replace, warn);
-      const falseType = replaceType(type.falseType, search, replace, warn);
+      const checkType = substituteType(type.checkType, search, replace, warn);
+      const extendsType = substituteType(type.extendsType, search, replace, warn);
+      const trueType = substituteType(type.trueType, search, replace, warn);
+      const falseType = substituteType(type.falseType, search, replace, warn);
       if (checkType === type.checkType && extendsType === type.extendsType &&
         trueType === type.trueType && falseType === type.falseType) {
         return type;
@@ -148,20 +151,20 @@ function replaceType(type, search, replace, warn) {
       return {...type, checkType, extendsType, trueType, falseType};
     }
     case 'tupleMember': {
-      const elementType = replaceType(type.elementType, search, replace, warn);
+      const elementType = substituteType(type.elementType, search, replace, warn);
       return elementType === type.elementType ? type : {...type, elementType};
     }
     case 'new':
     case 'function': {
-      const parameters = replaceDescriptors(type.parameters, search, replace, warn);
-      const ret = type.ret === undefined ? undefined : replaceType(type.ret, search, replace, warn);
+      const parameters = substituteDescriptors(type.parameters, search, replace, warn);
+      const ret = type.ret === undefined ? undefined : substituteType(type.ret, search, replace, warn);
       if (parameters === type.parameters && ret === type.ret) {
         return type;
       }
       return {...type, parameters, ret};
     }
     default:
-      warn('replaceType: @todo unhandled', {type, search, replace});
+      warn('substituteType: @todo unhandled', {type, search, replace});
       break;
   }
   return type;
@@ -175,13 +178,13 @@ function replaceType(type, search, replace, warn) {
  * @param {console["warn"]} warn - Function to warn with.
  * @returns {any[]|undefined} Substituted array or the original.
  */
-function replaceArray(items, search, replace, warn) {
+function substituteArray(items, search, replace, warn) {
   if (!Array.isArray(items)) {
     return items;
   }
   let out = items;
   for (let i = 0; i < items.length; i++) {
-    const next = replaceType(items[i], search, replace, warn);
+    const next = substituteType(items[i], search, replace, warn);
     if (next !== items[i]) {
       if (out === items) {
         out = items.slice(0, i);
@@ -202,13 +205,13 @@ function replaceArray(items, search, replace, warn) {
  * @param {console["warn"]} warn - Function to warn with.
  * @returns {Record<string, *>|undefined} Substituted record or the original.
  */
-function replaceRecord(record, search, replace, warn) {
+function substituteRecord(record, search, replace, warn) {
   if (record === null || typeof record !== 'object') {
     return record;
   }
   let out = record;
   for (const prop in record) {
-    const next = replaceType(record[prop], search, replace, warn);
+    const next = substituteType(record[prop], search, replace, warn);
     if (next !== record[prop]) {
       if (out === record) {
         out = {...record};
@@ -227,7 +230,7 @@ function replaceRecord(record, search, replace, warn) {
  * @param {console["warn"]} warn - Function to warn with.
  * @returns {any[]|undefined} Substituted descriptors or the original.
  */
-function replaceDescriptors(parameters, search, replace, warn) {
+function substituteDescriptors(parameters, search, replace, warn) {
   if (!Array.isArray(parameters)) {
     return parameters;
   }
@@ -235,7 +238,7 @@ function replaceDescriptors(parameters, search, replace, warn) {
   for (let i = 0; i < parameters.length; i++) {
     const parameter = parameters[i];
     if (parameter && typeof parameter === 'object' && parameter.type !== undefined) {
-      const next = replaceType(parameter.type, search, replace, warn);
+      const next = substituteType(parameter.type, search, replace, warn);
       if (next !== parameter.type) {
         if (out === parameters) {
           out = parameters.slice();
@@ -246,4 +249,4 @@ function replaceDescriptors(parameters, search, replace, warn) {
   }
   return out;
 }
-export {replaceType};
+export {substituteType};

@@ -3,7 +3,7 @@ import {deepFreeze} from "./deepFreeze.js";
 import {extendsCheck} from "./evaluateCondition.js";
 import {inspectType} from "./inspectType.js";
 import {options} from "./options.js";
-import {replaceType} from "./replaceType.js";
+import {substituteType} from "./substituteType.js";
 import {recurse} from "./validators.js";
 /**
  * Per-call inference state, keyed by the per-invocation templates dict (fresh
@@ -46,7 +46,7 @@ function substitutedFor(expect, loc, name, templates, warn) {
     // result shares every unchanged subtree with the pristine tree.
     sub = expect;
     for (const k in templates) {
-      sub = replaceType(sub, k, templates[k], warn);
+      sub = substituteType(sub, k, templates[k], warn);
     }
     substitutedCache.set(key, deepFreeze(sub));
   }

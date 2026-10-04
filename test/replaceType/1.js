@@ -29,7 +29,7 @@ function a() {
   //const type = expandType("[T, T, T]");
   const type = expandType("T[]");
   //const type = expandType("string");
-  const newType = replaceType(type, 'T', 'string', console.warn);
+  const newType = substituteType(type, 'T', 'string', console.warn);
   return stringify(newType);
 }
 setRight(stringify(type) + '\n\n' + a());

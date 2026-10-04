@@ -5,6 +5,9 @@
  * fallback (message-handling time, when the call site is already gone).
  * @param {number} [maxFrames] - Kept frames besides the `Error` header line.
  * @returns {string[]} Stack lines, oldest dropped past the cap.
+ * @example
+ * const stack = captureStackLines();
+ * crossContextPostMessage({type: 'rti', action: 'addError', key, stack});
  */
 function captureStackLines(maxFrames = 20) {
   const lines = (new Error().stack ?? '').split('\n');

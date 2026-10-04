@@ -2,7 +2,7 @@ import {variables} from "./registerVariable.js";
 import {typedefs, typedefTemplates} from "./registerTypedef.js";
 import {classes} from "./registerClass.js";
 import {mergedClassShape} from "./classShape.js";
-import {replaceType} from "./replaceType.js";
+import {substituteType} from "./substituteType.js";
 import {validators} from "./validators.js";
 import {stringifyType} from "./stringifyType.js";
 /**
@@ -269,7 +269,7 @@ function instantiateReference(type, warn) {
   // substituted directly instead of cloned first (read-only downstream).
   let instance = typedefs[name];
   params.forEach((param, i) => {
-    instance = replaceType(instance, param, i < args.length ? args[i] : 'any', warn);
+    instance = substituteType(instance, param, i < args.length ? args[i] : 'any', warn);
   });
   return instance;
 }
@@ -428,7 +428,7 @@ function keysOfConditionalMapping(access, from, warn, depth) {
   }
   const kept = [];
   for (const key of candidates) {
-    const result = replaceType(mapping.result, element, `"${key}"`, warn);
+    const result = substituteType(mapping.result, element, `"${key}"`, warn);
     if (result?.type === 'reference' && result.name === 'IfEquals') {
       if (!decide) {
         return;

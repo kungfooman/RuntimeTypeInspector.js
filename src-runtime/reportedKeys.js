@@ -12,6 +12,9 @@
  * Spec convention: the map is process-global, so every spec that posts a
  * failing check must use a unique `loc`/`name` pair — reusing one across
  * tests turns every later post into a key-only repeat.
+ * @example
+ * reportedKeys.set('takeFloat.data', 'array');
+ * reportedKeys.clear(); // fresh session: next failure reports in full
  */
 const reportedKeys = new Map();
 export {reportedKeys};

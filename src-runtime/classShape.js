@@ -1,5 +1,6 @@
 import {classes, classVersion } from "./registerClass.js";
 import {typedefs} from "./registerTypedef.js";
+import {versionedCache} from "./memoize.js";
 // Prototype enumeration is the expensive bit: once per constructor for its
 // lifetime, never in a validation hot path. Harvested shapes (transpiled
 // classes) never touch this map.
@@ -9,10 +10,8 @@ const methodShapes = new WeakMap();
  * ran per chain link of every class-shape derivation. Rebuilt when the
  * class registry mutates (re-registration changes what a name resolves
  * to); the dropped map takes dead constructors with it instead of leaking.
- * @type {WeakMap<Function, string|undefined>}
  */
-let namesByCtor = new WeakMap();
-let namesVersion = -1;
+const namesByCtor = versionedCache(() => classVersion);
 /**
  * Finds the registered name of a constructor (identity, not `.name`, so
  * aliases and minification stay correct).
@@ -22,10 +21,6 @@ let namesVersion = -1;
 function registeredNameOf(ctor) {
   if (ctor === null || (typeof ctor !== 'object' && typeof ctor !== 'function')) {
     return ctor?.name;
-  }
-  if (namesVersion !== classVersion) {
-    namesVersion = classVersion;
-    namesByCtor = new WeakMap();
   }
   if (namesByCtor.has(ctor)) {
     return namesByCtor.get(ctor);

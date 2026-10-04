@@ -1,5 +1,6 @@
-import {replaceType} from "./replaceType.js";
+import {substituteType} from "./substituteType.js";
 import {deepFreeze} from "./deepFreeze.js";
+import {versionedCache} from "./memoize.js";
 import {getTypeKeys} from "./getTypeKeys.js";
 import {typedefs, typedefVersion   } from "./registerTypedef.js";
 import {classVersion} from "./registerClass.js";
@@ -10,11 +11,8 @@ validators.materializeMapping = createTypeFromMapping;
  * Instantiated mappings by source node: instantiation re-derives keys,
  * conditions and indexed access per call, but nodes from the substituted
  * cache (and registry typedefs) are stable across calls, so repeats hit.
- * WeakMap: dead nodes vanish instead of leaking. Entries carry the
- * registry versions they were derived under; re-registration (or new
- * typedefs mid-run) recomputes instead of serving stale shapes.
  */
-const mappingCache = new WeakMap();
+const mappingCache = versionedCache(() => typedefVersion, () => classVersion);
 /**
  * Profile (#256, Node 22, dev machine): 500-key mapping materializes in
  * ~2ms and validates in ~1ms; 1000x small 3-key mapping validations take
@@ -201,12 +199,11 @@ function createTypeFromMapping(expect, warn) {
     expect = typedefs[expect];
   }
   if (expect !== null && typeof expect === 'object') {
-    const cached = mappingCache.get(expect);
-    if (cached && cached.typedefVersion === typedefVersion && cached.classVersion === classVersion) {
-      return cached.result;
+    if (mappingCache.has(expect)) {
+      return mappingCache.get(expect);
     }
     const result = deepFreeze(instantiateMapping(expect, warn));
-    mappingCache.set(expect, {typedefVersion, classVersion, result});
+    mappingCache.set(expect, result);
     return result;
   }
   return deepFreeze(instantiateMapping(expect, warn));
@@ -227,7 +224,7 @@ function instantiateMapping(expect, warn) {
   const properties = {};
   for (const typeKey of typeKeys) {
     const keyType = literalType(typeKey);
-    let propType = flattenRest(replaceType(result, element, keyType, warn));
+    let propType = flattenRest(substituteType(result, element, keyType, warn));
     if (propType && propType.type === 'indexedAccess') {
       // Eagerly resolve concrete indexed access so flags (readonly etc.)
       // live on the materialized type instead of behind lazy references.
@@ -244,7 +241,7 @@ function instantiateMapping(expect, warn) {
       // `as` key remapping: evaluate the (substituted) condition per key.
       // Pure substitution returns the new tree (nothing is modified in
       // place anymore), so no clone is needed first.
-      const substitutedCond = replaceType(nameType, element, keyType, warn);
+      const substitutedCond = substituteType(nameType, element, keyType, warn);
       if (!substitutedCond || substitutedCond.type !== 'condition') {
         warn('validateMapping: nameType is not a condition after substitution', substitutedCond);
       } else {

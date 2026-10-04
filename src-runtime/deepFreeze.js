@@ -6,6 +6,8 @@
  * catches instead.
  * @param {*} value - The tree to freeze.
  * @returns {*} The frozen tree.
+ * @example
+ * substitutedCache.set(key, deepFreeze(substituted));
  */
 function deepFreeze(value) {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {

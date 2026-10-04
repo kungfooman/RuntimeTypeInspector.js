@@ -58,6 +58,7 @@ const tests = [
   ...(await import('./src-runtime/componentTowerStress.spec.js'     )).tests,
   ...(await import('./src-runtime/templateNarrowing.spec.js'       )).tests,
   ...(await import('./src-runtime/templateMemo.spec.js'            )).tests,
+  ...(await import('./src-runtime/substituteType.spec.js'         )).tests,
   ...(await import('./src-runtime/collectCandidates.spec.js'      )).tests,
   ...(await import('./src-runtime/strictNullChecks.spec.js'        )).tests,
   ...(await import('./src-runtime/stringifyValue.spec.js'          )).tests,

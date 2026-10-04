@@ -1,8 +1,8 @@
 import {inspectTypeWithTemplates} from './inspectTypeWithTemplates.js';
-import {replaceType} from './replaceType.js';
+import {substituteType} from './substituteType.js';
 /**
  * Runs `fn` with `console.warn` stubbed, returning collected warnings.
- * `inspectTypeWithTemplates` wires `console.warn` into `replaceType`
+ * `inspectTypeWithTemplates` wires `console.warn` into `substituteType`
  * internally, so silence can only be asserted by intercepting it.
  * @param {Function} fn - The function to run with warnings captured.
  * @returns {{ret: *, warnings: any[][]}} Return value plus captured warnings.
@@ -53,15 +53,15 @@ function testOptionalBareOmitted() {
 function testOptionalUnrelatedSilent() {
   let warns = 0;
   const noisy = () => warns++;
-  const out = replaceType({type: 'string', optional: true}, 'T', 'any', noisy);
-  const out2 = replaceType({type: 'MyBox', optional: true}, 'T', 'any', noisy);
+  const out = substituteType({type: 'string', optional: true}, 'T', 'any', noisy);
+  const out2 = substituteType({type: 'MyBox', optional: true}, 'T', 'any', noisy);
   return warns === 0 && out.type === 'string' && out2.type === 'MyBox';
 }
 // `typeof X` is a value position: never rewritten, never warns.
 function testTypeofSilent() {
   let warns = 0;
   const noisy = () => warns++;
-  const out = replaceType({type: 'typeof', argument: 'X'}, 'X', 'number', noisy);
+  const out = substituteType({type: 'typeof', argument: 'X'}, 'X', 'number', noisy);
   return warns === 0 && out.argument === 'X';
 }
 // Templates inside index signatures instantiate like properties.
@@ -73,7 +73,7 @@ function testIndexSignatureSubstitutes() {
     properties: {},
     indexSignatures: [{type: 'indexSignature', indexType: 'T', indexParameters: [{type: 'string', name: 'k'}]}],
   };
-  const out = replaceType(type, 'T', 'number', noisy);
+  const out = substituteType(type, 'T', 'number', noisy);
   return warns === 0 && out.indexSignatures[0].indexType === 'number';
 }
 // First candidate wins, widened: `(a: T, b: T)` with `('x', 1)` pins the

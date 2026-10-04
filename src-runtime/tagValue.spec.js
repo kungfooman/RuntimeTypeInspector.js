@@ -30,11 +30,22 @@ function testExoticFallsBack() {
   revoke();
   return tagValue(proxy) === 'object';
 }
+function testThrowingGetterFallsBack() {
+  // User data with throwing property access (framework proxies, DOM edges)
+  // degrades to `'object'`: the handler exists so reporting never crashes
+  // on the value it reports about.
+  const evil = {};
+  Object.defineProperty(evil, 'constructor', {get() {
+    throw new Error('nope');
+  }});
+  return tagValue(evil) === 'object';
+}
 const tests = [
   testNullSplitFromObjects,
   testPrimitivesByTypeof,
   testObjectsByConstructor,
   testFunctionsTagByConstructor,
   testExoticFallsBack,
+  testThrowingGetterFallsBack,
 ];
 export {tests};
