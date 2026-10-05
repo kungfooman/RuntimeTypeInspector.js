@@ -33,9 +33,29 @@ function substitutedFor(expect, loc, name, templates, warn) {
   if (sub === undefined) {
     // Pure substitution never mutates its input, so no pre-clone: the
     // result shares every unchanged subtree with the pristine tree.
+    // Single-binding dicts take one pass like before; several bindings may
+    // nest (a `T` constraint mentioning `K`), so repeat until stable — each
+    // round shares identity on no-change, and the round cap bounds
+    // pathological binding cycles. Either way the outcome no longer depends
+    // on binding order.
     sub = expect;
-    for (const k in templates) {
-      sub = substituteType(sub, k, templates[k], warn);
+    const keys = Object.keys(templates);
+    if (keys.length <= 1) {
+      for (const k in templates) {
+        sub = substituteType(sub, k, templates[k], warn);
+      }
+    } else {
+      let changed = true;
+      for (let round = 0; changed && round <= keys.length; round++) {
+        changed = false;
+        for (const k of keys) {
+          const next = substituteType(sub, k, templates[k], warn);
+          if (next !== sub) {
+            sub = next;
+            changed = true;
+          }
+        }
+      }
     }
     substitutedCache.set(key, deepFreeze(sub));
   }

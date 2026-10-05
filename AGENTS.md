@@ -78,6 +78,10 @@ When the user hands you tests (repro files, `./tmp` snippets, demo cases), make 
   readable without reverse-engineering the assertion.
 - Full gate before finishing: `npm test` + `npm run lint`.
 
+## Break your own code
+
+The reported repro is the starting line, never the finish: every fix or feature must survive actively hostile testing before it lands. Invent nasty, complicated scenarios around the changed code (deep nesting, unions of edge cases, nullable and optional positions, template interplay and shadowing, recursive types, cross-file imports, every spelling of the construct you touched) and run each one through both RTI (`node run-jsdoc.js`) and `tsc --strict` on the same file. Close every divergence: either fix RTI until it groks the construct, or document it as deliberate in the fixture header (sparse-array precedent) with the tsc verdict noted. Promote every divergence you close into the permanent pipeline above (fixture + spec + errors file), so the suite keeps what you learned. Goal: perfect typing agreement — the only acceptable surprises are the ones tsc also reports.
+
 ## Test style
 
 Never assert exact human-readable prose (diagnosis sentences, detail

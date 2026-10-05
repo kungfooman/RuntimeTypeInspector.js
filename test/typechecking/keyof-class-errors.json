@@ -1,0 +1,6 @@
+{
+  "throws": [
+    {"loc": "KeyBox#constructor", "name": "key", "value": "nope"},
+    {"loc": "takeKey", "name": "key", "value": "nope"}
+  ]
+}
