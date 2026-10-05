@@ -6,8 +6,8 @@
  * with their own pipeline.
  */
 const RTI_INFO = {
-  "version": "5.0.7",
-  "commit": "3ddcced5510c36abfd8afb989b803402361398c5",
-  "subject": "Expand template constraints with the configured expander (#299)"
+  "version": "6.0.0",
+  "commit": "470dd57f679d32240cf4a38589665163dc02c03f",
+  "subject": "Homomorphic `Partial`/`Required` over indexed access, primitives, classes and friends (#302)"
 };
 export {RTI_INFO};
