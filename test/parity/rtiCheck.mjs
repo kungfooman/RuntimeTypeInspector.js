@@ -34,7 +34,8 @@ async function checkWithRti(absIn, opts = {}) {
   const base = basename(absIn).replace(/\.[^.]+$/u, '');
   const absOut = join(dirname(absIn), `${base}.rti.mjs`);
   const asserter = new Asserter({expandType, filename: basename(absIn)});
-  let out = asserter.getHeader() + asserter.toSource(parse(readFileSync(absIn, 'utf8'), parserOptions));
+  const ast = parse(readFileSync(absIn, 'utf8'), parserOptions);
+  let out = asserter.getHeader(ast) + asserter.toSource(ast);
   // Execute the working tree (ESM source) instead of the published bundle.
   const runtimeAbs = join(repoRoot, 'src-runtime', 'index.js');
   if (existsSync(runtimeAbs)) {

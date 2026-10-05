@@ -7,7 +7,7 @@
  */
 const RTI_INFO = {
   "version": "5.0.7",
-  "commit": "7aa5ccf2c56ecb6df7d8c5becd57568094bfcf9d",
-  "subject": "Make every substitution consumer-overwritable"
+  "commit": "44400a55c91efe760e9306c7082ea8c820ade841",
+  "subject": "Add unit test for substitution example"
 };
 export {RTI_INFO};
