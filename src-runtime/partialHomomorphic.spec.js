@@ -1,4 +1,6 @@
 import {validateType} from './validateType.js';
+import './resolveTemplateLiteralCandidates.js';
+import './resolveTemplateLiteralValues.js';
 import {expandType} from '../src-transpiler/expandType.js';
 import {registerTypedef, typedefs, typedefTemplates} from './registerTypedef.js';
 import {registerClass} from './registerClass.js';
@@ -414,6 +416,51 @@ function testIndexSignatureEnforcement() {
   }
   return validateType({0: 1}, partial, 'loc', 'name', true, warn, 0) === false;
 }
+function testPartialAny() {
+  // `any` maps over its keys: an object bag admitting objects while rejecting primitives and nullish.
+  prepare();
+  const partial = expandType('Partial<any>');
+  if (validateType({}, partial, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  if (validateType({a: 1}, partial, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  if (validateType(1, partial, 'loc', 'name', true, warn, 0) !== false) {
+    return false;
+  }
+  return validateType(null, partial, 'loc', 'name', true, warn, 0) === false;
+}
+function testPartialUnknownNever() {
+  // `unknown` maps over `never` keys (the bare object); `never` rejects every value.
+  prepare();
+  const unknown = expandType('Partial<unknown>');
+  if (validateType(1, unknown, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  if (validateType(null, unknown, 'loc', 'name', true, warn, 0) !== false) {
+    return false;
+  }
+  const never = expandType('Partial<never>');
+  return validateType(1, never, 'loc', 'name', true, warn, 0) === false;
+}
+function testPartialTemplateKeyof() {
+  // Finite template literals enumerate and key queries pass through untouched.
+  prepare();
+  const template = expandType('Partial<`on${"click" | "hover"}`>');
+  if (validateType('onclick', template, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  if (validateType('onmove', template, 'loc', 'name', true, warn, 0) !== false) {
+    return false;
+  }
+  registerTypedef('PhKeys', expandType('{a: number}'));
+  const keys = expandType('Partial<keyof PhKeys>');
+  if (validateType('a', keys, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  return validateType('z', keys, 'loc', 'name', true, warn, 0) === false;
+}
 const tests = [
   testExpandKeepsDeepPartial,
   testPartialNumberPassthrough,
@@ -442,6 +489,9 @@ const tests = [
   testPartialRecord,
   testIndexSignaturesPreserved,
   testPlatformBases,
-  testIndexSignatureEnforcement
+  testIndexSignatureEnforcement,
+  testPartialAny,
+  testPartialUnknownNever,
+  testPartialTemplateKeyof
 ];
 export {tests};

@@ -270,19 +270,39 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         (firstArg.name === 'NonNullable' || firstArg.name === 'Readonly' || firstArg.name === 'NoInfer')) {
         return recurse(value, {type: 'reference', name: 'Partial', args: [firstArg.args[0]]}, loc, name, critical, warn, depth + 1);
       }
-      // Typedef aliases to primitives (e.g. `type Id = number`) recurse so
-      // the underlying primitive takes the passthrough below.
+      // Typedef aliases (e.g. `type Id = number`) re-enter through Partial
+      // so the underlying kind takes its own branch below (primitives pass
+      // through, `any`/`unknown` take their shapes, objects turn optional).
       if (typeof firstArg === 'string' && typedefs[firstArg]) {
         const aliased = typedefs[firstArg];
         if (typeof aliased === 'string' && !typedefs[aliased] && !classes[aliased]) {
-          return recurse(value, aliased, loc, name, critical, warn, depth + 1);
+          return recurse(value, {type: 'reference', name: 'Partial', args: [aliased]}, loc, name, critical, warn, depth + 1);
         }
       }
       if (firstArg && firstArg.type === 'reference' && typedefs[firstArg.name]) {
         const instance = instantiateReference(firstArg, warn);
         if (typeof instance === 'string' && !typedefs[instance] && !classes[instance]) {
-          return recurse(value, instance, loc, name, critical, warn, depth + 1);
+          return recurse(value, {type: 'reference', name: 'Partial', args: [instance]}, loc, name, critical, warn, depth + 1);
         }
+      }
+      // `any` maps over its string/number/symbol keys: an object bag with
+      // `any` signatures, admitting objects (and functions, arrays) while
+      // rejecting primitives and nullish values, exactly like TypeScript.
+      if (firstArg === 'any') {
+        return recurse(value, {type: 'object', properties: {}, indexSignatures: [
+          {type: 'indexSignature', indexType: 'any', indexParameters: [{type: 'string', name: 'k'}]},
+          {type: 'indexSignature', indexType: 'any', indexParameters: [{type: 'number', name: 'n'}]}
+        ]}, loc, name, critical, warn, depth + 1);
+      }
+      // `unknown` maps over `never` keys: the bare object, admitting every
+      // non-nullish value and nothing else.
+      if (firstArg === 'unknown') {
+        return recurse(value, {type: 'object'}, loc, name, critical, warn, depth + 1);
+      }
+      // Template literals and key queries are already literal unions in
+      // disguise: homomorphic Partial is the identity on them.
+      if (firstArg && (firstArg.type === 'templateLiteral' || firstArg.type === 'keyof')) {
+        return recurse(value, firstArg, loc, name, critical, warn, depth + 1);
       }
       const objects = resolveObjectArgs(firstArg, warn);
       if (objects.length) {
@@ -302,10 +322,12 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         return recurse(value, members.length === 1 ? members[0] : {type: 'union', members}, loc, name, critical, warn, depth + 1);
       }
       // Homomorphic passthrough: `Partial<number>` is `number` (and the same
-      // for other primitives and literals), matching TypeScript.
+      // for other primitives and literals), matching TypeScript. (`any`
+      // and `unknown` take dedicated shapes above; `never` passes through
+      // and then rejects every value, also matching TypeScript.)
       if (typeof firstArg === 'string') {
         if (!typedefs[firstArg] && !classes[firstArg]) {
-          const primitives = new Set(['any', 'unknown', 'never', 'null', 'undefined', 'void',
+          const primitives = new Set(['never', 'null', 'undefined', 'void',
             'string', 'number', 'boolean', 'bigint', 'symbol', 'Function', 'CallableFunction',
             'NewableFunction', 'function', 'new', 'ObjectConstructor', 'IArguments', 'ArrayBufferView']);
           const isQuoted = firstArg.length >= 2 &&
@@ -523,14 +545,28 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
       if (typeof firstArg === 'string' && typedefs[firstArg]) {
         const aliased = typedefs[firstArg];
         if (typeof aliased === 'string' && !typedefs[aliased] && !classes[aliased]) {
-          return recurse(value, aliased, loc, name, critical, warn, depth + 1);
+          return recurse(value, {type: 'reference', name: 'Required', args: [aliased]}, loc, name, critical, warn, depth + 1);
         }
       }
       if (firstArg && firstArg.type === 'reference' && typedefs[firstArg.name]) {
         const instance = instantiateReference(firstArg, warn);
         if (typeof instance === 'string' && !typedefs[instance] && !classes[instance]) {
-          return recurse(value, instance, loc, name, critical, warn, depth + 1);
+          return recurse(value, {type: 'reference', name: 'Required', args: [instance]}, loc, name, critical, warn, depth + 1);
         }
+      }
+      // `any`/`unknown`/template literals/`keyof` behave exactly like under
+      // Partial (see above): signatures bag, bare object, identity.
+      if (firstArg === 'any') {
+        return recurse(value, {type: 'object', properties: {}, indexSignatures: [
+          {type: 'indexSignature', indexType: 'any', indexParameters: [{type: 'string', name: 'k'}]},
+          {type: 'indexSignature', indexType: 'any', indexParameters: [{type: 'number', name: 'n'}]}
+        ]}, loc, name, critical, warn, depth + 1);
+      }
+      if (firstArg === 'unknown') {
+        return recurse(value, {type: 'object'}, loc, name, critical, warn, depth + 1);
+      }
+      if (firstArg && (firstArg.type === 'templateLiteral' || firstArg.type === 'keyof')) {
+        return recurse(value, firstArg, loc, name, critical, warn, depth + 1);
       }
       const objects = resolveObjectArgs(firstArg, warn);
       if (objects.length) {
@@ -549,10 +585,11 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         });
         return recurse(value, members.length === 1 ? members[0] : {type: 'union', members}, loc, name, critical, warn, depth + 1);
       }
-      // `Required<number>` is `number`, mirroring Partial passthrough.
+      // `Required<number>` is `number`, mirroring Partial passthrough
+      // (`any`/`unknown` take their dedicated shapes above).
       if (typeof firstArg === 'string') {
         if (!typedefs[firstArg] && !classes[firstArg]) {
-          const primitives = new Set(['any', 'unknown', 'never', 'null', 'undefined', 'void',
+          const primitives = new Set(['never', 'null', 'undefined', 'void',
             'string', 'number', 'boolean', 'bigint', 'symbol', 'Function', 'CallableFunction',
             'NewableFunction', 'function', 'new', 'ObjectConstructor', 'IArguments', 'ArrayBufferView']);
           const isQuoted = firstArg.length >= 2 &&

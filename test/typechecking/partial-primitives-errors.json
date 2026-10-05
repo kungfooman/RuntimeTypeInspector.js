@@ -26,6 +26,21 @@
       "value": {}
     },
     {
+      "loc": "takePartialAny",
+      "name": "x",
+      "value": 1
+    },
+    {
+      "loc": "takePartialAny",
+      "name": "x",
+      "value": null
+    },
+    {
+      "loc": "takePartialUnknown",
+      "name": "x",
+      "value": null
+    },
+    {
       "loc": "takeFn",
       "name": "x",
       "value": null

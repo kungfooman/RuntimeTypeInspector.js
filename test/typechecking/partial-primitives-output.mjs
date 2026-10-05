@@ -146,6 +146,65 @@ takeReqNumber(1); // ok
 takeReqNumber({});
 
 /**
+ * @param {Partial<any>} x
+ */
+
+function takePartialAny(x) {
+  if (!inspectType(x, {
+    "type": "reference",
+    "name": "Partial",
+    "args": [
+      "any"
+    ],
+    "optional": false
+  }, 'takePartialAny', 'x')) {
+    youCanAddABreakpointHere();
+  }
+  return x;
+}
+takePartialAny({}); // ok: signature bag admits objects
+
+takePartialAny([1]); // ok
+
+// @ts-expect-error: number is not assignable to the signature bag
+
+ // ok
+
+// @ts-expect-error: number is not assignable to the signature bag
+takePartialAny(1);
+// @ts-expect-error: null is not assignable
+
+takePartialAny(null);
+
+/**
+ * @param {Partial<unknown>} x
+ */
+
+function takePartialUnknown(x) {
+  if (!inspectType(x, {
+    "type": "reference",
+    "name": "Partial",
+    "args": [
+      "unknown"
+    ],
+    "optional": false
+  }, 'takePartialUnknown', 'x')) {
+    youCanAddABreakpointHere();
+  }
+  return x;
+}
+takePartialUnknown(1); // ok: unknown maps over never keys, like {}
+
+takePartialUnknown({}); // ok
+
+// @ts-expect-error: null is not assignable
+
+ // ok
+
+// @ts-expect-error: null is not assignable
+takePartialUnknown(null);
+
+/**
  * @param {Partial<() => void>} x
  */
 
