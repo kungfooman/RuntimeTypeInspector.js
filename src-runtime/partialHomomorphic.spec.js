@@ -267,6 +267,115 @@ function testMixedUnionExcessDeliberate() {
   }
   return validateType({a: 1, c: true}, expect, 'loc', 'name', true, warn, 0) === false;
 }
+class SubAnimal {
+  constructor() {
+    this.legs = 0;
+  }
+}
+class SubDog extends SubAnimal {
+  constructor() {
+    super();
+    this.bark = 'woof';
+  }
+}
+function prepareAnimals() {
+  clearTypedefs();
+  registerClass(SubAnimal);
+  registerClass(SubDog);
+  registerTypedef('SubAnimal', {type: 'object', properties: {legs: 'number'}});
+  registerTypedef('SubDog', {type: 'object', properties: {legs: 'number', bark: 'string'}});
+  registerTypedef('SubZoo', expandType('{star: SubAnimal, count: number}'));
+}
+function testPartialSubclassNominal() {
+  // Subclass instances satisfy Partial of the base nominally, like the bare class check does.
+  prepareAnimals();
+  const expect = expandType('Partial<SubAnimal>');
+  if (validateType(new SubDog(), expect, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  if (validateType(new SubAnimal(), expect, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  return validateType({legs: 'bad'}, expect, 'loc', 'name', true, warn, 0) === false;
+}
+function testUtilitiesAcceptInstances() {
+  // Required/Pick/Omit of a class accept its instances (including subclasses) outright.
+  prepareAnimals();
+  if (validateType(new SubDog(), expandType('Required<SubAnimal>'), 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  if (validateType(new SubDog(), expandType('Pick<SubAnimal, "legs">'), 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  if (validateType(new SubDog(), expandType('Omit<SubAnimal, "legs">'), 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  return validateType(new SubAnimal(), expandType('Pick<SubDog, "bark">'), 'loc', 'name', true, warn, 0) === false;
+}
+function testPartialIndexedSubclass() {
+  // The nominal shortcut survives indexed access: Partial<Zoo['star']> takes subclass instances.
+  prepareAnimals();
+  const expect = expandType('Partial<SubZoo["star"]>');
+  if (validateType(new SubDog(), expect, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  return validateType({legs: 'bad'}, expect, 'loc', 'name', true, warn, 0) === false;
+}
+function testPartialIntersection() {
+  // Intersections merge member shapes before optionality applies.
+  prepare();
+  registerTypedef('PhOther', expandType('{c: boolean}'));
+  const expect = expandType('Partial<PhSmall & PhOther>');
+  if (validateType({}, expect, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  if (validateType({a: 1, c: true}, expect, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  return validateType({a: 'x', c: true}, expect, 'loc', 'name', true, warn, 0) === false;
+}
+function testPartialCondition() {
+  // Decidable conditions resolve to a branch first, so Partial applies to the denoted shape.
+  prepare();
+  registerTypedef('PhOther', expandType('{c: boolean}'));
+  registerTypedef('PhMode', 'string');
+  registerTypedef('PhCond', expandType('PhMode extends string ? PhSmall : PhOther'));
+  const expect = expandType('Partial<PhCond>');
+  if (validateType({a: 1}, expect, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  return validateType({a: 'x'}, expect, 'loc', 'name', true, warn, 0) === false;
+}
+function testPartialRecord() {
+  // Records stay records with undefined-able values; Required keeps them exactly.
+  prepare();
+  const partial = expandType('Partial<Record<string, number>>');
+  if (validateType({}, partial, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  if (validateType({k: 1}, partial, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  if (validateType({k: 'x'}, partial, 'loc', 'name', true, warn, 0) !== false) {
+    return false;
+  }
+  const required = expandType('Required<Record<string, number>>');
+  if (validateType({k: 1}, required, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  return validateType({k: 'x'}, required, 'loc', 'name', true, warn, 0) === false;
+}
+function testIndexSignaturesPreserved() {
+  // Index-signature shapes survive Partial/Required with base behavior intact.
+  prepare();
+  registerTypedef('PhIdx', expandType('{[k: string]: number}'));
+  const partial = expandType('Partial<PhIdx>');
+  if (validateType({}, partial, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  const required = expandType('Required<PhIdx>');
+  return validateType({}, required, 'loc', 'name', true, warn, 0) === true;
+}
 const tests = [
   testExpandKeepsDeepPartial,
   testPartialNumberPassthrough,
@@ -286,6 +395,13 @@ const tests = [
   testPartialTypedefAlias,
   testPartialWrappers,
   testPartialGenericAlias,
-  testMixedUnionExcessDeliberate
+  testMixedUnionExcessDeliberate,
+  testPartialSubclassNominal,
+  testUtilitiesAcceptInstances,
+  testPartialIndexedSubclass,
+  testPartialIntersection,
+  testPartialCondition,
+  testPartialRecord,
+  testIndexSignaturesPreserved
 ];
 export {tests};

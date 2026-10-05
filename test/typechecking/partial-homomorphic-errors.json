@@ -157,6 +157,62 @@
       "value": {
         "a": "x"
       }
+    },
+    {
+      "loc": "takeStar",
+      "name": "x",
+      "value": {
+        "legs": "bad"
+      }
+    },
+    {
+      "loc": "takePickDog",
+      "name": "x",
+      "value": {
+        "legs": 0,
+        "$type": "Animal"
+      }
+    },
+    {
+      "loc": "takeIntersect",
+      "name": "x",
+      "value": {
+        "a": "x",
+        "b": "s"
+      }
+    },
+    {
+      "loc": "takeReqIntersect",
+      "name": "x",
+      "value": {}
+    },
+    {
+      "loc": "takeCond",
+      "name": "x",
+      "value": {
+        "a": "x"
+      }
+    },
+    {
+      "loc": "takePartialRecord",
+      "name": "x",
+      "value": {
+        "k": "x"
+      }
+    },
+    {
+      "loc": "takeReqRecord",
+      "name": "x",
+      "value": {
+        "k": "x"
+      }
+    },
+    {
+      "loc": "takeDoubleIndex",
+      "name": "x",
+      "value": {
+        "a": "x"
+      }
     }
   ]
 }

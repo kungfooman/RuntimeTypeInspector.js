@@ -56,9 +56,48 @@ registerTypedef('GenericPartial', {
     "T"
   ]
 }, ["T"]);
+registerTypedef('Zoo', {
+  "type": "object",
+  "properties": {
+    "star": "Animal",
+    "count": "number"
+  }
+});
+registerTypedef('P1', {
+  "type": "object",
+  "properties": {
+    "a": "number"
+  }
+});
+registerTypedef('P2', {
+  "type": "object",
+  "properties": {
+    "b": "string"
+  }
+});
+registerTypedef('Mode', "string");
+registerTypedef('CondBox', {
+  "type": "condition",
+  "checkType": "Mode",
+  "extendsType": "string",
+  "trueType": "P1",
+  "falseType": "P2"
+});
+registerTypedef('Mid', {
+  "type": "object",
+  "properties": {
+    "mid": "P1"
+  }
+});
+registerTypedef('Top', {
+  "type": "object",
+  "properties": {
+    "deep": "Mid"
+  }
+});
 
 /**
- * Homomorphic Partial over indexed access: `{[K in keyof GizmoTheme]?: Partial<GizmoTheme[K]>}` (the transform-gizmo `setTheme` shape) used to reject every valid partial theme because `Partial` only accepted plain object typedefs. `Partial<GizmoTheme[K]>` instantiates per key to `Partial<mapping>` (shapeBase), `Partial<number>` (guideOcclusion) and `Partial<Color>` (disabled class): TypeScript keeps primitives as primitives, distributes over unions and turns object/class shapes optional with arrays staying arrays and tuples staying tuples. Every throwing call carries `@ts-expect-error`, so a tsc-strict run is green if and only if each directive is consumed and nothing else errors; `*-errors.json` pins the same sequence for RTI. Two deliberate divergences carry `// Expected:` notes instead: mixed-union literals like `{a, b}` against `Partial<A | B>` and class instances against `Pick<Class, ...>` are accepted structurally by tsc but rejected by RTI's exactObjects excess check (which `Omit`/`Pick` rejection relies on). Nested `>>>` closings are spaced (`> > >`) because tsc's JSDoc parser cannot lex them; RTI parses both spellings. Cross-file imports stay out of scope: RTI checks one file, so imported types are unknown while tsc follows them.
+ * Homomorphic Partial over indexed access: `{[K in keyof GizmoTheme]?: Partial<GizmoTheme[K]>}` (the transform-gizmo `setTheme` shape) used to reject every valid partial theme because `Partial` only accepted plain object typedefs. `Partial<GizmoTheme[K]>` instantiates per key to `Partial<mapping>` (shapeBase), `Partial<number>` (guideOcclusion) and `Partial<Color>` (disabled class): TypeScript keeps primitives as primitives, distributes over unions and turns object/class shapes optional with arrays staying arrays and tuples staying tuples. Class instances (including subclasses) satisfy `Partial`/`Required`/`Pick`/`Omit` of their class nominally, exactly like the bare class check does. Every throwing call carries `@ts-expect-error`, so a tsc-strict run is green if and only if each directive is consumed and nothing else errors; `*-errors.json` pins the same sequence for RTI. One deliberate divergence carries a `// Expected:` note instead: mixed-union literals like `{a, c}` against `Partial<A | C>` are accepted structurally by tsc but rejected by RTI's exactObjects excess check (which `Omit`/`Pick` rejection relies on; plain unions behave the same). Nested `>>>` closings are spaced (`> > >`) because tsc's JSDoc parser cannot lex them; RTI parses both spellings. Implicit index-signature objects (`{[k: string]: number}`) inherit base laxity under `Partial` (mistyped values pass, as they do for the base shape — index-signature enforcement itself is a separate gap). Cross-file imports stay out of scope: RTI checks one file, so imported types are unknown while tsc follows them.
  */
 class Color {
   constructor() {
@@ -894,5 +933,433 @@ takeGenericAlias({
 
 // @ts-expect-error: string is not assignable to number
 takeGenericAlias({
+  a: 'x'
+});
+class Animal {
+  constructor() {
+    /** @type {number} */
+    this.legs = 0;
+  }
+}
+registerClass(Animal);
+registerTypedef('Animal', {
+  "type": "object",
+  "properties": {
+    "legs": "number"
+  }
+});
+class Dog extends Animal {
+  constructor() {
+    super();
+    /** @type {string} */
+
+    this.bark = 'woof';
+  }
+}
+registerClass(Dog);
+registerTypedef('Dog', {
+  "type": "object",
+  "properties": {
+    "bark": "string"
+  }
+});
+
+/**
+ * @typedef {object} Zoo
+ * @property {Animal} star
+ * @property {number} count
+ */
+
+
+/**
+ * @param {Partial<Zoo['star']>} x
+ */
+
+
+/**
+ * @typedef {object} Zoo
+ * @property {Animal} star
+ * @property {number} count
+ */
+
+/**
+ * @param {Partial<Zoo['star']>} x
+ */
+function takeStar(x) {
+  if (!inspectType(x, {
+    "type": "reference",
+    "name": "Partial",
+    "args": [
+      {
+        "type": "indexedAccess",
+        "index": "'star'",
+        "object": "Zoo"
+      }
+    ],
+    "optional": false
+  }, 'takeStar', 'x')) {
+    youCanAddABreakpointHere();
+  }
+  return x;
+}
+takeStar(new Animal()); // ok
+
+takeStar(new Dog()); // ok: subclass instances satisfy Partial nominally
+
+takeStar({}); // ok
+
+// @ts-expect-error: string is not assignable to number
+
+ // ok
+
+// @ts-expect-error: string is not assignable to number
+takeStar({
+  legs: 'bad'
+});
+
+/**
+ * @param {Omit<Animal, 'legs'>} x
+ */
+
+function takeOmitAnimal(x) {
+  if (!inspectType(x, {
+    "type": "reference",
+    "name": "Omit",
+    "args": [
+      "Animal",
+      "'legs'"
+    ],
+    "optional": false
+  }, 'takeOmitAnimal', 'x')) {
+    youCanAddABreakpointHere();
+  }
+  return x;
+}
+takeOmitAnimal(new Dog()); // ok: instances satisfy Omit nominally
+
+takeOmitAnimal({}); // ok
+
+takeOmitAnimal({
+  legs: 1
+}); // ok: omitting the sole member leaves {}, which admits anything non-nullish in both checkers
+
+
+/**
+ * @param {Pick<Dog, 'bark'>} x
+ */
+
+function takePickDog(x) {
+  if (!inspectType(x, {
+    "type": "reference",
+    "name": "Pick",
+    "args": [
+      "Dog",
+      "'bark'"
+    ],
+    "optional": false
+  }, 'takePickDog', 'x')) {
+    youCanAddABreakpointHere();
+  }
+  return x;
+}
+takePickDog(new Dog()); // ok
+
+takePickDog({
+  bark: 'w'
+}); // ok
+
+// @ts-expect-error: Animal lacks bark
+
+ // ok
+
+// @ts-expect-error: Animal lacks bark
+takePickDog(new Animal());
+
+/**
+ * @typedef {object} P1
+ * @property {number} a
+ */
+
+
+/**
+ * @typedef {object} P2
+ * @property {string} b
+ */
+
+
+/**
+ * @param {Partial<P1 & P2>} x
+ */
+
+
+/**
+ * @typedef {object} P1
+ * @property {number} a
+ */
+
+/**
+ * @typedef {object} P2
+ * @property {string} b
+ */
+
+/**
+ * @param {Partial<P1 & P2>} x
+ */
+function takeIntersect(x) {
+  if (!inspectType(x, {
+    "type": "reference",
+    "name": "Partial",
+    "args": [
+      {
+        "type": "intersection",
+        "members": [
+          "P1",
+          "P2"
+        ]
+      }
+    ],
+    "optional": false
+  }, 'takeIntersect', 'x')) {
+    youCanAddABreakpointHere();
+  }
+  return x;
+}
+takeIntersect({}); // ok
+
+takeIntersect({
+  a: 1,
+  b: 's'
+}); // ok: members merge
+
+// @ts-expect-error: string is not assignable to number
+
+ // ok: members merge
+
+// @ts-expect-error: string is not assignable to number
+takeIntersect({
+  a: 'x',
+  b: 's'
+});
+
+/**
+ * @param {Required<P1 & P2>} x
+ */
+
+function takeReqIntersect(x) {
+  if (!inspectType(x, {
+    "type": "reference",
+    "name": "Required",
+    "args": [
+      {
+        "type": "intersection",
+        "members": [
+          "P1",
+          "P2"
+        ]
+      }
+    ],
+    "optional": false
+  }, 'takeReqIntersect', 'x')) {
+    youCanAddABreakpointHere();
+  }
+  return x;
+}
+takeReqIntersect({
+  a: 1,
+  b: 's'
+}); // ok
+
+// @ts-expect-error: missing required members
+
+ // ok
+
+// @ts-expect-error: missing required members
+takeReqIntersect({});
+
+/**
+ * @typedef {string} Mode
+ */
+
+
+/**
+ * @typedef {Mode extends string ? P1 : P2} CondBox
+ */
+
+
+/**
+ * @param {Partial<CondBox>} x
+ */
+
+
+/**
+ * @typedef {string} Mode
+ */
+
+/**
+ * @typedef {Mode extends string ? P1 : P2} CondBox
+ */
+
+/**
+ * @param {Partial<CondBox>} x
+ */
+function takeCond(x) {
+  if (!inspectType(x, {
+    "type": "reference",
+    "name": "Partial",
+    "args": [
+      "CondBox"
+    ],
+    "optional": false
+  }, 'takeCond', 'x')) {
+    youCanAddABreakpointHere();
+  }
+  return x;
+}
+takeCond({}); // ok: decidable conditions resolve to a branch first
+
+takeCond({
+  a: 1
+}); // ok
+
+// @ts-expect-error: string is not assignable to number
+
+ // ok
+
+// @ts-expect-error: string is not assignable to number
+takeCond({
+  a: 'x'
+});
+
+/**
+ * @param {Partial<Record<string, number>>} x
+ */
+
+function takePartialRecord(x) {
+  if (!inspectType(x, {
+    "type": "reference",
+    "name": "Partial",
+    "args": [
+      {
+        "type": "record",
+        "key": "string",
+        "val": "number"
+      }
+    ],
+    "optional": false
+  }, 'takePartialRecord', 'x')) {
+    youCanAddABreakpointHere();
+  }
+  return x;
+}
+takePartialRecord({}); // ok
+
+takePartialRecord({
+  k: 1
+}); // ok
+
+// @ts-expect-error: string is not assignable to number
+
+ // ok
+
+// @ts-expect-error: string is not assignable to number
+takePartialRecord({
+  k: 'x'
+});
+
+/**
+ * @param {Required<Record<string, number>>} x
+ */
+
+function takeReqRecord(x) {
+  if (!inspectType(x, {
+    "type": "reference",
+    "name": "Required",
+    "args": [
+      {
+        "type": "record",
+        "key": "string",
+        "val": "number"
+      }
+    ],
+    "optional": false
+  }, 'takeReqRecord', 'x')) {
+    youCanAddABreakpointHere();
+  }
+  return x;
+}
+takeReqRecord({}); // ok
+
+takeReqRecord({
+  k: 1
+}); // ok
+
+// @ts-expect-error: string is not assignable to number
+
+ // ok
+
+// @ts-expect-error: string is not assignable to number
+takeReqRecord({
+  k: 'x'
+});
+
+/**
+ * @param {Partial<Top['deep']['mid']>} x
+ */
+
+function takeDoubleIndex(x) {
+  if (!inspectType(x, {
+    "type": "reference",
+    "name": "Partial",
+    "args": [
+      {
+        "type": "indexedAccess",
+        "index": "'mid'",
+        "object": {
+          "type": "indexedAccess",
+          "index": "'deep'",
+          "object": "Top"
+        }
+      }
+    ],
+    "optional": false
+  }, 'takeDoubleIndex', 'x')) {
+    youCanAddABreakpointHere();
+  }
+  return x;
+}
+
+/**
+ * @typedef {object} Mid
+ * @property {P1} mid
+ */
+
+
+/**
+ * @typedef {object} Top
+ * @property {Mid} deep
+ */
+
+
+/**
+ * @typedef {object} Mid
+ * @property {P1} mid
+ */
+
+/**
+ * @typedef {object} Top
+ * @property {Mid} deep
+ */
+takeDoubleIndex({}); // ok: nested indexed access resolves
+
+takeDoubleIndex({
+  a: 1
+}); // ok
+
+// @ts-expect-error: string is not assignable to number
+
+ // ok
+
+// @ts-expect-error: string is not assignable to number
+takeDoubleIndex({
   a: 'x'
 });

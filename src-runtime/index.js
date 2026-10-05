@@ -56,6 +56,7 @@ export * from './makeJSDoc.js';
 export * from './options.js';
 export * from './partition.js';
 export * from './registerClass.js';
+export * from './nominalClassOf.js';
 export * from './registerImportNamespaceSpecifier.js';
 export * from './registerTypedef.js';
 export * from './registerVariable.js';
