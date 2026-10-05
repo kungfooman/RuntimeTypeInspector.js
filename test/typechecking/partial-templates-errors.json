@@ -1,0 +1,29 @@
+{
+  "throws": [
+    {
+      "loc": "takePartialEvent",
+      "name": "x",
+      "value": "onmove"
+    },
+    {
+      "loc": "takePartialEvent",
+      "name": "x",
+      "value": 1
+    },
+    {
+      "loc": "takeReqEvent",
+      "name": "x",
+      "value": "onleave"
+    },
+    {
+      "loc": "takePartialKey",
+      "name": "x",
+      "value": "z"
+    },
+    {
+      "loc": "takeReqKey",
+      "name": "x",
+      "value": 1
+    }
+  ]
+}

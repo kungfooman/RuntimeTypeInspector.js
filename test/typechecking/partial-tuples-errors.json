@@ -1,0 +1,32 @@
+{
+  "throws": [
+    {
+      "loc": "takePartialTuple",
+      "name": "x",
+      "value": [
+        "s",
+        "s"
+      ]
+    },
+    {
+      "loc": "takePartialTuple",
+      "name": "x",
+      "value": {}
+    },
+    {
+      "loc": "takeReqTuple",
+      "name": "x",
+      "value": [
+        "s",
+        "s"
+      ]
+    },
+    {
+      "loc": "takeReqTuple",
+      "name": "x",
+      "value": [
+        1
+      ]
+    }
+  ]
+}

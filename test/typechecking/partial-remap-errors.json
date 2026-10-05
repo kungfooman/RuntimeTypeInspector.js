@@ -1,0 +1,33 @@
+{
+  "throws": [
+    {
+      "loc": "takeExclude",
+      "name": "x",
+      "value": {
+        "keep": "x"
+      }
+    },
+    {
+      "loc": "takeExclude",
+      "name": "x",
+      "value": {
+        "drop": "s"
+      }
+    },
+    {
+      "loc": "takeFalsePolarity",
+      "name": "x",
+      "value": {
+        "drop": "s"
+      }
+    },
+    {
+      "loc": "takeBaseRemap",
+      "name": "x",
+      "value": {
+        "keep": 1,
+        "drop": "s"
+      }
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "throws": [
+    {
+      "loc": "takeTrueBranch",
+      "name": "x",
+      "value": {
+        "radius": "x"
+      }
+    },
+    {
+      "loc": "takeFalseBranch",
+      "name": "x",
+      "value": {
+        "side": "x"
+      }
+    },
+    {
+      "loc": "takeReqCond",
+      "name": "x",
+      "value": {}
+    }
+  ]
+}

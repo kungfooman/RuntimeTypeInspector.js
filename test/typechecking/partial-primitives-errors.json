@@ -1,0 +1,53 @@
+{
+  "throws": [
+    {
+      "loc": "takeAlias",
+      "name": "x",
+      "value": "x"
+    },
+    {
+      "loc": "takeString",
+      "name": "x",
+      "value": 1
+    },
+    {
+      "loc": "takeBoolean",
+      "name": "x",
+      "value": "x"
+    },
+    {
+      "loc": "takeLiterals",
+      "name": "x",
+      "value": "c"
+    },
+    {
+      "loc": "takeReqNumber",
+      "name": "x",
+      "value": {}
+    },
+    {
+      "loc": "takePartialAny",
+      "name": "x",
+      "value": 1
+    },
+    {
+      "loc": "takePartialAny",
+      "name": "x",
+      "value": null
+    },
+    {
+      "loc": "takePartialUnknown",
+      "name": "x",
+      "value": null
+    },
+    {
+      "loc": "takeFn",
+      "name": "x",
+      "value": null
+    },
+    {
+      "loc": "takeReqFn",
+      "name": "x"
+    }
+  ]
+}

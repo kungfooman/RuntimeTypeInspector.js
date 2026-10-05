@@ -4,7 +4,7 @@ import {versionedCache} from "./memoize.js";
 import {getTypeKeys} from "./getTypeKeys.js";
 import {typedefs, typedefVersion   } from "./registerTypedef.js";
 import {classVersion} from "./registerClass.js";
-import {evaluateCondition, literalType, resolveForExtends} from "./evaluateCondition.js";
+import {evaluateCondition, extendsCheck, literalType, resolveForExtends} from "./evaluateCondition.js";
 import {validators} from "./validators.js";
 import {applyQuestionModifier} from "./applyQuestionModifier.js";
 import {applyReadonlyModifier} from "./applyReadonlyModifier.js";
@@ -156,21 +156,37 @@ function instantiateMapping(expect, warn) {
     if (nameType !== undefined) {
       // `as` key remapping: evaluate the (substituted) condition per key.
       // Pure substitution returns the new tree (nothing is modified in
-      // place anymore), so no clone is needed first.
+      // place anymore), so no clone is needed first. Either branch may
+      // carry the kept name (`? K : never` keeps on true, `? never : K`
+      // keeps on false); a `never` branch drops the key.
       const substitutedCond = substituteType(nameType, element, keyType, warn);
       if (!substitutedCond || substitutedCond.type !== 'condition') {
-        warn('validateMapping: nameType is not a condition after substitution', substitutedCond);
+        // Idiomatic `Exclude` filters (`as Exclude<K, 'drop'>`) decide per
+        // key directly: excluded keys drop, the rest keep their name.
+        if (substitutedCond && substitutedCond.type === 'reference' && substitutedCond.name === 'Exclude' &&
+          Array.isArray(substitutedCond.args) && substitutedCond.args.length === 2) {
+          const excluded = extendsCheck(keyType, substitutedCond.args[1], warn);
+          if (excluded === true) {
+            continue;
+          }
+          if (excluded !== false) {
+            warn('validateMapping: undecidable Exclude, keeping key', {typeKey});
+          }
+        } else {
+          warn('validateMapping: nameType is not a condition after substitution', substitutedCond);
+        }
       } else {
         const decision = evaluateCondition(substitutedCond.checkType, substitutedCond.extendsType, warn);
-        if (decision === false) {
-          continue;
-        }
-        if (decision === true) {
-          const trueName = branchName(substitutedCond.trueType, warn);
-          if (trueName !== undefined) {
-            propKey = trueName;
+        if (decision === true || decision === false) {
+          const branch = decision === true ? substitutedCond.trueType : substitutedCond.falseType;
+          if (branch === 'never') {
+            continue;
+          }
+          const newName = branchName(branch, warn);
+          if (newName !== undefined) {
+            propKey = newName;
           } else {
-            warn('validateMapping: unresolvable true-branch, keeping key', {typeKey});
+            warn('validateMapping: unresolvable branch, keeping key', {typeKey});
           }
         } else {
           warn('validateMapping: undecidable condition, keeping key', {typeKey});

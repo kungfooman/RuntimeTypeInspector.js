@@ -1,0 +1,39 @@
+{
+  "throws": [
+    {
+      "loc": "takePickScores",
+      "name": "x",
+      "value": {
+        "k": "x"
+      }
+    },
+    {
+      "loc": "takePartialNums",
+      "name": "x",
+      "value": {
+        "0x10": "a"
+      }
+    },
+    {
+      "loc": "takePartialNums",
+      "name": "x",
+      "value": {
+        "": "a"
+      }
+    },
+    {
+      "loc": "takePartialNums",
+      "name": "x",
+      "value": {
+        "abc": "a"
+      }
+    },
+    {
+      "loc": "takePartialNums",
+      "name": "x",
+      "value": {
+        "0": 1
+      }
+    }
+  ]
+}
