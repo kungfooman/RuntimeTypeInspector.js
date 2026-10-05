@@ -4,7 +4,7 @@ import {validators, recurse} from "./validators.js";
 import {substituteType} from "./substituteType.js";
 import {createTypeFromMapping} from "./createTypeFromMapping.js";
 import {createTypeFromIndexedAccess} from "./createTypeFromIndexedAccess.js";
-import {mergedClassShape} from "./classShape.js";
+import {mergedClassShape, prototypeShape} from "./classShape.js";
 import {nominalClassOf} from "./nominalClassOf.js";
 import {getTypeKeys, resolveUtilityShape} from "./getTypeKeys.js";
 import {instantiateReference} from "./instantiateReference.js";
@@ -27,6 +27,15 @@ function resolveObjectArgs(type, warn) {
       }
       if (classes[current]) {
         current = mergedClassShape(current);
+        continue;
+      }
+      // Platform constructors (e.g. `Date`) reflect off the prototype chain
+      // like key reads already do, so utilities accept their instances and
+      // partial shapes instead of rejecting every value outright.
+      const lookup = validators.lookupGlobalConstructor;
+      const ctor = lookup ? lookup(current) : undefined;
+      if (typeof ctor === 'function') {
+        current = prototypeShape(ctor);
         continue;
       }
       return [];

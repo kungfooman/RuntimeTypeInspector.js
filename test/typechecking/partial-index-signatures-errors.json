@@ -1,3 +1,11 @@
 {
-  "throws": []
+  "throws": [
+    {
+      "loc": "takePickScores",
+      "name": "x",
+      "value": {
+        "k": "x"
+      }
+    }
+  ]
 }

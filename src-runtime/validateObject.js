@@ -1,6 +1,7 @@
 import {recurse} from "./validators.js";
 import {options     } from "./options.js";
 import {isObject    } from "./isObject.js";
+import {matchIndexSignature} from "./matchIndexSignature.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -33,32 +34,66 @@ function validateObject(value, expect, loc, name, critical, warn, depth) {
   }
   if (properties && Object.keys(properties).length) {
     if (loc !== 'sortPriority' && loc !== 'getResource' && loc !== 'cmpPriority') {
+      let failed = false;
+      let bare = false;
       Object.keys(value).forEach((key) => {
         if (key === 'profilerHint') {
           return;
         }
         if (!properties[key]) {
+          // Keys covered by an index signature validate against its value
+          // type instead of counting as excess.
+          const signature = matchIndexSignature(expect, key);
+          if (signature) {
+            if (!recurse(value[key], signature.indexType, loc, `${name}.${key}`, critical, warn, depth + 1)) {
+              warn(`Element ${name}.${key} has wrong type.`, {expect: signature.indexType, value: value[key]});
+              failed = true;
+            }
+            return;
+          }
           if (options.exactObjects) {
             warn(`Excess property '${name}.${key}' is not allowed (exact object check).`, {properties, value});
           } else if (options.logSuperfluousProperty) {
             warn(`Superfluous property: ${name}.${key}`, {properties, value});
           }
+          bare = true;
         }
       });
-      if (options.exactObjects && Object.keys(value).some((key) => key !== 'profilerHint' && !properties[key])) {
+      if (failed) {
+        return false;
+      }
+      if (options.exactObjects && bare) {
         return false;
       }
     }
-    for (const key of Object.keys(properties)) {
-      const innerValue = value[key];
-      const innerType = properties[key];
-      const nameKey = `${name}.${key}`;
-      const ret = recurse(innerValue, innerType, loc, nameKey, critical, warn, depth + 1);
-      if (!ret) {
-        const info = {expect: innerType, value: innerValue};
-        warn(`Element ${nameKey} has wrong type.`, info);
-        return false;
+  } else if (Array.isArray(expect.indexSignatures) && expect.indexSignatures.length) {
+    // No named properties (e.g. a pure `{[k: string]: number}` shape):
+    // signature-covered keys validate, uncovered ones keep today's pass.
+    if (loc !== 'sortPriority' && loc !== 'getResource' && loc !== 'cmpPriority') {
+      for (const key of Object.keys(value)) {
+        if (key === 'profilerHint') {
+          continue;
+        }
+        const signature = matchIndexSignature(expect, key);
+        if (!signature) {
+          continue;
+        }
+        if (!recurse(value[key], signature.indexType, loc, `${name}.${key}`, critical, warn, depth + 1)) {
+          warn(`Element ${name}.${key} has wrong type.`, {expect: signature.indexType, value: value[key]});
+          return false;
+        }
       }
+    }
+  }
+  for (const key of Object.keys(properties ?? {})) {
+    const innerValue = value[key];
+    const innerType = properties[key];
+    const nameKey = `${name}.${key}`;
+    const ret = recurse(innerValue, innerType, loc, nameKey, critical, warn, depth + 1);
+    if (!ret) {
+      const info = {expect: innerType, value: innerValue};
+      warn(`Element ${nameKey} has wrong type.`, info);
+      return false;
     }
   }
   return true;

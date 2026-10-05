@@ -379,6 +379,41 @@ function testIndexSignaturesPreserved() {
   const required = expandType('Required<PhIdx>');
   return validateType({}, required, 'loc', 'name', true, warn, 0) === true;
 }
+function testPlatformBases() {
+  // Platform constructors reflect like key reads do: Partial takes instances and partial shapes.
+  prepare();
+  const partial = expandType('Partial<Date>');
+  if (validateType(new Date(), partial, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  if (validateType({}, partial, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  if (validateType({getTime: 1}, partial, 'loc', 'name', true, warn, 0) !== false) {
+    return false;
+  }
+  const required = expandType('Required<Date>');
+  if (validateType(new Date(), required, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  return validateType({}, required, 'loc', 'name', true, warn, 0) === false;
+}
+function testIndexSignatureEnforcement() {
+  // Signature-covered values validate against the value type, in bases and under utilities alike.
+  prepare();
+  registerTypedef('PhWords', expandType('{[n: number]: string, length: number}'));
+  if (validateType({0: 'hi', length: 1}, 'PhWords', 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  if (validateType({0: 1, length: 1}, 'PhWords', 'loc', 'name', true, warn, 0) !== false) {
+    return false;
+  }
+  const partial = expandType('Partial<PhWords>');
+  if (validateType({0: 'hi'}, partial, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  return validateType({0: 1}, partial, 'loc', 'name', true, warn, 0) === false;
+}
 const tests = [
   testExpandKeepsDeepPartial,
   testPartialNumberPassthrough,
@@ -405,6 +440,8 @@ const tests = [
   testPartialIntersection,
   testPartialCondition,
   testPartialRecord,
-  testIndexSignaturesPreserved
+  testIndexSignaturesPreserved,
+  testPlatformBases,
+  testIndexSignatureEnforcement
 ];
 export {tests};
