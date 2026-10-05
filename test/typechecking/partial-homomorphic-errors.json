@@ -1,0 +1,13 @@
+{
+  "throws": [
+    {"loc": "setTheme", "name": "partial", "value": {"guideOcclusion": "bad"}},
+    {"loc": "setTheme", "name": "partial", "value": {"shapeBase": {"x": 123}}},
+    {"loc": "setTheme", "name": "partial", "value": {"unknownProp": 1}},
+    {"loc": "takeNumber", "name": "x", "value": {}},
+    {"loc": "takeUnion", "name": "x", "value": {"a": "x"}},
+    {"loc": "takeUnion", "name": "x", "value": true},
+    {"loc": "takeRequired", "name": "x", "value": {}},
+    {"loc": "takeArray", "name": "x", "value": {}},
+    {"loc": "takeClass", "name": "x", "value": {"r": "bad"}}
+  ]
+}

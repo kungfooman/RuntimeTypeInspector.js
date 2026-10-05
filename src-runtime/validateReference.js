@@ -3,6 +3,8 @@ import {classes} from "./registerClass.js";
 import {validators, recurse} from "./validators.js";
 import {substituteType} from "./substituteType.js";
 import {createTypeFromMapping} from "./createTypeFromMapping.js";
+import {createTypeFromIndexedAccess} from "./createTypeFromIndexedAccess.js";
+import {mergedClassShape} from "./classShape.js";
 import {getTypeKeys, resolveUtilityShape} from "./getTypeKeys.js";
 import {instantiateReference} from "./instantiateReference.js";
 import {extendsCheck, resolveForExtends, stripLiteral, deepEqualType} from "./evaluateCondition.js";
@@ -18,10 +20,23 @@ function resolveObjectArgs(type, warn) {
   let current = type;
   for (let i = 0; i < 10; i++) {
     if (typeof current === 'string') {
-      if (!typedefs[current]) {
+      if (typedefs[current]) {
+        current = typedefs[current];
+        continue;
+      }
+      if (classes[current]) {
+        current = mergedClassShape(current);
+        continue;
+      }
+      return [];
+    }
+    if (current && current.type === 'indexedAccess') {
+      const create = validators.createTypeFromIndexedAccess ?? createTypeFromIndexedAccess;
+      const resolved = create ? create(current, () => undefined) : undefined;
+      if (resolved === undefined) {
         return [];
       }
-      current = typedefs[current];
+      current = resolved;
       continue;
     }
     if (current && current.type === 'mapping') {
@@ -192,19 +207,80 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         warn('Partial requires one type argument.', {expect});
         return false;
       }
-      const objects = resolveObjectArgs(firstArg, warn);
-      if (!objects.length) {
-        warn('Partial requires an object type argument.', {expect});
-        return false;
+      // Homomorphic distribution: `Partial<A | B>` validates each member
+      // through `Partial` again so primitives survive alongside objects.
+      if (firstArg && firstArg.type === 'union' && Array.isArray(firstArg.members)) {
+        const members = firstArg.members.map((member) => ({type: 'reference', name: 'Partial', args: [member]}));
+        return recurse(value, {type: 'union', members}, loc, name, critical, warn, depth + 1);
       }
-      const members = objects.map((object) => {
-        const properties = {};
-        for (const key of Object.keys(object.properties)) {
-          properties[key] = asOptional(object.properties[key]);
+      // `Partial<GizmoTheme[K]>` resolves the indexed access first, then
+      // re-applies `Partial` so primitives pass through and objects turn optional.
+      if (firstArg && firstArg.type === 'indexedAccess') {
+        const create = validators.createTypeFromIndexedAccess ?? createTypeFromIndexedAccess;
+        const resolved = create ? create(firstArg, () => undefined) : undefined;
+        if (resolved !== undefined) {
+          return recurse(value, {type: 'reference', name: 'Partial', args: [resolved]}, loc, name, critical, warn, depth + 1);
         }
-        return {type: 'object', properties};
-      });
-      return recurse(value, members.length === 1 ? members[0] : {type: 'union', members}, loc, name, critical, warn, depth + 1);
+      }
+      // Transparent wrappers keep homomorphic behavior through recursion.
+      if (firstArg && firstArg.type === 'reference' && firstArg.args?.length &&
+        (firstArg.name === 'NonNullable' || firstArg.name === 'Readonly' || firstArg.name === 'NoInfer')) {
+        return recurse(value, {type: 'reference', name: 'Partial', args: [firstArg.args[0]]}, loc, name, critical, warn, depth + 1);
+      }
+      // Typedef aliases to primitives (e.g. `type Id = number`) recurse so
+      // the underlying primitive takes the passthrough below.
+      if (typeof firstArg === 'string' && typedefs[firstArg]) {
+        const aliased = typedefs[firstArg];
+        if (typeof aliased === 'string' && !typedefs[aliased] && !classes[aliased]) {
+          return recurse(value, aliased, loc, name, critical, warn, depth + 1);
+        }
+      }
+      if (firstArg && firstArg.type === 'reference' && typedefs[firstArg.name]) {
+        const instance = instantiateReference(firstArg, warn);
+        if (typeof instance === 'string' && !typedefs[instance] && !classes[instance]) {
+          return recurse(value, instance, loc, name, critical, warn, depth + 1);
+        }
+      }
+      const objects = resolveObjectArgs(firstArg, warn);
+      if (objects.length) {
+        const members = objects.map((object) => {
+          const properties = {};
+          for (const key of Object.keys(object.properties)) {
+            properties[key] = asOptional(object.properties[key]);
+          }
+          return {type: 'object', properties};
+        });
+        return recurse(value, members.length === 1 ? members[0] : {type: 'union', members}, loc, name, critical, warn, depth + 1);
+      }
+      // Homomorphic passthrough: `Partial<number>` is `number` (and the same
+      // for other primitives and literals), matching TypeScript.
+      if (typeof firstArg === 'string') {
+        if (!typedefs[firstArg] && !classes[firstArg]) {
+          const primitives = new Set(['any', 'unknown', 'never', 'null', 'undefined', 'void',
+            'string', 'number', 'boolean', 'bigint', 'symbol', 'Function', 'CallableFunction',
+            'NewableFunction', 'function', 'new', 'ObjectConstructor', 'IArguments', 'ArrayBufferView']);
+          const isQuoted = firstArg.length >= 2 &&
+            ((firstArg[0] === '"' && firstArg[firstArg.length - 1] === '"') ||
+             (firstArg[0] === "'" && firstArg[firstArg.length - 1] === "'"));
+          if (primitives.has(firstArg) || isQuoted) {
+            return recurse(value, firstArg, loc, name, critical, warn, depth + 1);
+          }
+        }
+      }
+      if (typeof firstArg === 'number' || typeof firstArg === 'boolean') {
+        return recurse(value, firstArg, loc, name, critical, warn, depth + 1);
+      }
+      // `Partial<string[]>` is `(string | undefined)[]`: arrays stay arrays
+      // with optional elements instead of rejecting every array outright.
+      if (firstArg && firstArg.type === 'array') {
+        const element = firstArg.elementType;
+        const hasUndefined = element === 'undefined' ||
+          (element && element.type === 'union' && Array.isArray(element.members) && element.members.includes('undefined'));
+        const partialElement = hasUndefined ? element : {type: 'union', members: [element, 'undefined']};
+        return recurse(value, {type: 'array', elementType: partialElement}, loc, name, critical, warn, depth + 1);
+      }
+      warn('Partial requires an object type argument.', {expect});
+      return false;
     }
     case 'Pick':
     case 'Omit': {
@@ -294,21 +370,70 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         warn('Required requires one type argument.', {expect});
         return false;
       }
-      const objects = resolveObjectArgs(firstArg, warn);
-      if (!objects.length) {
-        warn('Required requires an object type argument.', {expect});
-        return false;
+      // Homomorphic like Partial: distribute over unions and resolve indexed
+      // access first so `Required<Box | number>` keeps the primitive.
+      if (firstArg && firstArg.type === 'union' && Array.isArray(firstArg.members)) {
+        const members = firstArg.members.map((member) => ({type: 'reference', name: 'Required', args: [member]}));
+        return recurse(value, {type: 'union', members}, loc, name, critical, warn, depth + 1);
       }
-      // Required is shallow: only top-level optionality is stripped.
-      const members = objects.map((object) => {
-        const properties = {};
-        for (const key of Object.keys(object.properties)) {
-          const prop = object.properties[key];
-          properties[key] = prop && typeof prop === 'object' ? {...prop, optional: false} : prop;
+      if (firstArg && firstArg.type === 'indexedAccess') {
+        const create = validators.createTypeFromIndexedAccess ?? createTypeFromIndexedAccess;
+        const resolved = create ? create(firstArg, () => undefined) : undefined;
+        if (resolved !== undefined) {
+          return recurse(value, {type: 'reference', name: 'Required', args: [resolved]}, loc, name, critical, warn, depth + 1);
         }
-        return {type: 'object', properties};
-      });
-      return recurse(value, members.length === 1 ? members[0] : {type: 'union', members}, loc, name, critical, warn, depth + 1);
+      }
+      if (firstArg && firstArg.type === 'reference' && firstArg.args?.length &&
+        (firstArg.name === 'NonNullable' || firstArg.name === 'Readonly' || firstArg.name === 'NoInfer')) {
+        return recurse(value, {type: 'reference', name: 'Required', args: [firstArg.args[0]]}, loc, name, critical, warn, depth + 1);
+      }
+      if (typeof firstArg === 'string' && typedefs[firstArg]) {
+        const aliased = typedefs[firstArg];
+        if (typeof aliased === 'string' && !typedefs[aliased] && !classes[aliased]) {
+          return recurse(value, aliased, loc, name, critical, warn, depth + 1);
+        }
+      }
+      if (firstArg && firstArg.type === 'reference' && typedefs[firstArg.name]) {
+        const instance = instantiateReference(firstArg, warn);
+        if (typeof instance === 'string' && !typedefs[instance] && !classes[instance]) {
+          return recurse(value, instance, loc, name, critical, warn, depth + 1);
+        }
+      }
+      const objects = resolveObjectArgs(firstArg, warn);
+      if (objects.length) {
+        // Required is shallow: only top-level optionality is stripped.
+        const members = objects.map((object) => {
+          const properties = {};
+          for (const key of Object.keys(object.properties)) {
+            const prop = object.properties[key];
+            properties[key] = prop && typeof prop === 'object' ? {...prop, optional: false} : prop;
+          }
+          return {type: 'object', properties};
+        });
+        return recurse(value, members.length === 1 ? members[0] : {type: 'union', members}, loc, name, critical, warn, depth + 1);
+      }
+      // `Required<number>` is `number`, mirroring Partial passthrough.
+      if (typeof firstArg === 'string') {
+        if (!typedefs[firstArg] && !classes[firstArg]) {
+          const primitives = new Set(['any', 'unknown', 'never', 'null', 'undefined', 'void',
+            'string', 'number', 'boolean', 'bigint', 'symbol', 'Function', 'CallableFunction',
+            'NewableFunction', 'function', 'new', 'ObjectConstructor', 'IArguments', 'ArrayBufferView']);
+          const isQuoted = firstArg.length >= 2 &&
+            ((firstArg[0] === '"' && firstArg[firstArg.length - 1] === '"') ||
+             (firstArg[0] === "'" && firstArg[firstArg.length - 1] === "'"));
+          if (primitives.has(firstArg) || isQuoted) {
+            return recurse(value, firstArg, loc, name, critical, warn, depth + 1);
+          }
+        }
+      }
+      if (typeof firstArg === 'number' || typeof firstArg === 'boolean') {
+        return recurse(value, firstArg, loc, name, critical, warn, depth + 1);
+      }
+      if (firstArg && firstArg.type === 'array') {
+        return recurse(value, firstArg, loc, name, critical, warn, depth + 1);
+      }
+      warn('Required requires an object type argument.', {expect});
+      return false;
     }
     case 'Awaited': {
       if (!firstArg) {
