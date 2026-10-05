@@ -65,7 +65,7 @@ for (const {input, output} of tests) {
   const ast = parse(inputContent, parserOptions);
   // Must be called before getHeader since it's keeping an eye open for JSX elements.
   const source = converter.toSource(ast);
-  const newOutputContent = converter.getHeader() + source;
+  const newOutputContent = converter.getHeader(ast) + source;
   if (normalize(newOutputContent) !== normalize(outputContent)) {
     discrepancies++;
     console.error("Discrepancy detected, please check!", {

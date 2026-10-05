@@ -47,6 +47,28 @@ function ignoredParamsIn(text) {
   const names = line.slice('@ignoreRTI'.length).split(/[\s,]+/).map((name) => name.replace(/^[`'"]+|[`'"]+$/g, '')).filter(Boolean);
   return names.length ? new Set(names) : 'all';
 }
+/**
+ * Local names a file already imports from the runtime package: only exact
+ * same-module, non-aliased bindings (`import {registerTypedef} from ...`,
+ * never `import {x as y}` or other specifiers), so skipping them in the
+ * header can only remove a true duplicate.
+ * @param {import('@babel/types').File|import('@babel/types').Program} ast - The parsed program.
+ * @returns {Set<string>} Already-imported runtime names.
+ */
+function runtimeImportNames(ast) {
+  const found = new Set();
+  const program = ast?.type === 'File' ? ast.program : ast;
+  for (const node of program?.body ?? []) {
+    if (node.type === 'ImportDeclaration' && node.source?.value === '@runtime-type-inspector/runtime') {
+      for (const spec of node.specifiers ?? []) {
+        if (spec.type === 'ImportSpecifier' && spec.imported?.type === 'Identifier' && spec.local?.type === 'Identifier' && spec.imported.name === spec.local.name) {
+          found.add(spec.local.name);
+        }
+      }
+    }
+  }
+  return found;
+}
 /** @typedef {import('@babel/types').Node              } Node               */
 /** @typedef {import('@babel/types').ClassMethod       } ClassMethod        */
 /** @typedef {import('@babel/types').ClassPrivateMethod} ClassPrivateMethod */
@@ -184,23 +206,29 @@ class Asserter extends Stringifier {
    * or keeping log of every single call during RTI parsing.
    * @todo
    * Once we went over every node, we can see if we really require registerTypef, registerClass etc.
+   * @param {import('@babel/types').File|import('@babel/types').Program} [ast] - Optional parsed
+   * program: names the file already imports from the runtime are left out of
+   * the header import, so bundlers never see the same binding twice. Imports
+   * under other specifiers or aliased bindings still get the full header
+   * (a loud duplicate beats silently calling the wrong function).
    * @returns {string} The import declaration header for importing RTI.
    * @override
    */
-  getHeader() {
+  getHeader(ast) {
     if (!this.addHeader) {
       return '';
     }
     let header = super.getHeader();
-    header += "import {inspectIndexedAccess, inspectType, inspectTypeWithTemplates, youCanAddABreakpointHere, registerVariable";
+    const names = ['inspectIndexedAccess', 'inspectType', 'inspectTypeWithTemplates', 'youCanAddABreakpointHere', 'registerVariable'];
     if (this.validateDivision) {
-      header += ", validateDivision";
+      names.push('validateDivision');
     }
-    header += ", registerTypedef, registerClass, registerImportNamespaceSpecifier";
+    names.push('registerTypedef', 'registerClass', 'registerImportNamespaceSpecifier');
     if (this.projectVersion !== undefined && this.projectVersion !== null) {
-      header += ", setProjectVersion";
+      names.push('setProjectVersion');
     }
-    header += "} from '@runtime-type-inspector/runtime';\n";
+    const skip = ast ? runtimeImportNames(ast) : new Set();
+    header += `import {${names.filter((name) => !skip.has(name)).join(', ')}} from '@runtime-type-inspector/runtime';\n`;
     // Prevent tree-shaking in UMD build so we can always "add a breakpoint here".
     header += "export * from '@runtime-type-inspector/runtime';\n";
     if (this.projectVersion !== undefined && this.projectVersion !== null) {
