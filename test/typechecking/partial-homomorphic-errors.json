@@ -213,6 +213,18 @@
       "value": {
         "a": "x"
       }
+    },
+    {
+      "loc": "takeDeepTen",
+      "name": "x",
+      "value": {
+        "a": "x"
+      }
+    },
+    {
+      "loc": "takeTripleUnion",
+      "name": "x",
+      "value": true
     }
   ]
 }

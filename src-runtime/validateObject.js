@@ -67,21 +67,36 @@ function validateObject(value, expect, loc, name, critical, warn, depth) {
       }
     }
   } else if (Array.isArray(expect.indexSignatures) && expect.indexSignatures.length) {
-    // No named properties (e.g. a pure `{[k: string]: number}` shape):
-    // signature-covered keys validate, uncovered ones keep today's pass.
+    // No named properties (e.g. a pure `{[n: number]: string}` shape):
+    // signature-covered keys validate, uncovered ones count as excess
+    // exactly like above.
     if (loc !== 'sortPriority' && loc !== 'getResource' && loc !== 'cmpPriority') {
+      let failed = false;
+      let bare = false;
       for (const key of Object.keys(value)) {
         if (key === 'profilerHint') {
           continue;
         }
         const signature = matchIndexSignature(expect, key);
         if (!signature) {
+          if (options.exactObjects) {
+            warn(`Excess property '${name}.${key}' is not allowed (exact object check).`, {properties, value});
+          } else if (options.logSuperfluousProperty) {
+            warn(`Superfluous property: ${name}.${key}`, {properties, value});
+          }
+          bare = true;
           continue;
         }
         if (!recurse(value[key], signature.indexType, loc, `${name}.${key}`, critical, warn, depth + 1)) {
           warn(`Element ${name}.${key} has wrong type.`, {expect: signature.indexType, value: value[key]});
-          return false;
+          failed = true;
         }
+      }
+      if (failed) {
+        return false;
+      }
+      if (options.exactObjects && bare) {
+        return false;
       }
     }
   }

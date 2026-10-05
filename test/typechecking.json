@@ -236,6 +236,10 @@
     "output": "./test/typechecking/partial-records-output.mjs"
   },
   {
+    "input": "./test/typechecking/partial-remap-input.mjs",
+    "output": "./test/typechecking/partial-remap-output.mjs"
+  },
+  {
     "input": "./test/typechecking/partial-templates-input.mjs",
     "output": "./test/typechecking/partial-templates-output.mjs"
   },

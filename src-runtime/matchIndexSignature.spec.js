@@ -5,7 +5,7 @@ function testStringMatchesAll() {
   return matchIndexSignature(expect, 'a') !== undefined && matchIndexSignature(expect, '0') !== undefined;
 }
 function testNumberMatchesNumericOnly() {
-  // Number parameters cover numeric keys and skip named ones.
+  // Number parameters cover canonical numeric keys and skip the rest.
   const expect = {type: 'object', indexSignatures: [{type: 'indexSignature', indexType: 'string', indexParameters: [{type: 'number', name: 'n'}]}]};
   if (!matchIndexSignature(expect, '0')) {
     return false;
@@ -13,7 +13,16 @@ function testNumberMatchesNumericOnly() {
   if (!matchIndexSignature(expect, '-2')) {
     return false;
   }
+  if (!matchIndexSignature(expect, '1.5')) {
+    return false;
+  }
   if (matchIndexSignature(expect, 'a') !== undefined) {
+    return false;
+  }
+  if (matchIndexSignature(expect, '0x10') !== undefined) {
+    return false;
+  }
+  if (matchIndexSignature(expect, '01') !== undefined) {
     return false;
   }
   return matchIndexSignature(expect, '') === undefined;

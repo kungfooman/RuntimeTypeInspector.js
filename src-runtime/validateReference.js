@@ -241,6 +241,16 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         warn('Partial requires one type argument.', {expect});
         return false;
       }
+      // Same-name nesting is idempotent, so collapse it iteratively instead
+      // of recursing per layer: ten deep `Partial`s no longer blow the
+      // utility-resolution depth budget.
+      if (firstArg && firstArg.type === 'reference' && firstArg.name === 'Partial' && Array.isArray(firstArg.args) && firstArg.args.length) {
+        let inner = firstArg.args[0];
+        for (let i = 0; i < 25 && inner && inner.type === 'reference' && inner.name === 'Partial' && Array.isArray(inner.args) && inner.args.length; i++) {
+          inner = inner.args[0];
+        }
+        return recurse(value, {type: 'reference', name: 'Partial', args: [inner]}, loc, name, critical, warn, depth + 1);
+      }
       // Nominal classes accept their instances (including subclasses)
       // outright: a genuine instance already carries every member, so it
       // satisfies the partial just like it satisfies the bare class check.
@@ -518,6 +528,14 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
       if (!firstArg) {
         warn('Required requires one type argument.', {expect});
         return false;
+      }
+      // Same idempotent collapse as Partial.
+      if (firstArg && firstArg.type === 'reference' && firstArg.name === 'Required' && Array.isArray(firstArg.args) && firstArg.args.length) {
+        let inner = firstArg.args[0];
+        for (let i = 0; i < 25 && inner && inner.type === 'reference' && inner.name === 'Required' && Array.isArray(inner.args) && inner.args.length; i++) {
+          inner = inner.args[0];
+        }
+        return recurse(value, {type: 'reference', name: 'Required', args: [inner]}, loc, name, critical, warn, depth + 1);
       }
       // Same nominal shortcut as Partial: instances already carry every
       // member the bare class check demands.

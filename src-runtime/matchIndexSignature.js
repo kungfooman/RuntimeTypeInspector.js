@@ -1,8 +1,9 @@
 /**
  * Finds the index signature covering a value key: `string` parameters match
- * every key, `number` parameters match numeric keys only (mirroring how
- * TypeScript picks the numeric signature for numeric names). Unknown
- * parameter shapes never match, keeping them on today's excess path.
+ * every key, `number` parameters match canonical numeric names only (the
+ * round trip holds: `'-1'` and `'1.5'` count, `'0x10'` and `''` do not,
+ * mirroring TypeScript). Unknown parameter shapes never match, keeping
+ * them on today's excess path.
  * @param {object} expect - Object shape possibly carrying `indexSignatures`.
  * @param {string} key - Value key to cover.
  * @returns {object|undefined} Matching signature or undefined.
@@ -20,7 +21,7 @@ function matchIndexSignature(expect, key) {
     const params = Array.isArray(signature.indexParameters) ? signature.indexParameters : [];
     const kind = params.length ? params[0].type : undefined;
     if (kind === 'number') {
-      if (typeof key === 'string' && key.trim() !== '' && !Number.isNaN(Number(key))) {
+      if (typeof key === 'string' && key !== '' && String(Number(key)) === key) {
         return signature;
       }
       continue;

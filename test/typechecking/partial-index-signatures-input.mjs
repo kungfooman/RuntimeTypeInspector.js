@@ -29,3 +29,19 @@ function takePickScores(x) {
 takePickScores({ k: 1 }); // ok
 // @ts-expect-error: string is not assignable to number
 takePickScores({ k: 'x' });
+/**
+ * @param {Partial<{[n: number]: string}>} x
+ */
+function takePartialNums(x) {
+  return x;
+}
+takePartialNums({}); // ok
+takePartialNums({ 0: 'a', '-1': 'b', 1.5: 'c' }); // ok: canonical numeric names
+// @ts-expect-error: hex spellings are not numeric names
+takePartialNums({ '0x10': 'a' });
+// @ts-expect-error: empty key is not numeric
+takePartialNums({ '': 'a' });
+// @ts-expect-error: named keys are not numeric
+takePartialNums({ abc: 'a' });
+// @ts-expect-error: number is not assignable to string
+takePartialNums({ 0: 1 });

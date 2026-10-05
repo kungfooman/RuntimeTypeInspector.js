@@ -461,6 +461,53 @@ function testPartialTemplateKeyof() {
   }
   return validateType('z', keys, 'loc', 'name', true, warn, 0) === false;
 }
+function testSameNameCollapse() {
+  // Ten nested Partials collapse iteratively instead of blowing the depth budget.
+  prepare();
+  let expect = 'PhSmall';
+  for (let i = 0; i < 10; i++) {
+    expect = `Partial<${expect}>`;
+  }
+  const collapsed = expandType(expect);
+  if (validateType({}, collapsed, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  if (validateType({a: 1}, collapsed, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  return validateType({a: 'x'}, collapsed, 'loc', 'name', true, warn, 0) === false;
+}
+function testRemapFilters() {
+  // Condition remaps filter on either polarity and Exclude filters directly.
+  prepare();
+  registerTypedef('PhRow', expandType('{keep: number, drop: string}'));
+  registerTypedef('PhExcl', expandType('{ [K in keyof PhRow as Exclude<K, "drop">]: PhRow[K] }'));
+  const excluded = expandType('Partial<PhExcl>');
+  if (validateType({keep: 1}, excluded, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  if (validateType({drop: 's'}, excluded, 'loc', 'name', true, warn, 0) !== false) {
+    return false;
+  }
+  registerTypedef('PhFalse', expandType('{ [K in keyof PhRow as K extends "drop" ? never : K]: PhRow[K] }'));
+  const falseKept = expandType('Partial<PhFalse>');
+  if (validateType({keep: 1}, falseKept, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  return validateType({drop: 's'}, falseKept, 'loc', 'name', true, warn, 0) === false;
+}
+function testTripleUnion() {
+  // Three-way unions with primitives and nullish members distribute member-wise.
+  prepare();
+  const expect = expandType('Partial<PhSmall | number | null>');
+  if (validateType(5, expect, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  if (validateType(null, expect, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  return validateType(true, expect, 'loc', 'name', true, warn, 0) === false;
+}
 const tests = [
   testExpandKeepsDeepPartial,
   testPartialNumberPassthrough,
@@ -492,6 +539,9 @@ const tests = [
   testIndexSignatureEnforcement,
   testPartialAny,
   testPartialUnknownNever,
-  testPartialTemplateKeyof
+  testPartialTemplateKeyof,
+  testSameNameCollapse,
+  testRemapFilters,
+  testTripleUnion
 ];
 export {tests};

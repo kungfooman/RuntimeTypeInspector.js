@@ -368,3 +368,24 @@ takeDoubleIndex({}); // ok: nested indexed access resolves
 takeDoubleIndex({ a: 1 }); // ok
 // @ts-expect-error: string is not assignable to number
 takeDoubleIndex({ a: 'x' });
+/**
+ * @param {Partial<Partial<Partial<Partial<Partial<Partial<Partial<Partial<Partial<Partial<Small> > > > > > > > > >} x
+ */
+function takeDeepTen(x) {
+  return x;
+}
+takeDeepTen({}); // ok: same-name nesting collapses instead of blowing the depth budget
+takeDeepTen({ a: 1 }); // ok
+// @ts-expect-error: string is not assignable to number
+takeDeepTen({ a: 'x' });
+/**
+ * @param {Partial<Small | number | null>} x
+ */
+function takeTripleUnion(x) {
+  return x;
+}
+takeTripleUnion(5); // ok
+takeTripleUnion(null); // ok
+takeTripleUnion({}); // ok
+// @ts-expect-error: boolean matches no member
+takeTripleUnion(true);

@@ -99,3 +99,66 @@ takePickScores({
 takePickScores({
   k: 'x'
 });
+
+/**
+ * @param {Partial<{[n: number]: string}>} x
+ */
+
+function takePartialNums(x) {
+  if (!inspectType(x, {
+    "type": "reference",
+    "name": "Partial",
+    "args": [
+      {
+        "type": "object",
+        "indexSignatures": [
+          {
+            "type": "indexSignature",
+            "indexType": "string",
+            "indexParameters": [
+              {
+                "type": "number",
+                "name": "n"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "optional": false
+  }, 'takePartialNums', 'x')) {
+    youCanAddABreakpointHere();
+  }
+  return x;
+}
+takePartialNums({}); // ok
+
+takePartialNums({
+  0: 'a',
+  '-1': 'b',
+  1.5: 'c'
+}); // ok: canonical numeric names
+
+// @ts-expect-error: hex spellings are not numeric names
+
+ // ok: canonical numeric names
+
+// @ts-expect-error: hex spellings are not numeric names
+takePartialNums({
+  '0x10': 'a'
+});
+// @ts-expect-error: empty key is not numeric
+
+takePartialNums({
+  '': 'a'
+});
+// @ts-expect-error: named keys are not numeric
+
+takePartialNums({
+  abc: 'a'
+});
+// @ts-expect-error: number is not assignable to string
+
+takePartialNums({
+  0: 1
+});
