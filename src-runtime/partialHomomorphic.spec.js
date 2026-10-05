@@ -213,13 +213,16 @@ function testRequiredTuple() {
   return validateType(['s', 's'], expect, 'loc', 'name', true, warn, 0) === false;
 }
 function testPartialFunction() {
-  // Functions are homomorphic identities: only functions satisfy Partial over a function type.
+  // Bare signatures collapse to `{}` under Partial: every non-nullish value passes, nullish fails.
   prepare();
   const expect = expandType('Partial<() => void>');
   if (validateType(() => {}, expect, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  return validateType(1, expect, 'loc', 'name', true, warn, 0) === false;
+  if (validateType(1, expect, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  return validateType(null, expect, 'loc', 'name', true, warn, 0) === false;
 }
 function testPartialTypedefAlias() {
   // Typedef aliases to primitives resolve before passthrough, so Partial<Id> with Id=number takes numbers.

@@ -1,0 +1,26 @@
+{
+  "throws": [
+    {
+      "loc": "takePartialAnimal",
+      "name": "x",
+      "value": {
+        "legs": "bad"
+      }
+    },
+    {
+      "loc": "takeStar",
+      "name": "x",
+      "value": {
+        "legs": "bad"
+      }
+    },
+    {
+      "loc": "takePickDog",
+      "name": "x",
+      "value": {
+        "legs": 0,
+        "$type": "Animal"
+      }
+    }
+  ]
+}

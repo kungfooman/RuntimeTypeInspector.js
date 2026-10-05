@@ -310,10 +310,12 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
       if (typeof firstArg === 'number' || typeof firstArg === 'boolean') {
         return recurse(value, firstArg, loc, name, critical, warn, depth + 1);
       }
-      // Functions are homomorphic identities: `Partial<() => void>` is the
-      // function itself, matching TypeScript.
+      // Functions collapse to `{}`: TypeScript reduces homomorphic mappings
+      // over bare signatures to an all-optional method bag, which admits
+      // every non-nullish value (and rejects nullish ones) — exactly what
+      // the bare object check below enforces.
       if (firstArg && (firstArg.type === 'function' || firstArg.type === 'new')) {
-        return recurse(value, firstArg, loc, name, critical, warn, depth + 1);
+        return recurse(value, {type: 'object'}, loc, name, critical, warn, depth + 1);
       }
       // `Partial<string[]>` is `(string | undefined)[]`: arrays stay arrays
       // with optional elements instead of rejecting every array outright.
@@ -556,8 +558,12 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         return recurse(value, firstArg, loc, name, critical, warn, depth + 1);
       }
       // Functions and arrays pass through like primitives do; Required only
-      // strips object optionality, which neither of them carries.
-      if (firstArg && (firstArg.type === 'array' || firstArg.type === 'function' || firstArg.type === 'new')) {
+      // strips object optionality, which neither of them carries. Bare
+      // signatures collapse to `{}` just like under Partial (see above).
+      if (firstArg && (firstArg.type === 'function' || firstArg.type === 'new')) {
+        return recurse(value, {type: 'object'}, loc, name, critical, warn, depth + 1);
+      }
+      if (firstArg && firstArg.type === 'array') {
         return recurse(value, firstArg, loc, name, critical, warn, depth + 1);
       }
       // `Required` strips tuple member optionality but keeps element types

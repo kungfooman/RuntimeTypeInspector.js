@@ -1,0 +1,25 @@
+{
+  "throws": [
+    {
+      "loc": "takePartialRecord",
+      "name": "x",
+      "value": {
+        "k": "x"
+      }
+    },
+    {
+      "loc": "takeReqRecord",
+      "name": "x",
+      "value": {
+        "k": "x"
+      }
+    },
+    {
+      "loc": "takeLiteralKeys",
+      "name": "x",
+      "value": {
+        "a": "x"
+      }
+    }
+  ]
+}

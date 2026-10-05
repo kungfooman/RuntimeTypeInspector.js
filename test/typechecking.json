@@ -208,8 +208,36 @@
     "output": "./test/typechecking/only-description-output.mjs"
   },
   {
+    "input": "./test/typechecking/partial-conditionals-input.mjs",
+    "output": "./test/typechecking/partial-conditionals-output.mjs"
+  },
+  {
     "input": "./test/typechecking/partial-homomorphic-input.mjs",
     "output": "./test/typechecking/partial-homomorphic-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/partial-index-signatures-input.mjs",
+    "output": "./test/typechecking/partial-index-signatures-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/partial-intersections-input.mjs",
+    "output": "./test/typechecking/partial-intersections-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/partial-nominal-input.mjs",
+    "output": "./test/typechecking/partial-nominal-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/partial-primitives-input.mjs",
+    "output": "./test/typechecking/partial-primitives-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/partial-records-input.mjs",
+    "output": "./test/typechecking/partial-records-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/partial-tuples-input.mjs",
+    "output": "./test/typechecking/partial-tuples-output.mjs"
   },
   {
     "input": "./test/typechecking/playcanvas-camera-options-input.mjs",

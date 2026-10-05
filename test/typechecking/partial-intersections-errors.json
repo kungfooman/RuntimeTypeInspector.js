@@ -1,0 +1,40 @@
+{
+  "throws": [
+    {
+      "loc": "takePartialIntersect",
+      "name": "x",
+      "value": {
+        "a": "x",
+        "b": "s"
+      }
+    },
+    {
+      "loc": "takeReqIntersect",
+      "name": "x",
+      "value": {}
+    },
+    {
+      "loc": "takeReqIntersect",
+      "name": "x",
+      "value": {
+        "a": 1,
+        "b": 2
+      }
+    },
+    {
+      "loc": "takePickIntersect",
+      "name": "x",
+      "value": {
+        "a": "x"
+      }
+    },
+    {
+      "loc": "takeOmitIntersect",
+      "name": "x",
+      "value": {
+        "a": 1,
+        "b": "s"
+      }
+    }
+  ]
+}
