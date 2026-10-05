@@ -91,10 +91,47 @@ function testOverrideComposes() {
       out.properties.f.parameters[0].type === '"winning"';
   });
 }
+function testUnknownKindWarnsAndKeepsSearch() {
+  // A project-specific node kind passes through untouched with a warning:
+  // stock traversal doesn't know `opaque`, so `K` stays unsubstituted.
+  // (Asserts that a warning fires, not its wording.)
+  const warnings = [];
+  const tree = {type: 'opaque', name: 'UserId', underlying: 'K'};
+  const out = substituteType(tree, 'K', '"a"', (...args) => warnings.push(args));
+  return out === tree && out.underlying === 'K' && warnings.length > 0;
+}
+function testOpaqueOverrideInstantiatesNested() {
+  // Taught via the table, the custom kind instantiates everywhere stock
+  // routing reaches — bare, inside arrays, inside object properties — and
+  // nothing warns anymore. Models branded IDs like `UserId` wrapping `K`.
+  return withOverride(substitutes, 'substituteType', substituteType, (type, search, replace, warn) => {
+    if (type?.type === 'opaque') {
+      const underlying = substituteType(type.underlying, search, replace, warn);
+      return underlying === type.underlying ? type : {...type, underlying};
+    }
+    return substituteType(type, search, replace, warn);
+  }, () => {
+    const warnings = [];
+    const warn = (...args) => warnings.push(args);
+    const tree = {
+      type: 'object',
+      properties: {
+        id: {type: 'opaque', name: 'UserId', underlying: 'K'},
+        ids: {type: 'array', elementType: {type: 'opaque', name: 'UserId', underlying: 'K'}},
+      },
+    };
+    const out = substituteType(tree, 'K', '"a"', warn);
+    return out.properties.id.underlying === '"a"' &&
+      out.properties.ids.elementType.underlying === '"a"' &&
+      warnings.length === 0;
+  });
+}
 const tests = [
   testTablePopulated,
   testDispatcherDelegates,
   testDispatcherThrowsWhenUnregistered,
   testOverrideComposes,
+  testUnknownKindWarnsAndKeepsSearch,
+  testOpaqueOverrideInstantiatesNested,
 ];
 export {tests};
