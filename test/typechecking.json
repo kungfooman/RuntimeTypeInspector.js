@@ -292,6 +292,10 @@
     "output": "./test/typechecking/stringifier-ArrowFunctionExpression-spaces-output.mjs"
   },
   {
+    "input": "./test/typechecking/template-new-constraint-input.mjs",
+    "output": "./test/typechecking/template-new-constraint-output.mjs"
+  },
+  {
     "input": "./test/typechecking/template-types-1-input.mjs",
     "output": "./test/typechecking/template-types-1-output.mjs"
   },

@@ -421,7 +421,7 @@ class Asserter extends Stringifier {
         return {templates: undefined, params};
       }
     }
-    const templates = parseJSDocTemplates(comment);
+    const templates = parseJSDocTemplates(comment, this.expandType);
     const params = parseJSDoc(comment, this.expandType);
     if (!templates && !params) {
       return;
@@ -494,7 +494,7 @@ class Asserter extends Stringifier {
     if (lastComment.type !== 'CommentBlock') {
       return;
     }
-    return parseJSDocTemplates(lastComment.value);
+    return parseJSDocTemplates(lastComment.value, this.expandType);
   }
   /**
    * Reads the `@template` bindings off one enclosing function: its own
@@ -523,7 +523,7 @@ class Asserter extends Stringifier {
     if (lastComment.type !== 'CommentBlock') {
       return;
     }
-    return parseJSDocTemplates(lastComment.value);
+    return parseJSDocTemplates(lastComment.value, this.expandType);
   }
   /**
    * Retrieves the name of a parameter from a Babel AST node.

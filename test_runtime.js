@@ -133,6 +133,7 @@ const tests = [
   ...(await import('./src-transpiler/harvestClassShape.spec.js')).tests,
   ...(await import('./src-transpiler/classTemplates.spec.js')).tests,
   ...(await import('./src-transpiler/functionTemplates.spec.js')).tests,
+  ...(await import('./src-transpiler/templateConstraints.spec.js')).tests,
   ...(await import('./src-transpiler/indexedAccess.spec.js')).tests,
   ...(await import('./src-runtime/inspectIndexedAccess.spec.js'   )).tests,
   ...(await import('./src-runtime/stringifyType.spec.js'        )).tests,
