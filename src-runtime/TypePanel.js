@@ -8,6 +8,9 @@ import {createTable} from "./warnedTable.js";
 import {stringifyValue} from "./stringifyValue.js";
 import {RTI_INFO} from "./version.js";
 import {formatCompare} from "./formatCompare.js";
+import {compareText} from "./compareText.js";
+import {copyText} from "./copyText.js";
+import {logFilename} from "./logFilename.js";
 import {collectFailPaths, explainMismatch} from "./explainMismatch.js";
 import {buildTypeTree} from "./typeTree.js";
 import {Warning, renderActualValue, renderCellValue} from "./Warning.js";
@@ -36,6 +39,8 @@ function refreshWarning(warnObj, {value, expect, msg, strings}) {
   // Message may change aswell, especially after loading state.
   warnObj.msg = msg;
   warnObj.detailStrings = [...strings];
+  // Fresh content means not copied yet: a stale green mark would lie.
+  warnObj.unmarkCopied?.();
 }
 const Style = genJsx('style');
 const Label = genJsx('label');
@@ -88,16 +93,15 @@ function niceDiv(div) {
     }
     .rti-toolbar {
       user-select: none;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      align-items: center;
       padding: 6px 8px;
       flex: none;
       position: relative;
     }
+    .rti-toolbar button {
+      margin: 0 4px 4px 0;
+    }
     .rti-menu-btn {
-      margin-left: auto;
+      float: right;
       font-weight: bold;
     }
     .rti-menu {
@@ -149,6 +153,15 @@ function niceDiv(div) {
       line-height: 1;
       padding: 0;
       font-weight: bold;
+    }
+    .rti-caption button.rti-wide {
+      width: auto;
+      padding: 0 6px;
+      font-weight: normal;
+    }
+    button.rti-copied {
+      background-color: #2e9e4f;
+      color: white;
     }
     .rti-body {
       flex: 1 1 auto;
@@ -544,6 +557,8 @@ class TypePanel {
   static instance = null;
   /** Views already carrying the shrink-revive listener (main + pop-outs). */
   static viewportClampedViews = new Set();
+  /** Views already carrying the bfcache-restore listener (main + pop-outs). */
+  static pageshowViews = new Set();
   /** @type {HTMLDivElement} */
   div;
   /** @type {HTMLInputElement} */
@@ -653,6 +668,7 @@ class TypePanel {
     // handing it back would keep appending new errors into dead nodes
     // where nobody can see them, so that rebuilds fresh instead.
     if (TypePanel.instance && TypePanel.divAll?.isConnected) {
+      TypePanel.instance.reattachStranded();
       TypePanel.instance.clear();
       TypePanel.instance.show();
       // Singleton hand-back: returning an object overrides `this` by design.
@@ -856,6 +872,7 @@ class TypePanel {
     this.settleActive();
   }
   show() {
+    this.reattachStranded();
     this.div.style.display = '';
     this.updateTaskbarVisibility();
     this.refreshCompareTaskbar();
@@ -1014,10 +1031,15 @@ class TypePanel {
   }
   /**
    * Persists current panel size/position for the next page load.
-   * Maximized size is viewport-derived and never persisted.
+   * Maximized size is viewport-derived and never persisted; popped-out
+   * size (`100%`/`100vh`, popup-managed) is never persisted either, or it
+   * would clobber the good docked geometry with popup-managed values.
    */
   saveGeometry() {
     if (this.div?.dataset?.maximized === 'true') {
+      return;
+    }
+    if (this.popoutWin && !this.popoutWin.closed) {
       return;
     }
     try {
@@ -1105,6 +1127,25 @@ class TypePanel {
     }
     TypePanel.viewportClampedViews.add(view);
     view.addEventListener('resize', () => TypePanel.instance?.clampAllToViewport());
+    this.ensurePageshowRecovery(view);
+  }
+  /**
+   * Wires back-forward-cache recovery once per view: a `pageshow` with
+   * `persisted` means the page (and this panel) was resurrected without
+   * re-running any script, so a pop-out that died meanwhile must dock home
+   * — otherwise the page believes it is popped out while showing nothing.
+   * @param {Window|null} view - The view to watch.
+   */
+  ensurePageshowRecovery(view) {
+    if (!view || typeof view.addEventListener !== 'function' || TypePanel.pageshowViews.has(view)) {
+      return;
+    }
+    TypePanel.pageshowViews.add(view);
+    view.addEventListener('pageshow', (e) => {
+      if (e?.persisted && TypePanel.instance?.reattachStranded()) {
+        TypePanel.instance.show();
+      }
+    });
   }
   /**
    * A window is never draggable fully off-screen — its caption
@@ -1118,8 +1159,9 @@ class TypePanel {
    * @returns {{x: number, y: number}} Clamped position.
    */
   clampToViewport(root, x, y, captionH = 28) {
-    const vw = typeof window === 'undefined' ? undefined : window.innerWidth;
-    const vh = typeof window === 'undefined' ? undefined : window.innerHeight;
+    const view = root?.ownerDocument?.defaultView ?? (typeof window === 'undefined' ? undefined : window);
+    const vw = view?.innerWidth;
+    const vh = view?.innerHeight;
     if (!Number.isFinite(vw) || !Number.isFinite(vh)) {
       return {x, y};
     }
@@ -1138,6 +1180,9 @@ class TypePanel {
    * maximized windows never drag until restored. Double-clicking the
    * titlebar runs `onDblClick` (the maximize toggle). The caption is
    * clamped into the viewport: it can never be dragged off-screen and lost.
+   * Move/up listeners follow the window's own document, so dragging also
+   * works popped out (a popup dispatches moves to its own document, never
+   * the opener's).
    * @param {HTMLElement} handle - The titlebar to drag by.
    * @param {HTMLElement} root - The positioned wrapper to move.
    * @param {Function} [onDblClick] - Called on titlebar double-click.
@@ -1145,6 +1190,10 @@ class TypePanel {
    */
   makeDraggable(handle, root, onDblClick, isMaximized) {
     handle.addEventListener('mousedown', (e) => {
+      // The window's own document (popup or page): moves land where the grab
+      // lives. Resolved per grab, so windows adopted across documents (pop-out)
+      // follow their current home, not the one they were built in.
+      const moveDoc = root?.ownerDocument || document;
       const target = /** @type {HTMLElement} */ (e.target);
       if (target.closest('button')) {
         return;
@@ -1170,12 +1219,12 @@ class TypePanel {
         root.style.top = `${pos.y}px`;
       };
       const onUp = () => {
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
+        moveDoc.removeEventListener('mousemove', onMove);
+        moveDoc.removeEventListener('mouseup', onUp);
         this.saveGeometry();
       };
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
+      moveDoc.addEventListener('mousemove', onMove);
+      moveDoc.addEventListener('mouseup', onUp);
     });
     if (onDblClick) {
       handle.addEventListener('dblclick', (e) => {
@@ -1198,7 +1247,8 @@ class TypePanel {
    * The top (`n`) grip is a thin strip above the titlebar: grabbing it
    * resizes while grabbing the titlebar itself drags — no conflation.
    * West/north grips also move the wrapper, switching it from bottom/right
-   * anchoring to explicit left/top just like dragging does.
+   * anchoring to explicit left/top just like dragging does. Like dragging,
+   * move/up listeners follow the window's own document (pop-out safe).
    * @param {HTMLElement} handle - The edge/corner grip.
    * @param {string} dir - Resize direction (`e`, `w`, `n`, `s` and combos).
    * @param {HTMLElement} box - The window body to resize.
@@ -1207,6 +1257,9 @@ class TypePanel {
    */
   makeResizable(handle, dir, box, root, onDone) {
     handle.addEventListener('mousedown', (e) => {
+      // The window's own document (popup or page): moves land where the grab
+      // lives — resolved per grab like dragging, for the same pop-out reason.
+      const moveDoc = root?.ownerDocument || document;
       if (box?.dataset?.maximized === 'true') {
         return;
       }
@@ -1249,12 +1302,12 @@ class TypePanel {
         }
       };
       const onUp = () => {
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
+        moveDoc.removeEventListener('mousemove', onMove);
+        moveDoc.removeEventListener('mouseup', onUp);
         onDone();
       };
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
+      moveDoc.addEventListener('mousemove', onMove);
+      moveDoc.addEventListener('mouseup', onUp);
     });
   }
   /**
@@ -1317,11 +1370,9 @@ class TypePanel {
    */
   popout() {
     if (this.popoutWin && !this.popoutWin.closed) {
+      const popup = this.popoutWin;
       this.dock();
-      this.popoutWin.close();
-      this.popoutWin = null;
-      this.buttonPopout.textContent = '⧉';
-      this.buttonPopout.title = 'Pop out to own window';
+      popup.close();
       return;
     }
     const rect = this.div.getBoundingClientRect();
@@ -1331,7 +1382,10 @@ class TypePanel {
     const screenY = typeof window.screenY === 'number' ? window.screenY : 0;
     const left = Math.round(screenX + (rect.left || 0));
     const top = Math.round(screenY + (rect.top || 0));
-    const popup = window.open('', 'rti-panel', `width=${width},height=${height},left=${left},top=${top}`);
+    // Fresh window every time (`_blank`, never a name): a named window would
+    // recapture a stale popup from before a reload and steal the fresh panel
+    // into it, so the page looks empty while believing it is popped out.
+    const popup = window.open('', '_blank', `width=${width},height=${height},left=${left},top=${top}`);
     if (!popup) {
       console.warn('RTI pop-out blocked by the browser.');
       return;
@@ -1370,9 +1424,6 @@ class TypePanel {
     TypePanel.divAll.classList.add('rti-popped');
     popup.addEventListener('beforeunload', () => {
       this.dock();
-      this.popoutWin = null;
-      this.buttonPopout.textContent = '⧉';
-      this.buttonPopout.title = 'Pop out to own window';
     });
     this.popoutWin = popup;
     this.buttonPopout.textContent = '🗗';
@@ -1380,7 +1431,9 @@ class TypePanel {
   }
   /**
    * Moves the panel back into the page and restores its pre-popout styles,
-   * then re-applies the persisted docked size/position.
+   * then re-applies the persisted docked size/position. Also clears the
+   * pop-out state and button, so every close path (toggle, popup `×`,
+   * dead-popup recovery) funnels through here.
    */
   dock() {
     if (TypePanel.divAll) {
@@ -1408,6 +1461,34 @@ class TypePanel {
       this.poppedBodyCss = null;
       this.applyGeometry();
     }
+    this.popoutWin = null;
+    if (this.buttonPopout) {
+      this.buttonPopout.textContent = '⧉';
+      this.buttonPopout.title = 'Pop out to own window';
+    }
+  }
+  /**
+   * Brings the panel home after its pop-out window died: closing the popup
+   * via `×` leaves the wrapper connected to a dead document (`isConnected`
+   * stays true), so without this the singleton hand-back keeps rendering
+   * into the closed window while the page shows nothing and no button can
+   * bring it back. A dead popup — or a wrapper living in any document but
+   * this one — docks back into the current page.
+   * @returns {boolean} True when the panel was stranded and docked home.
+   */
+  reattachStranded() {
+    const {divAll} = TypePanel;
+    if (!divAll) {
+      return false;
+    }
+    const home = divAll.ownerDocument;
+    const foreign = home !== undefined && home !== null && home !== document;
+    const popupDead = Boolean(this.popoutWin && this.popoutWin.closed);
+    if (!foreign && !popupDead) {
+      return false;
+    }
+    this.dock();
+    return true;
   }
   /**
    * Renders one diagnosis finding as an interactive row. Union findings
@@ -1508,6 +1589,7 @@ class TypePanel {
    */
   buildCompareContent(warnObj) {
     const body = Div({});
+    const btnCopy = Button({textContent: 'Copy', title: 'Copy comparison to clipboard', onclick: () => this.copyCompare(warnObj, btnCopy)});
     const {expectPretty, actualPretty} = formatCompare(warnObj.expect, warnObj.value);
     const Grid = genJsx('div');
     let diagnosis;
@@ -1534,6 +1616,7 @@ class TypePanel {
       }
     }
     body.append(
+      btnCopy,
       Div({}, warnObj.msg || ''),
       H3({}, 'Diagnosis'),
     );
@@ -2054,9 +2137,36 @@ class TypePanel {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = 'rti-errors.json';
+    anchor.download = logFilename(typeof location !== 'undefined' ? location.href : undefined);
     anchor.click();
     URL.revokeObjectURL(url);
+  }
+  /**
+   * Paints a copy-button result. Success only greens the button (text stays
+   * put); the mark persists so "did I copy this one already" stays answered.
+   * @param {HTMLButtonElement} button - The button to update.
+   * @param {boolean} ok - Whether the copy succeeded.
+   */
+  markCopied(button, ok) {
+    if (ok) {
+      button.classList.add('rti-copied');
+    } else {
+      button.textContent = 'Copy failed';
+    }
+  }
+  /**
+   * Copies one comparator's content (message, diagnosis, panes) as text.
+   * @param {import('./Warning.js').Warning} warnObj - The row to copy.
+   * @param {HTMLButtonElement} button - The button to update.
+   */
+  copyCompare(warnObj, button) {
+    button.textContent = 'Copy';
+    const result = copyText(compareText(warnObj));
+    if (result === true || result === false) {
+      this.markCopied(button, result);
+    } else {
+      result.then((ok) => this.markCopied(button, ok));
+    }
   }
   get state() {
     /** @type {object[]} */

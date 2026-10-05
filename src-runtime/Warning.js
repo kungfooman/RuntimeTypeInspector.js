@@ -1,4 +1,5 @@
 import {options} from "./options.js";
+import {copyText} from "./copyText.js";
 import {DisplayAnything} from './DisplayAnything.js';
 import {Tr, Td, Button, Details, Summary, Pre, Div, Span} from './jsx.js';
 import {humanizeExpect} from './humanizeExpect.js';
@@ -743,6 +744,8 @@ class Warning {
   /** @type {HTMLButtonElement} */
   button_inspect;
   /** @type {HTMLButtonElement} */
+  button_copy;
+  /** @type {HTMLButtonElement} */
   button_dbgInput;
   /** @type {HTMLButtonElement} */
   button_hideInput;
@@ -774,6 +777,7 @@ class Warning {
     this.button_dbgInput = Button({textContent: '🧐', onclick: () => this.dbg = !this.dbg});
     this.button_hideInput = Button({textContent: '👁️‍🗨️', onclick: () => this.hidden = !this.hidden});
     this.button_inspect = Button({textContent: '🔍', title: 'Compare expected vs actual fullscreen', onclick: () => this.onCompare?.()});
+    this.button_copy = Button({textContent: '📋', title: 'Copy this message', onclick: () => this.copyMessage()});
     this.td_hide = Td({}, this.button_hideInput);
     this.td_dbg = Td({}, this.button_dbgInput);
     this.td_count = Td({});
@@ -782,7 +786,7 @@ class Warning {
     this.td_expect = Td({className: 'expect'});
     this.td_value = Td({className: 'value'});
     this.td_desc = Td({className: 'desc', innerText: msg});
-    this.td_inspect = Td({}, this.button_inspect);
+    this.td_inspect = Td({}, this.button_inspect, this.button_copy);
     const {td_hide, td_dbg, td_count, td_location, td_name, td_expect, td_value, td_desc, td_inspect} = this;
     this.tr = Tr({}, td_hide, td_dbg, td_count, td_location, td_name, td_expect, td_value, td_desc, td_inspect);
     // todo hits setter/getter
@@ -972,6 +976,63 @@ class Warning {
   }
   get msg() {
     return this._msg;
+  }
+  /**
+   * The copyable text for this row: page URL on top (the location marker),
+   * then loc/name plus the message, the offending value, and any further
+   * validator messages not already contained in the message (the Message
+   * column already shows only the detail, so re-listing it would print
+   * everything twice). Never throws: a copy button must not blow up.
+   * @returns {string} Row context with details, one per line.
+   */
+  get messageText() {
+    try {
+      const lines = [];
+      if (typeof location !== 'undefined' && location?.href) {
+        lines.push(location.href);
+      }
+      lines.push(`${this.loc}> '${this.name}': ${this.msg}`);
+      lines.push(`value: ${previewValue(this.value)}`);
+      for (const detail of this.detailStrings) {
+        if (detail && detail !== this.msg && !this.msg.includes(detail)) {
+          lines.push(detail);
+        }
+      }
+      return lines.join('\n');
+    } catch {
+      return `${this.loc}> '${this.name}': ${this.msg}`;
+    }
+  }
+  /**
+   * Copies this row's message: programmatic clipboard writes bypass
+   * page-level `copy`-event blockers that stop manual text selection.
+   * Success marks the button green until the message refreshes.
+   */
+  copyMessage() {
+    this.button_copy.textContent = '📋';
+    const result = copyText(this.messageText);
+    if (result === true || result === false) {
+      this.markCopied(result);
+    } else {
+      result.then((ok) => this.markCopied(ok));
+    }
+  }
+  /**
+   * Paints the row copy-button result: green only, the emoji stays put.
+   * @param {boolean} ok - Whether the copy succeeded.
+   */
+  markCopied(ok) {
+    if (ok) {
+      this.button_copy.classList.add('rti-copied');
+    } else {
+      this.button_copy.textContent = 'Copy failed';
+    }
+  }
+  /**
+   * Clears the row copy mark: fresh content means not copied yet.
+   */
+  unmarkCopied() {
+    this.button_copy.classList.remove('rti-copied');
   }
   /**
    * @type {string[]}

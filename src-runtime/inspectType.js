@@ -14,6 +14,7 @@ import {tagSnapshot              } from './tagSnapshot.js';
 import {reportedKeys             } from './reportedKeys.js';
 import {tagValue                 } from './tagValue.js';
 import {captureStackLines        } from './captureStack.js';
+import {globalMessageHost        } from './globalMessageHost.js';
 const breakpoints = new Set();
 /**
  * Snapshot budgets for panel-bound values: the tree batches rows on click,
@@ -25,7 +26,9 @@ const PANEL_SNAPSHOT_BREADTH = 500;
 const PANEL_SNAPSHOT_NODES = 20000;
 // In the simplest case we are attaching to `window` here, but it's designed to handle
 // more complex scenarious like running RTI inside a `Worker` or `<iframe>` aswell.
-(globalThis.window || self).addEventListener('message', (e) => {
+// Bare hosts (Node loading the transpiler bundle) have no message bus at all:
+// the listener simply stays unregistered instead of throwing at import time.
+globalMessageHost()?.addEventListener?.('message', (e) => {
   const {data} = e;
   const {type, action, destination} = data;
   // console.log("Message event", e);

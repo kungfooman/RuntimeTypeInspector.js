@@ -17,7 +17,6 @@ export * from './expandTypeDepFree.js';
 export * from './extractNameAndOptionality.js';
 export * from './extractCurlyContent.js';
 export * from './braceDepth.js';
-export * from './runChecks.js';
 export * from './noneUnchecked.js';
 export * from './markTypeofRequirements.js';
 export * from './ignoredParamsIn.js';

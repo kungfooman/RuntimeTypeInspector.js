@@ -7,7 +7,7 @@
  */
 const RTI_INFO = {
   "version": "5.0.7",
-  "commit": "664012c14a41a33a2f3918f53a9b033f16cbf015",
-  "subject": "Dedup transpiler header imports against the file's own runtime imports (#298)"
+  "commit": "3ddcced5510c36abfd8afb989b803402361398c5",
+  "subject": "Expand template constraints with the configured expander (#299)"
 };
 export {RTI_INFO};

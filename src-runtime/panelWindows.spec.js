@@ -1530,6 +1530,278 @@ function testMissingStackFallsBack() {
     }
   });
 }
+/**
+ * Closing the popped-out window via `×` leaves the wrapper connected to a
+ * dead document (`isConnected` stays true), so reopening must dock it back
+ * into the page instead of rendering into the closed window forever.
+ * @returns {boolean} True when a dead popup docks home on reconstruction.
+ */
+function testDeadPopoutReattachesOnReopen() {
+  return withPanel((panel) => {
+    panel.popoutWin = {closed: true, close() {}};
+    panel.buttonPopout.textContent = '🗗';
+    const deadBody = new FakeElement('body');
+    deadBody.connectedRoot = true;
+    globalThis.document.body.removeChild(TypePanel.divAll);
+    deadBody.append(TypePanel.divAll);
+    const revived = new TypePanel();
+    return revived === panel && TypePanel.divAll.parent === globalThis.document.body &&
+      panel.popoutWin === null && panel.buttonPopout.textContent === '⧉';
+  });
+}
+/**
+ * A wrapper living in any document but this one (popup surviving an SPA
+ * navigation, adopted nodes) docks home even with no pop-out state left.
+ * @returns {boolean} True when a foreign-document wrapper docks home.
+ */
+function testForeignDocumentReattachesOnReopen() {
+  return withPanel((panel) => {
+    const deadBody = new FakeElement('body');
+    deadBody.connectedRoot = true;
+    globalThis.document.body.removeChild(TypePanel.divAll);
+    deadBody.append(TypePanel.divAll);
+    TypePanel.divAll.ownerDocument = {name: 'popup-document'};
+    const revived = new TypePanel();
+    delete TypePanel.divAll.ownerDocument;
+    return revived === panel && TypePanel.divAll.parent === globalThis.document.body;
+  });
+}
+/**
+ * Same stranding without reconstruction: showing the panel (e.g. via the
+ * taskbar RTI entry) recovers first, so the button never shows dead air.
+ * @returns {boolean} True when show() docks a stranded panel home.
+ */
+function testShowRecoversStrandedPanel() {
+  return withPanel((panel) => {
+    panel.popoutWin = {closed: true, close() {}};
+    const deadBody = new FakeElement('body');
+    deadBody.connectedRoot = true;
+    globalThis.document.body.removeChild(TypePanel.divAll);
+    deadBody.append(TypePanel.divAll);
+    panel.show();
+    return TypePanel.divAll.parent === globalThis.document.body && panel.popoutWin === null;
+  });
+}
+/**
+ * Builds a second-document stub with its own listener registry, standing
+ * in for the popped-out window's document.
+ * @returns {object} The stub document.
+ */
+function popupDocument() {
+  const listeners = {};
+  return {
+    defaultView: {innerWidth: 1600, innerHeight: 900},
+    addEventListener: (type, fn) => {
+      (listeners[type] ??= []).push(fn);
+    },
+    removeEventListener: (type, fn) => {
+      listeners[type] = (listeners[type] ?? []).filter((_) => _ !== fn);
+    },
+    fire: (type, event = {}) => {
+      for (const fn of listeners[type] ?? []) {
+        fn(event);
+      }
+    },
+  };
+}
+/**
+ * Dragging a popped-out compare window: its moves dispatch to the popup
+ * document, never the opener's, so the drag must listen there.
+ * @returns {boolean} True when popup-document moves drag the window.
+ */
+function testPopoutDragUsesOwnDocument() {
+  return withPanel((panel) => {
+    panel.openComparator(stubWarn('L1', 'a'));
+    const {el, titlebar} = panel.compareWins.get('L1-a');
+    const popupDoc = popupDocument();
+    el.ownerDocument = popupDoc;
+    const press = {clientX: 100, clientY: 100, target: titlebar};
+    titlebar.fire('mousedown', press);
+    const home = [el.style.left, el.style.top];
+    globalThis.document.fire('mousemove', {clientX: 500, clientY: 500});
+    if (el.style.left !== home[0] || el.style.top !== home[1]) {
+      return false;
+    }
+    popupDoc.fire('mousemove', {clientX: 200, clientY: 150});
+    popupDoc.fire('mouseup', {});
+    return el.style.left === '100px' && el.style.top === '50px';
+  });
+}
+/**
+ * Resizing a popped-out compare window listens on the popup document too.
+ * @returns {boolean} True when popup-document moves resize the window.
+ */
+function testPopoutResizeUsesOwnDocument() {
+  return withPanel((panel) => {
+    panel.openComparator(stubWarn('L1', 'a'));
+    const {el} = panel.compareWins.get('L1-a');
+    const popupDoc = popupDocument();
+    el.ownerDocument = popupDoc;
+    const grip = el.children.find((_) => _?.dataset?.dir === 'e');
+    grip.fire('mousedown', {clientX: 100, clientY: 100, target: grip});
+    globalThis.document.fire('mousemove', {clientX: 500, clientY: 100});
+    if (el.style.width !== undefined) {
+      return false;
+    }
+    popupDoc.fire('mousemove', {clientX: 500, clientY: 100});
+    popupDoc.fire('mouseup', {});
+    return el.style.width === '400px';
+  });
+}
+/**
+ * Each warning row carries its own copy button: clicking copies that row's
+ * message and marks it green until the message refreshes. The full-log copy
+ * is gone (Download log covers that); per-row is what gets pasted around.
+ * @returns {boolean} True when row copy marks green with the message text.
+ */
+function testRowCopyButtonCopies() {
+  return withPanel((panel) => {
+    globalThis.document.execCommand = () => true;
+    try {
+      const prevMode = options.mode;
+      options.mode = 'never';
+      try {
+        panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError',
+          value: 1, expect: 'string', loc: 'L9', name: 'z', valueToString: '1',
+          strings: ['boom'], extras: [], key: 'L9-z'}});
+      } finally {
+        options.mode = prevMode;
+      }
+      const warnObj = panel.warnings['L9-z'];
+      if (!warnObj?.button_copy || warnObj.button_copy.textContent !== '📋') {
+        return false;
+      }
+      if (warnObj.messageText !== 'http://localhost/\nL9> \'z\': boom\nvalue: 1') {
+        return false;
+      }
+      warnObj.button_copy.onclick();
+      return warnObj.button_copy.textContent === '📋' &&
+        warnObj.button_copy.classList.contains('rti-copied');
+    } finally {
+      delete globalThis.document.execCommand;
+    }
+  });
+}
+/**
+ * Fresh content means not copied yet: a re-reported row loses its green
+ * mark instead of claiming an old copy still stands for new text.
+ * @returns {boolean} True when a full re-report clears the copy mark.
+ */
+function testRowCopyMarkResetsOnRefresh() {
+  return withPanel((panel) => {
+    globalThis.document.execCommand = () => true;
+    try {
+      const prevMode = options.mode;
+      options.mode = 'never';
+      try {
+        panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError',
+          value: 1, expect: 'string', loc: 'L9', name: 'z', valueToString: '1',
+          strings: ['boom'], extras: [], key: 'L9-z'}});
+      } finally {
+        options.mode = prevMode;
+      }
+      const warnObj = panel.warnings['L9-z'];
+      warnObj.button_copy.onclick();
+      if (!warnObj.button_copy.classList.contains('rti-copied')) {
+        return false;
+      }
+      panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError',
+        value: 'other', expect: 'string', loc: 'L9', name: 'z', valueToString: 'other',
+        strings: ['bang'], extras: [], key: 'L9-z'}});
+      return warnObj.button_copy.textContent === '📋' &&
+        !warnObj.button_copy.classList.contains('rti-copied');
+    } finally {
+      delete globalThis.document.execCommand;
+    }
+  });
+}
+/**
+ * The whole-log Copy button is gone: per-row copy plus Download log cover
+ * both needs with one fewer toolbar entry.
+ * @returns {boolean} True when no Copy-log button remains.
+ */
+function testCopyLogButtonGone() {
+  return withPanel((panel) => panel.buttonCopyLog === undefined &&
+    !textOf(panel.toolbar).includes('Copy log'));
+}
+/**
+ * Builds a popup-window stub with its own document, standing in for a real
+ * `window.open` result.
+ * @param {object} body - The popup document body.
+ * @returns {{popup: object, opened: object[]}} Stub plus captured open calls.
+ */
+function popupStub(body) {
+  const opened = [];
+  const docListeners = {};
+  const popupDoc = {
+    title: '',
+    head: {appendChild() {}},
+    body,
+    defaultView: null,
+    addEventListener: (type, fn) => {
+      (docListeners[type] ??= []).push(fn);
+    },
+  };
+  const popup = {
+    closed: false,
+    close() {},
+    document: popupDoc,
+    addEventListener() {},
+  };
+  return {popup, opened, open: (...args) => {
+    opened.push(args);
+    return popup;
+  }};
+}
+/**
+ * Popping out opens a fresh unnamed window: a reused name would recapture a
+ * stale pre-reload popup and steal the fresh panel into it, leaving the page
+ * empty while believing it is popped out.
+ * @returns {boolean} True when the popup opens `_blank` and hosts the panel.
+ */
+function testPopoutOpensBlankWindow() {
+  return withPanel((panel) => {
+    const body = new FakeElement('body');
+    const stub = popupStub(body);
+    globalThis.window.open = stub.open;
+    panel.popout();
+    return stub.opened[0]?.[1] === '_blank' && TypePanel.divAll.parent === body &&
+      panel.buttonPopout.textContent === '🗗';
+  });
+}
+/**
+ * Popped-out sizes are popup-managed (`100%`/`100vh`): persisting them would
+ * clobber the good docked geometry, so reloads would start wrong-sized.
+ * @returns {boolean} True when a live pop-out saves nothing.
+ */
+function testSaveGeometrySkipsPopout() {
+  return withPanel((panel) => {
+    panel.popoutWin = {closed: false, close() {}};
+    panel.saveGeometry();
+    return globalThis.localStorage.getItem('rti-panel-geometry') === null;
+  });
+}
+/**
+ * Back-forward-cache resurrection re-runs no script: a `pageshow` with
+ * `persisted` docks a panel whose pop-out died meanwhile, so the revived
+ * page never believes it is popped out while showing nothing.
+ * @returns {boolean} True when a persisted pageshow docks home.
+ */
+function testPageshowRecoversStrandedPanel() {
+  return withPanel((panel) => {
+    panel.popoutWin = {closed: true, close() {}};
+    const deadBody = new FakeElement('body');
+    deadBody.connectedRoot = true;
+    globalThis.document.body.removeChild(TypePanel.divAll);
+    deadBody.append(TypePanel.divAll);
+    globalThis.window.fire('pageshow', {persisted: false});
+    if (TypePanel.divAll.parent !== deadBody) {
+      return false;
+    }
+    globalThis.window.fire('pageshow', {persisted: true});
+    return TypePanel.divAll.parent === globalThis.document.body && panel.popoutWin === null;
+  });
+}
 const tests = [
   testOpenFocusDedupe,
   testMinimizeRestoreTaskbar,
@@ -1586,5 +1858,16 @@ const tests = [
   testMissingStackFallsBack,
   testTypeTreeSetRootWarns,
   testActualCompareHighlightsMap,
+  testDeadPopoutReattachesOnReopen,
+  testForeignDocumentReattachesOnReopen,
+  testShowRecoversStrandedPanel,
+  testPopoutDragUsesOwnDocument,
+  testPopoutResizeUsesOwnDocument,
+  testRowCopyButtonCopies,
+  testRowCopyMarkResetsOnRefresh,
+  testCopyLogButtonGone,
+  testPopoutOpensBlankWindow,
+  testSaveGeometrySkipsPopout,
+  testPageshowRecoversStrandedPanel,
 ];
 export {tests};
