@@ -447,7 +447,7 @@ function testPartialUnknownNever() {
 function testPartialTemplateKeyof() {
   // Finite template literals enumerate and key queries pass through untouched.
   prepare();
-  const template = expandType('Partial<`on${"click" | "hover"}`>');
+  const template = expandType('Partial<`on${"click" | "hover"}`>'); // eslint-disable-line no-template-curly-in-string
   if (validateType('onclick', template, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
