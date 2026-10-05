@@ -8,12 +8,14 @@ import * as runtime from '../src-runtime/index.js';
  * against the real validators, and runs `body` with the resulting scope.
  * Every failed check is observed two ways: the emitted
  * `youCanAddABreakpointHere()` records a hit per failure, and posted RTI
- * messages are captured for content assertions (e.g. no `unchecked`, the
- * symptom of issue #265). Both only live for the duration of `body`.
+ * messages are captured for content assertions (e.g. no `unchecked`, which
+ * means a template was never inferred). Both only live for the duration of `body`.
  * @param {string} src - Source code to transpile and run.
  * @param {string} expose - Comma-separated top-level bindings to return.
  * @param {Function} body - Receives `(scope, {hits, posted})`.
  * @returns {*} Whatever `body` returns.
+ * @example
+ * runChecks('/** @param {number} x *\/ function f(x) { return x; }', 'f', (scope) => typeof scope.f);
  */
 function runChecks(src, expose, body) {
   const asserter = new Asserter({expandType, addHeader: false, filename: 'test.js'});
@@ -45,13 +47,4 @@ function runChecks(src, expose, body) {
     globalThis.self = origSelf;
   }
 }
-/**
- * Every posted message must name a real type: `unchecked` means a template
- * was never inferred (the exact #265 symptom).
- * @param {object[]} posted - Captured RTI messages.
- * @returns {boolean} True when no message degrades to `unchecked`.
- */
-function noneUnchecked(posted) {
-  return posted.every((msg) => !(msg.strings ?? []).join(' ').includes('unchecked'));
-}
-export {runChecks, noneUnchecked};
+export {runChecks};

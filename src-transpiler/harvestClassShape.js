@@ -1,4 +1,4 @@
-import {extractCurlyContent} from './parseJSDocTypedef.js';
+import {extractCurlyContent} from './extractCurlyContent.js';
 import {parseJSDoc} from './parseJSDoc.js';
 import {inferTypeFromDefault} from './inferTypeFromDefault.js';
 // Declaration-site ranks: the field always beats constructor assignments,

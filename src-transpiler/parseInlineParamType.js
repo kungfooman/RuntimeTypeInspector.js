@@ -1,4 +1,4 @@
-import {extractCurlyContent} from './parseJSDocTypedef.js';
+import {extractCurlyContent} from './extractCurlyContent.js';
 /**
  * Extracts an inline `/** @type {X} *\/` annotation from parameter comments,
  * e.g. `function add(/** @type {number} *\/ a) {...}`.

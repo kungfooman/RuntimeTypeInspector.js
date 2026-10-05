@@ -106,9 +106,10 @@ untouched — just don't introduce new ones.
 
 ## One function per file
 
-Each `src-runtime/` helper module holds exactly one function, named after its file (e.g. `stripKey` lives in `src-runtime/stripKey.js`), plus only the module-local constants that function directly needs (e.g. its memoization cache).
+Each helper module in `src-runtime/` and `src-transpiler/` holds exactly one function, named after its file (e.g. `stripKey` lives in `src-runtime/stripKey.js`), plus only the module-local constants that function directly needs (e.g. its memoization cache). Spec files (`*.spec.js`) are exempt: they hold one test function per behavior under test.
 - Every extracted helper carries a JSDoc block with a runnable `@example` showing a representative call and its result, so each module documents itself.
-- When extracting: move the function as-is (no behavior changes), point the old module's import at the new file, add an `export * from './<name>.js';` line to `src-runtime/index.js`, update any specs importing from the old path, and finish with the full gate (`npm test` + `npm run lint`).
+- When extracting: move the function as-is (no behavior changes), point the old module's import at the new file, add an `export * from './<name>.js';` line to the package index (`src-runtime/index.js` or `src-transpiler/index.js`), update any specs importing from the old path, and finish with the full gate (`npm test` + `npm run lint`).
+- Every helper module ships with a `<name>.spec.js` next to it (same style: sync boolean tests, `export const tests`, wired into `test_runtime.js`): a function lands only with a spec that fails when the function is stubbed out. Pre-existing spec-less modules are backlog, not precedent.
 - Exception: `src-runtime/jsx.js` stays whole (`genJsx`, `appendChildren` and the tag factories live together) because the factories call `appendChildren` and splitting them only trades a working module for a circular import.
 
 ## Markdown style
