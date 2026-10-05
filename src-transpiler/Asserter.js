@@ -9,66 +9,12 @@ import {parseJSDoc         } from './parseJSDoc.js';
 import {parseJSDocSetter   } from './parseJSDocSetter.js';
 import {parseJSDocTemplates} from './parseJSDocTemplates.js';
 import {parseJSDocTypedef  } from './parseJSDocTypedef.js';
+import {markTypeofRequirements} from './markTypeofRequirements.js';
+import {ignoredParamsIn     } from './ignoredParamsIn.js';
+import {runtimeImportNames  } from './runtimeImportNames.js';
 import {simplifyTypeToSource} from './simplifyTypeToSource.js';
 import {statReset          } from './stat.js';
 import {Stringifier        } from './Stringifier.js';
-/**
- * Pre-marks every `typeof Name` value query inside a JSDoc comment so the
- * later `VariableDeclaration` pass emits its `registerVariable` in source
- * order (before any runtime use). Previously only `@typedef` comments were
- * pre-scanned, so a direct `@param {typeof X}` never registered `X` and
- * every such check failed closed. Marks without a same-named declaration
- * never emit anything and are harmless.
- * @param {string} text - The comment text.
- */
-function markTypeofRequirements(text) {
-  for (const match of text.matchAll(/\btypeof\s+([A-Za-z_$][\w$]*)/g)) {
-    if (!requiredTypeofs[match[1]]) {
-      requiredTypeofs[match[1]] = 'missing';
-    }
-  }
-}
-/**
- * Parameter names listed after `@ignoreRTI` in a leading JSDoc comment
- * (`@ignoreRTI vertices` skips only that check; bare `@ignoreRTI` skips
- * the whole function). Names are matched against JSDoc parameter names.
- * Markdown quoting around the tag or names (`` `@ignoreRTI` ``, `"@ignoreRTI"`)
- * is formatting, not a name: quoted tokens are stripped, so a bare tag stays
- * bare no matter how it is quoted for lint or docs.
- * @param {string} text - The comment text.
- * @returns {Set<string>|'all'|null} Ignored names, `'all'`, or nothing.
- */
-function ignoredParamsIn(text) {
-  const at = text.search(/@ignoreRTI(?![\w$])/);
-  if (at === -1) {
-    return null;
-  }
-  const line = text.slice(at).split('\n', 1)[0];
-  const names = line.slice('@ignoreRTI'.length).split(/[\s,]+/).map((name) => name.replace(/^[`'"]+|[`'"]+$/g, '')).filter(Boolean);
-  return names.length ? new Set(names) : 'all';
-}
-/**
- * Local names a file already imports from the runtime package: only exact
- * same-module, non-aliased bindings (`import {registerTypedef} from ...`,
- * never `import {x as y}` or other specifiers), so skipping them in the
- * header can only remove a true duplicate.
- * @param {import('@babel/types').File|import('@babel/types').Program} ast - The parsed program.
- * @returns {Set<string>} Already-imported runtime names.
- */
-function runtimeImportNames(ast) {
-  const found = new Set();
-  const program = ast?.type === 'File' ? ast.program : ast;
-  for (const node of program?.body ?? []) {
-    if (node.type === 'ImportDeclaration' && node.source?.value === '@runtime-type-inspector/runtime') {
-      for (const spec of node.specifiers ?? []) {
-        if (spec.type === 'ImportSpecifier' && spec.imported?.type === 'Identifier' && spec.local?.type === 'Identifier' && spec.imported.name === spec.local.name) {
-          found.add(spec.local.name);
-        }
-      }
-    }
-  }
-  return found;
-}
 /** @typedef {import('@babel/types').Node              } Node               */
 /** @typedef {import('@babel/types').ClassMethod       } ClassMethod        */
 /** @typedef {import('@babel/types').ClassPrivateMethod} ClassPrivateMethod */
@@ -421,7 +367,7 @@ class Asserter extends Stringifier {
         return {templates: undefined, params};
       }
     }
-    const templates = parseJSDocTemplates(comment);
+    const templates = parseJSDocTemplates(comment, this.expandType);
     const params = parseJSDoc(comment, this.expandType);
     if (!templates && !params) {
       return;
@@ -494,7 +440,7 @@ class Asserter extends Stringifier {
     if (lastComment.type !== 'CommentBlock') {
       return;
     }
-    return parseJSDocTemplates(lastComment.value);
+    return parseJSDocTemplates(lastComment.value, this.expandType);
   }
   /**
    * Reads the `@template` bindings off one enclosing function: its own
@@ -523,7 +469,7 @@ class Asserter extends Stringifier {
     if (lastComment.type !== 'CommentBlock') {
       return;
     }
-    return parseJSDocTemplates(lastComment.value);
+    return parseJSDocTemplates(lastComment.value, this.expandType);
   }
   /**
    * Retrieves the name of a parameter from a Babel AST node.

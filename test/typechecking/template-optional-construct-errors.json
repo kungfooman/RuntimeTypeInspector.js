@@ -1,0 +1,5 @@
+{
+  "throws": [
+    {"loc": "MaybePool#constructor", "name": "constructorFunc", "value": 42}
+  ]
+}

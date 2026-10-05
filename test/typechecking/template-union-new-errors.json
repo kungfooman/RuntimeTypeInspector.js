@@ -1,0 +1,5 @@
+{
+  "throws": [
+    {"loc": "UnionFactory#constructor", "name": "make", "value": 42}
+  ]
+}

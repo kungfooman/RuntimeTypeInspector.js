@@ -283,7 +283,7 @@ class JSDocAnnotator {
       const params = {[paramName]: setterType};
       return {templates: undefined, params};
     }
-    const templates = parseJSDocTemplates(comment);
+    const templates = parseJSDocTemplates(comment, this.expandType);
     const params = parseJSDoc(comment, this.expandType);
     if (!templates && !params) {
       return;

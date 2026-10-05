@@ -1,5 +1,6 @@
 import {parseJSDocTemplates} from './parseJSDocTemplates.js';
-import {runChecks, noneUnchecked} from './executeChecks.js';
+import {runChecks} from './runChecks.js';
+import {noneUnchecked} from './noneUnchecked.js';
 // `@template {Constraint} [K=Default]` keeps the constraint: the default
 // only applies when nothing is inferred (issue #265 parsed this as
 // undefined, so the whole class went unchecked).

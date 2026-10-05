@@ -164,6 +164,10 @@
     "output": "./test/typechecking/jsx-namespaced-name-output.mjs"
   },
   {
+    "input": "./test/typechecking/keyof-class-input.mjs",
+    "output": "./test/typechecking/keyof-class-output.mjs"
+  },
+  {
     "input": "./test/typechecking/keyof-typeof-input.mjs",
     "output": "./test/typechecking/keyof-typeof-output.mjs"
   },
@@ -292,8 +296,28 @@
     "output": "./test/typechecking/stringifier-ArrowFunctionExpression-spaces-output.mjs"
   },
   {
+    "input": "./test/typechecking/template-abstract-new-input.mjs",
+    "output": "./test/typechecking/template-abstract-new-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/template-nested-crossref-input.mjs",
+    "output": "./test/typechecking/template-nested-crossref-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/template-new-constraint-input.mjs",
+    "output": "./test/typechecking/template-new-constraint-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/template-optional-construct-input.mjs",
+    "output": "./test/typechecking/template-optional-construct-output.mjs"
+  },
+  {
     "input": "./test/typechecking/template-types-1-input.mjs",
     "output": "./test/typechecking/template-types-1-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/template-union-new-input.mjs",
+    "output": "./test/typechecking/template-union-new-output.mjs"
   },
   {
     "input": "./test/typechecking/tuple-named-input.mjs",

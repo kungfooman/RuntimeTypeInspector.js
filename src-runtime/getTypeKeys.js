@@ -2,7 +2,7 @@ import {variables} from "./registerVariable.js";
 import {stripKey} from "./stripKey.js";
 import {typedefs, typedefTemplates} from "./registerTypedef.js";
 import {classes} from "./registerClass.js";
-import {mergedClassShape} from "./classShape.js";
+import {mergedClassShape, prototypeShape} from "./classShape.js";
 import {substituteType} from "./substituteType.js";
 import {instantiateReference} from "./instantiateReference.js";
 import {validators} from "./validators.js";
@@ -626,6 +626,19 @@ function getTypeKeys(expect, warn, depth = 0) {
       return getTypeKeys(typedef, warn, depth + 1);
       //warn("getTypeKeys: Unhandled typedef", {expect, typedef});
       //return;
+    }
+    if (classes[expect]) {
+      // Registered classes resolve through the harvested constructor chain,
+      // so `keyof` sees members like tsc does (same as resolveObject below).
+      return getTypeKeys(mergedClassShape(expect), warn, depth + 1);
+    }
+    if (typeof validators.lookupGlobalConstructor === 'function') {
+      // Platform constructors (e.g. `keyof Date`) reflect off the prototype
+      // chain instead: instance side only, matching type-position semantics.
+      const ctor = validators.lookupGlobalConstructor(expect);
+      if (typeof ctor === 'function') {
+        return getTypeKeys(prototypeShape(ctor), warn, depth + 1);
+      }
     }
 
     warn("getTypeKeys> 'expect' was a string but not a typedef, unhandled case.");

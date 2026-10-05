@@ -7,7 +7,7 @@
  */
 const RTI_INFO = {
   "version": "5.0.7",
-  "commit": "44400a55c91efe760e9306c7082ea8c820ade841",
-  "subject": "Add unit test for substitution example"
+  "commit": "664012c14a41a33a2f3918f53a9b033f16cbf015",
+  "subject": "Dedup transpiler header imports against the file's own runtime imports (#298)"
 };
 export {RTI_INFO};

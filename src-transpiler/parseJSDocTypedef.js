@@ -1,48 +1,7 @@
 import {extractNameAndOptionality} from './extractNameAndOptionality.js';
 import {annotateOptional     } from './annotateOptional.js';
-/**
- * Extracts the content of a string that is delimited by curly braces.
- * @example
- * extractCurlyContent('{ {inner} }'); // Returns: {content: ' {inner} ', nextIndex: 11}
- * @param {string} line - The string to extract from.
- * @returns {{content: string, nextIndex: number}} An object containing the extracted content,
- * and the index of the character immediately following the closing curly brace.
- */
-function extractCurlyContent(line) {
-  const firstCurly = line.indexOf('{');
-  let k = firstCurly + 1;
-  let count = 0;
-  for (; k < line.length; k++) {
-    const c = line[k];
-    if (c === '{') {
-      count++;
-    } else if (c === '}') {
-      count--;
-    }
-    if (count === -1) {
-      break;
-    }
-  }
-  const content = line.substring(firstCurly + 1, k);
-  return {content, nextIndex: k + 1};
-}
-/**
- * Counts unbalanced opening braces, so `@typedef {{...}}` types split
- * across lines can be re-joined before parsing.
- * @param {string} text - Text to scan.
- * @returns {number} Open braces minus close braces.
- */
-function braceDepth(text) {
-  let depth = 0;
-  for (const c of text) {
-    if (c === '{') {
-      depth++;
-    } else if (c === '}') {
-      depth--;
-    }
-  }
-  return depth;
-}
+import {extractCurlyContent } from './extractCurlyContent.js';
+import {braceDepth           } from './braceDepth.js';
 /**
  * Parses JSDoc comments to extract and expand typedefs and their associated properties.
  *
@@ -141,4 +100,4 @@ function parseJSDocTypedef(typedefs, typedefTemplates, warn, comment, expandType
     }
   }
 }
-export {extractCurlyContent, parseJSDocTypedef};
+export {parseJSDocTypedef};
