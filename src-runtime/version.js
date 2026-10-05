@@ -7,7 +7,7 @@
  */
 const RTI_INFO = {
   "version": "5.0.7",
-  "commit": "0a2318bfe1eb5dc3701eb457a546647ab34568a3",
-  "subject": "Consumer sync script (#294)"
+  "commit": "7aa5ccf2c56ecb6df7d8c5becd57568094bfcf9d",
+  "subject": "Make every substitution consumer-overwritable"
 };
 export {RTI_INFO};

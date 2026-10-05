@@ -1,10 +1,11 @@
 /**
  * Rewrites `src-runtime/version.js` with plain ESM literals: the version
  * from `package.json` (single source of truth — never hand-mirrored) plus
- * fresh build stamps. Runs first in `npm run build`, so every bundle logs
- * which version and commit it was built from. Never fails the build: git
- * info is best-effort (missing outside checkouts), and any failure only
- * warns, leaving the current literals in place.
+ * fresh publish stamps. Runs in `npm run build:publish` and
+ * `npm run sync:consumer` only, so everyday builds leave the tree clean
+ * and the committed file holds the last-release stamps. Never fails the
+ * build: git info is best-effort (missing outside checkouts), and any
+ * failure only warns, leaving the current literals in place.
  */
 import {execSync} from 'child_process';
 import {readFileSync, writeFileSync} from 'fs';

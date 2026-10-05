@@ -3,8 +3,8 @@
   "version": "5.0.7",
   "description": "Validating JSDoc types at runtime for high-quality types - Trust is good, control is better.",
   "scripts": {
-    "build": "node sync-version.js && rollup -c",
-    "build:publish": "npm run build && node npmhelper.js",
+    "build": "rollup -c",
+    "build:publish": "node sync-version.js && npm run build && node npmhelper.js",
     "build:atBabelCore": "rollup -c --environment target:atBabelCore",
     "build:dts": "tsc src-transpiler/index.js --outDir types/transpiler --allowJs --declaration --emitDeclarationOnly --target esnext",
     "build:types": "npm run build:dts && rollup -c --environment target:types",
@@ -15,7 +15,7 @@
     "test:jsdoc-expect": "node test/jsdoc-expect/run.mjs",
     "test:parity": "node test/parity/run.mjs",
     "test:update": "node gen_tests.js > test/typechecking.json",
-    "sync:consumer": "npm run build && node sync-consumer.js"
+    "sync:consumer": "node sync-version.js && npm run build && node sync-consumer.js"
   },
   "repository": {
     "type": "git",

@@ -122,6 +122,8 @@ const tests = [
   ...(await import('./src-runtime/typeTree.spec.js'              )).tests,
   ...(await import('./src-runtime/panelRefresh.spec.js'          )).tests,
   ...(await import('./src-runtime/panelWindows.spec.js'           )).tests,
+  ...(await import('./src-runtime/customValidations.spec.js'          )).tests,
+  ...(await import('./src-transpiler/ignoreRti.spec.js'               )).tests,
   ...(await import('./src-transpiler/expandTypeParity.spec.js'   )).tests,
   ...(await import('./src-transpiler/projectVersionHeader.spec.js')).tests,
   ...(await import('./src-transpiler/inferTypeFromDefault.spec.js')).tests,

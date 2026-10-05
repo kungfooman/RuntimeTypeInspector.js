@@ -4,6 +4,29 @@ import {substituteRecord} from './substituteRecord.js';
 import {substituteDescriptors} from './substituteDescriptors.js';
 import {substitutes, recurseSubstitute} from './substitutes.js';
 const noop = () => undefined;
+/**
+ * Runs `body` with one dispatch-table entry swapped, then restores the
+ * pristine entry and reports both halves. Override tests share this
+ * process-global table with every later test, so the no-leak check lives
+ * here — against the imported original, not execution history — instead of
+ * in a follow-up test that only passes when the array order cooperates.
+ * @param {Record<string, Function>} table - The dispatch table to swap in.
+ * @param {string} entry - The table key to swap (e.g. 'substituteType').
+ * @param {Function} original - The pristine entry to restore (the import).
+ * @param {Function} override - The temporary entry.
+ * @param {Function} body - Assertions to run under the override.
+ * @returns {boolean} True when the body passed and the original is back.
+ */
+function withOverride(table, entry, original, override, body) {
+  table[entry] = override;
+  let ret = false;
+  try {
+    ret = body() === true;
+  } finally {
+    table[entry] = original;
+  }
+  return ret && table[entry] === original;
+}
 function testTablePopulated() {
   // Importing substituteType.js fills every table entry with the real impl.
   return substitutes.substituteType === substituteType &&
@@ -48,12 +71,11 @@ function testDispatcherThrowsWhenUnregistered() {
 function testOverrideComposes() {
   // A userland override of the table entry applies to every nested position:
   // records, single positions, sibling lists and descriptors all recurse
-  // through the dispatcher, not past it.
-  const keep = substitutes.substituteType;
-  substitutes.substituteType = (type, search, replace, warn) => {
-    return type === 'K' ? '"winning"' : keep(type, search, replace, warn);
-  };
-  try {
+  // through the dispatcher, not past it. The restore is asserted by
+  // `withOverride`, so no later test can observe the swap.
+  return withOverride(substitutes, 'substituteType', substituteType, (type, search, replace, warn) => {
+    return type === 'K' ? '"winning"' : substituteType(type, search, replace, warn);
+  }, () => {
     const out = substituteType({
       type: 'object',
       properties: {
@@ -67,20 +89,12 @@ function testOverrideComposes() {
       out.properties.els.elementType === '"winning"' &&
       out.properties.u.members[0] === '"winning"' &&
       out.properties.f.parameters[0].type === '"winning"';
-  } finally {
-    substitutes.substituteType = keep;
-  }
-}
-function testOverrideRestored() {
-  // The previous test left no trace: defaults are back in the table.
-  return substitutes.substituteType === substituteType &&
-    substituteType({type: 'array', elementType: 'K'}, 'K', '"a"', noop).elementType === '"a"';
+  });
 }
 const tests = [
   testTablePopulated,
   testDispatcherDelegates,
   testDispatcherThrowsWhenUnregistered,
   testOverrideComposes,
-  testOverrideRestored,
 ];
 export {tests};
