@@ -156,6 +156,117 @@ function testPickIndexedAccess() {
   }
   return validateType({a: 'x'}, expect, 'loc', 'name', true, warn, 0) === false;
 }
+function testPartialDeepNesting() {
+  // Doubly and triply nested Partials stay fully optional without rejecting valid subsets.
+  prepare();
+  const double = expandType('Partial<Partial<PhSmall> >');
+  if (validateType({}, double, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  if (validateType({a: 1}, double, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  if (validateType({a: 'x'}, double, 'loc', 'name', true, warn, 0) !== false) {
+    return false;
+  }
+  const triple = expandType('Partial<Partial<Partial<PhSmall> > >');
+  if (validateType({b: 's'}, triple, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  return validateType({b: 1}, triple, 'loc', 'name', true, warn, 0) === false;
+}
+function testPartialNestedPickOmit() {
+  // Partial composes with Pick/Omit: picked-away and omitted keys stay rejected while kept keys turn optional.
+  prepare();
+  const pick = expandType('Partial<Pick<PhSmall, "a">>');
+  if (validateType({}, pick, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  if (validateType({b: 's'}, pick, 'loc', 'name', true, warn, 0) !== false) {
+    return false;
+  }
+  const omit = expandType('Partial<Omit<PhSmall, "a">>');
+  if (validateType({b: 's'}, omit, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  return validateType({a: 1}, omit, 'loc', 'name', true, warn, 0) === false;
+}
+function testPartialTuple() {
+  // Tuples stay tuples with optional undefined-able members instead of rejecting every tuple outright.
+  prepare();
+  const expect = expandType('Partial<[number, string]>');
+  if (validateType([1, 's'], expect, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  if (validateType([1, undefined], expect, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  return validateType({}, expect, 'loc', 'name', true, warn, 0) === false;
+}
+function testRequiredTuple() {
+  // Required strips tuple member optionality but keeps element types, so valid tuples still pass.
+  prepare();
+  const expect = expandType('Required<[number, string]>');
+  if (validateType([1, 's'], expect, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  return validateType(['s', 's'], expect, 'loc', 'name', true, warn, 0) === false;
+}
+function testPartialFunction() {
+  // Functions are homomorphic identities: only functions satisfy Partial over a function type.
+  prepare();
+  const expect = expandType('Partial<() => void>');
+  if (validateType(() => {}, expect, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  return validateType(1, expect, 'loc', 'name', true, warn, 0) === false;
+}
+function testPartialTypedefAlias() {
+  // Typedef aliases to primitives resolve before passthrough, so Partial<Id> with Id=number takes numbers.
+  prepare();
+  registerTypedef('PhId', 'number');
+  const expect = expandType('Partial<PhId>');
+  if (validateType(5, expect, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  return validateType('x', expect, 'loc', 'name', true, warn, 0) === false;
+}
+function testPartialWrappers() {
+  // Transparent wrappers keep homomorphic behavior: NonNullable unwraps unions, Readonly keeps shape.
+  prepare();
+  const nonNull = expandType('Partial<NonNullable<PhSmall | null>>');
+  if (validateType({}, nonNull, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  if (validateType({a: 'x'}, nonNull, 'loc', 'name', true, warn, 0) !== false) {
+    return false;
+  }
+  const readonly = expandType('Partial<Readonly<PhSmall>>');
+  if (validateType({b: 's'}, readonly, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  return validateType({b: 1}, readonly, 'loc', 'name', true, warn, 0) === false;
+}
+function testPartialGenericAlias() {
+  // Generic aliases instantiate before Partial applies, so Partial<Pick<T,...>>-style helpers work per argument.
+  prepare();
+  registerTypedef('PhPartial', expandType('Partial<T>'), ['T']);
+  const expect = expandType('PhPartial<PhSmall>');
+  if (validateType({a: 1}, expect, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  return validateType({a: 'x'}, expect, 'loc', 'name', true, warn, 0) === false;
+}
+function testMixedUnionExcessDeliberate() {
+  // Mixed literals against a Partial union are rejected by exactObjects while tsc accepts them structurally.
+  prepare();
+  registerTypedef('PhOther', expandType('{c: boolean}'));
+  const expect = expandType('Partial<PhSmall | PhOther>');
+  if (validateType({}, expect, 'loc', 'name', true, warn, 0) !== true) {
+    return false;
+  }
+  return validateType({a: 1, c: true}, expect, 'loc', 'name', true, warn, 0) === false;
+}
 const tests = [
   testExpandKeepsDeepPartial,
   testPartialNumberPassthrough,
@@ -166,6 +277,15 @@ const tests = [
   testPartialArray,
   testRequiredPassthrough,
   testDeepPartialMapping,
-  testPickIndexedAccess
+  testPickIndexedAccess,
+  testPartialDeepNesting,
+  testPartialNestedPickOmit,
+  testPartialTuple,
+  testRequiredTuple,
+  testPartialFunction,
+  testPartialTypedefAlias,
+  testPartialWrappers,
+  testPartialGenericAlias,
+  testMixedUnionExcessDeliberate
 ];
 export {tests};

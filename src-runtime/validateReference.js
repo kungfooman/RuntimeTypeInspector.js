@@ -270,6 +270,11 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
       if (typeof firstArg === 'number' || typeof firstArg === 'boolean') {
         return recurse(value, firstArg, loc, name, critical, warn, depth + 1);
       }
+      // Functions are homomorphic identities: `Partial<() => void>` is the
+      // function itself, matching TypeScript.
+      if (firstArg && (firstArg.type === 'function' || firstArg.type === 'new')) {
+        return recurse(value, firstArg, loc, name, critical, warn, depth + 1);
+      }
       // `Partial<string[]>` is `(string | undefined)[]`: arrays stay arrays
       // with optional elements instead of rejecting every array outright.
       if (firstArg && firstArg.type === 'array') {
@@ -277,7 +282,26 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         const hasUndefined = element === 'undefined' ||
           (element && element.type === 'union' && Array.isArray(element.members) && element.members.includes('undefined'));
         const partialElement = hasUndefined ? element : {type: 'union', members: [element, 'undefined']};
-        return recurse(value, {type: 'array', elementType: partialElement}, loc, name, critical, warn, depth + 1);
+        return recurse(value, {...firstArg, type: 'array', elementType: partialElement}, loc, name, critical, warn, depth + 1);
+      }
+      // `Partial<[number, string]>` is `[(number | undefined)?, (string |
+      // undefined)?]`: tuples stay tuples with optional undefined-able
+      // members instead of rejecting every tuple outright.
+      if (firstArg && firstArg.type === 'tuple' && Array.isArray(firstArg.elements)) {
+        const elements = firstArg.elements.map((element) => {
+          if (element && element.type === 'rest') {
+            return element;
+          }
+          const inner = element && element.type === 'tupleMember' ? element.elementType : element;
+          const hasUndefined = inner === 'undefined' ||
+            (inner && inner.type === 'union' && Array.isArray(inner.members) && inner.members.includes('undefined'));
+          const elementType = hasUndefined ? inner : {type: 'union', members: [inner, 'undefined']};
+          if (element && element.type === 'tupleMember') {
+            return {...element, elementType, optional: true};
+          }
+          return {type: 'tupleMember', elementType, optional: true};
+        });
+        return recurse(value, {...firstArg, type: 'tuple', elements}, loc, name, critical, warn, depth + 1);
       }
       warn('Partial requires an object type argument.', {expect});
       return false;
@@ -429,8 +453,21 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
       if (typeof firstArg === 'number' || typeof firstArg === 'boolean') {
         return recurse(value, firstArg, loc, name, critical, warn, depth + 1);
       }
-      if (firstArg && firstArg.type === 'array') {
+      // Functions and arrays pass through like primitives do; Required only
+      // strips object optionality, which neither of them carries.
+      if (firstArg && (firstArg.type === 'array' || firstArg.type === 'function' || firstArg.type === 'new')) {
         return recurse(value, firstArg, loc, name, critical, warn, depth + 1);
+      }
+      // `Required` strips tuple member optionality but keeps element types
+      // (including `| undefined`) exactly like it keeps property types.
+      if (firstArg && firstArg.type === 'tuple' && Array.isArray(firstArg.elements)) {
+        const elements = firstArg.elements.map((element) => {
+          if (element && element.type === 'tupleMember') {
+            return {...element, optional: false};
+          }
+          return element;
+        });
+        return recurse(value, {...firstArg, type: 'tuple', elements}, loc, name, critical, warn, depth + 1);
       }
       warn('Required requires an object type argument.', {expect});
       return false;

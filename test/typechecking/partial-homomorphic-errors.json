@@ -1,13 +1,162 @@
 {
   "throws": [
-    {"loc": "setTheme", "name": "partial", "value": {"guideOcclusion": "bad"}},
-    {"loc": "setTheme", "name": "partial", "value": {"shapeBase": {"x": 123}}},
-    {"loc": "setTheme", "name": "partial", "value": {"unknownProp": 1}},
-    {"loc": "takeNumber", "name": "x", "value": {}},
-    {"loc": "takeUnion", "name": "x", "value": {"a": "x"}},
-    {"loc": "takeUnion", "name": "x", "value": true},
-    {"loc": "takeRequired", "name": "x", "value": {}},
-    {"loc": "takeArray", "name": "x", "value": {}},
-    {"loc": "takeClass", "name": "x", "value": {"r": "bad"}}
+    {
+      "loc": "setTheme",
+      "name": "partial",
+      "value": {
+        "guideOcclusion": "bad"
+      }
+    },
+    {
+      "loc": "setTheme",
+      "name": "partial",
+      "value": {
+        "shapeBase": {
+          "x": 123
+        }
+      }
+    },
+    {
+      "loc": "setTheme",
+      "name": "partial",
+      "value": {
+        "unknownProp": 1
+      }
+    },
+    {
+      "loc": "takeNumber",
+      "name": "x",
+      "value": {}
+    },
+    {
+      "loc": "takeUnion",
+      "name": "x",
+      "value": {
+        "a": "x"
+      }
+    },
+    {
+      "loc": "takeUnion",
+      "name": "x",
+      "value": true
+    },
+    {
+      "loc": "takeRequired",
+      "name": "x",
+      "value": {}
+    },
+    {
+      "loc": "takeArray",
+      "name": "x",
+      "value": {}
+    },
+    {
+      "loc": "takeClass",
+      "name": "x",
+      "value": {
+        "r": "bad"
+      }
+    },
+    {
+      "loc": "takeDouble",
+      "name": "x",
+      "value": {
+        "a": "x"
+      }
+    },
+    {
+      "loc": "takeTriple",
+      "name": "x",
+      "value": {
+        "b": 1
+      }
+    },
+    {
+      "loc": "takePartialPick",
+      "name": "x",
+      "value": {
+        "a": "x"
+      }
+    },
+    {
+      "loc": "takePartialPick",
+      "name": "x",
+      "value": {
+        "b": "s"
+      }
+    },
+    {
+      "loc": "takePartialOmit",
+      "name": "x",
+      "value": {
+        "b": 1
+      }
+    },
+    {
+      "loc": "takePartialOmit",
+      "name": "x",
+      "value": {
+        "a": 1
+      }
+    },
+    {
+      "loc": "takeMixedUnion",
+      "name": "x",
+      "value": {
+        "a": 1,
+        "c": true
+      }
+    },
+    {
+      "loc": "takeMixedUnion",
+      "name": "x",
+      "value": {
+        "a": "x"
+      }
+    },
+    {
+      "loc": "takeNullable",
+      "name": "x",
+      "value": 5
+    },
+    {
+      "loc": "takeTuple",
+      "name": "x",
+      "value": {}
+    },
+    {
+      "loc": "takeReqTuple",
+      "name": "x",
+      "value": [
+        "s",
+        "s"
+      ]
+    },
+    {
+      "loc": "takeAliasPrim",
+      "name": "x",
+      "value": "x"
+    },
+    {
+      "loc": "takeWrapNonNull",
+      "name": "x",
+      "value": {
+        "a": "x"
+      }
+    },
+    {
+      "loc": "takeWrapReadonly",
+      "name": "x",
+      "value": {
+        "b": 1
+      }
+    },
+    {
+      "loc": "takeGenericAlias",
+      "name": "x",
+      "value": {
+        "a": "x"
+      }
+    }
   ]
 }
