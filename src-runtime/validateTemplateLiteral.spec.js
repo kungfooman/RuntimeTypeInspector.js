@@ -1,7 +1,7 @@
 import {registerTypedef} from './registerTypedef.js';
 import {typedefs       } from './registerTypedef.js';
 import {validateType   } from './validateType.js';
-import {templateLiteralValues} from './templateLiteralValues.js';
+import {resolveTemplateLiteralValues} from './resolveTemplateLiteralValues.js';
 import {resolveTemplateLiteralCandidates} from './resolveTemplateLiteralCandidates.js';
 import {expandType     } from '../src-transpiler/expandType.js';
 /**
@@ -24,7 +24,7 @@ function test1() {
 function test2() {
   // Single interpolation with an inline union of string literals
   const expect = {type: 'templateLiteral', quasis: ['', 'x'], types: [{type: 'union', members: ['"a"', '"b"']}]};
-  const values = templateLiteralValues(expect, () => undefined);
+  const values = resolveTemplateLiteralValues(expect, () => undefined);
   if (JSON.stringify(values) !== JSON.stringify(['ax', 'bx'])) {
     return false;
   }
@@ -36,7 +36,7 @@ function test3() {
     {type: 'union', members: ['"a"', '"b"']},
     {type: 'union', members: ['"1"', '"2"']},
   ]};
-  const values = templateLiteralValues(expect, () => undefined);
+  const values = resolveTemplateLiteralValues(expect, () => undefined);
   const expected = ['a_1', 'a_2', 'b_1', 'b_2'];
   if (JSON.stringify(values) !== JSON.stringify(expected)) {
     return false;
@@ -49,7 +49,7 @@ function test4() {
     {type: 'templateLiteral', quasis: ['', '!'], types: [{type: 'union', members: ['"a"', '"b"']}]},
     {type: 'templateLiteral', quasis: ['~'], types: []},
   ]};
-  const values = templateLiteralValues(expect, () => undefined);
+  const values = resolveTemplateLiteralValues(expect, () => undefined);
   const expected = ['a!_~', 'b!_~'];
   if (JSON.stringify(values) !== JSON.stringify(expected)) {
     return false;
@@ -79,7 +79,7 @@ function test6() {
     quasis: ['', '_', ''],
     types: ['Lang', 'AllLocaleIDs'],
   });
-  const values = templateLiteralValues(typedefs.LocaleMessageIDs, () => undefined);
+  const values = resolveTemplateLiteralValues(typedefs.LocaleMessageIDs, () => undefined);
   // 3 langs x 4 ids = 12 permutations
   if (values?.length !== 12) {
     return false;
@@ -95,7 +95,7 @@ function test6() {
 function test7() {
   // Non-enumerable interpolations (like `string`) fail gracefully
   const expect = {type: 'templateLiteral', quasis: ['', '_'], types: ['string']};
-  const values = templateLiteralValues(expect, () => undefined);
+  const values = resolveTemplateLiteralValues(expect, () => undefined);
   if (values !== undefined) {
     return false;
   }

@@ -7,7 +7,7 @@
  */
 const RTI_INFO = {
   "version": "5.0.7",
-  "commit": "c1218222178582df07ce61806719453bea6db484",
-  "subject": "Fix panel Diagnosis: mapped optionality, array/tuple pinpoints, `$type` snapshots (#291)"
+  "commit": "7aa5ccf2c56ecb6df7d8c5becd57568094bfcf9d",
+  "subject": "Make every substitution consumer-overwritable"
 };
 export {RTI_INFO};

@@ -1,6 +1,64 @@
-import {substituteArray} from "./substituteArray.js";
-import {substituteRecord} from "./substituteRecord.js";
-import {substituteDescriptors} from "./substituteDescriptors.js";
+import {substituteList            } from "./substituteList.js";
+import {substituteRecord          } from "./substituteRecord.js";
+import {substituteDescriptors     } from "./substituteDescriptors.js";
+import {substituteArray           } from "./substituteArray.js";
+import {substituteAtom            } from "./substituteAtom.js";
+import {substituteObject          } from "./substituteObject.js";
+import {substituteIndexSignature  } from "./substituteIndexSignature.js";
+import {substituteTuple           } from "./substituteTuple.js";
+import {substituteReference       } from "./substituteReference.js";
+import {substitutePromise         } from "./substitutePromise.js";
+import {substituteSet             } from "./substituteSet.js";
+import {substituteClass           } from "./substituteClass.js";
+import {substituteUnion           } from "./substituteUnion.js";
+import {substituteTemplateLiteral } from "./substituteTemplateLiteral.js";
+import {substituteRest            } from "./substituteRest.js";
+import {substituteIndexedAccess   } from "./substituteIndexedAccess.js";
+import {substituteMapping         } from "./substituteMapping.js";
+import {substituteIntersection    } from "./substituteIntersection.js";
+import {substituteKeyof           } from "./substituteKeyof.js";
+import {substituteCondition       } from "./substituteCondition.js";
+import {substituteTupleMember     } from "./substituteTupleMember.js";
+import {substituteRecordNode      } from "./substituteRecordNode.js";
+import {substituteMapNode         } from "./substituteMapNode.js";
+import {substituteTypeof          } from "./substituteTypeof.js";
+import {substituteNew             } from "./substituteNew.js";
+import {substituteFunction        } from "./substituteFunction.js";
+import {substitutes, recurseSubstitute} from "./substitutes.js";
+/**
+ * Populates the dispatch table: every edge points outward from here, so the
+ * module graph stays acyclic. Importing this module (or the package index)
+ * guarantees a full table. Shorthand keys mirror the export names.
+ */
+Object.assign(substitutes, {
+  substituteType,
+  substituteList,
+  substituteRecord,
+  substituteDescriptors,
+  substituteArray,
+  substituteAtom,
+  substituteObject,
+  substituteIndexSignature,
+  substituteTuple,
+  substituteReference,
+  substitutePromise,
+  substituteSet,
+  substituteClass,
+  substituteUnion,
+  substituteTemplateLiteral,
+  substituteRest,
+  substituteIndexedAccess,
+  substituteMapping,
+  substituteIntersection,
+  substituteKeyof,
+  substituteCondition,
+  substituteTupleMember,
+  substituteRecordNode,
+  substituteMapNode,
+  substituteTypeof,
+  substituteNew,
+  substituteFunction,
+});
 /**
  * Substitutes template references, purely: never mutates its input, and
  * unchanged subtrees are shared by identity with the input, so only the
@@ -14,7 +72,7 @@ import {substituteDescriptors} from "./substituteDescriptors.js";
  * @param {*} type - The type.
  * @param {*} search - The search.
  * @param {*} replace - The replace.
- * @param {*} warn - The warn.
+ * @param {console["warn"]} warn - The warn.
  * @returns {any} - Substituted copy, sharing every unchanged subtree.
  * @example
  * substituteType({type: 'object', properties: {a: 'K'}}, 'K', '"a"', console.warn);
@@ -22,150 +80,62 @@ import {substituteDescriptors} from "./substituteDescriptors.js";
  */
 function substituteType(type, search, replace, warn) {
   if (type === search) {
-    // console.log("substituteType", {type, search, replace, warn});
     return replace;
   }
   if (type === null || typeof type !== 'object') {
-    // Bare names, literals and modifiers pass through untouched: only the
-    // searched template key is substituted, everything else keeps its shape.
     return type;
   }
-  // Annotated atoms like `{type: 'T', optional: true}` (what annotateOptional
-  // emits for optional bare params, e.g. `@param {T} [a]`): substitute inside
-  // `.type` so optional/nullable template params actually instantiate instead
-  // of warning `unchecked`/`@todo unhandled`. Restricted to pure flag
-  // wrappers (no structural fields) so real discriminators (e.g. a template
-  // literally named `array`) are never rewritten.
   if (typeof type.type === 'string' || typeof type.type === 'number' || typeof type.type === 'boolean') {
     const keys = Object.keys(type);
     if (keys.every((key) => key === 'type' || key === 'optional' || key === 'readonly')) {
-      const inner = substituteType(type.type, search, replace, warn);
-      return inner === type.type ? type : {...type, type: inner};
+      return substitutes.substituteAtom(type, search, replace, warn);
     }
   }
   switch (type.type) {
-    case 'object': {
-      const {properties} = type;
-      const next = substituteRecord(properties, search, replace, warn);
-      const signatures = substituteArray(type.indexSignatures, search, replace, warn);
-      if (next === properties && signatures === type.indexSignatures) {
-        return type;
-      }
-      // `{[k: string]: T}` value positions instantiate like properties.
-      const out = {...type};
-      if (next !== properties) {
-        out.properties = next;
-      }
-      if (signatures !== type.indexSignatures) {
-        out.indexSignatures = signatures;
-      }
-      return out;
-    }
-    case 'indexSignature': {
-      const indexType = type.indexType === undefined ? undefined : substituteType(type.indexType, search, replace, warn);
-      const indexParameters = substituteDescriptors(type.indexParameters, search, replace, warn);
-      if (indexType === type.indexType && indexParameters === type.indexParameters) {
-        return type;
-      }
-      // Parameter descriptors `{type, name}`: only `.type` is a type position.
-      return {...type, indexType, indexParameters};
-    }
+    case 'object':
+      return substitutes.substituteObject(type, search, replace, warn);
+    case 'indexSignature':
+      return substitutes.substituteIndexSignature(type, search, replace, warn);
     case 'typeof':
-      // `typeof X` names a value, not a type: a same-named template must not
-      // rewrite it. Silent no-op (previously warned `@todo unhandled` on every
-      // templated function that merely had a typeof-typed param).
-      return type;
-    case 'tuple': {
-      const elements = substituteArray(type.elements, search, replace, warn);
-      return elements === type.elements ? type : {...type, elements};
-    }
-    case 'array': {
-      const elementType = substituteType(type.elementType, search, replace, warn);
-      return elementType === type.elementType ? type : {...type, elementType};
-    }
-    case 'reference': {
-      const {args} = type;
-      if (!Array.isArray(args)) {
-        return type;
-      }
-      const next = substituteArray(args, search, replace, warn);
-      return next === args ? type : {...type, args: next};
-    }
+      return substitutes.substituteTypeof(type, search, replace, warn);
+    case 'tuple':
+      return substitutes.substituteTuple(type, search, replace, warn);
+    case 'array':
+      return substitutes.substituteArray(type, search, replace, warn);
+    case 'reference':
+      return substitutes.substituteReference(type, search, replace, warn);
     case 'promise':
+      return substitutes.substitutePromise(type, search, replace, warn);
     case 'set':
-    case 'class': {
-      const elementType = substituteType(type.elementType, search, replace, warn);
-      return elementType === type.elementType ? type : {...type, elementType};
-    }
-    case 'union': {
-      const members = substituteArray(type.members, search, replace, warn);
-      return members === type.members ? type : {...type, members};
-    }
-    case 'templateLiteral': {
-      const types = substituteArray(type.types, search, replace, warn);
-      return types === type.types ? type : {...type, types};
-    }
-    case 'rest': {
-      const annotation = substituteType(type.annotation, search, replace, warn);
-      return annotation === type.annotation ? type : {...type, annotation};
-    }
-    case 'indexedAccess': {
-      const index = substituteType(type.index, search, replace, warn);
-      const object = substituteType(type.object, search, replace, warn);
-      return index === type.index && object === type.object ? type : {...type, index, object};
-    }
+      return substitutes.substituteSet(type, search, replace, warn);
+    case 'class':
+      return substitutes.substituteClass(type, search, replace, warn);
+    case 'union':
+      return substitutes.substituteUnion(type, search, replace, warn);
+    case 'templateLiteral':
+      return substitutes.substituteTemplateLiteral(type, search, replace, warn);
+    case 'rest':
+      return substitutes.substituteRest(type, search, replace, warn);
+    case 'indexedAccess':
+      return substitutes.substituteIndexedAccess(type, search, replace, warn);
     case 'record':
-    case 'map': {
-      const key = substituteType(type.key, search, replace, warn);
-      const val = substituteType(type.val, search, replace, warn);
-      return key === type.key && val === type.val ? type : {...type, key, val};
-    }
-    case 'mapping': {
-      // `element` binds the iteration variable: a matching search is
-      // shadowed inside and must not be substituted.
-      if (type.element === search) {
-        return type;
-      }
-      const iterable = substituteType(type.iterable, search, replace, warn);
-      const result = substituteType(type.result, search, replace, warn);
-      const nameType = type.nameType === undefined ? undefined : substituteType(type.nameType, search, replace, warn);
-      if (iterable === type.iterable && result === type.result && nameType === type.nameType) {
-        return type;
-      }
-      return {...type, iterable, result, nameType};
-    }
-    case 'intersection': {
-      const members = substituteArray(type.members, search, replace, warn);
-      return members === type.members ? type : {...type, members};
-    }
-    case 'keyof': {
-      const argument = substituteType(type.argument, search, replace, warn);
-      return argument === type.argument ? type : {...type, argument};
-    }
-    case 'condition': {
-      const checkType = substituteType(type.checkType, search, replace, warn);
-      const extendsType = substituteType(type.extendsType, search, replace, warn);
-      const trueType = substituteType(type.trueType, search, replace, warn);
-      const falseType = substituteType(type.falseType, search, replace, warn);
-      if (checkType === type.checkType && extendsType === type.extendsType &&
-        trueType === type.trueType && falseType === type.falseType) {
-        return type;
-      }
-      return {...type, checkType, extendsType, trueType, falseType};
-    }
-    case 'tupleMember': {
-      const elementType = substituteType(type.elementType, search, replace, warn);
-      return elementType === type.elementType ? type : {...type, elementType};
-    }
+      return substitutes.substituteRecordNode(type, search, replace, warn);
+    case 'map':
+      return substitutes.substituteMapNode(type, search, replace, warn);
+    case 'mapping':
+      return substitutes.substituteMapping(type, search, replace, warn);
+    case 'intersection':
+      return substitutes.substituteIntersection(type, search, replace, warn);
+    case 'keyof':
+      return substitutes.substituteKeyof(type, search, replace, warn);
+    case 'condition':
+      return substitutes.substituteCondition(type, search, replace, warn);
+    case 'tupleMember':
+      return substitutes.substituteTupleMember(type, search, replace, warn);
     case 'new':
-    case 'function': {
-      const parameters = substituteDescriptors(type.parameters, search, replace, warn);
-      const ret = type.ret === undefined ? undefined : substituteType(type.ret, search, replace, warn);
-      if (parameters === type.parameters && ret === type.ret) {
-        return type;
-      }
-      return {...type, parameters, ret};
-    }
+      return substitutes.substituteNew(type, search, replace, warn);
+    case 'function':
+      return substitutes.substituteFunction(type, search, replace, warn);
     default:
       warn('substituteType: @todo unhandled', {type, search, replace});
       break;

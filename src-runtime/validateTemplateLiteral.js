@@ -1,4 +1,4 @@
-import {templateLiteralValues} from "./templateLiteralValues.js";
+import {resolveTemplateLiteralValues} from "./resolveTemplateLiteralValues.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {object} expect - The supposed type information of said value.
@@ -12,7 +12,7 @@ import {templateLiteralValues} from "./templateLiteralValues.js";
  * @returns {boolean} Boolean indicating if a type is correct.
  */
 function validateTemplateLiteral(value, expect, loc, name, critical, warn, depth) {
-  const values = templateLiteralValues(expect, warn);
+  const values = resolveTemplateLiteralValues(expect, warn);
   if (!values) {
     warn(`Given value '${value}' couldn't be checked against template literal type.`, {loc, name, expect});
     return false;

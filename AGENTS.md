@@ -73,6 +73,9 @@ When the user hands you tests (repro files, `./tmp` snippets, demo cases), make 
 - Every unit test gets a comment stating its expectation up front; then
   verify it (mutation: break the code, watch it fail) and fix whatever is
   wrong — test or code — until the expectation holds for the right reason.
+- Every unit test carries a plain-English comment saying what it wants to
+  test and why the outcome should be the way it is, so the intent is
+  readable without reverse-engineering the assertion.
 - Full gate before finishing: `npm test` + `npm run lint`.
 
 ## Test style
