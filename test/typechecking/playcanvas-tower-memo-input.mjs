@@ -1,13 +1,17 @@
 /**
- * Repeated `addComponent` checks with the same component name must share the
- * resolved options shape instead of rebuilding it per call (the scroll-view
- * example spent 161 s resolving the same options tower 260 times). Repeats
- * with good values stay quiet, repeats with bad values still throw, and
- * alternating names never mix their shapes. Every throwing call carries
- * `@ts-expect-error`, so a tsc-strict run is green if and only if each
- * directive is consumed and nothing else errors; `*-errors.json` pins the
- * same sequence for RTI. (`Component` is intentionally non-empty: tsc reads
- * an empty base class structurally, so every member would extend it.)
+ * Repeat-call correctness for `addComponent`'s conditional options: repeats
+ * with good values stay quiet, repeats with bad values still throw, other
+ * names resolve independently, and an omitted optional argument stays
+ * quiet — so sharing the resolved shape across calls never leaks a verdict
+ * from one call into another. This is correctness coverage only: the tower
+ * here is small and runs in ~0.5 s with or without memoization. The actual
+ * performance guard is the repeat-throughput spec test, which resolves a
+ * wide options tower once and requires repeats to cost a fraction of it.
+ * Every throwing call carries `@ts-expect-error`, so a tsc-strict run is
+ * green if and only if each directive is consumed and nothing else errors;
+ * `*-errors.json` pins the same sequence for RTI. (`Component` is
+ * intentionally non-empty: tsc reads an empty base class structurally, so
+ * every member would extend it.)
  */
 class Component {
   constructor() {
