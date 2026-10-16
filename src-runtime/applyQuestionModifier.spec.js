@@ -4,13 +4,13 @@ import {registerTypedef, typedefs, bumpTypedefVersion} from './registerTypedef.j
 // without the flag while the registered typedef keeps it, so later checks
 // still see the optional spelling.
 function testStripCopiesRegistryAlias() {
-  registerTypedef('RtiOpt', {type: 'object', properties: {v: 'number'}, optional: true});
+  registerTypedef('OptionalBox', {type: 'object', properties: {v: 'number'}, optional: true});
   try {
-    const stripped = applyQuestionModifier('RtiOpt', '-');
-    return stripped !== typedefs.RtiOpt && typeof stripped === 'object' && stripped !== null &&
-      !('optional' in stripped) && typedefs.RtiOpt.optional === true;
+    const stripped = applyQuestionModifier('OptionalBox', '-');
+    return stripped !== typedefs.OptionalBox && typeof stripped === 'object' && stripped !== null &&
+      !('optional' in stripped) && typedefs.OptionalBox.optional === true;
   } finally {
-    delete typedefs.RtiOpt;
+    delete typedefs.OptionalBox;
     bumpTypedefVersion();
   }
 }
@@ -18,13 +18,13 @@ function testStripCopiesRegistryAlias() {
 // an alias unconditionally breaks structural comparisons like `IfEquals`,
 // which must see the same spelling on both sides.
 function testNoFlagKeepsIdentity() {
-  registerTypedef('RtiReq', {type: 'object', properties: {v: 'number'}});
+  registerTypedef('RequiredBox', {type: 'object', properties: {v: 'number'}});
   try {
     const plain = {type: 'object', properties: {}};
-    return applyQuestionModifier('RtiReq', '-') === 'RtiReq' &&
+    return applyQuestionModifier('RequiredBox', '-') === 'RequiredBox' &&
       applyQuestionModifier(plain, '-') === plain;
   } finally {
-    delete typedefs.RtiReq;
+    delete typedefs.RequiredBox;
     bumpTypedefVersion();
   }
 }

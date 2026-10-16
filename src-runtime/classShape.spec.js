@@ -167,13 +167,13 @@ function testPrimitiveRegistryOddity() {
   // Registries are written by tests with anything at all: a primitive entry
   // cannot merge a chain, so it falls through uncached and yields an empty
   // object shape instead of throwing.
-  classes.RtiOddity = 42;
+  classes.Oddity = 42;
   bumpClassVersion();
   try {
-    const shape = mergedClassShape('RtiOddity');
+    const shape = mergedClassShape('Oddity');
     return shape.type === 'object' && Object.keys(shape.properties).length === 0;
   } finally {
-    dropClass('RtiOddity');
+    dropClass('Oddity');
   }
 }
 function testWipeWithBumpInvalidates() {

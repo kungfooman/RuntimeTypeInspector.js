@@ -22,56 +22,56 @@ function testMergedShapeSharesIdentity() {
   // Repeats for one name share one frozen shape instead of rebuilding the
   // merge per key and per validation, which is what made long accessor
   // lists cost ~0.6 s per check.
-  class MemoBase {
+  class MergeBase {
     base() {}
   }
-  class MemoSub extends MemoBase {
+  class MergeChild extends MergeBase {
     sub() {}
   }
-  classes.MemoBase = MemoBase;
-  classes.MemoSub = MemoSub;
+  classes.MergeBase = MergeBase;
+  classes.MergeChild = MergeChild;
   bumpClassVersion();
   try {
-    const first = mergedClassShape('MemoSub');
-    const second = mergedClassShape('MemoSub');
+    const first = mergedClassShape('MergeChild');
+    const second = mergedClassShape('MergeChild');
     return first === second && Object.isFrozen(first) && 'base' in first.properties && 'sub' in first.properties;
   } finally {
-    dropClass('MemoBase');
-    dropClass('MemoSub');
+    dropClass('MergeBase');
+    dropClass('MergeChild');
   }
 }
 function testMergedShapeReflectsTypedefChange() {
   // Re-registering the harvested typedef recomputes instead of serving the
   // stale merge, so class edits show up without restarting.
-  class MemoHarv {}
-  registerClass(MemoHarv);
+  class HarvestedBox {}
+  registerClass(HarvestedBox);
   try {
-    registerTypedef('MemoHarv', {type: 'object', properties: {a: 'number'}});
-    const before = mergedClassShape('MemoHarv');
-    registerTypedef('MemoHarv', {type: 'object', properties: {a: 'number', b: 'string'}});
-    const after = mergedClassShape('MemoHarv');
+    registerTypedef('HarvestedBox', {type: 'object', properties: {a: 'number'}});
+    const before = mergedClassShape('HarvestedBox');
+    registerTypedef('HarvestedBox', {type: 'object', properties: {a: 'number', b: 'string'}});
+    const after = mergedClassShape('HarvestedBox');
     return before !== after && !('b' in before.properties) && 'b' in after.properties;
   } finally {
-    dropClass('MemoHarv');
-    dropTypedef('MemoHarv');
+    dropClass('HarvestedBox');
+    dropTypedef('HarvestedBox');
   }
 }
 function testReferenceSharesIdentityPerArgs() {
   // One generic instantiation per reference plus arguments: repeats share,
   // distinct arguments stay distinct, so 260 `addComponent('element', …)`
   // calls resolve the options tower once.
-  const prev = typedefs.MemoBox;
+  const prev = typedefs.ArgumentsBox;
   try {
-    registerTypedef('MemoBox', {type: 'object', properties: {value: 'T'}}, ['T']);
-    const first = instantiateReference({type: 'reference', name: 'MemoBox', args: ['"a"']}, noop);
-    const second = instantiateReference({type: 'reference', name: 'MemoBox', args: ['"a"']}, noop);
-    const other = instantiateReference({type: 'reference', name: 'MemoBox', args: ['"b"']}, noop);
+    registerTypedef('ArgumentsBox', {type: 'object', properties: {value: 'T'}}, ['T']);
+    const first = instantiateReference({type: 'reference', name: 'ArgumentsBox', args: ['"a"']}, noop);
+    const second = instantiateReference({type: 'reference', name: 'ArgumentsBox', args: ['"a"']}, noop);
+    const other = instantiateReference({type: 'reference', name: 'ArgumentsBox', args: ['"b"']}, noop);
     return first === second && Object.isFrozen(first) && first !== other && first.properties.value === '"a"' && other.properties.value === '"b"';
   } finally {
     if (prev === undefined) {
-      delete typedefs.MemoBox;
+      delete typedefs.ArgumentsBox;
     } else {
-      typedefs.MemoBox = prev;
+      typedefs.ArgumentsBox = prev;
     }
     bumpTypedefVersion();
   }
@@ -79,18 +79,18 @@ function testReferenceSharesIdentityPerArgs() {
 function testReferenceReflectsReregistration() {
   // Re-registering the generic typedef recomputes pending instantiations
   // instead of serving the stale substitution.
-  const prev = typedefs.MemoRe;
+  const prev = typedefs.ReregisteredBox;
   try {
-    registerTypedef('MemoRe', {type: 'object', properties: {v: 'T'}}, ['T']);
-    const before = instantiateReference({type: 'reference', name: 'MemoRe', args: ['"a"']}, noop);
-    registerTypedef('MemoRe', {type: 'object', properties: {v: 'T', w: 'number'}}, ['T']);
-    const after = instantiateReference({type: 'reference', name: 'MemoRe', args: ['"a"']}, noop);
+    registerTypedef('ReregisteredBox', {type: 'object', properties: {v: 'T'}}, ['T']);
+    const before = instantiateReference({type: 'reference', name: 'ReregisteredBox', args: ['"a"']}, noop);
+    registerTypedef('ReregisteredBox', {type: 'object', properties: {v: 'T', w: 'number'}}, ['T']);
+    const after = instantiateReference({type: 'reference', name: 'ReregisteredBox', args: ['"a"']}, noop);
     return before !== after && !('w' in before.properties) && 'w' in after.properties;
   } finally {
     if (prev === undefined) {
-      delete typedefs.MemoRe;
+      delete typedefs.ReregisteredBox;
     } else {
-      typedefs.MemoRe = prev;
+      typedefs.ReregisteredBox = prev;
     }
     bumpTypedefVersion();
   }
@@ -98,33 +98,33 @@ function testReferenceReflectsReregistration() {
 function testRepeatValidationStaysCorrect() {
   // Sharing the resolved shape must not leak verdicts: good, bad, then good
   // again for one name decides per value, and the other name is unaffected.
-  class MemoComponent {
+  class TowerComponent {
     toggle() {}
   }
-  class MemoCam extends MemoComponent {
+  class TowerCamera extends TowerComponent {
     constructor() {
       super();
       this.fov = 1;
     }
   }
-  registerClass(MemoComponent);
-  registerClass(MemoCam);
-  const prevCam = typedefs.MemoCam;
-  const prevMap = typedefs.MemoMap;
-  const prevName = typedefs.MemoName;
-  const prevOpts = typedefs.MemoOpts;
+  registerClass(TowerComponent);
+  registerClass(TowerCamera);
+  const prevCam = typedefs.TowerCamera;
+  const prevMap = typedefs.TowerMap;
+  const prevName = typedefs.TowerName;
+  const prevOpts = typedefs.TowerOptions;
   try {
-    registerTypedef('MemoCam', {type: 'object', properties: {fov: 'number'}});
-    registerTypedef('MemoEntity', {type: 'object', properties: {camera: 'MemoCam', name: 'string'}});
-    registerTypedef('MemoMap', expandType('{ [K in keyof MemoEntity as NonNullable<MemoEntity[K]> extends MemoComponent ? K : never]: NonNullable<MemoEntity[K]> }'));
-    registerTypedef('MemoName', expandType('keyof MemoMap & string'));
-    registerTypedef('MemoOpts', expandType('Partial<Pick<MemoMap[K], "fov">>'), ['K']);
+    registerTypedef('TowerCamera', {type: 'object', properties: {fov: 'number'}});
+    registerTypedef('TowerEntity', {type: 'object', properties: {camera: 'TowerCamera', name: 'string'}});
+    registerTypedef('TowerMap', expandType('{ [K in keyof TowerEntity as NonNullable<TowerEntity[K]> extends TowerComponent ? K : never]: NonNullable<TowerEntity[K]> }'));
+    registerTypedef('TowerName', expandType('keyof TowerMap & string'));
+    registerTypedef('TowerOptions', expandType('Partial<Pick<TowerMap[K], "fov">>'), ['K']);
     const check = (type, data) => {
-      const templates = {K: 'MemoName'};
-      if (!inspectTypeWithTemplates(type, 'K', 'MemoEntity#add', 'type', templates)) {
+      const templates = {K: 'TowerName'};
+      if (!inspectTypeWithTemplates(type, 'K', 'TowerEntity#add', 'type', templates)) {
         return false;
       }
-      return inspectTypeWithTemplates(data, {type: 'reference', name: 'MemoOpts', args: ['K']}, 'MemoEntity#add', 'data', templates);
+      return inspectTypeWithTemplates(data, {type: 'reference', name: 'TowerOptions', args: ['K']}, 'TowerEntity#add', 'data', templates);
     };
     const good = {fov: 1};
     const bad = {fov: 'x'};
@@ -142,41 +142,41 @@ function testRepeatValidationStaysCorrect() {
     }
     return true;
   } finally {
-    for (const key of ['MemoCam', 'MemoEntity', 'MemoMap', 'MemoName', 'MemoOpts']) {
+    for (const key of ['TowerCamera', 'TowerEntity', 'TowerMap', 'TowerName', 'TowerOptions']) {
       delete typedefs[key];
     }
     bumpTypedefVersion();
-    dropClass('MemoComponent');
-    dropClass('MemoCam');
+    dropClass('TowerComponent');
+    dropClass('TowerCamera');
     substitutedCache.clear();
     if (prevCam !== undefined) {
-      typedefs.MemoCam = prevCam;
+      typedefs.TowerCamera = prevCam;
     }
     if (prevMap !== undefined) {
-      typedefs.MemoMap = prevMap;
+      typedefs.TowerMap = prevMap;
     }
     if (prevName !== undefined) {
-      typedefs.MemoName = prevName;
+      typedefs.TowerName = prevName;
     }
     if (prevOpts !== undefined) {
-      typedefs.MemoOpts = prevOpts;
+      typedefs.TowerOptions = prevOpts;
     }
   }
 }
 function testReferenceKeepsNegZeroDistinct() {
   // Cache keys must not collapse JSON-identical siblings: `-0` and `+0`
   // instantiate distinctly, mirroring how inference pins them distinctly.
-  const prev = typedefs.MemoNeg;
+  const prev = typedefs.NegativeZeroBox;
   try {
-    registerTypedef('MemoNeg', {type: 'object', properties: {v: 'T'}}, ['T']);
-    const neg = instantiateReference({type: 'reference', name: 'MemoNeg', args: [-0]}, noop);
-    const pos = instantiateReference({type: 'reference', name: 'MemoNeg', args: [0]}, noop);
+    registerTypedef('NegativeZeroBox', {type: 'object', properties: {v: 'T'}}, ['T']);
+    const neg = instantiateReference({type: 'reference', name: 'NegativeZeroBox', args: [-0]}, noop);
+    const pos = instantiateReference({type: 'reference', name: 'NegativeZeroBox', args: [0]}, noop);
     return neg !== pos && Object.is(neg.properties.v, -0) && Object.is(pos.properties.v, 0) && !Object.is(pos.properties.v, -0);
   } finally {
     if (prev === undefined) {
-      delete typedefs.MemoNeg;
+      delete typedefs.NegativeZeroBox;
     } else {
-      typedefs.MemoNeg = prev;
+      typedefs.NegativeZeroBox = prev;
     }
     bumpTypedefVersion();
   }
@@ -187,32 +187,32 @@ function testHundredRepeatsCheaperThanOneCold() {
   // bar is 100x (a 50-key tower measures ~1400x per call, ~13000x at 150
   // keys), which keeps headroom for CI timing noise while failing at ~1x
   // without the memoization. Every repeat still validates its own value.
-  class MemoPerfComponent {
+  class ThroughputComponent {
     toggle() {}
   }
-  class MemoPerfElement extends MemoPerfComponent {}
-  registerClass(MemoPerfComponent);
-  registerClass(MemoPerfElement);
+  class ThroughputElement extends ThroughputComponent {}
+  registerClass(ThroughputComponent);
+  registerClass(ThroughputElement);
   try {
     const props = {};
     for (let i = 0; i < 50; i++) {
       props[`p${i}`] = 'number';
     }
-    registerTypedef('MemoPerfElement', {type: 'object', properties: props});
-    registerTypedef('MemoPerfEntity', {type: 'object', properties: {element: 'MemoPerfElement', name: 'string'}});
-    registerTypedef('MemoPerfMap', expandType('{ [K in keyof MemoPerfEntity as NonNullable<MemoPerfEntity[K]> extends MemoPerfComponent ? K : never]: NonNullable<MemoPerfEntity[K]> }'));
-    registerTypedef('MemoPerfName', expandType('keyof MemoPerfMap & string'));
-    registerTypedef('MemoPerfWritable', expandType('{ [P in keyof T]-?: IfEquals<{ [Q in P]: T[P] }, { -readonly [Q in P]: T[P] }, P> }[keyof T]'), ['T']);
-    registerTypedef('MemoPerfOptionKeys', expandType('{ [K in MemoPerfWritable<C>]: K extends \'system\' | \'entity\' ? never : NonNullable<C[K]> extends Function ? never : K }[MemoPerfWritable<C>]'), ['C']);
-    registerTypedef('MemoPerfOptionsOf', expandType('Partial<Pick<C, Extract<MemoPerfOptionKeys<C>, keyof C>>>'), ['C']);
-    registerTypedef('MemoPerfMerged', expandType('MemoPerfOptionsOf<MemoPerfMap[K]>'), ['K']);
-    registerTypedef('MemoPerfOptions', expandType('{ [P in keyof MemoPerfMerged<K>]: MemoPerfMerged<K>[P] }'), ['K']);
+    registerTypedef('ThroughputElement', {type: 'object', properties: props});
+    registerTypedef('ThroughputEntity', {type: 'object', properties: {element: 'ThroughputElement', name: 'string'}});
+    registerTypedef('ThroughputMap', expandType('{ [K in keyof ThroughputEntity as NonNullable<ThroughputEntity[K]> extends ThroughputComponent ? K : never]: NonNullable<ThroughputEntity[K]> }'));
+    registerTypedef('ThroughputName', expandType('keyof ThroughputMap & string'));
+    registerTypedef('ThroughputWritable', expandType('{ [P in keyof T]-?: IfEquals<{ [Q in P]: T[P] }, { -readonly [Q in P]: T[P] }, P> }[keyof T]'), ['T']);
+    registerTypedef('ThroughputOptionKeys', expandType('{ [K in ThroughputWritable<C>]: K extends \'system\' | \'entity\' ? never : NonNullable<C[K]> extends Function ? never : K }[ThroughputWritable<C>]'), ['C']);
+    registerTypedef('ThroughputOptionsOf', expandType('Partial<Pick<C, Extract<ThroughputOptionKeys<C>, keyof C>>>'), ['C']);
+    registerTypedef('ThroughputMerged', expandType('ThroughputOptionsOf<ThroughputMap[K]>'), ['K']);
+    registerTypedef('ThroughputOptions', expandType('{ [P in keyof ThroughputMerged<K>]: ThroughputMerged<K>[P] }'), ['K']);
     const check = (type, data) => {
-      const templates = {K: 'MemoPerfName'};
-      if (!inspectTypeWithTemplates(type, 'K', 'MemoPerf#add', 'type', templates)) {
+      const templates = {K: 'ThroughputName'};
+      if (!inspectTypeWithTemplates(type, 'K', 'Throughput#add', 'type', templates)) {
         return false;
       }
-      return inspectTypeWithTemplates(data, {type: 'reference', name: 'MemoPerfOptions', args: ['K']}, 'MemoPerf#add', 'data', templates);
+      return inspectTypeWithTemplates(data, {type: 'reference', name: 'ThroughputOptions', args: ['K']}, 'Throughput#add', 'data', templates);
     };
     const value = {p0: 1};
     const coldStart = performance.now();
@@ -233,12 +233,12 @@ function testHundredRepeatsCheaperThanOneCold() {
     }
     return avgMs * 100 < coldMs;
   } finally {
-    for (const key of ['MemoPerfElement', 'MemoPerfEntity', 'MemoPerfMap', 'MemoPerfName', 'MemoPerfWritable', 'MemoPerfOptionKeys', 'MemoPerfOptionsOf', 'MemoPerfMerged', 'MemoPerfOptions']) {
+    for (const key of ['ThroughputElement', 'ThroughputEntity', 'ThroughputMap', 'ThroughputName', 'ThroughputWritable', 'ThroughputOptionKeys', 'ThroughputOptionsOf', 'ThroughputMerged', 'ThroughputOptions']) {
       delete typedefs[key];
     }
     bumpTypedefVersion();
-    dropClass('MemoPerfComponent');
-    dropClass('MemoPerfElement');
+    dropClass('ThroughputComponent');
+    dropClass('ThroughputElement');
     substitutedCache.clear();
   }
 }
@@ -248,7 +248,7 @@ function testFrozenSharedTupleMaterializes() {
   // alone instead of throwing, desugaring into a fresh flattened copy, and
   // validation still accepts and rejects the same values because tuple
   // validation expands rest elements itself.
-  registerTypedef('MemoFrzTup', {
+  registerTypedef('SharedTupleBox', {
     type: 'object',
     properties: {
       t: {type: 'tuple', elements: [
@@ -258,9 +258,9 @@ function testFrozenSharedTupleMaterializes() {
     },
   }, ['X']);
   try {
-    const inst = instantiateReference({type: 'reference', name: 'MemoFrzTup', args: ['any']}, noop);
+    const inst = instantiateReference({type: 'reference', name: 'SharedTupleBox', args: ['any']}, noop);
     const shared = inst.properties.t;
-    const mk = () => ({
+    const freshNode = () => ({
       type: 'mapping',
       iterable: {type: 'keyof', argument: {type: 'object', properties: {a: 'number', b: 'number'}}},
       element: 'K',
@@ -268,7 +268,7 @@ function testFrozenSharedTupleMaterializes() {
     });
     let mat;
     try {
-      mat = createTypeFromMapping(mk(), noop);
+      mat = createTypeFromMapping(freshNode(), noop);
     } catch {
       return false;
     }
@@ -279,7 +279,7 @@ function testFrozenSharedTupleMaterializes() {
     const bad = validateType({a: [1, 2, 'x']}, mat, 'loc', 'name', true, noop, 0) === false;
     return untouched && desugared && ok && bad;
   } finally {
-    dropTypedef('MemoFrzTup');
+    dropTypedef('SharedTupleBox');
   }
 }
 export const tests = [

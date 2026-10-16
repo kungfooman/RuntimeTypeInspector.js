@@ -13,37 +13,37 @@ function dropTypedef(name) {
 // very same instance on every call, so downstream identity caches keep
 // hitting instead of re-deriving per check.
 function testStableNodeReturnsSameInstance() {
-  registerTypedef('RtiStable', {type: 'object', properties: {v: 'T'}}, ['T']);
+  registerTypedef('StableBox', {type: 'object', properties: {v: 'T'}}, ['T']);
   try {
-    const node = {type: 'reference', name: 'RtiStable', args: ['number']};
+    const node = {type: 'reference', name: 'StableBox', args: ['number']};
     const a = instantiateReference(node, warn);
     const b = instantiateReference(node, warn);
     return a === b && a.properties.v === 'number';
   } finally {
-    dropTypedef('RtiStable');
+    dropTypedef('StableBox');
   }
 }
 // An unknown name instantiates nothing: the caller sees undefined and can
 // report `unchecked` instead of validating against a phantom type.
 function testMissingTypedefReturnsUndefined() {
-  return instantiateReference({type: 'reference', name: 'RtiNeverRegistered', args: ['number']}, warn) === undefined;
+  return instantiateReference({type: 'reference', name: 'UnregisteredBox', args: ['number']}, warn) === undefined;
 }
 // Without template parameters or arguments there is nothing to substitute:
 // the registry object itself comes back by identity, uncloned.
 function testNoArgsReturnsRegistryEntry() {
-  registerTypedef('RtiPlain', {type: 'object', properties: {n: 'number'}});
+  registerTypedef('PlainBox', {type: 'object', properties: {n: 'number'}});
   try {
-    return instantiateReference({type: 'reference', name: 'RtiPlain', args: []}, warn) === typedefs.RtiPlain;
+    return instantiateReference({type: 'reference', name: 'PlainBox', args: []}, warn) === typedefs.PlainBox;
   } finally {
-    dropTypedef('RtiPlain');
+    dropTypedef('PlainBox');
   }
 }
 // Cached instances are shared by every check of the site: a future
 // in-place mutator must throw instead of silently corrupting all callers.
 function testInstanceFrozen() {
-  registerTypedef('RtiFrz', {type: 'object', properties: {v: 'T'}}, ['T']);
+  registerTypedef('FrozenBox', {type: 'object', properties: {v: 'T'}}, ['T']);
   try {
-    const inst = instantiateReference({type: 'reference', name: 'RtiFrz', args: ['number']}, warn);
+    const inst = instantiateReference({type: 'reference', name: 'FrozenBox', args: ['number']}, warn);
     let loud = false;
     try {
       inst.properties.v = 'string';
@@ -52,34 +52,34 @@ function testInstanceFrozen() {
     }
     return Object.isFrozen(inst) && loud && inst.properties.v === 'number';
   } finally {
-    dropTypedef('RtiFrz');
+    dropTypedef('FrozenBox');
   }
 }
 // Fewer arguments than parameters fill the remainder with `any`, matching
 // TypeScript's missing-type-argument behavior; extra arguments are ignored.
 function testArgFillMatchesTypeScript() {
-  registerTypedef('RtiTwo', {type: 'object', properties: {a: 'T', b: 'U'}}, ['T', 'U']);
+  registerTypedef('TwoParamBox', {type: 'object', properties: {a: 'T', b: 'U'}}, ['T', 'U']);
   try {
-    const missing = instantiateReference({type: 'reference', name: 'RtiTwo', args: ['number']}, warn);
-    const extra = instantiateReference({type: 'reference', name: 'RtiTwo', args: ['number', 'string', 'boolean']}, warn);
+    const missing = instantiateReference({type: 'reference', name: 'TwoParamBox', args: ['number']}, warn);
+    const extra = instantiateReference({type: 'reference', name: 'TwoParamBox', args: ['number', 'string', 'boolean']}, warn);
     return missing.properties.a === 'number' && missing.properties.b === 'any' &&
       extra.properties.a === 'number' && extra.properties.b === 'string';
   } finally {
-    dropTypedef('RtiTwo');
+    dropTypedef('TwoParamBox');
   }
 }
 // Unserializable arguments (functions have no stable key) skip the cache
 // instead of sharing wrongly: each call still substitutes correctly, just
 // into a fresh object.
 function testUnserializableArgsSkipCache() {
-  registerTypedef('RtiFn', {type: 'object', properties: {v: 'T'}}, ['T']);
+  registerTypedef('FunctionBox', {type: 'object', properties: {v: 'T'}}, ['T']);
   try {
     const fn = () => {};
-    const a = instantiateReference({type: 'reference', name: 'RtiFn', args: [fn]}, warn);
-    const b = instantiateReference({type: 'reference', name: 'RtiFn', args: [fn]}, warn);
+    const a = instantiateReference({type: 'reference', name: 'FunctionBox', args: [fn]}, warn);
+    const b = instantiateReference({type: 'reference', name: 'FunctionBox', args: [fn]}, warn);
     return a !== b && a.properties.v === fn && b.properties.v === fn;
   } finally {
-    dropTypedef('RtiFn');
+    dropTypedef('FunctionBox');
   }
 }
 export const tests = [

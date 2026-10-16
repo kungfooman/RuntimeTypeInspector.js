@@ -15,9 +15,9 @@ function dropTypedef(name) {
 // non-templated sites emit the mapping struct inline, and the per-call key,
 // condition and indexed-access derivation only runs once per site.
 function testFreshNodesShareMaterialization() {
-  const mk = () => expandType('{[K in "a"|"b"]: number}');
-  const a = createTypeFromMapping(mk(), warn);
-  const b = createTypeFromMapping(mk(), warn);
+  const freshNode = () => expandType('{[K in "a"|"b"]: number}');
+  const a = createTypeFromMapping(freshNode(), warn);
+  const b = createTypeFromMapping(freshNode(), warn);
   return a === b && a.properties.a === 'number' && a.properties.b === 'number';
 }
 // A stable node (registry typedef or substituted tree) takes the identity
@@ -44,30 +44,30 @@ function testMaterializationFrozen() {
 // mapping content must recompute its keys against the new registry instead
 // of serving the stale materialization from before the update.
 function testRegistryUpdateInvalidates() {
-  registerTypedef('RtiMapSrc', {type: 'object', properties: {a: 'number'}});
+  registerTypedef('MapSource', {type: 'object', properties: {a: 'number'}});
   try {
-    const mk = () => ({type: 'mapping', iterable: {type: 'keyof', argument: 'RtiMapSrc'}, element: 'K', result: 'K'});
-    const before = createTypeFromMapping(mk(), warn);
-    registerTypedef('RtiMapSrc', {type: 'object', properties: {a: 'number', b: 'boolean'}});
-    const after = createTypeFromMapping(mk(), warn);
+    const freshNode = () => ({type: 'mapping', iterable: {type: 'keyof', argument: 'MapSource'}, element: 'K', result: 'K'});
+    const before = createTypeFromMapping(freshNode(), warn);
+    registerTypedef('MapSource', {type: 'object', properties: {a: 'number', b: 'boolean'}});
+    const after = createTypeFromMapping(freshNode(), warn);
     return before !== after &&
       before.properties.b === undefined &&
       after.properties.a === '"a"' &&
       after.properties.b === '"b"';
   } finally {
-    dropTypedef('RtiMapSrc');
+    dropTypedef('MapSource');
   }
 }
 // A string typedef name resolves to the registry node before caching, so
 // repeated calls share the materialization.
 function testStringNameResolvesTypedef() {
-  registerTypedef('RtiMapNamed', expandType('{[K in "x"]: number}'));
+  registerTypedef('NamedMapping', expandType('{[K in "x"]: number}'));
   try {
-    const a = createTypeFromMapping('RtiMapNamed', warn);
-    const b = createTypeFromMapping('RtiMapNamed', warn);
+    const a = createTypeFromMapping('NamedMapping', warn);
+    const b = createTypeFromMapping('NamedMapping', warn);
     return a === b && a.properties.x === 'number';
   } finally {
-    dropTypedef('RtiMapNamed');
+    dropTypedef('NamedMapping');
   }
 }
 // Materializing through a registered mapping must not rewrite the registry:
@@ -75,7 +75,7 @@ function testStringNameResolvesTypedef() {
 // in-place flattener replaced its elements array on first materialization.
 // The registry keeps its exact array afterwards.
 function testRegistryTypedefUntouched() {
-  registerTypedef('RtiMapReg', {type: 'mapping',
+  registerTypedef('RegistryMapping', {type: 'mapping',
     iterable: {type: 'keyof', argument: {type: 'object', properties: {a: 'number'}}},
     element: 'K',
     result: {type: 'tuple', elements: [
@@ -83,16 +83,16 @@ function testRegistryTypedefUntouched() {
       'string',
     ]}});
   try {
-    const elementsBefore = typedefs.RtiMapReg.result.elements;
-    const mat = createTypeFromMapping('RtiMapReg', warn);
-    const untouched = typedefs.RtiMapReg.result.elements === elementsBefore &&
+    const elementsBefore = typedefs.RegistryMapping.result.elements;
+    const mat = createTypeFromMapping('RegistryMapping', warn);
+    const untouched = typedefs.RegistryMapping.result.elements === elementsBefore &&
       elementsBefore.length === 2 &&
       elementsBefore[0].type === 'rest';
     const flat = mat.properties.a;
     const desugared = flat.elements.length === 3 && flat.elements[0] === 'number' && flat.elements[2] === 'string';
     return untouched && desugared;
   } finally {
-    dropTypedef('RtiMapReg');
+    dropTypedef('RegistryMapping');
   }
 }
 export const tests = [

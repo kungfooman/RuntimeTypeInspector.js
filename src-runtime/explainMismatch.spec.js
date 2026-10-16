@@ -41,11 +41,11 @@ function testGenericReferenceResolves() {
 // diagnoses that read the same shared tree.
 function testSharedMaterializationNeverMutated() {
   reset();
-  registerTypedef('ShrBox', {type: 'object', properties: {content: 'T'}}, ['T']);
+  registerTypedef('SharedBox', {type: 'object', properties: {content: 'T'}}, ['T']);
   try {
-    const before = JSON.stringify(typedefs.ShrBox);
-    const first = materializeExpect(expandType('ShrBox<number>'));
-    const second = materializeExpect(expandType('ShrBox<number>'));
+    const before = JSON.stringify(typedefs.SharedBox);
+    const first = materializeExpect(expandType('SharedBox<number>'));
+    const second = materializeExpect(expandType('SharedBox<number>'));
     let loud = false;
     try {
       first.properties.content = 'string';
@@ -54,9 +54,9 @@ function testSharedMaterializationNeverMutated() {
     }
     return first === second && Object.isFrozen(first) && loud &&
       first.properties.content === 'number' &&
-      JSON.stringify(typedefs.ShrBox) === before;
+      JSON.stringify(typedefs.SharedBox) === before;
   } finally {
-    delete typedefs.ShrBox;
+    delete typedefs.SharedBox;
   }
 }
 function testUnionClosestMatch() {
