@@ -13,7 +13,10 @@ const methodShapes = new WeakMap();
 // derived under plus the head constructor identity, so re-registration
 // recomputes instead of serving stale shapes. Frozen once: validation is
 // read-only over expects, and freezing here removes the per-call deepFreeze
-// of freshly built shapes.
+// of freshly built shapes. Keyed by name (not constructor) so subclass and
+// base entries stay distinct; the map is bounded by distinct class names,
+// and the class registry itself pins every constructor anyway, so this adds
+// no new retention beyond what registration already holds.
 const mergedShapes = new Map();
 /**
  * Builds a shape from the prototype chain: methods as `Function`,

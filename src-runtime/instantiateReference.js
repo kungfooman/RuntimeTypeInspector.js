@@ -10,7 +10,9 @@ import {canonicalKey} from "./canonicalKey.js";
 // carry the registry versions they were derived under, so re-registration
 // recomputes instead of serving stale shapes. Frozen once: validation is
 // read-only over expects. Unserializable args skip the cache (computed
-// directly) rather than failing.
+// directly) rather than failing. One content cache, no identity tier:
+// keying stable nodes by identity as well would double the lookups to save
+// microseconds of canonicalization on hits that already land here.
 const referenceInstances = new Map();
 /**
  * Instantiates a generic typedef reference by substituting arguments for
@@ -30,6 +32,11 @@ function instantiateReference(type, warn) {
   }
   const params = typedefTemplates[name];
   if (!params?.length || !args?.length) {
+    // No substitution to perform: the registry object comes back by
+    // identity, deliberately unfrozen. Registry entries are owned by the
+    // registries (replaced wholesale, never edited in place), so freezing
+    // them here would newly observe shared state without buying the
+    // multi-caller protection that freezing instantiations provides.
     return typedefs[name];
   }
   let key;
