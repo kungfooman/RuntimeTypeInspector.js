@@ -176,6 +176,33 @@ function testPrimitiveRegistryOddity() {
     dropClass('RtiOddity');
   }
 }
+function testWipeWithBumpInvalidates() {
+  // Wiping a harvest with a version bump drops the cached merge: the shape
+  // falls back to prototype members instead of serving the wiped harvest.
+  // (The harness wipes registries between tests this way; without the bump
+  // the previous entry would keep serving the deleted harvest.)
+  class RtiWipe {
+    work() {
+      return 1;
+    }
+  }
+  classes.RtiWipe = RtiWipe;
+  typedefs.RtiWipe = {type: 'object', properties: {harvested: 'string'}};
+  bumpClassVersion();
+  bumpTypedefVersion();
+  try {
+    if (!('harvested' in mergedClassShape('RtiWipe').properties)) {
+      return false;
+    }
+    delete typedefs.RtiWipe;
+    bumpTypedefVersion();
+    const after = mergedClassShape('RtiWipe');
+    return !('harvested' in after.properties) && 'work' in after.properties;
+  } finally {
+    dropClass('RtiWipe');
+    dropTypedef('RtiWipe');
+  }
+}
 export const tests = [
   testNeverInstantiates,
   testNonEnumerablesIncluded,
@@ -187,4 +214,5 @@ export const tests = [
   testSubclassWins,
   testReflectionFallbackPerLevel,
   testPrimitiveRegistryOddity,
+  testWipeWithBumpInvalidates,
 ];

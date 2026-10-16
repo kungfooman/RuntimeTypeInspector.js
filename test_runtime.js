@@ -3,13 +3,16 @@ import {expandType           } from './src-transpiler/expandType.js';
 import {validateType         } from './src-runtime/validateType.js';
 import {validateUnion        } from './src-runtime/validateUnion.js';
 import {validateTuple        } from './src-runtime/validateTuple.js';
-import {typedefs, typedefTemplates} from './src-runtime/registerTypedef.js';
+import {typedefs, typedefTemplates, bumpTypedefVersion} from './src-runtime/registerTypedef.js';
 // inspectType.js uses addEventListener/postMessage on import, bootstrapping them
 // here allows running inspectIndexedAccess in the Node.js test environment.
 globalThis.self = globalThis;
 globalThis.postMessage = () => {};
 globalThis.addEventListener = () => {};
 /**
+ * Drops every entry of a registry object. Callers bump afterwards: caches
+ * key results by registry versions, so a silent wipe without a bump would
+ * keep serving entries derived from typedefs that no longer exist.
  * @param {Object<string, any>} obj - The object to clear.
  */
 function clearObject(obj) {
@@ -170,6 +173,7 @@ let errors = 0;
 for (const test of tests) {
   clearObject(typedefs); // Each test starts with a clean slate of typedefs
   clearObject(typedefTemplates);
+  bumpTypedefVersion(); // Wiping without a bump would serve stale cache entries
   const ret = test();
   if (!ret) {
     console.error("Test failed: " + test);
