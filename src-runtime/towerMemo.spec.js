@@ -245,8 +245,9 @@ function testHundredRepeatsCheaperThanOneCold() {
 function testFrozenSharedTupleMaterializes() {
   // A generic instantiation shares a registry tuple and freezes it:
   // materializing a mapping over that tuple must leave the frozen node
-  // alone instead of throwing, and validation still accepts and rejects
-  // the same values because tuple validation expands rest elements itself.
+  // alone instead of throwing, desugaring into a fresh flattened copy, and
+  // validation still accepts and rejects the same values because tuple
+  // validation expands rest elements itself.
   registerTypedef('MemoFrzTup', {
     type: 'object',
     properties: {
@@ -272,9 +273,11 @@ function testFrozenSharedTupleMaterializes() {
       return false;
     }
     const untouched = shared.elements[0].type === 'rest';
+    const flat = mat.properties.a;
+    const desugared = flat !== shared && flat.elements.length === 2 && flat.elements[0] === 'number' && flat.elements[1] === 'string';
     const ok = validateType({a: [1, 'x'], b: [2, 'y']}, mat, 'loc', 'name', true, noop, 0);
     const bad = validateType({a: [1, 2, 'x']}, mat, 'loc', 'name', true, noop, 0) === false;
-    return untouched && ok && bad;
+    return untouched && desugared && ok && bad;
   } finally {
     dropTypedef('MemoFrzTup');
   }
