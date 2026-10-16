@@ -4,6 +4,8 @@ import {registerClass, classes, bumpClassVersion} from './registerClass.js';
 import {registerTypedef, typedefs, bumpTypedefVersion} from './registerTypedef.js';
 import {expandType} from '../src-transpiler/expandType.js';
 import {inspectTypeWithTemplates} from './inspectTypeWithTemplates.js';
+import {createTypeFromMapping} from './createTypeFromMapping.js';
+import {validateType} from './validateType.js';
 import {substitutedCache} from './substitutedFor.js';
 const noop = () => undefined;
 function dropClass(name) {
@@ -240,6 +242,43 @@ function testHundredRepeatsCheaperThanOneCold() {
     substitutedCache.clear();
   }
 }
+function testFrozenSharedTupleMaterializes() {
+  // A generic instantiation shares a registry tuple and freezes it:
+  // materializing a mapping over that tuple must leave the frozen node
+  // alone instead of throwing, and validation still accepts and rejects
+  // the same values because tuple validation expands rest elements itself.
+  registerTypedef('MemoFrzTup', {
+    type: 'object',
+    properties: {
+      t: {type: 'tuple', elements: [
+        {type: 'rest', annotation: {type: 'tuple', elements: ['number']}},
+        'string',
+      ]},
+    },
+  }, ['X']);
+  try {
+    const inst = instantiateReference({type: 'reference', name: 'MemoFrzTup', args: ['any']}, noop);
+    const shared = inst.properties.t;
+    const mk = () => ({
+      type: 'mapping',
+      iterable: {type: 'keyof', argument: {type: 'object', properties: {a: 'number', b: 'number'}}},
+      element: 'K',
+      result: shared,
+    });
+    let mat;
+    try {
+      mat = createTypeFromMapping(mk(), noop);
+    } catch {
+      return false;
+    }
+    const untouched = shared.elements[0].type === 'rest';
+    const ok = validateType({a: [1, 'x'], b: [2, 'y']}, mat, 'loc', 'name', true, noop, 0);
+    const bad = validateType({a: [1, 2, 'x']}, mat, 'loc', 'name', true, noop, 0) === false;
+    return untouched && ok && bad;
+  } finally {
+    dropTypedef('MemoFrzTup');
+  }
+}
 export const tests = [
   testMergedShapeSharesIdentity,
   testMergedShapeReflectsTypedefChange,
@@ -248,4 +287,5 @@ export const tests = [
   testReferenceKeepsNegZeroDistinct,
   testRepeatValidationStaysCorrect,
   testHundredRepeatsCheaperThanOneCold,
+  testFrozenSharedTupleMaterializes,
 ];

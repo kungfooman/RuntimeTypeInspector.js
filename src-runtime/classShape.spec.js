@@ -163,6 +163,19 @@ function testReflectionFallbackPerLevel() {
     dropClass('RtiPlainSub');
   }
 }
+function testPrimitiveRegistryOddity() {
+  // Registries are written by tests with anything at all: a primitive entry
+  // cannot merge a chain, so it falls through uncached and yields an empty
+  // object shape instead of throwing.
+  classes.RtiOddity = 42;
+  bumpClassVersion();
+  try {
+    const shape = mergedClassShape('RtiOddity');
+    return shape.type === 'object' && Object.keys(shape.properties).length === 0;
+  } finally {
+    dropClass('RtiOddity');
+  }
+}
 export const tests = [
   testNeverInstantiates,
   testNonEnumerablesIncluded,
@@ -173,4 +186,5 @@ export const tests = [
   testHarvestPreferred,
   testSubclassWins,
   testReflectionFallbackPerLevel,
+  testPrimitiveRegistryOddity,
 ];

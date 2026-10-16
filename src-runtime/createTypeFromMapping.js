@@ -1,6 +1,7 @@
 import {substituteType} from "./substituteType.js";
 import {deepFreeze} from "./deepFreeze.js";
 import {versionedCache} from "./memoize.js";
+import {canonicalKey} from "./canonicalKey.js";
 import {getTypeKeys} from "./getTypeKeys.js";
 import {typedefs, typedefVersion   } from "./registerTypedef.js";
 import {classVersion} from "./registerClass.js";
@@ -15,6 +16,18 @@ validators.materializeMapping = createTypeFromMapping;
  * cache (and registry typedefs) are stable across calls, so repeats hit.
  */
 const mappingCache = versionedCache(() => typedefVersion, () => classVersion);
+/**
+ * Content-keyed mappings alongside the identity cache: transpiled sites
+ * without templates emit the mapping struct inline, so a fresh node per
+ * call always misses identity keys even though the content is static per
+ * site. The key is canonical (order-insensitive, `-0`/`NaN`/`undefined`
+ * precise, unserializable nodes skip the cache); strings can't key a
+ * WeakMap, so a registry version move clears the whole map instead.
+ * @type {Map<string, object>}
+ */
+const contentMappings = new Map();
+let contentTypedefVersion = -1;
+let contentClassVersion = -1;
 /**
  * Profile (#256, Node 22, dev machine): 500-key mapping materializes in
  * ~2ms and validates in ~1ms; 1000x small 3-key mapping validations take
@@ -56,6 +69,14 @@ function branchName(type) {
  */
 function flattenRest(type) {
   if (!type || typeof type !== 'object') {
+    return type;
+  }
+  // Frozen nodes are shared (registry subtrees behind a frozen generic
+  // instance, or already-materialized cache results): in-place flattening
+  // would throw, and it is only an eager desugaring — `validateTuple`
+  // expands rest elements itself, so leaving them nested keeps validation
+  // semantics while the shared tree stays intact.
+  if (Object.isFrozen(type)) {
     return type;
   }
   if (type.type === 'tuple' && Array.isArray(type.elements)) {
@@ -109,8 +130,23 @@ function createTypeFromMapping(expect, warn) {
     if (mappingCache.has(expect)) {
       return mappingCache.get(expect);
     }
+    const key = canonicalKey(expect);
+    if (key !== undefined) {
+      if (contentTypedefVersion !== typedefVersion || contentClassVersion !== classVersion) {
+        contentTypedefVersion = typedefVersion;
+        contentClassVersion = classVersion;
+        contentMappings.clear();
+      }
+      const hit = contentMappings.get(key);
+      if (hit !== undefined) {
+        return hit;
+      }
+    }
     const result = deepFreeze(instantiateMapping(expect, warn));
     mappingCache.set(expect, result);
+    if (key !== undefined) {
+      contentMappings.set(key, result);
+    }
     return result;
   }
   return deepFreeze(instantiateMapping(expect, warn));
