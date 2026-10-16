@@ -260,6 +260,10 @@
     "output": "./test/typechecking/playcanvas-tower-conditions-output.mjs"
   },
   {
+    "input": "./test/typechecking/playcanvas-tower-memo-input.mjs",
+    "output": "./test/typechecking/playcanvas-tower-memo-output.mjs"
+  },
+  {
     "input": "./test/typechecking/playcanvas-tower-modifiers-input.mjs",
     "output": "./test/typechecking/playcanvas-tower-modifiers-output.mjs"
   },

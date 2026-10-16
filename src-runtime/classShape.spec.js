@@ -1,6 +1,6 @@
 import {prototypeShape, mergedClassShape} from './classShape.js';
-import {classes} from './registerClass.js';
-import {typedefs} from './registerTypedef.js';
+import {classes, bumpClassVersion} from './registerClass.js';
+import {typedefs, bumpTypedefVersion} from './registerTypedef.js';
 /**
  * Drops a class registration the test added: `test_runtime.js` never clears
  * the class registry, so every mutation here cleans up after itself.
@@ -8,6 +8,7 @@ import {typedefs} from './registerTypedef.js';
  */
 function dropClass(name) {
   delete classes[name];
+  bumpClassVersion();
 }
 /**
  * Drops a typedef registration the test added.
@@ -15,6 +16,7 @@ function dropClass(name) {
  */
 function dropTypedef(name) {
   delete typedefs[name];
+  bumpTypedefVersion();
 }
 function testNeverInstantiates() {
   // Keys come from prototypes, so a throwing constructor never runs while
@@ -100,6 +102,8 @@ function testHarvestPreferred() {
   }
   classes.RtiHarv = RtiHarv;
   typedefs.RtiHarv = {type: 'object', properties: {harvestedProp: 'string'}};
+  bumpClassVersion();
+  bumpTypedefVersion();
   try {
     const {properties} = mergedClassShape('RtiHarv');
     return 'harvestedProp' in properties && !('realMethod' in properties);
@@ -124,6 +128,8 @@ function testSubclassWins() {
   classes.RtiWBase = RtiWBase;
   classes.RtiWSub = RtiWSub;
   typedefs.RtiWBase = {type: 'object', properties: {dup: 'number'}};
+  bumpClassVersion();
+  bumpTypedefVersion();
   try {
     const {properties} = mergedClassShape('RtiWSub');
     return properties.dup === 'Function' && 'baseWork' in properties;
@@ -148,6 +154,7 @@ function testReflectionFallbackPerLevel() {
   }
   classes.RtiPlainBase = RtiPlainBase;
   classes.RtiPlainSub = RtiPlainSub;
+  bumpClassVersion();
   try {
     const {properties} = mergedClassShape('RtiPlainSub');
     return 'baseWork' in properties && 'subWork' in properties;
