@@ -68,10 +68,25 @@ function testArgFillMatchesTypeScript() {
     dropTypedef('RtiTwo');
   }
 }
+// Unserializable arguments (functions have no stable key) skip the cache
+// instead of sharing wrongly: each call still substitutes correctly, just
+// into a fresh object.
+function testUnserializableArgsSkipCache() {
+  registerTypedef('RtiFn', {type: 'object', properties: {v: 'T'}}, ['T']);
+  try {
+    const fn = () => {};
+    const a = instantiateReference({type: 'reference', name: 'RtiFn', args: [fn]}, warn);
+    const b = instantiateReference({type: 'reference', name: 'RtiFn', args: [fn]}, warn);
+    return a !== b && a.properties.v === fn && b.properties.v === fn;
+  } finally {
+    dropTypedef('RtiFn');
+  }
+}
 export const tests = [
   testStableNodeReturnsSameInstance,
   testMissingTypedefReturnsUndefined,
   testNoArgsReturnsRegistryEntry,
   testInstanceFrozen,
   testArgFillMatchesTypeScript,
+  testUnserializableArgsSkipCache,
 ];
