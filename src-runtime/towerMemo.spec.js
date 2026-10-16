@@ -179,6 +179,67 @@ function testReferenceKeepsNegZeroDistinct() {
     bumpTypedefVersion();
   }
 }
+function testHundredRepeatsCheaperThanOneCold() {
+  // Repeats over one component name must cost a fraction of a single cold
+  // resolution: the tower resolves once, then 100 repeats share it. The
+  // bar is 100x (a 50-key tower measures ~1400x per call, ~13000x at 150
+  // keys), which keeps headroom for CI timing noise while failing at ~1x
+  // without the memoization. Every repeat still validates its own value.
+  class MemoPerfComponent {
+    toggle() {}
+  }
+  class MemoPerfElement extends MemoPerfComponent {}
+  registerClass(MemoPerfComponent);
+  registerClass(MemoPerfElement);
+  try {
+    const props = {};
+    for (let i = 0; i < 50; i++) {
+      props[`p${i}`] = 'number';
+    }
+    registerTypedef('MemoPerfElement', {type: 'object', properties: props});
+    registerTypedef('MemoPerfEntity', {type: 'object', properties: {element: 'MemoPerfElement', name: 'string'}});
+    registerTypedef('MemoPerfMap', expandType('{ [K in keyof MemoPerfEntity as NonNullable<MemoPerfEntity[K]> extends MemoPerfComponent ? K : never]: NonNullable<MemoPerfEntity[K]> }'));
+    registerTypedef('MemoPerfName', expandType('keyof MemoPerfMap & string'));
+    registerTypedef('MemoPerfWritable', expandType('{ [P in keyof T]-?: IfEquals<{ [Q in P]: T[P] }, { -readonly [Q in P]: T[P] }, P> }[keyof T]'), ['T']);
+    registerTypedef('MemoPerfOptionKeys', expandType('{ [K in MemoPerfWritable<C>]: K extends \'system\' | \'entity\' ? never : NonNullable<C[K]> extends Function ? never : K }[MemoPerfWritable<C>]'), ['C']);
+    registerTypedef('MemoPerfOptionsOf', expandType('Partial<Pick<C, Extract<MemoPerfOptionKeys<C>, keyof C>>>'), ['C']);
+    registerTypedef('MemoPerfMerged', expandType('MemoPerfOptionsOf<MemoPerfMap[K]>'), ['K']);
+    registerTypedef('MemoPerfOptions', expandType('{ [P in keyof MemoPerfMerged<K>]: MemoPerfMerged<K>[P] }'), ['K']);
+    const check = (type, data) => {
+      const templates = {K: 'MemoPerfName'};
+      if (!inspectTypeWithTemplates(type, 'K', 'MemoPerf#add', 'type', templates)) {
+        return false;
+      }
+      return inspectTypeWithTemplates(data, {type: 'reference', name: 'MemoPerfOptions', args: ['K']}, 'MemoPerf#add', 'data', templates);
+    };
+    const value = {p0: 1};
+    const coldStart = performance.now();
+    if (!check('element', value)) {
+      return false;
+    }
+    const coldMs = performance.now() - coldStart;
+    const repeats = 100;
+    const repeatStart = performance.now();
+    for (let i = 0; i < repeats; i++) {
+      if (!check('element', value)) {
+        return false;
+      }
+    }
+    const avgMs = (performance.now() - repeatStart) / repeats;
+    if (!(avgMs > 0)) {
+      return coldMs > 0;
+    }
+    return avgMs * 100 < coldMs;
+  } finally {
+    for (const key of ['MemoPerfElement', 'MemoPerfEntity', 'MemoPerfMap', 'MemoPerfName', 'MemoPerfWritable', 'MemoPerfOptionKeys', 'MemoPerfOptionsOf', 'MemoPerfMerged', 'MemoPerfOptions']) {
+      delete typedefs[key];
+    }
+    bumpTypedefVersion();
+    dropClass('MemoPerfComponent');
+    dropClass('MemoPerfElement');
+    substitutedCache.clear();
+  }
+}
 export const tests = [
   testMergedShapeSharesIdentity,
   testMergedShapeReflectsTypedefChange,
@@ -186,4 +247,5 @@ export const tests = [
   testReferenceReflectsReregistration,
   testReferenceKeepsNegZeroDistinct,
   testRepeatValidationStaysCorrect,
+  testHundredRepeatsCheaperThanOneCold,
 ];
