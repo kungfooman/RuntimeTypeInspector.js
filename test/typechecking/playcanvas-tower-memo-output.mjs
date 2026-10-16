@@ -311,3 +311,4 @@ e.addComponent('light', {
 e.addComponent('camera', {
   clearColor: new Color()
 });
+e.addComponent('camera');

@@ -70,10 +70,36 @@ function testStringNameResolvesTypedef() {
     dropTypedef('RtiMapNamed');
   }
 }
+// Materializing through a registered mapping must not rewrite the registry:
+// an inline tuple result with rest elements is registry-shared, and the old
+// in-place flattener replaced its elements array on first materialization.
+// The registry keeps its exact array afterwards.
+function testRegistryTypedefUntouched() {
+  registerTypedef('RtiMapReg', {type: 'mapping',
+    iterable: {type: 'keyof', argument: {type: 'object', properties: {a: 'number'}}},
+    element: 'K',
+    result: {type: 'tuple', elements: [
+      {type: 'rest', annotation: {type: 'tuple', elements: ['number', 'boolean']}},
+      'string',
+    ]}});
+  try {
+    const elementsBefore = typedefs.RtiMapReg.result.elements;
+    const mat = createTypeFromMapping('RtiMapReg', warn);
+    const untouched = typedefs.RtiMapReg.result.elements === elementsBefore &&
+      elementsBefore.length === 2 &&
+      elementsBefore[0].type === 'rest';
+    const flat = mat.properties.a;
+    const desugared = flat.elements.length === 3 && flat.elements[0] === 'number' && flat.elements[2] === 'string';
+    return untouched && desugared;
+  } finally {
+    dropTypedef('RtiMapReg');
+  }
+}
 export const tests = [
   testFreshNodesShareMaterialization,
   testStableNodeReturnsSameMaterialization,
   testMaterializationFrozen,
   testRegistryUpdateInvalidates,
   testStringNameResolvesTypedef,
+  testRegistryTypedefUntouched,
 ];

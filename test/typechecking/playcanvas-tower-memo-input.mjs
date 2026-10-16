@@ -104,3 +104,4 @@ e.addComponent('light', {intensity: 2});
 // @ts-expect-error: wrong type for the other name
 e.addComponent('light', {intensity: 'x'});
 e.addComponent('camera', {clearColor: new Color()});
+e.addComponent('camera');
