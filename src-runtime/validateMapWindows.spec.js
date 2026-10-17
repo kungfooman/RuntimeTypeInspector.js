@@ -163,6 +163,53 @@ function testNumberEdgeKeysStayChecked() {
   const second = check(map, expect, 0);
   return first.good === false && second.good === false;
 }
+/**
+ * Measures the ratio of a forced full scan per check (legacy behavior,
+ * via resetMapCheckWindows before every check) against the windowed per
+ * check cost on one big clean map, and demands a minimum improvement so
+ * the whole point of the windows stays measured, not just trusted. The
+ * assertion is a ratio over per check cost, so it does not depend on the
+ * machine being fast or slow; both sides scale together.
+ * @returns {boolean} True when the windowed checks are faster than the demanded ratio.
+ */
+function testWindowsSpeedupRatio() {
+  resetMapCheckWindows();
+  const entries = [];
+  for (let i = 0; i < 20000; i++) {
+    entries.push([i, i]);
+  }
+  const map = new Map(entries);
+  const expect = {type: 'map', key: 'number', val: 'number'};
+  const warn = () => undefined;
+  const checkOnce = () => validateMap(map, expect, 'RatioTest#check', 'mapProperty', true, warn, 0);
+  // Best of several rounds mit scheduler and GC hiccups, warmup first so
+  // JIT tiering differences do not steer the verdict.
+  const bestPerCheck = (round, iters) => {
+    round();
+    let best = Number.POSITIVE_INFINITY;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const start = performance.now();
+      for (let i = 0; i < iters; i++) round();
+      const perCheck = (performance.now() - start) / iters;
+      if (perCheck < best) {
+        best = perCheck;
+      }
+    }
+    return best;
+  };
+  const forcedScanUs = bestPerCheck(() => {
+    resetMapCheckWindows();
+    checkOnce();
+  }, 20) * 1000;
+  const windowedUs = bestPerCheck(checkOnce, 4000) * 1000;
+  const demanded = 100;
+  const actual = Math.round(forcedScanUs / windowedUs);
+  if (actual < demanded) {
+    console.error(`expected a speed increase of ${demanded}x but got ${actual}x (full scan ${forcedScanUs.toFixed(4)}us, windowed ${windowedUs.toFixed(4)}us per check)`);
+    return false;
+  }
+  return true;
+}
 const tests = [
   testFirstCheckScansAndDoubles,
   testRepeatsSkipUntilWindowHits,
@@ -175,5 +222,6 @@ const tests = [
   testResetForgetsHistory,
   testRecordTracksLastSize,
   testNumberEdgeKeysStayChecked,
+  testWindowsSpeedupRatio,
 ];
 export {tests};
