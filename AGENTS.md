@@ -104,6 +104,11 @@ JSDoc blocks, or specs. Describe the why in plain words instead; the commit
 message / PR is the place for issue links. Pre-existing references stay
 untouched — just don't introduce new ones.
 
+Write comments, commit messages and prose in plain proper English with plain
+ASCII punctuation only: no unicode decorations (em dashes, curly quotes,
+arrows), and do not sprinkle hyphens and dashes everywhere; use normal
+sentences with regular word spacing instead.
+
 ## One function per file
 
 Each helper module in `src-runtime/` and `src-transpiler/` holds exactly one function, named after its file (e.g. `stripKey` lives in `src-runtime/stripKey.js`), plus only the module-local constants that function directly needs (e.g. its memoization cache). Spec files (`*.spec.js`) are exempt: they hold one test function per behavior under test.
