@@ -174,6 +174,18 @@ function testNumberEdgeKeysStayChecked() {
  */
 function testWindowsSpeedupRatio() {
   resetMapCheckWindows();
+  // The window scheme exists to make repeated checks of one unchanged
+  // map cheap. This test demands that payoff as a measured ratio, not as
+  // trust. Both sides run the identical work: validateMap on one
+  // unchanged 20000 entry map. The legacy side forces a full scan for
+  // every check by resetting the window history before each call. The
+  // windowed side warms up to its steady state, where one of every 1024
+  // checks pays a scan and the rest only read the history record. The
+  // numbers to expect: a scan costs around 300us at this map size, a
+  // windowed check costs well under a microsecond including its shares
+  // of the amortized scans, so the ratio lands at a few hundred times,
+  // far above the demanded floor and far below a ceiling that would
+  // expose the actual check being timed away into nothing.
   const entries = [];
   for (let i = 0; i < 20000; i++) {
     entries.push([i, i]);
@@ -182,30 +194,34 @@ function testWindowsSpeedupRatio() {
   const expect = {type: 'map', key: 'number', val: 'number'};
   const warn = () => undefined;
   const checkOnce = () => validateMap(map, expect, 'RatioTest#check', 'mapProperty', true, warn, 0);
-  // Best of several rounds mit scheduler and GC hiccups, warmup first so
-  // JIT tiering differences do not steer the verdict.
-  const bestPerCheck = (round, iters) => {
+  /**
+   * Times the given round in microseconds per check, best of 2 rounds
+   * with a warmup pass first so JIT tiering does not steer the verdict.
+   * @param {() => void} round - The per check work to time.
+   * @param {number} iters - Number of checks per timed round.
+   * @returns {number} The best measured microseconds per check.
+   */
+  const perCheckUs = (round, iters) => {
     round();
     let best = Number.POSITIVE_INFINITY;
-    for (let attempt = 0; attempt < 3; attempt++) {
+    for (let attempt = 0; attempt < 2; attempt++) {
       const start = performance.now();
       for (let i = 0; i < iters; i++) round();
-      const perCheck = (performance.now() - start) / iters;
-      if (perCheck < best) {
-        best = perCheck;
-      }
+      const perCheck = performance.now() - start;
+      best = Math.min(best, perCheck / iters);
     }
-    return best;
+    return best * 1000;
   };
-  const forcedScanUs = bestPerCheck(() => {
+  const forcedScanUs = perCheckUs(() => {
     resetMapCheckWindows();
     checkOnce();
-  }, 20) * 1000;
-  const windowedUs = bestPerCheck(checkOnce, 4000) * 1000;
+  }, 30);
+  const windowedUs = perCheckUs(checkOnce, 4096);
   const demanded = 100;
+  const sanity = 5000;
   const actual = Math.round(forcedScanUs / windowedUs);
-  if (actual < demanded) {
-    console.error(`expected a speed increase of ${demanded}x but got ${actual}x (full scan ${forcedScanUs.toFixed(4)}us, windowed ${windowedUs.toFixed(4)}us per check)`);
+  if (actual < demanded || actual > sanity) {
+    console.error(`expected a speed increase between ${demanded}x and ${sanity}x but got ${actual}x (full scan ${forcedScanUs.toFixed(4)}us, windowed ${windowedUs.toFixed(4)}us per check)`);
     return false;
   }
   return true;
