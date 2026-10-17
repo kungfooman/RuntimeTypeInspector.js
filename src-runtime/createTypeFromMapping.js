@@ -1,6 +1,7 @@
 import {substituteType} from "./substituteType.js";
 import {deepFreeze} from "./deepFreeze.js";
 import {versionedCache} from "./memoize.js";
+import {canonicalKey} from "./canonicalKey.js";
 import {getTypeKeys} from "./getTypeKeys.js";
 import {typedefs, typedefVersion   } from "./registerTypedef.js";
 import {classVersion} from "./registerClass.js";
@@ -15,6 +16,18 @@ validators.materializeMapping = createTypeFromMapping;
  * cache (and registry typedefs) are stable across calls, so repeats hit.
  */
 const mappingCache = versionedCache(() => typedefVersion, () => classVersion);
+/**
+ * Content-keyed mappings alongside the identity cache: transpiled sites
+ * without templates emit the mapping struct inline, so a fresh node per
+ * call always misses identity keys even though the content is static per
+ * site. The key is canonical (order-insensitive, `-0`/`NaN`/`undefined`
+ * precise, unserializable nodes skip the cache); strings can't key a
+ * WeakMap, so a registry version move clears the whole map instead.
+ * @type {Map<string, object>}
+ */
+const contentMappings = new Map();
+let contentTypedefVersion = -1;
+let contentClassVersion = -1;
 /**
  * Profile (#256, Node 22, dev machine): 500-key mapping materializes in
  * ~2ms and validates in ~1ms; 1000x small 3-key mapping validations take
@@ -52,46 +65,73 @@ function branchName(type) {
 }
 /**
  * @param {any} type - Type to flatten.
- * @returns {any} Flattened type.
+ * @returns {any} Flattened type: fresh objects on the rewrite path, every
+ * unchanged subtree shared by identity (same contract as `substituteType`,
+ * so downstream identity memos keep hitting). Never mutates its input, so
+ * shared registry subtrees and frozen cache results pass through safely —
+ * flattening is only an eager desugaring, and `validateTuple` expands rest
+ * elements itself either way.
  */
 function flattenRest(type) {
   if (!type || typeof type !== 'object') {
     return type;
   }
   if (type.type === 'tuple' && Array.isArray(type.elements)) {
+    let changed = false;
     const flat = [];
     for (const el of type.elements) {
       if (el && typeof el === 'object' && el.type === 'rest') {
         const ann = el.annotation;
         if (ann && ann.type === 'tuple' && Array.isArray(ann.elements)) {
-          // Recursively flatten inner tuple first
-          flattenRest(ann);
-          flat.push(...ann.elements);
+          // Splicing always rebuilds, even when the inner tuple was already
+          // flat: the rewrite path allocates, everything else is shared.
+          changed = true;
+          flat.push(...flattenRest(ann).elements);
         } else if (ann) {
-          flattenRest(ann);
-          // For non-tuple rest (e.g., array), keep as is for validateTuple to handle
-          flat.push(el);
+          const flatAnn = flattenRest(ann);
+          flat.push(flatAnn === ann ? el : {...el, annotation: flatAnn});
+          if (flatAnn !== ann) {
+            changed = true;
+          }
         } else {
           flat.push(el);
         }
       } else {
-        flattenRest(el);
-        flat.push(el);
+        const next = flattenRest(el);
+        flat.push(next);
+        if (next !== el) {
+          changed = true;
+        }
       }
     }
-    type.elements = flat;
+    return changed ? {...type, elements: flat} : type;
   } else if (type.type === 'object' && type.properties) {
+    let changed = false;
+    const properties = {};
     for (const key in type.properties) {
-      flattenRest(type.properties[key]);
+      const next = flattenRest(type.properties[key]);
+      properties[key] = next;
+      if (next !== type.properties[key]) {
+        changed = true;
+      }
     }
+    return changed ? {...type, properties} : type;
   } else if ((type.type === 'union' || type.type === 'intersection') && Array.isArray(type.members)) {
-    for (const m of type.members) {
-      flattenRest(m);
-    }
+    let changed = false;
+    const members = type.members.map((m) => {
+      const next = flattenRest(m);
+      if (next !== m) {
+        changed = true;
+      }
+      return next;
+    });
+    return changed ? {...type, members} : type;
   } else if (type.type === 'array' && type.elementType) {
-    flattenRest(type.elementType);
+    const next = flattenRest(type.elementType);
+    return next === type.elementType ? type : {...type, elementType: next};
   } else if (type.type === 'rest' && type.annotation) {
-    flattenRest(type.annotation);
+    const next = flattenRest(type.annotation);
+    return next === type.annotation ? type : {...type, annotation: next};
   }
   return type;
 }
@@ -109,8 +149,23 @@ function createTypeFromMapping(expect, warn) {
     if (mappingCache.has(expect)) {
       return mappingCache.get(expect);
     }
+    const key = canonicalKey(expect);
+    if (key !== undefined) {
+      if (contentTypedefVersion !== typedefVersion || contentClassVersion !== classVersion) {
+        contentTypedefVersion = typedefVersion;
+        contentClassVersion = classVersion;
+        contentMappings.clear();
+      }
+      const hit = contentMappings.get(key);
+      if (hit !== undefined) {
+        return hit;
+      }
+    }
     const result = deepFreeze(instantiateMapping(expect, warn));
     mappingCache.set(expect, result);
+    if (key !== undefined) {
+      contentMappings.set(key, result);
+    }
     return result;
   }
   return deepFreeze(instantiateMapping(expect, warn));

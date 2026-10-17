@@ -1,7 +1,6 @@
 import {typedefs, typedefTemplates} from "./registerTypedef.js";
 import {classes} from "./registerClass.js";
 import {validators, recurse} from "./validators.js";
-import {substituteType} from "./substituteType.js";
 import {createTypeFromMapping} from "./createTypeFromMapping.js";
 import {createTypeFromIndexedAccess} from "./createTypeFromIndexedAccess.js";
 import {mergedClassShape, prototypeShape} from "./classShape.js";
@@ -770,11 +769,9 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
   if (typedefs[refName] && !classes[refName]) {
     const params = typedefTemplates[refName];
     if (args?.length && params?.length) {
-      // Generic typedef: instantiate by substituting arguments for parameters.
-      let instance = structuredClone(typedefs[refName]);
-      params.forEach((param, i) => {
-        instance = substituteType(instance, param, i < args.length ? args[i] : 'any', warn);
-      });
+      // Generic typedef: instantiate via the shared memoized path instead of
+      // cloning the whole tower per value (pure substitution, frozen once).
+      const instance = instantiateReference(expect, warn);
       return recurse(value, instance, loc, name, critical, warn, depth + 1);
     }
     if (args?.length) {

@@ -1,0 +1,6 @@
+{
+  "throws": [
+    {"loc": "Entity#addComponent", "name": "data", "value": {"clearColor": "x"}},
+    {"loc": "Entity#addComponent", "name": "data", "value": {"intensity": "x"}}
+  ]
+}

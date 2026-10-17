@@ -1,5 +1,19 @@
 import {substituteType} from "./substituteType.js";
-import {typedefs, typedefTemplates} from "./registerTypedef.js";
+import {typedefs, typedefTemplates, typedefVersion} from "./registerTypedef.js";
+import {classVersion} from "./registerClass.js";
+import {deepFreeze} from "./deepFreeze.js";
+import {canonicalKey} from "./canonicalKey.js";
+// Instantiated generic typedefs by name plus canonical arguments: e.g.
+// `ComponentOptions<"element">` depends only on its argument, not on the
+// checked value, so 260 `addComponent('element', …)` calls share one
+// instantiation instead of substituting the whole tower per call. Entries
+// carry the registry versions they were derived under, so re-registration
+// recomputes instead of serving stale shapes. Frozen once: validation is
+// read-only over expects. Unserializable args skip the cache (computed
+// directly) rather than failing. One content cache, no identity tier:
+// keying stable nodes by identity as well would double the lookups to save
+// microseconds of canonicalization on hits that already land here.
+const referenceInstances = new Map();
 /**
  * Instantiates a generic typedef reference by substituting arguments for
  * template parameters. Shared by reference resolution paths.
@@ -18,7 +32,25 @@ function instantiateReference(type, warn) {
   }
   const params = typedefTemplates[name];
   if (!params?.length || !args?.length) {
+    // No substitution to perform: the registry object comes back by
+    // identity, deliberately unfrozen. Registry entries are owned by the
+    // registries (replaced wholesale, never edited in place), so freezing
+    // them here would newly observe shared state without buying the
+    // multi-caller protection that freezing instantiations provides.
     return typedefs[name];
+  }
+  let key;
+  const argsKey = canonicalKey(args);
+  if (argsKey !== undefined) {
+    key = `${name}\n${argsKey}`;
+  } else {
+    key = undefined;
+  }
+  if (key !== undefined) {
+    const cached = referenceInstances.get(key);
+    if (cached && cached.typedefV === typedefVersion && cached.classV === classVersion) {
+      return cached.instance;
+    }
   }
   // Pure substitution never mutates its input, so the registry object is
   // substituted directly instead of cloned first (read-only downstream).
@@ -26,6 +58,10 @@ function instantiateReference(type, warn) {
   params.forEach((param, i) => {
     instance = substituteType(instance, param, i < args.length ? args[i] : 'any', warn);
   });
+  instance = deepFreeze(instance);
+  if (key !== undefined) {
+    referenceInstances.set(key, {typedefV: typedefVersion, classV: classVersion, instance});
+  }
   return instance;
 }
 export {instantiateReference};

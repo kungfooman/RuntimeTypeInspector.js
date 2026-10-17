@@ -1,10 +1,23 @@
-import {classes} from "./registerClass.js";
-import {typedefs} from "./registerTypedef.js";
+import {classes, classVersion} from "./registerClass.js";
+import {typedefs, typedefVersion} from "./registerTypedef.js";
 import {registeredNameOf} from "./registeredNameOf.js";
+import {deepFreeze} from "./deepFreeze.js";
 // Prototype enumeration is the expensive bit: once per constructor for its
 // lifetime, never in a validation hot path. Harvested shapes (transpiled
 // classes) never touch this map.
 const methodShapes = new WeakMap();
+// Merged class shapes by registered name: the merge walks the constructor
+// chain and copies every level's properties, so without memoization a
+// mapped type over a 150-key component re-derives the same shape per key
+// (and per validation). Entries carry the registry versions they were
+// derived under plus the head constructor identity, so re-registration
+// recomputes instead of serving stale shapes. Frozen once: validation is
+// read-only over expects, and freezing here removes the per-call deepFreeze
+// of freshly built shapes. Keyed by name (not constructor) so subclass and
+// base entries stay distinct; the map is bounded by distinct class names,
+// and the class registry itself pins every constructor anyway, so this adds
+// no new retention beyond what registration already holds.
+const mergedShapes = new Map();
 /**
  * Builds a shape from the prototype chain: methods as `Function`,
  * getter/setter pairs as writable `any`, getter-only as readonly `any`.
@@ -51,8 +64,13 @@ function prototypeShape(ctor) {
  * @returns {object} Merged object shape with a properties map.
  */
 function mergedClassShape(name) {
+  const head = classes[name];
+  const cached = mergedShapes.get(name);
+  if (cached && cached.classV === classVersion && cached.typedefV === typedefVersion && cached.head === head) {
+    return cached.shape;
+  }
   const properties = {};
-  let ctor = classes[name];
+  let ctor = head;
   const seen = new Set();
   const chain = [];
   while (ctor && typeof ctor === 'function' && !seen.has(ctor)) {
@@ -73,6 +91,8 @@ function mergedClassShape(name) {
       Object.assign(properties, prototypeShape(chain[i]).properties);
     }
   }
-  return {type: 'object', properties};
+  const shape = deepFreeze({type: 'object', properties});
+  mergedShapes.set(name, {classV: classVersion, typedefV: typedefVersion, head, shape});
+  return shape;
 }
 export {mergedClassShape, prototypeShape};

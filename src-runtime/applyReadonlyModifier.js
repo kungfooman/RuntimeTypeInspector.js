@@ -20,14 +20,15 @@ function applyReadonlyModifier(type, modifier) {
     if (typeof type === 'string') {
       let current = type;
       for (let i = 0; i < 10 && typeof current === 'string' && typedefs[current]; i++) {
-        current = structuredClone(typedefs[current]);
+        current = typedefs[current];
         if (typeof current !== 'string') {
           break;
         }
       }
       if (current && typeof current === 'object' && current.readonly) {
-        delete current.readonly;
-        return current;
+        const out = {...current};
+        delete out.readonly;
+        return out;
       }
       return type;
     }

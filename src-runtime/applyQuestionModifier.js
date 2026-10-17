@@ -21,18 +21,19 @@ function applyQuestionModifier(type, question) {
     // expanding unconditionally (e.g. `Color` -> `{r, g, b, a}`) changes
     // identity and breaks structural comparisons like `IfEquals`, which
     // must see the same spelling on both sides when neither side is
-    // optional. Cloned, the registry is never mutated.
+    // optional. Copied shallowly, the registry is never mutated.
     if (typeof type === 'string') {
       let current = type;
       for (let i = 0; i < 10 && typeof current === 'string' && typedefs[current]; i++) {
-        current = structuredClone(typedefs[current]);
+        current = typedefs[current];
         if (typeof current !== 'string') {
           break;
         }
       }
       if (current && typeof current === 'object' && current.optional) {
-        delete current.optional;
-        return current;
+        const out = {...current};
+        delete out.optional;
+        return out;
       }
       return type;
     }

@@ -35,6 +35,30 @@ function testGenericReferenceResolves() {
   return mat?.properties?.content !== 'T' &&
     explainMismatch({content: 1}, expect, 'box').findings.length === 0;
 }
+// Materializing shares instead of cloning: two equal generic references
+// resolve to the same frozen instance, the registry keeps its exact shape,
+// and an in-place edit attempt fails loudly instead of corrupting later
+// diagnoses that read the same shared tree.
+function testSharedMaterializationNeverMutated() {
+  reset();
+  registerTypedef('SharedBox', {type: 'object', properties: {content: 'T'}}, ['T']);
+  try {
+    const before = JSON.stringify(typedefs.SharedBox);
+    const first = materializeExpect(expandType('SharedBox<number>'));
+    const second = materializeExpect(expandType('SharedBox<number>'));
+    let loud = false;
+    try {
+      first.properties.content = 'string';
+    } catch {
+      loud = true;
+    }
+    return first === second && Object.isFrozen(first) && loud &&
+      first.properties.content === 'number' &&
+      JSON.stringify(typedefs.SharedBox) === before;
+  } finally {
+    delete typedefs.SharedBox;
+  }
+}
 function testUnionClosestMatch() {
   reset();
   const expect = expandType('"a" | {fov: number, clearColor: Array<number>}');
@@ -364,6 +388,7 @@ const tests = [
   testMissingKey,
   testWrongNestedType,
   testGenericReferenceResolves,
+  testSharedMaterializationNeverMutated,
   testUnionClosestMatch,
   testExtraKey,
   testPassingValueHasNoFindings,

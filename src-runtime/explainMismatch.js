@@ -1,9 +1,9 @@
-import {typedefs, typedefTemplates} from './registerTypedef.js';
-import {substituteType} from './substituteType.js';
+import {typedefs} from './registerTypedef.js';
 import {createTypeFromMapping} from './createTypeFromMapping.js';
 import {keyNames, resolveObject, resolveUtilityShape} from './getTypeKeys.js';
 import {classes} from './registerClass.js';
 import {mergedClassShape} from './classShape.js';
+import {instantiateReference} from './instantiateReference.js';
 import {recurse, validators} from './validators.js';
 import {tupleEffective} from './tupleEffective.js';
 import {tupleOptional} from './tupleOptional.js';
@@ -71,7 +71,7 @@ function materializeExpect(expect) {
   for (let i = 0; i < 10; i++) {
     if (typeof current === 'string') {
       if (typedefs[current]) {
-        current = structuredClone(typedefs[current]);
+        current = typedefs[current];
         continue;
       }
       if (classes[current]) {
@@ -146,16 +146,7 @@ function materializeExpect(expect) {
           }
         }
         if (typedefs[name]) {
-          const params = typedefTemplates[name];
-          let instance = structuredClone(typedefs[name]);
-          if (args?.length && params?.length) {
-            params.forEach((param, j) => {
-              instance = substituteType(instance, param, j < args.length ? args[j] : 'any', noop);
-            });
-            current = instance;
-            continue;
-          }
-          current = instance;
+          current = instantiateReference(current, noop) ?? current;
           continue;
         }
         return current;
@@ -286,14 +277,7 @@ function removalInfo(expect, key, seen = []) {
       return null;
     }
     if (typedefs[name]) {
-      const params = typedefTemplates[name];
-      let instance = typedefs[name];
-      if (args?.length && params?.length) {
-        instance = structuredClone(instance);
-        params.forEach((param, j) => {
-          instance = substituteType(instance, param, j < args.length ? args[j] : 'any', noop);
-        });
-      }
+      const instance = instantiateReference(expect, noop) ?? typedefs[name];
       return removalInfo(instance, key, [...seen, expect]);
     }
     return null;

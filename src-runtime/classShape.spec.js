@@ -1,6 +1,6 @@
 import {prototypeShape, mergedClassShape} from './classShape.js';
-import {classes} from './registerClass.js';
-import {typedefs} from './registerTypedef.js';
+import {classes, bumpClassVersion} from './registerClass.js';
+import {typedefs, bumpTypedefVersion} from './registerTypedef.js';
 /**
  * Drops a class registration the test added: `test_runtime.js` never clears
  * the class registry, so every mutation here cleans up after itself.
@@ -8,6 +8,7 @@ import {typedefs} from './registerTypedef.js';
  */
 function dropClass(name) {
   delete classes[name];
+  bumpClassVersion();
 }
 /**
  * Drops a typedef registration the test added.
@@ -15,6 +16,7 @@ function dropClass(name) {
  */
 function dropTypedef(name) {
   delete typedefs[name];
+  bumpTypedefVersion();
 }
 function testNeverInstantiates() {
   // Keys come from prototypes, so a throwing constructor never runs while
@@ -100,6 +102,8 @@ function testHarvestPreferred() {
   }
   classes.RtiHarv = RtiHarv;
   typedefs.RtiHarv = {type: 'object', properties: {harvestedProp: 'string'}};
+  bumpClassVersion();
+  bumpTypedefVersion();
   try {
     const {properties} = mergedClassShape('RtiHarv');
     return 'harvestedProp' in properties && !('realMethod' in properties);
@@ -124,6 +128,8 @@ function testSubclassWins() {
   classes.RtiWBase = RtiWBase;
   classes.RtiWSub = RtiWSub;
   typedefs.RtiWBase = {type: 'object', properties: {dup: 'number'}};
+  bumpClassVersion();
+  bumpTypedefVersion();
   try {
     const {properties} = mergedClassShape('RtiWSub');
     return properties.dup === 'Function' && 'baseWork' in properties;
@@ -148,12 +154,53 @@ function testReflectionFallbackPerLevel() {
   }
   classes.RtiPlainBase = RtiPlainBase;
   classes.RtiPlainSub = RtiPlainSub;
+  bumpClassVersion();
   try {
     const {properties} = mergedClassShape('RtiPlainSub');
     return 'baseWork' in properties && 'subWork' in properties;
   } finally {
     dropClass('RtiPlainBase');
     dropClass('RtiPlainSub');
+  }
+}
+function testPrimitiveRegistryOddity() {
+  // Registries are written by tests with anything at all: a primitive entry
+  // cannot merge a chain, so it falls through uncached and yields an empty
+  // object shape instead of throwing.
+  classes.Oddity = 42;
+  bumpClassVersion();
+  try {
+    const shape = mergedClassShape('Oddity');
+    return shape.type === 'object' && Object.keys(shape.properties).length === 0;
+  } finally {
+    dropClass('Oddity');
+  }
+}
+function testWipeWithBumpInvalidates() {
+  // Wiping a harvest with a version bump drops the cached merge: the shape
+  // falls back to prototype members instead of serving the wiped harvest.
+  // (The harness wipes registries between tests this way; without the bump
+  // the previous entry would keep serving the deleted harvest.)
+  class RtiWipe {
+    work() {
+      return 1;
+    }
+  }
+  classes.RtiWipe = RtiWipe;
+  typedefs.RtiWipe = {type: 'object', properties: {harvested: 'string'}};
+  bumpClassVersion();
+  bumpTypedefVersion();
+  try {
+    if (!('harvested' in mergedClassShape('RtiWipe').properties)) {
+      return false;
+    }
+    delete typedefs.RtiWipe;
+    bumpTypedefVersion();
+    const after = mergedClassShape('RtiWipe');
+    return !('harvested' in after.properties) && 'work' in after.properties;
+  } finally {
+    dropClass('RtiWipe');
+    dropTypedef('RtiWipe');
   }
 }
 export const tests = [
@@ -166,4 +213,6 @@ export const tests = [
   testHarvestPreferred,
   testSubclassWins,
   testReflectionFallbackPerLevel,
+  testPrimitiveRegistryOddity,
+  testWipeWithBumpInvalidates,
 ];
