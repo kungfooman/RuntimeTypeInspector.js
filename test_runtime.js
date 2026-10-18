@@ -94,6 +94,8 @@ const tests = [
   ...(await import('./src-runtime/templateCandidates.spec.js'     )).tests,
   ...(await import('./src-runtime/firstBadIndex.spec.js'           )).tests,
   ...(await import('./src-runtime/firstBadEntry.spec.js'           )).tests,
+  ...(await import('./src-runtime/isFailingNumberDisallowingInf.spec.js'         )).tests,
+  ...(await import('./src-runtime/isFailingNumberAllowingInf.spec.js')).tests,
   ...(await import('./src-runtime/mappedOptionality.spec.js'       )).tests,
   ...(await import('./src-runtime/nominalClassOf.spec.js'         )).tests,
   ...(await import('./src-runtime/matchIndexSignature.spec.js'     )).tests,

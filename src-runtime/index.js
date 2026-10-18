@@ -35,6 +35,8 @@ export * from './snapshotTag.js';
 export * from './DisplayAnything.js';
 export * from './evaluateCondition.js';
 export * from './firstBadIndex.js';
+export * from './isFailingNumberDisallowingInf.js';
+export * from './isFailingNumberAllowingInf.js';
 export * from './getTypeKeys.js';
 export * from './stripKey.js';
 export * from './inspectIndexedAccess.js';

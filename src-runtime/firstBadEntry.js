@@ -7,6 +7,8 @@ import {validateBoolean} from "./validateBoolean.js";
 import {customTypes} from "./customTypes.js";
 import {customValidations} from "./customValidations.js";
 import {options} from "./options.js";
+import {isFailingNumberDisallowingInf} from "./isFailingNumberDisallowingInf.js";
+import {isFailingNumberAllowingInf} from "./isFailingNumberAllowingInf.js";
 /**
  * Names sharing space between utility types and registered classes: the
  * reference validator resolves them through its utility `case` branches
@@ -77,13 +79,15 @@ function firstBadEntry(value, key, val) {
     return -2;
   }
   const checkInfinity = options.checkInfinity !== false;
+  // The Infinity verdict is a pre-picked predicate instead of a boolean
+  // threaded through every call: both scanner paths share this pick.
+  const numberBad = checkInfinity ? isFailingNumberDisallowingInf : isFailingNumberAllowingInf;
   /** @type {null | ((x: any) => boolean)} */
   let keyBad;
   if (key !== undefined) {
     if (key === 'number') {
       // Mirrors `validateNumber` exactly, `Infinity` included.
-      keyBad = checkInfinity ? detectsBadNumber :
-        (k) => typeof k !== 'number' || Number.isNaN(k);
+      keyBad = numberBad;
     } else if (key === 'string' || key === 'boolean') {
       const want = key;
       keyBad = (k) => typeof k !== want;
@@ -100,8 +104,7 @@ function firstBadEntry(value, key, val) {
   let valBad;
   if (val !== undefined) {
     if (val === 'number') {
-      valBad = checkInfinity ? detectsBadNumber :
-        (v) => typeof v !== 'number' || Number.isNaN(v);
+      valBad = numberBad;
     } else if (val === 'string' || val === 'boolean') {
       const want = val;
       valBad = (v) => typeof v !== want;
@@ -135,9 +138,5 @@ function firstBadEntry(value, key, val) {
     index++;
   });
   return bad;
-}
-function detectsBadNumber(x) {
-  return typeof x !== 'number' || Number.isNaN(x) ||
-    (options.checkInfinity !== false && !Number.isFinite(x));
 }
 export {firstBadEntry};
