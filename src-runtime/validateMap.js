@@ -93,7 +93,11 @@ function scanAndSettle(value, record, key, val, loc, name, critical, warn, depth
  * @returns {{sinceLast: number, window: number, lastSize: number}} Fresh history record.
  */
 function freshWindow() {
-  return {sinceLast: 0, window: 1, lastSize: NaN};
+  // Sizes are non negative integers, so -1 is the unset sentinel: it can
+  // never match a real map size, forcing the size based restart into its
+  // conservative "changed" branch whenever a record is read before its
+  // first scan wrote a real size.
+  return {sinceLast: 0, window: 1, lastSize: -1};
 }
 /**
  * Scratch record for the 100% pedantic mode, which never reads window
