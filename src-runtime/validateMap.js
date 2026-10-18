@@ -1,6 +1,7 @@
 import {recurse} from "./validators.js";
 import {formatMapKey} from "./formatMapKey.js";
 import {firstBadEntry} from "./firstBadEntry.js";
+import {options} from "./options.js";
 /**
  * Validation history per map instance: how many checks passed since the
  * last full scan, the current rescan interval (doubles while a map keeps
@@ -95,6 +96,14 @@ function freshWindow() {
   return {sinceLast: 0, window: 1, lastSize: NaN};
 }
 /**
+ * Scratch record for the 100% pedantic mode, which never reads window
+ * history. `scanAndSettle` only writes on the record, so reusing a
+ * module local scratch avoids a fresh allocation per check without
+ * carrying state between checks (every meaningful field is rewritten).
+ * @type {{sinceLast: number, window: number, lastSize: number}}
+ */
+const scratchRecord = freshWindow();
+/**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
  * @param {string} loc - String like `BoundingBox#compute`
@@ -109,6 +118,14 @@ function validateMap(value, expect, loc, name, critical, warn, depth) {
   if (!(value instanceof Map)) {
     warn(`validateMap> value isn't an instance of Map.`);
     return false;
+  }
+  if (!options.windowedChecks) {
+    // 100% pedantic mode is the default: every check scans the entire
+    // map, so no check can hide drift between checks. The window
+    // history is left untouched, so later opt-ins start from the
+    // first-check behavior again; the scratch record only receives
+    // writes that the caller discards.
+    return scanAndSettle(value, scratchRecord, key, val, loc, name, critical, warn, depth);
   }
   let record = mapCheckWindows.get(value);
   if (record === undefined) {

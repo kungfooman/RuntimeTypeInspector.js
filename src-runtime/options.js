@@ -51,7 +51,42 @@ const options = {
    * @type {string|null}
    */
   projectVersion: null,
+  /**
+   * When `false` (default), every check of a `Map` argument scans the
+   * entire map: 100% pedantic, no check can hide anything between
+   * checks. When `true`, repeated checks of the same unchanged map ride
+   * doubling rescan windows: the first check scans everything, further
+   * checks ride the current interval, the interval doubles on every
+   * clean full scan and it restarts on size changes and failing scans
+   * (up to a cap of 1024 checks). This trades detection latency for
+   * throughput: persistent content mutations (stored value edits or
+   * foreign uninstrumented writes) stay unreported for at most one
+   * window, and false positives stay impossible. Consumers that
+   * revalidate an unchanged map per call (streaming loads like the
+   * PlayCanvas GSplat world state) opt in via
+   * `setOptions({windowedChecks: true})`. Applies to maps today; the
+   * intent is one switch for Set/Array windows when they exist.
+   * @type {boolean}
+   */
+  windowedChecks: false,
 };
+/**
+ * Patches RTI's runtime options from a consumer (engine bootstrap, app
+ * config). Unknown keys throw, so a typo'd option name cannot pretend
+ * it was applied, and values must match the current option types.
+ * @param {Record<string, boolean>} patch - Options to set, e.g. `{windowedChecks: true}`.
+ */
+function setOptions(patch) {
+  for (const key in patch) {
+    if (!Object.hasOwn(options, key)) {
+      throw new Error(`setOptions> unknown option '${key}'`);
+    }
+    if (typeof options[key] !== typeof patch[key]) {
+      throw new Error(`setOptions> option '${key}' expects a value of type ${typeof options[key]}, got a ${typeof patch[key]}`);
+    }
+  }
+  Object.assign(options, patch);
+}
 /**
  * Records the host project version (see `options.projectVersion`).
  * @param {string} version - The version, e.g. from the app's package.json.
@@ -59,4 +94,4 @@ const options = {
 function setProjectVersion(version) {
   options.projectVersion = version;
 }
-export {options, setProjectVersion};
+export {options, setOptions, setProjectVersion};

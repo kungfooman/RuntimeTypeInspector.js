@@ -1,6 +1,14 @@
 import './validateType.js';
+import {options, setOptions} from './options.js';
 import {validateMap} from './validateMap.js';
 import {mapCheckWindowRecord, resetMapCheckWindows} from './validateMap.js';
+/**
+ * The option untouched by any test logic: every windowed behavior test
+ * flips `options.windowedChecks` explicitly after starting, so the
+ * suite state cannot steer it, while this capture must stay undisturbed.
+ * @type {boolean}
+ */
+const virginWindowedChecks = options.windowedChecks;
 /**
  * Runs a map validation with a warning recorder and returns the verdict
  * plus the recorded warning infos for structure assertions.
@@ -19,6 +27,7 @@ function check(map, expect, depth = 0) {
   return {good, infos, messages};
 }
 function testFirstCheckScansAndDoubles() {
+  options.windowedChecks = true;
   resetMapCheckWindows();
   // The first clean check is a full scan and seeds the doubling: the
   // window becomes 2 right away, so the next check may skip.
@@ -42,6 +51,7 @@ function snap(record) {
   return {sinceLast: record.sinceLast, window: record.window, lastSize: record.lastSize};
 }
 function testRepeatsSkipUntilWindowHits() {
+  options.windowedChecks = true;
   resetMapCheckWindows();
   // Same call, unchanged map: checks inside the window take the O(1)
   // exit, every due check scans and doubles the window again.
@@ -58,6 +68,7 @@ function testRepeatsSkipUntilWindowHits() {
     fourth.good === true && snap(mapCheckWindowRecord(map)).window === 4;
 }
 function testDoublingStaysBoundedByCap() {
+  options.windowedChecks = true;
   resetMapCheckWindows();
   // Doubling reaches the cap after 1+2+4+... Windows then hold at the
   // cap: the longest a persistent drift can hide is one cap.
@@ -74,6 +85,7 @@ function testDoublingStaysBoundedByCap() {
   return capped.window === 1024 && stillCapped.window === 1024 && capped.window === stillCapped.window;
 }
 function testSizeChangeRestartsWindow() {
+  options.windowedChecks = true;
   resetMapCheckWindows();
   // Adding entries drops the interval back to the start: the next check
   // scans the new content instead of riding an outdated window.
@@ -92,6 +104,7 @@ function testSizeChangeRestartsWindow() {
     bad.infos.some((info) => info && info.expect === 'string' && info.value === 42);
 }
 function testDirtyMapsRescanEveryTime() {
+  options.windowedChecks = true;
   resetMapCheckWindows();
   // A failing scan resets the interval: unchanged dirty data is reported
   // on every check, keeping persistent bugs loud instead of 1-of-N.
@@ -104,6 +117,7 @@ function testDirtyMapsRescanEveryTime() {
     second.infos.some((info) => info && info.expect === 'string' && info.value === 3);
 }
 function testContentDriftCaughtWithinWindow() {
+  options.windowedChecks = true;
   resetMapCheckWindows();
   // Content mutation without size change may skip one check (documented
   // sampling), but the next window boundary scans and reports it.
@@ -116,6 +130,7 @@ function testContentDriftCaughtWithinWindow() {
   return skipped.good === true && caught.good === false;
 }
 function testRecordsArePerInstance() {
+  options.windowedChecks = true;
   resetMapCheckWindows();
   // Two maps each carry their own history: one fresh map starts from
   // the scanning state again.
@@ -129,21 +144,25 @@ function testRecordsArePerInstance() {
     mapCheckWindowRecord(b).window === 2;
 }
 function testUnknownMapHasNoRecord() {
+  options.windowedChecks = true;
   resetMapCheckWindows();
   // Asking before any check exists returns nothing.
   return mapCheckWindowRecord(new Map()) === undefined;
 }
 function testResetForgetsHistory() {
+  options.windowedChecks = true;
   resetMapCheckWindows();
   // Resetting makes the next check behave like the first one again.
   const map = new Map([[1, 'a']]);
   const expect = {type: 'map', key: 'number', val: 'string'};
   check(map, expect);
   check(map, expect);
+  options.windowedChecks = true;
   resetMapCheckWindows();
   return mapCheckWindowRecord(map) === undefined && check(map, expect).good === true;
 }
 function testRecordTracksLastSize() {
+  options.windowedChecks = true;
   resetMapCheckWindows();
   // The record shares the scan result: fresh history keeps the size the
   // scan saw, enabling the size based restart.
@@ -153,6 +172,7 @@ function testRecordTracksLastSize() {
   return mapCheckWindowRecord(map).lastSize === map.size;
 }
 function testNumberEdgeKeysStayChecked() {
+  options.windowedChecks = true;
   resetMapCheckWindows();
   // Number keys with Infinity and NaN keep their verdicts under the
   // window scheme: failures reset the interval, so repeat checks of the
@@ -164,28 +184,28 @@ function testNumberEdgeKeysStayChecked() {
   return first.good === false && second.good === false;
 }
 /**
- * Measures the ratio of a forced full scan per check (legacy behavior,
- * via resetMapCheckWindows before every check) against the windowed per
- * check cost on one big clean map, and demands a minimum improvement so
- * the whole point of the windows stays measured, not just trusted. The
- * assertion is a ratio over per check cost, so it does not depend on the
- * machine being fast or slow; both sides scale together.
+ * Measures the ratio of the pedantic mode (every check scans the whole
+ * map) against the windowed per check cost on one big clean map, and
+ * demands an improvement inside a sane band so the whole point of the
+ * windows stays measured, not just trusted. The assertion is a ratio
+ * over per check cost, so it does not depend on the machine being fast
+ * or slow; both sides scale together.
  * @returns {boolean} True when the windowed checks are faster than the demanded ratio.
  */
 function testWindowsSpeedupRatio() {
-  resetMapCheckWindows();
   // The window scheme exists to make repeated checks of one unchanged
-  // map cheap. This test demands that payoff as a measured ratio, not as
-  // trust. Both sides run the identical work: validateMap on one
-  // unchanged 20000 entry map. The legacy side forces a full scan for
-  // every check by resetting the window history before each call. The
-  // windowed side warms up to its steady state, where one of every 1024
-  // checks pays a scan and the rest only read the history record. The
-  // numbers to expect: a scan costs around 300us at this map size, a
-  // windowed check costs well under a microsecond including its shares
-  // of the amortized scans, so the ratio lands at a few hundred times,
+  // map cheap. Both sides run the identical work: validateMap on one
+  // unchanged 20000 entry map. The pedantic side keeps the option off,
+  // so every check pays a full scan. The windowed side turns the option
+  // on and warms up to the steady state, where one of every 1024 checks
+  // pays a scan and the rest only read the history record. The numbers
+  // to expect: a scan costs around 300us at this map size, a windowed
+  // check costs well under a microsecond including its shares of the
+  // amortized scans, so the ratio lands at a few hundred times,
   // far above the demanded floor and far below a ceiling that would
   // expose the actual check being timed away into nothing.
+  options.windowedChecks = false;
+  resetMapCheckWindows();
   const entries = [];
   for (let i = 0; i < 20000; i++) {
     entries.push([i, i]);
@@ -212,11 +232,11 @@ function testWindowsSpeedupRatio() {
     }
     return best * 1000;
   };
-  const forcedScanUs = perCheckUs(() => {
-    resetMapCheckWindows();
-    checkOnce();
-  }, 30);
+  const forcedScanUs = perCheckUs(checkOnce, 30);
+  options.windowedChecks = true;
+  resetMapCheckWindows();
   const windowedUs = perCheckUs(checkOnce, 4096);
+  options.windowedChecks = false;
   const demanded = 100;
   const sanity = 5000;
   const actual = Math.round(forcedScanUs / windowedUs);
@@ -225,6 +245,77 @@ function testWindowsSpeedupRatio() {
     return false;
   }
   return true;
+}
+function testDefaultChecksEverythingEveryCheck() {
+  // The default is 100% pedantic (windowedChecks === false): a stored
+  // value mutated between checks fails the very next check, because no
+  // check ever skips via a window. This pins the shipped default as
+  // captured at import time before any test logic runs, and the
+  // loophole freedom it buys, with the user's concrete example (a
+  // stored string turned into a number).
+  if (virginWindowedChecks !== false) {
+    return false;
+  }
+  options.windowedChecks = false;
+  resetMapCheckWindows();
+  const map = new Map([[1, 'a']]);
+  const expect = {type: 'map', key: 'number', val: 'string'};
+  if (!check(map, expect).good) {
+    return false;
+  }
+  map.set(1, 42); // same size, wrong stored value type
+  const bad = check(map, expect);
+  return bad.good === false &&
+    bad.infos.some((info) => info && info.expect === 'string' && info.value === 42);
+}
+function testWindowedChecksCanMissDriftAtTenthCheck() {
+  resetMapCheckWindows();
+  // The documented sampling tradeoff, demonstrated live: with
+  // windowedChecks on, a stored value mutated between checks fails only
+  // at the next due scan, so check 10 still passes (no scan is due at
+  // 10: with windows 2/4/8 the due checks land at 1, 3, 7, 15...). The
+  // catch at the next due check stays covered by
+  // testContentDriftCaughtWithinWindow.
+  options.windowedChecks = true;
+  const map = new Map([[1, 'a']]);
+  const expect = {type: 'map', key: 'number', val: 'string'};
+  if (!check(map, expect).good) {
+    return false;
+  }
+  for (let i = 0; i < 9; i++) {
+    if (!check(map, expect).good) {
+      return false;
+    }
+  }
+  map.set(1, 42); // same size, wrong stored value type
+  return check(map, expect).good === true;
+}
+function testSetOptionsPatchesAndRejectsUnknown() {
+  // The consumer bootstrap API must patch the option and reject unknown
+  // keys plus wrong value types, so typos cannot silently pretend
+  // success.
+  setOptions({windowedChecks: false});
+  setOptions({windowedChecks: true});
+  const patched = options.windowedChecks === true;
+  setOptions({windowedChecks: false});
+  const restored = options.windowedChecks === false;
+  const unknownThrew = (() => {
+    try {
+      setOptions({windowedCheckz: true});
+      return false;
+    } catch (unused) {
+      return true;
+    }
+  })();
+  const wrongTypeThrew = (() => {
+    try {
+      setOptions({windowedChecks: 'yes'});
+      return false;
+    } catch (unused) {
+      return true;
+    }
+  })();
+  return patched && restored && unknownThrew && wrongTypeThrew;
 }
 const tests = [
   testFirstCheckScansAndDoubles,
@@ -238,6 +329,9 @@ const tests = [
   testResetForgetsHistory,
   testRecordTracksLastSize,
   testNumberEdgeKeysStayChecked,
+  testDefaultChecksEverythingEveryCheck,
+  testWindowedChecksCanMissDriftAtTenthCheck,
+  testSetOptionsPatchesAndRejectsUnknown,
   testWindowsSpeedupRatio,
 ];
 export {tests};
