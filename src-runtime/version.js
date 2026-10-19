@@ -7,7 +7,7 @@
  */
 const RTI_INFO = {
   "version": "6.0.0",
-  "commit": "5ea4061ef07aa1aece3ba411da396dd72a988d0f",
-  "subject": "rename isFailingNumber to make it more explicit"
+  "commit": "1d55964a537ee8167bd650748012ace29fb9641a",
+  "subject": "re-track src-runtime/version.js"
 };
 export {RTI_INFO};

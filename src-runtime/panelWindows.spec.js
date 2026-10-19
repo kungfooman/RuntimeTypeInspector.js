@@ -1,5 +1,6 @@
 import {TypePanel} from './TypePanel.js';
 import {options} from './options.js';
+import {recordCheck, recordMapRide, recordMapScan, getCheckStats, resetCheckStats} from './checkStats.js';
 import {reportedKeys} from './reportedKeys.js';
 import {expandType} from '../src-transpiler/expandType.js';
 import {collectFailPaths, explainMismatch} from './explainMismatch.js';
@@ -1802,6 +1803,355 @@ function testPageshowRecoversStrandedPanel() {
     return TypePanel.divAll.parent === globalThis.document.body && panel.popoutWin === null;
   });
 }
+/**
+ * Feeds one addError message through the panel's window bus, with the
+ * given sink as the message source, so later `send*StateToWorker` calls
+ * target the captured `postMessage`s.
+ * @param {*} panel - The panel.
+ * @param {{messages: any[], postMessage: Function}} sink - Message capture.
+ * @returns {void}
+ */
+function feedError(panel, sink) {
+  const msg = {source: sink, data: {type: 'rti', destination: 'ui', action: 'addError',
+    value: 1, expect: 'string', loc: 'L1', name: 'a', valueToString: '1',
+    strings: ['boom'], extras: [], key: 'L1-a'}};
+  globalThis.window.fire('message', msg);
+}
+function testWindowedCheckboxWiresOptionStorageAndWorker() {
+  return withPanel((panel) => {
+    const prevWindowed = options.windowedChecks;
+    const sink = {messages: [], postMessage(data) {
+      this.messages.push(data);
+    }};
+    try {
+      options.windowedChecks = false;
+      const prevMode = options.mode;
+      options.mode = 'never';
+      feedError(panel, sink);
+      options.mode = prevMode;
+      panel.inputWindowed.checked = true;
+      panel.inputWindowed.onchange();
+      return options.windowedChecks === true &&
+        localStorage.getItem('rti-windowed-checks') === 'true' &&
+        sink.messages.some(_ => _.action === 'windowedChecks' && _.value === true && _.destination === 'worker');
+    } finally {
+      options.windowedChecks = prevWindowed;
+    }
+  });
+}
+function testWindowCapInputClampsAndForwards() {
+  return withPanel((panel) => {
+    const prevCap = options.mapCheckWindowCap;
+    const sink = {messages: [], postMessage(data) {
+      this.messages.push(data);
+    }};
+    try {
+      const prevMode = options.mode;
+      options.mode = 'never';
+      feedError(panel, sink);
+      options.mode = prevMode;
+      panel.inputWindowCap.value = '256';
+      panel.inputWindowCap.onchange();
+      const applied = options.mapCheckWindowCap === 256 &&
+        localStorage.getItem('rti-window-cap') === '256' &&
+        sink.messages.some(_ => _.action === 'mapCheckWindowCap' && _.value === 256 && _.destination === 'worker');
+      // Garbage input (half typed) must not clobber the live cap.
+      panel.inputWindowCap.value = '';
+      panel.inputWindowCap.onchange();
+      const kept = options.mapCheckWindowCap === 256;
+      panel.inputWindowCap.value = '-5';
+      panel.inputWindowCap.onchange();
+      const noNegative = options.mapCheckWindowCap === 256;
+      return applied && kept && noNegative;
+    } finally {
+      options.mapCheckWindowCap = prevCap;
+    }
+  });
+}
+function testCheckStatsCheckboxWiresOptionStorageAndWorker() {
+  return withPanel((panel) => {
+    const prevStats = options.checkStats;
+    const sink = {messages: [], postMessage(data) {
+      this.messages.push(data);
+    }};
+    try {
+      const prevMode = options.mode;
+      options.mode = 'never';
+      feedError(panel, sink);
+      options.mode = prevMode;
+      panel.inputCheckStats.checked = false;
+      panel.inputCheckStats.onchange();
+      return options.checkStats === false &&
+        localStorage.getItem('rti-check-stats') === 'false' &&
+        sink.messages.some(_ => _.action === 'checkStats' && _.value === false && _.destination === 'worker');
+    } finally {
+      options.checkStats = prevStats;
+    }
+  });
+}
+function testCheckStatsTableRendersHotspotsSorted() {
+  return withPanel((panel) => {
+    resetCheckStats();
+    try {
+      recordCheck('Zzz#checks', 5);
+      recordMapScan('Aaa#scan-heavy', 50);
+      recordMapScan('Bbb#scan-light', 1);
+      panel.updateCheckStats();
+      const rows = panel.checksTable.children.slice(1);
+      return rows.length === 3 &&
+        textOf(rows[0]).includes('Aaa#scan-heavy') &&
+        textOf(rows[2]).includes('Zzz#checks');
+    } finally {
+      resetCheckStats();
+    }
+  });
+}
+function testCheckStatsResetButtonEmptiesTable() {
+  return withPanel((panel) => {
+    resetCheckStats();
+    try {
+      recordCheck('Rst#x', 1);
+      panel.updateCheckStats();
+      if (panel.checksTable.children.length !== 2) {
+        return false;
+      }
+      panel.buttonResetCheckStats.onclick();
+      return getCheckStats().length === 0 && panel.checksTable.children.length === 1;
+    } finally {
+      resetCheckStats();
+    }
+  });
+}
+function testTrailerRowFoldsRowOverflow() {
+  return withPanel((panel) => {
+    resetCheckStats();
+    try {
+      for (let i = 0; i < 205; i++) {
+        recordCheck(`Flood#${i}`, 1);
+      }
+      panel.updateCheckStats();
+      const rows = panel.checksTable.children.slice(1);
+      return rows.length === 201 && textOf(rows[rows.length - 1]).includes('5 more locs');
+    } finally {
+      resetCheckStats();
+    }
+  });
+}
+function testLogMetaCarriesWindowSettings() {
+  return withPanel((panel) => {
+    const prevWindowed = options.windowedChecks;
+    const prevCap = options.mapCheckWindowCap;
+    const prevStats = options.checkStats;
+    try {
+      options.windowedChecks = true;
+      options.mapCheckWindowCap = 256;
+      options.checkStats = false;
+      const meta = panel.getLogMeta();
+      return meta.settings.windowedChecks === true &&
+        meta.settings.mapCheckWindowCap === 256 &&
+        meta.settings.checkStats === false;
+    } finally {
+      options.windowedChecks = prevWindowed;
+      options.mapCheckWindowCap = prevCap;
+      options.checkStats = prevStats;
+    }
+  });
+}
+function testStatsWinHiddenByDefault() {
+  // The stats window is a separate box, hidden until the Stats button
+  // opens it, and it never sits inside the panel body.
+  return withPanel((panel) => {
+    return panel.statsWin !== null &&
+      panel.statsWinHidden === true &&
+      panel.statsWin.style.display === 'none' &&
+      panel.body.children.length === 1;
+  });
+}
+/**
+ * Finds a button by its label anywhere under a node, depth first.
+ * @param {*} node - Subtree to search.
+ * @param {string} label - Exact button text to match.
+ * @returns {*} The button node, or null.
+ */
+function findButtonByLabel(node, label) {
+  if (!node || typeof node === 'string') {
+    return null;
+  }
+  if (node.tag === 'button' && node.textContent === label) {
+    return node;
+  }
+  for (const child of node.children ?? []) {
+    const found = findButtonByLabel(child, label);
+    if (found) {
+      return found;
+    }
+  }
+  return null;
+}
+function testStatsButtonSitsInToolbarAndOpensWindow() {
+  // Regression: the Stats button was created after the toolbar consumed
+  // it, so it never reached the DOM and there was no way to open the
+  // window at all. The button must live in the toolbar AND its click must
+  // open the stats window — walking the DOM, not the instance property,
+  // since the property exists even when the render dropped the node.
+  return withPanel((panel) => {
+    const btn = findButtonByLabel(panel.toolbar, 'Stats');
+    if (!btn) {
+      return false;
+    }
+    btn.onclick();
+    const opened = panel.statsWinHidden === false && panel.statsWin.style.display !== 'none';
+    btn.onclick();
+    const toggled = panel.statsWinHidden === true;
+    return opened && toggled;
+  });
+}
+function testStatsWinOpensPopulatesAndCloses() {
+  return withPanel((panel) => {
+    resetCheckStats();
+    try {
+      recordCheck('W#x', 1);
+      panel.buttonStats.onclick();
+      const shown = panel.statsWin.style.display !== 'none' && panel.statsWinHidden === false;
+      const rows = panel.checksTable.children.slice(1);
+      const populated = rows.length === 1 && textOf(rows[0]).includes('W#x');
+      panel.hideStatsWin();
+      const hidden = panel.statsWin.style.display === 'none' && panel.statsWinHidden === true;
+      return shown && populated && hidden;
+    } finally {
+      resetCheckStats();
+    }
+  });
+}
+function testStatsWinToggleCycles() {
+  return withPanel((panel) => {
+    panel.toggleStatsWin();
+    const open = panel.statsWinHidden === false;
+    panel.toggleStatsWin();
+    return open && panel.statsWinHidden === true;
+  });
+}
+function testStatsLocCellIsButtonWithTitle() {
+  // Every loc renders as a clickable button carrying the full loc in both
+  // its visible text and its tooltip, so cryptic names like `get` can be
+  // inspected (click shows the call stack, logs + copies the loc) instead
+  // of being guessed; the tooltip additionally promises that behavior.
+  return withPanel((panel) => {
+    resetCheckStats();
+    try {
+      recordCheck('get', 1);
+      panel.updateCheckStats();
+      const cell = panel.checksTable.children[1].children[0];
+      const btn = cell.children[0];
+      return btn.tag === 'button' && btn.textContent === 'get' &&
+        btn.title.startsWith('get') && btn.title.length > 'get'.length;
+    } finally {
+      resetCheckStats();
+    }
+  });
+}
+function testStatsTableShowsSkippedPercent() {
+  // Skipped % is rides/(rides+scans): how often the check was skipped by
+  // a window ride rather than paid via a full scan. Rows without map
+  // activity show a dash rather than a bogus 0%.
+  return withPanel((panel) => {
+    resetCheckStats();
+    try {
+      // 3 rides + 1 scan: 75% skipped.
+      recordMapRide('Skp#m');
+      recordMapRide('Skp#m');
+      recordMapRide('Skp#m');
+      recordMapScan('Skp#m', 1);
+      // No map activity at all: dash.
+      recordCheck('Flat#x', 1);
+      panel.updateCheckStats();
+      const rows = panel.checksTable.children.slice(1);
+      const mapRow = rows.find(_ => textOf(_).includes('Skp#m'));
+      const flatRow = rows.find(_ => textOf(_).includes('Flat#x'));
+      const skipCell = mapRow.children[3];
+      const flatCell = flatRow.children[3];
+      return skipCell.textContent === '75.0%' && flatCell.textContent === '—';
+    } finally {
+      resetCheckStats();
+    }
+  });
+}
+function testStatsTableFormatsCompactTimes() {
+  // Raw float noise (like 1.8000000009778887) must never reach the
+  // table: sub-millisecond totals show as microseconds, bigger ones as
+  // milliseconds, zero as 0µs.
+  return withPanel((panel) => {
+    resetCheckStats();
+    try {
+      recordMapScan('Fmt#tiny', 0.0004);      // 0.4µs -> "0.4µs"
+      recordMapScan('Fmt#mid', 2.345);        // ms -> "2.35ms"
+      recordMapScan('Fmt#big', 42.6);         // ms -> "42.6ms"
+      recordCheck('Fmt#zero', 0);             // 0 -> "0µs"
+      panel.updateCheckStats();
+      const rows = panel.checksTable.children.slice(1);
+      const get = (loc, idx) => rows.find(_ => textOf(_).includes(loc)).children[idx].textContent;
+      return get('Fmt#tiny', 5) === '0.4µs' &&
+        get('Fmt#mid', 5) === '2.35ms' &&
+        get('Fmt#big', 5) === '42.6ms' &&
+        get('Fmt#zero', 7) === '0µs';
+    } finally {
+      resetCheckStats();
+    }
+  });
+}
+function testStatsLegendExplainsColumns() {
+  // The raw header names ("Rides", "Skipped %") are insider jargon: the
+  // legend under the header must define every column in plain English, as
+  // span[data-col] entries a spec can find structurally.
+  return withPanel((panel) => {
+    const legend = panel.checksLegend;
+    if (!legend || !panel.checksWrap.children.includes(legend)) {
+      return false;
+    }
+    const cols = legend.children.map(_ => _.dataset.col);
+    return cols.includes('Rides') && cols.includes('Skipped %') &&
+      cols.includes('Scans') && cols.includes('Checks') &&
+      legend.children.every(_ => typeof _.title === 'string' && _.title.length > 0);
+  });
+}
+function testStatsHeaderCellsCarryTooltips() {
+  // Each header cell explains its own column on hover, so a reader never
+  // has to guess what a number means while looking at it.
+  return withPanel((panel) => {
+    const header = panel.checksTable.children[0];
+    return header.children.length === 9 &&
+      header.children.every(_ => typeof _.title === 'string' && _.title.length > 0);
+  });
+}
+function testStatsLocClickShowsCallStack() {
+  // Clicking a loc must answer "where is this?" in the panel: the row
+  // carries the stack captured at its creation, the click reveals it, a
+  // second click hides it, and a table rebuild starts fresh.
+  return withPanel((panel) => {
+    resetCheckStats();
+    try {
+      if (!panel.checksWrap.children.includes(panel.checksLocDetail)) {
+        return false;
+      }
+      recordCheck('Where#x', 1);
+      panel.updateCheckStats();
+      const btn = panel.checksTable.children[1].children[0].children[0];
+      btn.onclick();
+      const shown = panel.checksLocDetail.style.display !== 'none' &&
+        panel.checksLocDetail.dataset.loc === 'Where#x' &&
+        panel.checksLocDetail.textContent.includes('Where#x') &&
+        panel.checksLocDetail.textContent.includes('recordCheck');
+      btn.onclick();
+      const toggled = panel.checksLocDetail.style.display === 'none';
+      btn.onclick();
+      panel.updateCheckStats();
+      const rebuilt = panel.checksLocDetail.style.display === 'none';
+      return shown && toggled && rebuilt;
+    } finally {
+      resetCheckStats();
+    }
+  });
+}
 const tests = [
   testOpenFocusDedupe,
   testMinimizeRestoreTaskbar,
@@ -1869,5 +2219,22 @@ const tests = [
   testPopoutOpensBlankWindow,
   testSaveGeometrySkipsPopout,
   testPageshowRecoversStrandedPanel,
+  testWindowedCheckboxWiresOptionStorageAndWorker,
+  testWindowCapInputClampsAndForwards,
+  testCheckStatsCheckboxWiresOptionStorageAndWorker,
+  testCheckStatsTableRendersHotspotsSorted,
+  testCheckStatsResetButtonEmptiesTable,
+  testTrailerRowFoldsRowOverflow,
+  testLogMetaCarriesWindowSettings,
+  testStatsWinHiddenByDefault,
+  testStatsButtonSitsInToolbarAndOpensWindow,
+  testStatsWinOpensPopulatesAndCloses,
+  testStatsWinToggleCycles,
+  testStatsLocCellIsButtonWithTitle,
+  testStatsLegendExplainsColumns,
+  testStatsHeaderCellsCarryTooltips,
+  testStatsLocClickShowsCallStack,
+  testStatsTableShowsSkippedPercent,
+  testStatsTableFormatsCompactTimes,
 ];
 export {tests};

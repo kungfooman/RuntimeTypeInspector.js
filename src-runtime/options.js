@@ -69,6 +69,30 @@ const options = {
    * @type {boolean}
    */
   windowedChecks: false,
+  /**
+   * Largest interval the doubling map rescan scheme may reach when
+   * `windowedChecks` is true. A small cap bounds the detection latency
+   * for persistent drift (at most one window of checks passes before a
+   * rescan reports it) at the price of more frequent scans; a large cap
+   * amortizes scan cost further but staleness grows with it. Editable
+   * live, so a hotspot found via the panel's check stats can be
+   * retuned without a reload. Applies to maps today, like
+   * `windowedChecks`.
+   * @type {number}
+   */
+  mapCheckWindowCap: 1024,
+  /**
+   * When `true` (default), RTI records per call site check statistics:
+   * how often each `loc` was validated, how many map window rides and
+   * full scans happened, and the wall time scans and top level checks
+   * took. The TypePanel shows the rows sorted by scan cost, so the real
+   * hotspots (and sensible `mapCheckWindowCap` values) can be found.
+   * When `false`, recording turns into an early return and costs
+   * nothing but one boolean read per check. Toggleable via the
+   * TypePanel checkbox.
+   * @type {boolean}
+   */
+  checkStats: true,
 };
 /**
  * Patches RTI's runtime options from a consumer (engine bootstrap, app

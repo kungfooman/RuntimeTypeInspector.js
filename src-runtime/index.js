@@ -14,6 +14,7 @@ export * from './unwrapMember.js';
 export * from './customTypes.js';
 export * from './customValidations.js';
 export * from './customChecks.js';
+export * from './checkStats.js';
 export * from './describeValue.js';
 export * from './formatMapKey.js';
 export * from './previewValue.js';

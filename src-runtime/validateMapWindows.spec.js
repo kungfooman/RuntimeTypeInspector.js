@@ -2,13 +2,16 @@ import './validateType.js';
 import {options, setOptions} from './options.js';
 import {validateMap} from './validateMap.js';
 import {mapCheckWindowRecord, resetMapCheckWindows} from './validateMap.js';
+import {recordCheck, recordMapScan, getCheckStats, resetCheckStats} from './checkStats.js';
 /**
- * The option untouched by any test logic: every windowed behavior test
- * flips `options.windowedChecks` explicitly after starting, so the
- * suite state cannot steer it, while this capture must stay undisturbed.
- * @type {boolean}
+ * The options untouched by any test logic: every behavior test flips
+ * `options.windowedChecks` explicitly after starting, so the suite state
+ * cannot steer it, while these captures must stay undisturbed.
+ * @type {{windowedChecks: boolean, mapCheckWindowCap: number, checkStats: boolean}}
  */
 const virginWindowedChecks = options.windowedChecks;
+const virginMapCheckWindowCap = options.mapCheckWindowCap;
+const virginCheckStats = options.checkStats;
 /**
  * Runs a map validation with a warning recorder and returns the verdict
  * plus the recorded warning infos for structure assertions.
@@ -317,6 +320,122 @@ function testSetOptionsPatchesAndRejectsUnknown() {
   })();
   return patched && restored && unknownThrew && wrongTypeThrew;
 }
+function testMapCheckWindowCapIsOptionAndLiveEditable() {
+  // The doubling cap is not a magic constant: a small cap stops growth
+  // at that interval (bounded detection latency), and lowering it
+  // mid-flight applies at the next doubling without a reset or reload.
+  options.windowedChecks = true;
+  options.mapCheckWindowCap = 2;
+  resetMapCheckWindows();
+  const map = new Map([[1, 'a']]);
+  const expect = {type: 'map', key: 'number', val: 'string'};
+  check(map, expect);
+  let record = mapCheckWindowRecord(map);
+  let ok = record.window === 2;
+  // More checks oscillate scan/ride but can never grow past the cap.
+  for (let i = 0; i < 10; i++) {
+    check(map, expect);
+  }
+  record = mapCheckWindowRecord(map);
+  ok = ok && record.window === 2;
+  // Widening mid-life also applies at the next doubling.
+  options.mapCheckWindowCap = 32;
+  for (let i = 0; i < 64; i++) {
+    check(map, expect);
+  }
+  record = mapCheckWindowRecord(map);
+  ok = ok && record.window === 32;
+  options.mapCheckWindowCap = virginMapCheckWindowCap;
+  options.windowedChecks = false;
+  return ok;
+}
+function testMapCheckCapFloorsAtOne() {
+  // A cap below 1 (or fractional input from the panel) must not stall
+  // the scheme: every check then checks per scan, which is the safest
+  // misconfiguration.
+  options.windowedChecks = true;
+  options.mapCheckWindowCap = 0.5;
+  resetMapCheckWindows();
+  const map = new Map([[1, 'a']]);
+  const expect = {type: 'map', key: 'number', val: 'string'};
+  check(map, expect);
+  let record = mapCheckWindowRecord(map);
+  let ok = record.window === 1;
+  for (let i = 0; i < 10; i++) {
+    check(map, expect);
+  }
+  record = mapCheckWindowRecord(map);
+  ok = ok && record.window === 1;
+  options.mapCheckWindowCap = virginMapCheckWindowCap;
+  options.windowedChecks = false;
+  return ok;
+}
+function testCheckStatsCountsRidesAndScans() {
+  // The window scheme's cost is visible in the stats: rides for skipped
+  // checks, scans for full scans, and the scan wall time lands on the
+  // same loc row. Direct `validateMap` calls never touch `checks`;
+  // that ledger belongs to top level `inspectType` entries.
+  options.windowedChecks = true;
+  options.checkStats = true;
+  resetMapCheckWindows();
+  resetCheckStats();
+  const map = new Map([[1, 'a']]);
+  const expect = {type: 'map', key: 'number', val: 'string'};
+  // Scans land at checks 1, 3, 7 (windows 1/2/4): rides at 2, 4, 5, 6.
+  for (let i = 0; i < 7; i++) {
+    check(map, expect);
+  }
+  const rows = getCheckStats();
+  const row = rows.find(_ => _.loc === 'TestSite#method');
+  const ok = rows.length === 1 && row !== undefined &&
+    row.checks === 0 && row.rides === 4 && row.scans === 3 &&
+    row.scanMs >= 0;
+  resetCheckStats();
+  options.windowedChecks = false;
+  return ok;
+}
+function testCheckStatsOffMeansMapChecksCostOneBit() {
+  // With stats off, map checks (here: full pedantic scans) record
+  // nothing, so the recording can never become part of the cost users
+  // did not ask for.
+  options.windowedChecks = false;
+  options.checkStats = false;
+  resetMapCheckWindows();
+  resetCheckStats();
+  check(new Map([[1, 'a']]), {type: 'map', key: 'number', val: 'string'});
+  const empty = getCheckStats().length === 0;
+  options.checkStats = virginCheckStats;
+  resetCheckStats();
+  return empty;
+}
+function testStatsScansRecordUnderPedanticToo() {
+  // The pedantic default is the expensive mode: its scans must show up
+  // in the stats, or the hotspot table would hide the very mode users
+  // start from.
+  options.windowedChecks = false;
+  options.checkStats = true;
+  resetMapCheckWindows();
+  resetCheckStats();
+  check(new Map([[1, 'a']]), {type: 'map', key: 'number', val: 'string'});
+  check(new Map([[1, 'a']]), {type: 'map', key: 'number', val: 'string'});
+  const rows = getCheckStats();
+  const row = rows.find(_ => _.loc === 'TestSite#method');
+  const ok = rows.length === 1 && row !== undefined &&
+    row.rides === 0 && row.scans === 2 && row.checks === 0;
+  resetCheckStats();
+  return ok;
+}
+function testRecordCheckLedgerUsesScanLedgerSeparately() {
+  // The map ledger (rides/scans, from `validateMap`) and the top level
+  // ledger (checks, from `inspectType`) are independent columns on one
+  // row, so scan cost never masquerades as check frequency.
+  options.checkStats = true;
+  resetCheckStats();
+  recordCheck('Ledger#x', 2);
+  recordMapScan('Ledger#x', 20);
+  const row = getCheckStats().find(_ => _.loc === 'Ledger#x');
+  return row !== undefined && row.checks === 1 && row.scans === 1 && row.rides === 0;
+}
 const tests = [
   testFirstCheckScansAndDoubles,
   testRepeatsSkipUntilWindowHits,
@@ -332,6 +451,12 @@ const tests = [
   testDefaultChecksEverythingEveryCheck,
   testWindowedChecksCanMissDriftAtTenthCheck,
   testSetOptionsPatchesAndRejectsUnknown,
+  testMapCheckWindowCapIsOptionAndLiveEditable,
+  testMapCheckCapFloorsAtOne,
+  testCheckStatsCountsRidesAndScans,
+  testCheckStatsOffMeansMapChecksCostOneBit,
+  testStatsScansRecordUnderPedanticToo,
+  testRecordCheckLedgerUsesScanLedgerSeparately,
   testWindowsSpeedupRatio,
 ];
 export {tests};

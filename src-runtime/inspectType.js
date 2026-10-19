@@ -15,6 +15,7 @@ import {reportedKeys             } from './reportedKeys.js';
 import {tagValue                 } from './tagValue.js';
 import {captureStackLines        } from './captureStack.js';
 import {globalMessageHost        } from './globalMessageHost.js';
+import {recordCheck, nowMs       } from './checkStats.js';
 const breakpoints = new Set();
 /**
  * Snapshot budgets for panel-bound values: the tree batches rows on click,
@@ -77,6 +78,21 @@ globalMessageHost()?.addEventListener?.('message', (e) => {
       options.exactObjects = data.value === true;
       return;
     }
+    if (action === 'windowedChecks') {
+      options.windowedChecks = data.value !== false;
+      return;
+    }
+    if (action === 'mapCheckWindowCap') {
+      const cap = Math.floor(Number(data.value));
+      if (Number.isFinite(cap) && cap >= 1) {
+        options.mapCheckWindowCap = cap;
+      }
+      return;
+    }
+    if (action === 'checkStats') {
+      options.checkStats = data.value !== false;
+      return;
+    }
   }
   console.log('Unhandled action destination combo', {action, destination, e, data});
 });
@@ -134,10 +150,16 @@ function inspectType(value, expect, loc, name, critical = true) {
   };
   // Host-controlled checks fully replace standard validation (approve or
   // deny); failures flow through the standard error pipeline below.
+  // The clock starts here: everything after is validation work, message
+  // building and panel delivery stay out of the hotspot numbers.
+  const startedMs = options.checkStats ? nowMs() : undefined;
   const custom = customChecks.get(`${loc}.${name}`) ?? customChecks.get(loc);
   const ret = custom ?
     custom(value, expect, loc, name, critical, innerWarn, 0) :
     validateType(value, expect, loc, name, critical, innerWarn, 0);
+  if (startedMs !== undefined) {
+    recordCheck(loc, nowMs() - startedMs);
+  }
   if (!ret && critical) {
     options.count++;
     const key = `${loc}-${name}`;

@@ -14,7 +14,8 @@ import {logFilename} from "./logFilename.js";
 import {collectFailPaths, explainMismatch} from "./explainMismatch.js";
 import {buildTypeTree} from "./typeTree.js";
 import {Warning, renderActualValue, renderCellValue} from "./Warning.js";
-import {Div, Span, Button, Input, Select, Option, H3, Pre, Details, Summary, genJsx} from "./jsx.js";
+import {Div, Span, Button, Input, Select, Option, H3, Pre, Details, Summary, genJsx, Table, Tr, Td, Th} from "./jsx.js";
+import {getCheckStats, resetCheckStats} from "./checkStats.js";
 /**
  * @typedef {MessageEvent<{action: string}>} MessageEventRTI
  */
@@ -172,6 +173,44 @@ function niceDiv(div) {
     }
     .rti-body table {
       width: 100%;
+    }
+    .rti-checks {
+      margin-top: 8px;
+    }
+    .rti-checks-head {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      font-size: 11px;
+      font-weight: bold;
+      padding-bottom: 2px;
+    }
+    .rti-checks table {
+      font-size: 10px;
+      text-align: left;
+    }
+    .rti-checks-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px 10px;
+      font-size: 9px;
+      font-weight: normal;
+      color: #555;
+      padding-bottom: 3px;
+    }
+    .rti-checks-legend span {
+      white-space: nowrap;
+    }
+    .rti-checks-loc-detail {
+      font-size: 9px;
+      max-height: 140px;
+      overflow: auto;
+      white-space: pre-wrap;
+      background: #f4f6fa;
+      border: 1px solid #ccd4e0;
+      border-radius: 3px;
+      margin-top: 4px;
+      padding: 4px 6px;
     }
     .rti-all {
       overflow: unset;
@@ -338,6 +377,28 @@ function niceDiv(div) {
       overflow: auto;
       padding: 4px 16px 16px 16px;
       border-radius: 0 0 4px 4px;
+    }
+    .rti-stats-win {
+      position: fixed;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #0058e6;
+      border-radius: 8px 8px 4px 4px;
+      background: #F3F3F3;
+      color: black;
+      box-shadow: 3px 3px 12px rgba(0, 0, 0, 0.4);
+      max-height: 85vh;
+      overflow: visible;
+    }
+    .rti-stats-win .rti-titlebar {
+      border-radius: 6px 6px 0 0;
+      flex: none;
+    }
+    .rti-stats-win .rti-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+      padding: 0 8px 8px 8px;
     }
     .rti-compare {
       display: grid;
@@ -517,6 +578,72 @@ function niceDiv(div) {
   div.classList.add('rti');
   document.head.appendChild(rule);
 }
+/**
+ * Column titles of the check stats table, in render order.
+ * @type {string[]}
+ */
+const CHECKS_HEADS = ['Loc', 'Checks', 'Rides', 'Skipped %', 'Scans', 'Scan ms (total)', 'Scan ms (worst)', 'Check ms (total)', 'Check ms (worst)'];
+/**
+ * Hover text per stats column, so every number explains itself without a
+ * manual. Index aligned with `CHECKS_HEADS`.
+ * @type {string[]}
+ */
+const CHECKS_TITLES = [
+  'Validation call site (class#method or function). Click a loc to see the call stack that created its row.',
+  'How often this loc was checked.',
+  'Checks skipped for free: the map was still inside its rescan window, so no scan ran.',
+  'rides / (rides + scans): how often a check was skipped instead of paid via a scan.',
+  'Full map scans: the expensive walk over every entry.',
+  'Wall time spent in full map scans at this loc.',
+  'Slowest single full map scan at this loc.',
+  'Wall time spent in top level checks (validation work only, messages excluded).',
+  'Slowest single top level check at this loc.',
+];
+/**
+ * Plain English glossary under the stats header. Each item carries its
+ * column name in `data-col`, so specs can find entries structurally
+ * instead of pinning the sentence wording.
+ * @type {[string, string][]}
+ */
+const CHECKS_LEGEND = [
+  ['Loc', 'the check site; click one to see the call stack that recorded it'],
+  ['Checks', 'how often this loc was checked'],
+  ['Rides', 'checks skipped for free because the map was still inside its rescan window (no scan ran)'],
+  ['Skipped %', 'rides divided by rides plus scans'],
+  ['Scans', 'full map scans: the expensive walk over every entry'],
+  ['Scan ms', 'wall time spent scanning'],
+  ['Check ms', 'wall time of the check itself (validation only, messages excluded)'],
+];
+/**
+ * How many hotspot rows the panel renders before folding the rest into a
+ * trailer row; 200 covers honest projects while keeping rebuilds cheap.
+ * @type {number}
+ */
+const CHECKS_ROWS_SHOWN = 200;
+/**
+ * Builds the (empty) check stats table: a header row only, rows stream in
+ * via `updateCheckStats`. Returns null outside a DOM, like `createTable`.
+ * @returns {*} The table node, or null.
+ */
+function createChecksTable() {
+  if (typeof document === 'undefined') {
+    return null;
+  }
+  return Table({className: 'rti-checks-table'},
+               Tr({}, ...CHECKS_HEADS.map((_, i) => Th({textContent: _, title: CHECKS_TITLES[i]}))));
+}
+/**
+ * Glossary row under the stats header: one `span[data-col]` per column so
+ * "Rides" and friends explain themselves without a manual.
+ * @returns {*} The legend node, or null outside a DOM.
+ */
+function createChecksLegend() {
+  if (typeof document === 'undefined') {
+    return null;
+  }
+  const items = CHECKS_LEGEND.map(([col, desc]) => Span({dataset: {col}, title: desc}, `${col}: ${desc}`));
+  return Div({className: 'rti-checks-legend'}, ...items);
+}
 function isEnabled() {
   const tmp = localStorage.getItem('rti-enabled');
   return tmp === null || tmp === 'true';
@@ -531,6 +658,24 @@ function isCheckInfinity() {
 }
 function isExactObjects() {
   return localStorage.getItem('rti-exact-objects') !== 'false';
+}
+function isWindowedChecks() {
+  const tmp = localStorage.getItem('rti-windowed-checks');
+  // No stored choice keeps the current option value, so an engine
+  // bootstrap `setOptions({windowedChecks: true})` survives panel loads.
+  return tmp === null ? options.windowedChecks !== false : tmp === 'true';
+}
+function storedMapCheckWindowCap() {
+  const tmp = localStorage.getItem('rti-window-cap');
+  if (tmp === null) {
+    return options.mapCheckWindowCap;
+  }
+  const n = Math.floor(Number(tmp));
+  return Number.isFinite(n) && n >= 1 ? n : options.mapCheckWindowCap;
+}
+function isCheckStats() {
+  const tmp = localStorage.getItem('rti-check-stats');
+  return tmp === null ? options.checkStats !== false : tmp === 'true';
 }
 /**
  * Asserts a panel start position, falling back to the default corner.
@@ -709,11 +854,38 @@ class TypePanel {
       localStorage.setItem('rti-exact-objects', String(this.inputExact.checked));
       this.sendExactStateToWorker();
     }});
+    this.inputWindowed = Input({type: 'checkbox', checked: isWindowedChecks(), onchange: () => {
+      options.windowedChecks = this.inputWindowed.checked;
+      localStorage.setItem('rti-windowed-checks', String(this.inputWindowed.checked));
+      this.sendWindowedStateToWorker();
+      this.updateCheckStats();
+    }});
+    this.inputWindowCap = Input({type: 'number', value: storedMapCheckWindowCap(), min: '1', step: '1', onchange: () => {
+      const n = Math.floor(Number(this.inputWindowCap.value));
+      // Silly input guard: a half typed value ("", "3.7", "-5") must not
+      // clobber the live cap; the checkbox styled minimum of 1 mirrors
+      // `windowCap()`'s floor in validateMap.
+      if (Number.isFinite(n) && n >= 1) {
+        options.mapCheckWindowCap = n;
+        localStorage.setItem('rti-window-cap', String(n));
+        this.sendMapCheckWindowCapToWorker();
+      }
+      this.updateCheckStats();
+    }});
+    this.inputCheckStats = Input({type: 'checkbox', checked: isCheckStats(), onchange: () => {
+      options.checkStats = this.inputCheckStats.checked;
+      localStorage.setItem('rti-check-stats', String(this.inputCheckStats.checked));
+      this.sendCheckStatsStateToWorker();
+      this.updateCheckStats();
+    }});
     this.spanErrors = Span({});
     this.span = Span({innerText: 'Report mode:'});
     this.spanStrict = Span({innerText: ' Strict null checks'});
     this.spanInfinity = Span({innerText: ' Check Infinity'});
     this.spanExact = Span({innerText: ' Exact objects'});
+    this.spanWindowed = Span({innerText: ' Windowed checks'});
+    this.spanWindowCap = Span({innerText: ' Window cap'});
+    this.spanCheckStats = Span({innerText: ' Collect check stats'});
     this.option_spam = Option({text: 'spam'});
     this.option_once = Option({text: 'once'});
     this.option_never = Option({text: 'never'});
@@ -766,6 +938,12 @@ class TypePanel {
                     Div({className: 'rti-setting-row'},
                         Label({}, this.inputExact, this.spanExact)),
                     Div({className: 'rti-setting-row'},
+                        Label({}, this.inputWindowed, this.spanWindowed)),
+                    Div({className: 'rti-setting-row'},
+                        Label({}, this.spanWindowCap, this.inputWindowCap)),
+                    Div({className: 'rti-setting-row'},
+                        Label({}, this.inputCheckStats, this.spanCheckStats)),
+                    Div({className: 'rti-setting-row'},
                         this.buttonLoadState, this.buttonSaveState));
     this.menu.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
@@ -773,12 +951,34 @@ class TypePanel {
         this.menuButton.focus();
       }
     });
+    this.buttonStats = Button({textContent: 'Stats', title: 'Check stats (hotspots)', onclick: () => this.toggleStatsWin()});
     this.toolbar = Div({className: 'rti-toolbar'},
                        this.spanErrors, this.buttonClear, this.buttonDownloadLog,
-                       this.menuButton, this.menu);
+                       this.buttonStats, this.menuButton, this.menu);
     this.body = Div({className: 'rti-body'});
     this.warnedTable = createTable();
     this.body.append(this.warnedTable);
+    // Check stats section: the hotspot table under the warnings. Rows are
+    // rebuilt from `getCheckStats()` on demand (button, settings flips,
+    // error arrivals), never on a timer, so idle pages stay idle.
+    this.buttonResetCheckStats = Button({textContent: 'Reset stats', title: 'Forget all recorded check statistics', onclick: () => {
+      resetCheckStats();
+      this.updateCheckStats();
+    }});
+    this.buttonRefreshCheckStats = Button({textContent: 'Refresh stats', title: 'Re-read the latest check statistics', onclick: () => this.updateCheckStats()});
+    this.checksTable = createChecksTable();
+    this.checksLegend = createChecksLegend();
+    // Per loc detail: clicking a loc button fills this pane with the call
+    // stack captured when that loc's row was born, so "where is this?"
+    // has an answer inside the panel instead of only in the console.
+    this.checksLocDetail = Pre({className: 'rti-checks-loc-detail', style: {display: 'none'}});
+    this.checksHead = Div({className: 'rti-checks-head'},
+                          Span({innerText: 'Check stats (hotspots by scan cost)'}),
+                          this.buttonRefreshCheckStats, this.buttonResetCheckStats);
+    this.checksWrap = Div({className: 'rti-checks'},
+                          this.checksHead, this.checksLegend, this.checksTable, this.checksLocDetail);
+    this.statsWin = null;
+    this.statsWinHidden = true;
     // Mini taskbar (our stand-in for the missing OS taskbar): the panel is
     // just another entry, and every entry toggles — open minimizes,
     // minimized maximizes. The error count lives in the RTI title.
@@ -789,7 +989,7 @@ class TypePanel {
     const {
       div, titlebar, toolbar, body,
     } = this;
-    const {inputEnable, inputStrict, inputInfinity, inputExact, select} = this;
+    const {inputEnable, inputStrict, inputInfinity, inputExact, inputWindowed, inputWindowCap, inputCheckStats, select} = this;
     TypePanel.divAll ??= Div({
       className: 'rti-all',
       style: {position: 'fixed', bottom: '0px', right: '0px', zIndex: '10000', overflow: 'unset'},
@@ -800,6 +1000,9 @@ class TypePanel {
     inputStrict.onchange();
     inputInfinity.onchange();
     inputExact.onchange();
+    inputWindowed.onchange();
+    inputWindowCap.onchange();
+    inputCheckStats.onchange();
     const spamTypeReports = localStorage.getItem('rti-spam-type-reports');
     select.value = options.mode;
     if (spamTypeReports !== null) {
@@ -832,6 +1035,12 @@ class TypePanel {
     const finalFunc = () => {
       document.body.append(divAll);
       document.body.append(this.taskbar);
+      this.buildStatsWindow();
+      if (this.statsWin) {
+        divAll.append(this.statsWin);
+        this.statsWin.style.display = 'none';
+        this.statsWinHidden = true;
+      }
       if (!positionRestored) {
         // Center needs layout: re-dock fresh panels once measurable.
         this.applyStartPosition();
@@ -877,6 +1086,86 @@ class TypePanel {
     this.updateTaskbarVisibility();
     this.refreshCompareTaskbar();
     this.frontPanel();
+  }
+  toggleStatsWin() {
+    if (!this.statsWin) {
+      this.buildStatsWindow();
+    }
+    if (!this.statsWin) {
+      return;
+    }
+    if (this.statsWinHidden || this.statsWin.style.display === 'none') {
+      this.showStatsWin();
+    } else {
+      this.hideStatsWin();
+    }
+  }
+  showStatsWin() {
+    if (!this.statsWin) {
+      this.buildStatsWindow();
+    }
+    if (!this.statsWin) {
+      return;
+    }
+    this.statsWin.style.display = '';
+    this.statsWinHidden = false;
+    this.updateCheckStats();
+    this.frontStatsWin();
+    this.updateTaskbarVisibility();
+  }
+  hideStatsWin() {
+    if (this.statsWin) {
+      this.statsWin.style.display = 'none';
+    }
+    this.statsWinHidden = true;
+    if (this.activeWindow === 'stats') {
+      this.activeWindow = 'panel';
+    }
+    this.updateTaskbarVisibility();
+    this.refreshCompareTaskbar();
+  }
+  frontStatsWin() {
+    if (this.statsWin) {
+      this.statsWin.style.zIndex = String(++this.winZ);
+      if (this.taskbar) {
+        this.taskbar.style.zIndex = String(this.winZ + 1);
+      }
+      const container = TypePanel.divAll;
+      if (container && container.lastElementChild !== this.statsWin) {
+        container.append(this.statsWin);
+      }
+    }
+    this.activeWindow = 'stats';
+    this.setActive('stats');
+    this.refreshCompareTaskbar();
+  }
+  /**
+   * Builds the floating stats window on demand: a plain draggable box
+   * holding the hotspot table, appended to the panel container but hidden
+   * until the toolbar Stats button opens it.
+   */
+  buildStatsWindow() {
+    if (this.statsWin) {
+      return;
+    }
+    const closeBtn = Button({textContent: '×', title: 'Close', onclick: () => this.hideStatsWin()});
+    const titlebar = Div({className: 'rti-titlebar', title: 'Drag to move'},
+                         Span({className: 'rti-title', textContent: 'Check stats'}),
+                         Div({className: 'rti-caption'}, closeBtn));
+    const el = Div({className: 'rti-stats-win'},
+                   titlebar,
+                   Div({className: 'rti-body'}, this.checksWrap));
+    el.style.width = '620px';
+    el.style.height = '380px';
+    el.style.top = '60px';
+    el.style.left = '60px';
+    this.statsWin = el;
+    this.makeDraggable(titlebar, el, () => {}, () => false);
+    for (const dir of ['e', 's', 'se']) {
+      const handle = Div({className: `rti-handle rti-handle-${dir}`, dataset: {dir}});
+      el.append(handle);
+      this.makeResizable(handle, dir, el, el, () => {});
+    }
   }
   /**
    * Taskbar entry for the panel: hidden shows it, inactive fronts it,
@@ -1981,6 +2270,9 @@ class TypePanel {
       this.taskbar.style.zIndex = String(this.winZ + 1);
     }
     this.setActive('panel');
+    if (this.statsWin) {
+      this.statsWin.style.zIndex = String(this.winZ);
+    }
   }
   /**
    * Destroys all compare windows (e.g. on Clear: their rows are gone).
@@ -2031,6 +2323,39 @@ class TypePanel {
         type: 'rti',
         action: 'exactObjects',
         value: options.exactObjects,
+        destination: 'worker',
+      });
+    });
+  }
+  sendWindowedStateToWorker() {
+    const {eventSources} = this;
+    eventSources.forEach(eventSource => {
+      eventSource.postMessage({
+        type: 'rti',
+        action: 'windowedChecks',
+        value: options.windowedChecks,
+        destination: 'worker',
+      });
+    });
+  }
+  sendMapCheckWindowCapToWorker() {
+    const {eventSources} = this;
+    eventSources.forEach(eventSource => {
+      eventSource.postMessage({
+        type: 'rti',
+        action: 'mapCheckWindowCap',
+        value: options.mapCheckWindowCap,
+        destination: 'worker',
+      });
+    });
+  }
+  sendCheckStatsStateToWorker() {
+    const {eventSources} = this;
+    eventSources.forEach(eventSource => {
+      eventSource.postMessage({
+        type: 'rti',
+        action: 'checkStats',
+        value: options.checkStats,
         destination: 'worker',
       });
     });
@@ -2097,6 +2422,8 @@ class TypePanel {
       '`meta.settings` matters: `strictNullChecks: false` means null/undefined pass every type,',
       '`checkInfinity: false` means +-Infinity passes `number`.',
       '`exactObjects: true` means excess keys fail (stricter than tsc, which only checks fresh literals).',
+      '`windowedChecks: true` means map checks ride doubling rescan windows: persistent drift is reported within one window (mapCheckWindowCap checks worst case).',
+      '`checkStats: false` turns the per call site hotspot recording off.',
       'Those are settings, not bugs.',
       '`meta.rti` identifies the RTI build: version is always present, commit/subject are stamped by `npm run build` (null from unstamped source).',
     ];
@@ -2116,6 +2443,9 @@ class TypePanel {
         checkInfinity: options.checkInfinity,
         exactObjects: options.exactObjects,
         logSuperfluousProperty: options.logSuperfluousProperty,
+        windowedChecks: options.windowedChecks,
+        mapCheckWindowCap: options.mapCheckWindowCap,
+        checkStats: options.checkStats,
       },
       counts: {
         totalValidations: options.count,
@@ -2229,6 +2559,101 @@ class TypePanel {
     const hash = [...map].map(_ => _.join('=')).join('&');
     location.hash = hash;
   }
+  /**
+   * Rebuilds the check stats table from `getCheckStats()`: hotspot rows
+   * (sorted by scan cost) first, one trailer row folding the overflow.
+   * Called on demand (settings flips, buttons, error arrivals), never on
+   * a timer, so idle pages stay idle.
+   * @returns {void}
+   */
+  updateCheckStats() {
+    if (!this.checksTable) {
+      return;
+    }
+    const [, ...stale] = this.checksTable.children;
+    for (const row of stale) {
+      row.remove();
+    }
+    const rows = getCheckStats();
+    const shown = rows.slice(0, CHECKS_ROWS_SHOWN);
+    for (const row of shown) {
+      const skipped = row.rides + row.scans;
+      const skipPct = skipped === 0 ? '—' : ((row.rides / skipped) * 100).toFixed(1) + '%';
+      const fmtMs = (v) => {
+        if (v <= 0) {
+          return '0µs';
+        }
+        if (v < 0.5) {
+          return (v * 1000).toFixed(1) + 'µs';
+        }
+        if (v < 10) {
+          return v.toFixed(2) + 'ms';
+        }
+        return v.toFixed(1) + 'ms';
+      };
+      const locBtn = Button({textContent: row.loc, title: `${row.loc} (click: call stack, copy)`, onclick: () => {
+        try {
+          copyText(row.loc);
+        } catch (unused) {
+          // ignore copy failure
+        }
+        try {
+          console.log('RTI checkStats loc:', row.loc);
+          if (row.stack) {
+            console.log(row.stack);
+          }
+        } catch (unused) {
+          // ignore logging failure
+        }
+        this.showLocDetail(row);
+      }});
+      this.checksTable.append(Tr({},
+                                 Td({}, locBtn),
+                                 Td({textContent: String(row.checks)}),
+                                 Td({textContent: String(row.rides)}),
+                                 Td({textContent: skipPct}),
+                                 Td({textContent: String(row.scans)}),
+                                 Td({textContent: fmtMs(row.scanMs)}),
+                                 Td({textContent: fmtMs(row.maxScanMs)}),
+                                 Td({textContent: fmtMs(row.checkMs)}),
+                                 Td({textContent: fmtMs(row.maxCheckMs)})));
+    }
+    if (rows.length > shown.length) {
+      this.checksTable.append(Tr({}, Td({textContent: `+ ${rows.length - shown.length} more locs not shown`, colSpan: '9'})));
+    }
+    this.hideLocDetail();
+  }
+  /**
+   * Fills the loc detail pane with a row's call stack and reveals it, so
+   * clicking a loc answers "where does this check actually come from"
+   * inside the panel. Clicking the same loc again hides the pane.
+   * @param {{loc: string, stack?: string}} row - Stats row of the clicked loc.
+   */
+  showLocDetail(row) {
+    const pre = this.checksLocDetail;
+    if (!pre) {
+      return;
+    }
+    if (pre.dataset.loc === row.loc && pre.style.display !== 'none') {
+      this.hideLocDetail();
+      return;
+    }
+    pre.dataset.loc = row.loc;
+    pre.textContent = `${row.loc}\n\n${row.stack || '(no call stack was captured for this loc)'}`;
+    pre.style.display = '';
+  }
+  /**
+   * Hides the loc detail pane (stats rebuilds and reset start fresh).
+   */
+  hideLocDetail() {
+    const pre = this.checksLocDetail;
+    if (!pre) {
+      return;
+    }
+    pre.textContent = '';
+    pre.style.display = 'none';
+    delete pre.dataset.loc;
+  }
   updateErrorCount() {
     const {count} = options;
     this.spanErrors.innerText = `Type validation errors: ${count}`;
@@ -2292,6 +2717,7 @@ class TypePanel {
     warnObj.hits++;
     warnObj.warn(msg, {expect, value, valueToString}, ...extras);
     refreshWarning(warnObj, {value, expect, msg: detail || msg, strings});
+    this.updateCheckStats();
   }
   /**
    * @param {MessageEventRTI} event - The event from Worker, IFrame or own window.

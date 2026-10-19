@@ -111,6 +111,7 @@ const tests = [
   ...(await import('./src-runtime/validateArguments.spec.js'         )).tests,
   ...(await import('./src-runtime/validateMap.spec.js'               )).tests,
   ...(await import('./src-runtime/validateMapWindows.spec.js'         )).tests,
+  ...(await import('./src-runtime/checkStats.spec.js'                 )).tests,
   ...(await import('./src-runtime/validateKeyof.spec.js'             )).tests,
   ...(await import('./src-runtime/classShape.spec.js'               )).tests,
   ...(await import('./src-runtime/instantiateReference.spec.js'    )).tests,

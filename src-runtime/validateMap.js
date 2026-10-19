@@ -2,6 +2,7 @@ import {recurse} from "./validators.js";
 import {formatMapKey} from "./formatMapKey.js";
 import {firstBadEntry} from "./firstBadEntry.js";
 import {options} from "./options.js";
+import {recordMapRide, recordMapScan, nowMs} from "./checkStats.js";
 /**
  * Validation history per map instance: how many checks passed since the
  * last full scan, the current rescan interval (doubles while a map keeps
@@ -12,14 +13,14 @@ import {options} from "./options.js";
  */
 let mapCheckWindows = new WeakMap();
 /**
- * Largest interval the doubling scheme may reach. A cap keeps the
- * detection latency for persistent drift bounded: the longest a foreign
- * mutation (including content-only edits of stored values) can stay
- * unreported is one window, so the cap is the worst-case staleness in
- * checks, not a scan cost any map keeps paying every check.
- * @type {number}
+ * Fetches the live window cap, floored to a sane positive integer so a
+ * panel input or misconfigured `setOptions` cannot stall the doubling
+ * scheme with zero or negative caps.
+ * @returns {number} Smallest usable cap, at least 1.
  */
-const mapCheckWindowMax = 1024;
+function windowCap() {
+  return Math.max(1, Math.floor(options.mapCheckWindowCap));
+}
 /**
  * Runs the real scan over a map and updates the instance's window
  * history with the verdict. Shared by the first check, the due check and
@@ -47,7 +48,7 @@ function scanAndSettle(value, record, key, val, loc, name, critical, warn, depth
     // A clean scan doubles the interval: repeated checks of an unchanged
     // map become amortized O(1), while any drift stays detectable within
     // one window.
-    record.window = Math.min(record.window * 2, mapCheckWindowMax);
+    record.window = Math.min(record.window * 2, windowCap());
     record.sinceLast = 0;
     record.lastSize = value.size;
     return true;
@@ -82,10 +83,32 @@ function scanAndSettle(value, record, key, val, loc, name, critical, warn, depth
   }
   // The scan helper never returns true without its entry path confirming
   // clean, but the fallback above ends in `return true` naturally.
-  record.window = Math.min(record.window * 2, mapCheckWindowMax);
+  record.window = Math.min(record.window * 2, windowCap());
   record.sinceLast = 0;
   record.lastSize = value.size;
   return true;
+}
+/**
+ * Runs a full scan and records its wall time in the check statistics,
+ * so panel users can see which call sites actually pay for scanning.
+ * @param {Map} value - The map to fully scan.
+ * @param {{sinceLast: number, window: number, lastSize: number}} record - The instance's history record.
+ * @param {*} key - The map node's `key` type (`undefined` means unchecked).
+ * @param {*} val - The map node's `val` type (`undefined` means unchecked).
+ * @param {string} loc - String like `BoundingBox#compute`
+ * @param {string} name - Name of the argument.
+ * @param {boolean} critical - Only `false` for unions.
+ * @param {console["warn"]} warn - Function to warn with.
+ * @param {number} depth - The depth to detect recursion.
+ * @returns {boolean} Scan verdict, stats recorded when enabled.
+ */
+function timedScan(value, record, key, val, loc, name, critical, warn, depth) {
+  const startedMs = options.checkStats ? nowMs() : undefined;
+  const clean = scanAndSettle(value, record, key, val, loc, name, critical, warn, depth);
+  if (startedMs !== undefined) {
+    recordMapScan(loc, nowMs() - startedMs);
+  }
+  return clean;
 }
 /**
  * New instance history: full scan due at the very first check, intervals
@@ -129,7 +152,7 @@ function validateMap(value, expect, loc, name, critical, warn, depth) {
     // history is left untouched, so later opt-ins start from the
     // first-check behavior again; the scratch record only receives
     // writes that the caller discards.
-    return scanAndSettle(value, scratchRecord, key, val, loc, name, critical, warn, depth);
+    return timedScan(value, scratchRecord, key, val, loc, name, critical, warn, depth);
   }
   let record = mapCheckWindows.get(value);
   if (record === undefined) {
@@ -146,11 +169,12 @@ function validateMap(value, expect, loc, name, critical, warn, depth) {
       const sinceLast = record.sinceLast + 1;
       if (sinceLast < record.window) {
         record.sinceLast = sinceLast;
+        recordMapRide(loc);
         return true;
       }
     }
   }
-  const clean = scanAndSettle(value, record, key, val, loc, name, critical, warn, depth);
+  const clean = timedScan(value, record, key, val, loc, name, critical, warn, depth);
   if (clean) {
     return true;
   }
