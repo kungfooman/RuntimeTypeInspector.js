@@ -7,7 +7,7 @@
  */
 const RTI_INFO = {
   "version": "6.0.0",
-  "commit": "1d401082bb8e6e311cb9296b4b2afe439c3351d7",
-  "subject": "Rework to only start windowing once it hit a 100ms cap"
+  "commit": "d04fbffb628ad400f3f0231c88d516d45a6fc9ac",
+  "subject": "UI rework for performance tracer"
 };
 export {RTI_INFO};

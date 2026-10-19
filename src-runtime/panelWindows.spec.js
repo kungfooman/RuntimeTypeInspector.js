@@ -23,7 +23,13 @@ class FakeNode {
       if (node === undefined || node === null || node === false) {
         continue;
       }
-      this.children.push(node);
+      // Plain arrays push; HTMLCollection-shaped stand-ins only offer
+      // indexed slots plus length, like the real live collection.
+      if (Array.isArray(this.children)) {
+        this.children.push(node);
+      } else {
+        this.children[this.children.length++] = node;
+      }
       if (node instanceof FakeNode) {
         node.parent = this;
       }
@@ -57,7 +63,23 @@ class FakeNode {
   }
   remove() {
     if (this.parent) {
-      this.parent.children = this.parent.children.filter((_) => _ !== this);
+      const kids = this.parent.children;
+      if (Array.isArray(kids)) {
+        this.parent.children = kids.filter((_) => _ !== this);
+      } else {
+        // HTMLCollection-shaped stand-in: compact in place, like the
+        // live collection shrinking on a native remove.
+        let dst = 0;
+        for (let src = 0; src < kids.length; src++) {
+          if (kids[src] !== this) {
+            kids[dst++] = kids[src];
+          }
+        }
+        for (let i = dst; i < kids.length; i++) {
+          delete kids[i];
+        }
+        kids.length = dst;
+      }
       this.parent = null;
     }
   }
@@ -2122,13 +2144,15 @@ function testStatsLocCellIsButtonWithTitle() {
   });
 }
 function testStatsTableShowsSkippedPercent() {
-  // Skipped % is rides/(rides+scans): how often the check was skipped by
-  // a window ride rather than paid via a full scan. Rows without map
-  // activity show a dash rather than a bogus 0%.
+  // Skipped % is skipped/(skipped+scans): how often a map check was
+  // skipped instead of scanned. The columns only exist with windowing
+  // on; rows without map activity show a dash rather than a bogus 0%.
   return withPanel((panel) => {
+    const prevWindowed = options.windowedChecks;
     resetCheckStats();
     try {
-      // 3 rides + 1 scan: 75% skipped.
+      options.windowedChecks = true;
+      // 3 skipped + 1 scan: 75% skipped.
       recordMapRide('Skp#m');
       recordMapRide('Skp#m');
       recordMapRide('Skp#m');
@@ -2136,13 +2160,11 @@ function testStatsTableShowsSkippedPercent() {
       // No map activity at all: dash.
       recordCheck('Flat#x', 1);
       panel.updateCheckStats();
-      const rows = panel.checksTable.children.slice(1);
-      const mapRow = rows.find(_ => textOf(_).includes('Skp#m'));
-      const flatRow = rows.find(_ => textOf(_).includes('Flat#x'));
-      const skipCell = mapRow.children[3];
-      const flatCell = flatRow.children[3];
-      return skipCell.textContent === '75.0%' && flatCell.textContent === '—';
+      return statsCell(panel, 'Skp#m', 'skipPct') === '75.0%' &&
+        statsCell(panel, 'Flat#x', 'skipPct') === '—' &&
+        statsCell(panel, 'Skp#m', 'skipped') === '3';
     } finally {
+      options.windowedChecks = prevWindowed;
       resetCheckStats();
     }
   });
@@ -2150,48 +2172,101 @@ function testStatsTableShowsSkippedPercent() {
 function testStatsTableFormatsCompactTimes() {
   // Raw float noise (like 1.8000000009778887) must never reach the
   // table: sub-millisecond totals show as microseconds, bigger ones as
-  // milliseconds, zero as 0µs.
+  // milliseconds. Cells look up their column by id, so the conditional
+  // Skipped columns cannot shift them.
   return withPanel((panel) => {
     resetCheckStats();
     try {
       recordMapScan('Fmt#tiny', 0.0004);      // 0.4µs -> "0.4µs"
       recordMapScan('Fmt#mid', 2.345);        // ms -> "2.35ms"
       recordMapScan('Fmt#big', 42.6);         // ms -> "42.6ms"
-      recordCheck('Fmt#zero', 0);             // 0 -> "0µs"
       panel.updateCheckStats();
-      const rows = panel.checksTable.children.slice(1);
-      const get = (loc, idx) => rows.find(_ => textOf(_).includes(loc)).children[idx].textContent;
-      return get('Fmt#tiny', 5) === '0.4µs' &&
-        get('Fmt#mid', 5) === '2.35ms' &&
-        get('Fmt#big', 5) === '42.6ms' &&
-        get('Fmt#zero', 7) === '0µs';
+      return statsCell(panel, 'Fmt#tiny', 'scanMs') === '0.4µs' &&
+        statsCell(panel, 'Fmt#mid', 'scanMs') === '2.35ms' &&
+        statsCell(panel, 'Fmt#big', 'scanMs') === '42.6ms';
     } finally {
       resetCheckStats();
     }
   });
 }
+function testNeverRanTimeCellsShowDash() {
+  // Honest zeros: "0µs" is only for counters that ran but measured
+  // nothing; a counter that never ran shows a dash. A check-only loc
+  // has no scan data, a scan-only loc has no check data.
+  return withPanel((panel) => {
+    resetCheckStats();
+    try {
+      recordCheck('Chk#only', 1);
+      recordMapScan('Scn#only', 2);
+      panel.updateCheckStats();
+      return statsCell(panel, 'Chk#only', 'scanMs') === '—' &&
+        statsCell(panel, 'Chk#only', 'maxScanMs') === '—' &&
+        statsCell(panel, 'Scn#only', 'checkMs') === '—' &&
+        statsCell(panel, 'Scn#only', 'maxCheckMs') === '—' &&
+        statsCell(panel, 'Scn#only', 'scanMs') === '2.00ms';
+    } finally {
+      resetCheckStats();
+    }
+  });
+}
+function testSkippedColumnsFollowWindowing() {
+  // The Skipped columns answer a windowing question, so they only render
+  // while windowing is on: with it off every value would be a confusing
+  // wall of zeros, with it on they explain the savings.
+  return withPanel((panel) => {
+    const prevWindowed = options.windowedChecks;
+    resetCheckStats();
+    try {
+      options.windowedChecks = false;
+      recordCheck('Off#x', 1);
+      panel.updateCheckStats();
+      const hidden = statsColIndex(panel, 'skipped') === -1 &&
+        statsColIndex(panel, 'skipPct') === -1 &&
+        panel.checksTable.children[1].children.length === 7;
+      options.windowedChecks = true;
+      panel.updateCheckStats();
+      const shown = statsColIndex(panel, 'skipped') !== -1 &&
+        statsColIndex(panel, 'skipPct') !== -1 &&
+        panel.checksTable.children[1].children.length === 9;
+      return hidden && shown;
+    } finally {
+      options.windowedChecks = prevWindowed;
+      resetCheckStats();
+    }
+  });
+}
+/**
+ * HTMLCollection-shaped children stand-in (indexed slots + length +
+ * iterator, deliberately no array methods), so specs can prove
+ * production code survives the real live collection instead of only the
+ * fake's plain arrays.
+ * @param {object[]} cells - Child nodes to expose.
+ * @returns {object} The stand-in.
+ */
+function collectionShaped(cells) {
+  const shaped = {length: cells.length, [Symbol.iterator]: Array.prototype.values.bind(cells)};
+  cells.forEach((cell, i) => {
+    shaped[i] = cell;
+  });
+  return shaped;
+}
 function testStatsRebuildToleratesRealDomChildren() {
   // Regression: `updateCheckStats` called `head.children.forEach`, but a
   // real browser's `children` is an HTMLCollection with no array methods,
   // so opening Stats crashed the panel while the suite (plain arrays)
-  // stayed green. Swapping the header's children for an
-  // HTMLCollection-shaped object (indexed + length, no forEach) must
-  // still rebuild and sort.
+  // stayed green. Swapping the table's and header's children for
+  // collection-shaped stand-ins must still rebuild and sort.
   return withPanel((panel) => {
     resetCheckStats();
     try {
       recordCheck('Zzz#checks', 5);
       recordMapScan('Aaa#scan-heavy', 50);
       panel.updateCheckStats();
-      const head = panel.checksTable.children[0];
-      const cells = head.children.slice();
-      const collectionShaped = {length: cells.length};
-      cells.forEach((cell, i) => {
-        collectionShaped[i] = cell;
-      });
-      head.children = collectionShaped;
+      const table = panel.checksTable;
+      table.children = collectionShaped(table.children.slice());
+      table.children[0].children = collectionShaped(table.children[0].children.slice());
       panel.updateCheckStats();
-      const rows = panel.checksTable.children.slice(1);
+      const rows = Array.prototype.slice.call(table.children, 1);
       return rows.length === 2 && textOf(rows[0]).includes('Aaa#scan-heavy');
     } finally {
       resetCheckStats();
@@ -2201,31 +2276,39 @@ function testStatsRebuildToleratesRealDomChildren() {
 function testStatsHeadersSortOnClick() {
   // Headers are not decoration: clicking one re-sorts the table by that
   // column, clicking again flips the direction, and the active header
-  // carries an arrow so the order is visible, not guessed.
+  // carries an arrow so the order is visible, not guessed. Columns are
+  // found by sort id, so conditional columns cannot shift them.
+  const clickHead = (panel, id) => {
+    const head = panel.checksTable.children[0];
+    head.children[statsColIndex(panel, id)].onclick();
+  };
+  const headText = (panel, id) => {
+    const head = panel.checksTable.children[0];
+    return head.children[statsColIndex(panel, id)].textContent;
+  };
   return withPanel((panel) => {
     resetCheckStats();
     try {
       recordCheck('Zzz#checks', 5);
       recordMapScan('Aaa#scan-heavy', 50);
       recordMapScan('Bbb#scan-light', 1);
-      panel.checksSort = {col: 5, desc: true};
+      panel.checksSort = {id: 'scanMs', desc: true};
       panel.updateCheckStats();
-      const head = panel.checksTable.children[0];
       const firstByScan = textOf(panel.checksTable.children[1]).includes('Aaa#scan-heavy');
-      const scanArrow = head.children[5].textContent.includes('▼');
+      const scanArrow = headText(panel, 'scanMs').includes('▼');
       // Click Loc: alphabetical ascending.
-      head.children[0].onclick();
+      clickHead(panel, 'loc');
       const byLoc = textOf(panel.checksTable.children[1]).includes('Aaa#scan-heavy') &&
         textOf(panel.checksTable.children[1]) < textOf(panel.checksTable.children[2]);
-      const locArrow = panel.checksTable.children[0].children[0].textContent.includes('▲');
+      const locArrow = headText(panel, 'loc').includes('▲');
       // Click Loc again: flipped to descending.
-      panel.checksTable.children[0].children[0].onclick();
+      clickHead(panel, 'loc');
       const flipped = textOf(panel.checksTable.children[1]).includes('Zzz#checks') &&
-        panel.checksTable.children[0].children[0].textContent.includes('▼');
+        headText(panel, 'loc').includes('▼');
       return firstByScan && scanArrow && byLoc && locArrow && flipped;
     } finally {
       resetCheckStats();
-      panel.checksSort = {col: 5, desc: true};
+      panel.checksSort = {id: 'scanMs', desc: true};
     }
   });
 }
@@ -2269,31 +2352,57 @@ function testStatsWinCaptionHasMinMaxClose() {
     }
   });
 }
-function testStatsHelpExplainsColumns() {
-  // The raw header names ("Rides", "Skipped %") are insider jargon: one
-  // (?) next to the title must carry the whole column glossary in its
-  // tooltip, as span[data-help] a spec can find structurally, instead of
-  // a wall of tiny text under the header.
-  return withPanel((panel) => {
-    const help = panel.checksHelp;
-    if (!help || !panel.checksHead.children.includes(help)) {
-      return false;
+/**
+ * Header cell index of a stats column by its id, -1 when hidden (the
+ * Skipped columns only render with windowing on).
+ * @param {object} panel - The panel.
+ * @param {string} id - Column id from `CHECKS_COLS`.
+ * @returns {number} Header index, or -1.
+ */
+function statsColIndex(panel, id) {
+  const head = panel.checksTable.children[0];
+  for (let i = 0; i < head.children.length; i++) {
+    if (head.children[i].dataset.sort === id) {
+      return i;
     }
-    if (help.dataset.help !== 'columns' || textOf(help) !== '?') {
-      return false;
-    }
-    return typeof help.title === 'string' &&
-      help.title.includes('Rides') && help.title.includes('Skipped %') &&
-      help.title.includes('Scans') && help.title.includes('Checks');
-  });
+  }
+  return -1;
+}
+/**
+ * Text of one stats cell, found by loc and column id instead of brittle
+ * numeric indices.
+ * @param {object} panel - The panel.
+ * @param {string} loc - Row locator.
+ * @param {string} id - Column id from `CHECKS_COLS`.
+ * @returns {string} Cell text.
+ */
+function statsCell(panel, loc, id) {
+  const idx = statsColIndex(panel, id);
+  const rows = panel.checksTable.children.slice(1);
+  const row = rows.find(_ => _.className !== 'rti-checks-loc-detail' && textOf(_).includes(loc));
+  return row.children[idx].textContent;
 }
 function testStatsHeaderCellsCarryTooltips() {
   // Each header cell explains its own column on hover, so a reader never
-  // has to guess what a number means while looking at it.
+  // has to guess what a number means while looking at it. Header and
+  // tooltip come from one column definition each, keyed by a sort id the
+  // spec can read structurally.
   return withPanel((panel) => {
-    const header = panel.checksTable.children[0];
-    return header.children.length === 9 &&
-      header.children.every(_ => typeof _.title === 'string' && _.title.length > 0);
+    resetCheckStats();
+    try {
+      recordCheck('Tip#x', 1);
+      panel.updateCheckStats();
+      const header = panel.checksTable.children[0];
+      const ids = [];
+      for (let i = 0; i < header.children.length; i++) {
+        ids.push(header.children[i].dataset.sort);
+      }
+      return header.children.length === ids.length &&
+        Array.prototype.every.call(header.children, _ => typeof _.title === 'string' && _.title.length > 0) &&
+        new Set(ids).size === ids.length && ids.includes('scanMs') && ids.includes('loc');
+    } finally {
+      resetCheckStats();
+    }
   });
 }
 function testStatsLocClickShowsCallStack() {
@@ -2406,7 +2515,6 @@ const tests = [
   testStatsWinOpensPopulatesAndCloses,
   testStatsWinToggleCycles,
   testStatsLocCellIsButtonWithTitle,
-  testStatsHelpExplainsColumns,
   testStatsRebuildToleratesRealDomChildren,
   testStatsHeadersSortOnClick,
   testStatsWinMaximizesViaSharedCore,
@@ -2415,5 +2523,7 @@ const tests = [
   testStatsLocClickShowsCallStack,
   testStatsTableShowsSkippedPercent,
   testStatsTableFormatsCompactTimes,
+  testNeverRanTimeCellsShowDash,
+  testSkippedColumnsFollowWindowing,
 ];
 export {tests};

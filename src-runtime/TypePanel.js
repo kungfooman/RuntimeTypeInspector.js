@@ -193,19 +193,6 @@ function niceDiv(div) {
       cursor: pointer;
       white-space: nowrap;
     }
-    .rti-checks-help {
-      cursor: help;
-      display: inline-block;
-      width: 14px;
-      height: 14px;
-      line-height: 14px;
-      text-align: center;
-      border: 1px solid #999;
-      border-radius: 50%;
-      color: #555;
-      font-weight: normal;
-      margin-left: 6px;
-    }
     .rti-checks-loc-detail td {
       background: #f4f6fa;
     }
@@ -590,40 +577,24 @@ function niceDiv(div) {
   document.head.appendChild(rule);
 }
 /**
- * Column titles of the check stats table, in render order.
- * @type {string[]}
+ * Column metadata of the check stats table, in render order. Headers
+ * sort on click (by `id`, so hiding columns cannot misalign anything)
+ * and explain their column on hover, so every number is both explorable
+ * and accountable. The two `windowed` columns only render while
+ * `windowedChecks` is on: with windowing off every ride count is 0 by
+ * construction, so the columns would be dead weight.
+ * @type {{id: string, head: string, title: string, windowed?: boolean, get: (row: object) => (string|number)}[]}
  */
-const CHECKS_HEADS = ['Loc', 'Checks', 'Rides', 'Skipped %', 'Scans', 'Scan ms (total)', 'Scan ms (worst)', 'Check ms (total)', 'Check ms (worst)'];
-/**
- * Hover text per stats column, so every number explains itself without a
- * manual. Index aligned with `CHECKS_HEADS`.
- * @type {string[]}
- */
-const CHECKS_TITLES = [
-  'Validation call site (class#method or function). Click a loc to see the call stack that created its row.',
-  'How often this loc was checked.',
-  'Checks skipped for free: the map was still inside its rescan window, so no scan ran.',
-  'rides / (rides + scans): how often a check was skipped instead of paid via a scan.',
-  'Full map scans: the expensive walk over every entry.',
-  'Wall time spent in full map scans at this loc.',
-  'Slowest single full map scan at this loc.',
-  'Wall time spent in top level checks (validation work only, messages excluded).',
-  'Slowest single top level check at this loc.',
-];
-/**
- * Plain English glossary of the stats columns. The header (?) button
- * shows these as its tooltip, so specs can find entries structurally
- * instead of pinning the sentence wording.
- * @type {[string, string][]}
- */
-const CHECKS_LEGEND = [
-  ['Loc', 'the check site; click one to see the call stack that recorded it'],
-  ['Checks', 'how often this loc was checked'],
-  ['Rides', 'checks skipped for free because the map was still inside its rescan window (no scan ran)'],
-  ['Skipped %', 'rides divided by rides plus scans'],
-  ['Scans', 'full map scans: the expensive walk over every entry'],
-  ['Scan ms', 'wall time spent scanning'],
-  ['Check ms', 'wall time of the check itself (validation only, messages excluded)'],
+const CHECKS_COLS = [
+  {id: 'loc', head: 'Loc', title: 'Call site (class#method or function). Click a loc to see the call stack captured for it.', get: (row) => row.loc},
+  {id: 'checks', head: 'Checks', title: 'How many times this call site was checked.', get: (row) => row.checks},
+  {id: 'skipped', head: 'Skipped', title: 'Checks skipped without scanning: the map was unchanged and inside its rescan window.', windowed: true, get: (row) => row.rides},
+  {id: 'skipPct', head: 'Skipped %', title: 'Share of map checks skipped instead of scanned. The dash means no map checks ran here.', windowed: true, get: (row) => skipRatio(row)},
+  {id: 'scans', head: 'Full scans', title: 'Full map validations that actually ran over every entry.', get: (row) => row.scans},
+  {id: 'scanMs', head: 'Scan time', title: 'Total wall time in full scans. 0us means below what the clock can see, not broken; the slowest column bounds it.', get: (row) => row.scanMs},
+  {id: 'maxScanMs', head: 'Slowest scan', title: 'Slowest single full scan.', get: (row) => row.maxScanMs},
+  {id: 'checkMs', head: 'Check time', title: 'Total wall time checking this call site, nested scans included.', get: (row) => row.checkMs},
+  {id: 'maxCheckMs', head: 'Slowest check', title: 'Slowest single check.', get: (row) => row.maxCheckMs},
 ];
 /**
  * Sort key of the Skipped % column: the ride share, or -1 when a row has
@@ -637,29 +608,24 @@ function skipRatio(row) {
 }
 /**
  * Builds the (empty) check stats table: a header row only, rows stream in
- * via `updateCheckStats`. Header cells sort on click and explain their
- * column on hover, so every number is both explorable and accountable.
- * Returns null outside a DOM, like `createTable`.
+ * via `updateCheckStats`. Columns come from `CHECKS_COLS`, so headers,
+ * tooltips and sort keys cannot drift apart. Returns null outside a DOM,
+ * like `createTable`.
  * @returns {*} The table node, or null.
  */
 function createChecksTable() {
   if (typeof document === 'undefined') {
     return null;
   }
-  return Table({className: 'rti-checks-table'},
-               Tr({}, ...CHECKS_HEADS.map((_, i) => Th({textContent: _, title: CHECKS_TITLES[i], dataset: {sort: String(i)}}))));
+  return Table({className: 'rti-checks-table'}, Tr({}));
 }
 /**
- * Glossary (?) button for the stats header: the whole column glossary
- * lives in one tooltip instead of a wall of tiny text under the header.
- * @returns {*} The help node, or null outside a DOM.
+ * Columns to render right now: everything, minus the two windowing
+ * columns while `windowedChecks` is off (their zeros would only confuse).
+ * @returns {object[]} Visible column metadata.
  */
-function createChecksHelp() {
-  if (typeof document === 'undefined') {
-    return null;
-  }
-  const text = CHECKS_LEGEND.map(([col, desc]) => `${col}: ${desc}`).join('\n');
-  return Span({className: 'rti-checks-help', dataset: {help: 'columns'}, title: text}, '?');
+function visibleCheckCols() {
+  return CHECKS_COLS.filter((col) => !col.windowed || options.windowedChecks);
 }
 /**
  * Pre-maximize inline geometry per window element: the shared maximize
@@ -1071,17 +1037,16 @@ class TypePanel {
     }});
     this.buttonRefreshCheckStats = Button({textContent: 'Refresh stats', title: 'Re-read the latest check statistics', onclick: () => this.updateCheckStats()});
     this.checksTable = createChecksTable();
-    this.checksHelp = createChecksHelp();
     // Sort state of the stats table: which column, and which direction.
-    // Starts on total scan time descending, the hotspot view.
-    this.checksSort = {col: 5, desc: true};
+    // Starts on scan time descending, the hotspot view. By column id, so
+    // hiding columns cannot misalign it.
+    this.checksSort = {id: 'scanMs', desc: true};
     // Inline call stack: clicking a loc inserts a detail row right under
     // it, so the answer appears where the user looks instead of at the
     // bottom of the window. One open at a time, tracked by loc.
     this.checksDetailLoc = null;
     this.checksHead = Div({className: 'rti-checks-head'},
                           Span({innerText: 'Check stats (hotspots by scan cost)'}),
-                          this.checksHelp,
                           this.buttonRefreshCheckStats, this.buttonResetCheckStats);
     this.checksWrap = Div({className: 'rti-checks'},
                           this.checksHead, this.checksTable);
@@ -2663,9 +2628,10 @@ class TypePanel {
   }
   /**
    * Rebuilds the check stats table from `getCheckStats()`: every row,
-   * never a folded trailer, sorted by the active header (scan cost until
-   * the user picks another column). Called on demand (settings flips,
-   * buttons, error arrivals), never on a timer, so idle pages stay idle.
+   * never a folded trailer, sorted by the active header (scan time until
+   * the user picks another column). The Skipped columns only render while
+   * `windowedChecks` is on. Called on demand (settings flips, buttons,
+   * error arrivals), never on a timer, so idle pages stay idle.
    * @returns {void}
    */
   updateCheckStats() {
@@ -2676,52 +2642,46 @@ class TypePanel {
     for (const row of stale) {
       row.remove();
     }
-    const byCol = [
-      (row) => row.loc,
-      (row) => row.checks,
-      (row) => row.rides,
-      (row) => skipRatio(row),
-      (row) => row.scans,
-      (row) => row.scanMs,
-      (row) => row.maxScanMs,
-      (row) => row.checkMs,
-      (row) => row.maxCheckMs,
-    ];
+    const cols = visibleCheckCols();
+    const sort = this.checksSort ?? {id: 'scanMs', desc: true};
+    const sortCol = cols.find((col) => col.id === sort.id) ?? cols.find((col) => col.id === 'scanMs');
     const rows = getCheckStats().slice();
-    const {col, desc} = this.checksSort ?? {col: 5, desc: true};
-    const key = byCol[col] ?? byCol[5];
     rows.sort((a, b) => {
-      const ka = key(a);
-      const kb = key(b);
+      const ka = sortCol.get(a);
+      const kb = sortCol.get(b);
       if (ka < kb) {
-        return desc ? 1 : -1;
+        return sort.desc ? 1 : -1;
       }
       if (ka > kb) {
-        return desc ? -1 : 1;
+        return sort.desc ? -1 : 1;
       }
       return a.loc < b.loc ? -1 : 1;
     });
     const [head] = this.checksTable.children;
     if (head) {
-      // `children` is an HTMLCollection in real browsers (no forEach):
-      // index it, so the fake DOM's plain array keeps agreeing with it.
-      for (let i = 0; i < head.children.length; i++) {
-        const th = head.children[i];
-        // Clicking a header sorts by that column, clicking again flips
-        // the direction; the arrow shows the active column and way.
+      // Rebuilt every time (columns come and go with `windowedChecks`):
+      // remove, never reassign, since real `children` is read-only.
+      for (const th of [...head.children]) {
+        th.remove();
+      }
+      // Clicking a header sorts by that column, clicking again flips the
+      // direction; the arrow shows the active column and way.
+      for (const col of cols) {
+        const active = this.checksSort?.id === col.id;
+        const label = active ? `${col.head} ${this.checksSort.desc ? '▼' : '▲'}` : col.head;
+        const th = Th({textContent: label, title: col.title, dataset: {sort: col.id}});
         th.onclick = () => {
-          if (this.checksSort?.col === i) {
-            this.checksSort = {col: i, desc: !this.checksSort.desc};
+          if (this.checksSort?.id === col.id) {
+            this.checksSort = {id: col.id, desc: !this.checksSort.desc};
           } else {
-            this.checksSort = {col: i, desc: i !== 0};
+            this.checksSort = {id: col.id, desc: col.id !== 'loc'};
           }
           this.updateCheckStats();
         };
-        const label = CHECKS_HEADS[i] ?? '';
-        const active = this.checksSort?.col === i;
-        th.textContent = active ? `${label} ${this.checksSort.desc ? '▼' : '▲'}` : label;
+        head.append(th);
       }
     }
+    const timeTitle = 'Zero time with real work means the clock could not see it, not that it was free: each single check ran below one clock tick. Totals above zero would show; the slowest column bounds the single cost.';
     const fmtMs = (v) => {
       if (v <= 0) {
         return '0µs';
@@ -2735,37 +2695,50 @@ class TypePanel {
       return v.toFixed(1) + 'ms';
     };
     for (const row of rows) {
-      const skipped = row.rides + row.scans;
-      const skipPct = skipped === 0 ? '—' : ((row.rides / skipped) * 100).toFixed(1) + '%';
-      const locBtn = Button({textContent: row.loc, title: `${row.loc} (click: call stack, copy)`, onclick: () => {
-        try {
-          copyText(row.loc);
-        } catch (unused) {
-          // ignore copy failure
+      const cells = cols.map((col) => {
+        if (col.id === 'loc') {
+          const locBtn = Button({textContent: row.loc, title: `${row.loc} (click: call stack, copy)`, onclick: () => {
+            try {
+              copyText(row.loc);
+            } catch (unused) {
+              // ignore copy failure
+            }
+            try {
+              console.log('RTI checkStats loc:', row.loc);
+              if (row.stack) {
+                console.log(row.stack);
+              }
+            } catch (unused) {
+              // ignore logging failure
+            }
+            this.showLocDetail(row);
+          }});
+          return Td({}, locBtn);
         }
-        try {
-          console.log('RTI checkStats loc:', row.loc);
-          if (row.stack) {
-            console.log(row.stack);
+        if (col.id === 'skipPct') {
+          const skipped = row.rides + row.scans;
+          return Td({textContent: skipped === 0 ? '—' : ((row.rides / skipped) * 100).toFixed(1) + '%'});
+        }
+        const v = col.get(row);
+        if (typeof v === 'number' && col.id.endsWith('Ms')) {
+          // Honest zeros: a time cell is only "0µs" when its own counter
+          // ran but measured nothing. When the counter never ran, the
+          // dash says "no data" instead of pretending a measurement.
+          const ran = col.id === 'checkMs' || col.id === 'maxCheckMs' ? row.checks > 0 : row.scans > 0;
+          if (!ran) {
+            return Td({textContent: '—'});
           }
-        } catch (unused) {
-          // ignore logging failure
+          if (v <= 0) {
+            return Td({textContent: '0µs', title: timeTitle});
+          }
+          return Td({textContent: fmtMs(v)});
         }
-        this.showLocDetail(row);
-      }});
-      this.checksTable.append(Tr({},
-                                 Td({}, locBtn),
-                                 Td({textContent: String(row.checks)}),
-                                 Td({textContent: String(row.rides)}),
-                                 Td({textContent: skipPct}),
-                                 Td({textContent: String(row.scans)}),
-                                 Td({textContent: fmtMs(row.scanMs)}),
-                                 Td({textContent: fmtMs(row.maxScanMs)}),
-                                 Td({textContent: fmtMs(row.checkMs)}),
-                                 Td({textContent: fmtMs(row.maxCheckMs)})));
+        return Td({textContent: String(v)});
+      });
+      this.checksTable.append(Tr({}, ...cells));
       if (this.checksDetailLoc === row.loc) {
         this.checksTable.append(Tr({className: 'rti-checks-loc-detail'},
-                                   Td({colSpan: '9'},
+                                   Td({colSpan: String(cols.length)},
                                       Pre({textContent: `${row.loc}\n\n${row.stack || '(no call stack was captured for this loc)'}`}))));
       }
     }
