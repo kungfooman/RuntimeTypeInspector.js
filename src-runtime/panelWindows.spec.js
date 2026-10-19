@@ -134,6 +134,17 @@ class FakeElement extends FakeNode {
   setAttribute(key, value) {
     this.attributes[key] = value;
   }
+  // Like the browser's IDL attribute: an input's `value` is always a
+  // string, so numeric assignments from constructors (and tests) must
+  // come back as text, which is what onchange handlers assume when they
+  // call `.trim()` or `Number(...)`. `null` maps to '' per the
+  // LegacyNullToEmptyString annotation real inputs carry.
+  set value(v) {
+    this._value = v === null ? '' : String(v);
+  }
+  get value() {
+    return this._value ?? '';
+  }
   set innerHTML(_) {
     // Like the browser: replacing markup detaches all children.
     for (const child of this.children) {
@@ -216,6 +227,9 @@ function installFakeBrowser() {
     getItem: (key) => (key in store ? store[key] : null),
     setItem: (key, value) => {
       store[key] = String(value);
+    },
+    removeItem: (key) => {
+      delete store[key];
     },
   };
   globalThis.location = {hash: '', href: 'http://localhost/'};
@@ -1868,6 +1882,56 @@ function testWindowCapInputClampsAndForwards() {
     }
   });
 }
+function testWindowMinTotalInputClampsAndForwards() {
+  return withPanel((panel) => {
+    const prevMin = options.mapCheckWindowMinTotalMs;
+    const sink = {messages: [], postMessage(data) {
+      this.messages.push(data);
+    }};
+    try {
+      const prevMode = options.mode;
+      options.mode = 'never';
+      feedError(panel, sink);
+      options.mode = prevMode;
+      // A whole millisecond budget round trips into option, storage and
+      // worker message.
+      panel.inputWindowMinTotal.value = '100';
+      panel.inputWindowMinTotal.onchange();
+      const applied = options.mapCheckWindowMinTotalMs === 100 &&
+        localStorage.getItem('rti-window-min-total-ms') === '100' &&
+        sink.messages.some(_ => _.action === 'mapCheckWindowMinTotalMs' && _.value === 100 && _.destination === 'worker');
+      // A deliberately typed 0 (ride without any budget) passes,
+      // mirroring the open fallback in `minTotalMs()`.
+      panel.inputWindowMinTotal.value = '0';
+      panel.inputWindowMinTotal.onchange();
+      const zeroOk = options.mapCheckWindowMinTotalMs === 0 &&
+        sink.messages.some(_ => _.action === 'mapCheckWindowMinTotalMs' && _.value === 0 && _.destination === 'worker');
+      // Back to a non zero baseline so the two rejections below are
+      // distinguishable: a guard that silently applied the garbage would
+      // land on a different value, not on the baseline by luck.
+      panel.inputWindowMinTotal.value = '250';
+      panel.inputWindowMinTotal.onchange();
+      const baseline = options.mapCheckWindowMinTotalMs === 250;
+      // Garbage input must not clobber the live budget, and the empty
+      // string deserves its own trip: `Number('')` is 0, which would
+      // silently turn a half typed field into ride-always windowing.
+      panel.inputWindowMinTotal.value = '';
+      panel.inputWindowMinTotal.onchange();
+      const kept = options.mapCheckWindowMinTotalMs === 250;
+      panel.inputWindowMinTotal.value = '-3';
+      panel.inputWindowMinTotal.onchange();
+      const noNegative = options.mapCheckWindowMinTotalMs === 250;
+      return applied && zeroOk && baseline && kept && noNegative;
+    } finally {
+      // Clean the stored budget up (unlike the cap above): the shipped
+      // default is pinned by a virgin capture taken at import time, so
+      // a leaked stored value must not be able to rewrite what later
+      // panel constructions apply to `options`.
+      options.mapCheckWindowMinTotalMs = prevMin;
+      localStorage.removeItem('rti-window-min-total-ms');
+    }
+  });
+}
 function testCheckStatsCheckboxWiresOptionStorageAndWorker() {
   return withPanel((panel) => {
     const prevStats = options.checkStats;
@@ -1941,18 +2005,22 @@ function testLogMetaCarriesWindowSettings() {
   return withPanel((panel) => {
     const prevWindowed = options.windowedChecks;
     const prevCap = options.mapCheckWindowCap;
+    const prevMin = options.mapCheckWindowMinTotalMs;
     const prevStats = options.checkStats;
     try {
       options.windowedChecks = true;
       options.mapCheckWindowCap = 256;
+      options.mapCheckWindowMinTotalMs = 250;
       options.checkStats = false;
       const meta = panel.getLogMeta();
       return meta.settings.windowedChecks === true &&
         meta.settings.mapCheckWindowCap === 256 &&
+        meta.settings.mapCheckWindowMinTotalMs === 250 &&
         meta.settings.checkStats === false;
     } finally {
       options.windowedChecks = prevWindowed;
       options.mapCheckWindowCap = prevCap;
+      options.mapCheckWindowMinTotalMs = prevMin;
       options.checkStats = prevStats;
     }
   });
@@ -2221,6 +2289,7 @@ const tests = [
   testPageshowRecoversStrandedPanel,
   testWindowedCheckboxWiresOptionStorageAndWorker,
   testWindowCapInputClampsAndForwards,
+  testWindowMinTotalInputClampsAndForwards,
   testCheckStatsCheckboxWiresOptionStorageAndWorker,
   testCheckStatsTableRendersHotspotsSorted,
   testCheckStatsResetButtonEmptiesTable,

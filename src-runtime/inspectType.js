@@ -89,6 +89,13 @@ globalMessageHost()?.addEventListener?.('message', (e) => {
       }
       return;
     }
+    if (action === 'mapCheckWindowMinTotalMs') {
+      const min = Number(data.value);
+      if (Number.isFinite(min) && min >= 0) {
+        options.mapCheckWindowMinTotalMs = min;
+      }
+      return;
+    }
     if (action === 'checkStats') {
       options.checkStats = data.value !== false;
       return;

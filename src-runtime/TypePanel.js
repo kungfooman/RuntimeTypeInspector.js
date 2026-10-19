@@ -355,6 +355,10 @@ function niceDiv(div) {
       padding: 2px 0;
       white-space: nowrap;
     }
+    .rti-setting-row input[type='number'] {
+      width: 9ch;
+      flex: none;
+    }
     .rti-compare-win {
       position: fixed;
       display: flex;
@@ -673,6 +677,17 @@ function storedMapCheckWindowCap() {
   const n = Math.floor(Number(tmp));
   return Number.isFinite(n) && n >= 1 ? n : options.mapCheckWindowCap;
 }
+function storedMapCheckWindowMinTotalMs() {
+  const tmp = localStorage.getItem('rti-window-min-total-ms');
+  if (tmp === null) {
+    return options.mapCheckWindowMinTotalMs;
+  }
+  // Unlike the cap, fractional milliseconds are valid here, so the
+  // stored value is only range checked, never floored; `0` is a real
+  // choice (ride without any budget), only NaN and negatives are not.
+  const n = Number(tmp);
+  return Number.isFinite(n) && n >= 0 ? n : options.mapCheckWindowMinTotalMs;
+}
 function isCheckStats() {
   const tmp = localStorage.getItem('rti-check-stats');
   return tmp === null ? options.checkStats !== false : tmp === 'true';
@@ -860,7 +875,7 @@ class TypePanel {
       this.sendWindowedStateToWorker();
       this.updateCheckStats();
     }});
-    this.inputWindowCap = Input({type: 'number', value: storedMapCheckWindowCap(), min: '1', step: '1', onchange: () => {
+    this.inputWindowCap = Input({type: 'number', value: storedMapCheckWindowCap(), min: '1', step: '1', title: 'Longest rescan window in checks: bounds how long drift can hide', onchange: () => {
       const n = Math.floor(Number(this.inputWindowCap.value));
       // Silly input guard: a half typed value ("", "3.7", "-5") must not
       // clobber the live cap; the checkbox styled minimum of 1 mirrors
@@ -869,6 +884,22 @@ class TypePanel {
         options.mapCheckWindowCap = n;
         localStorage.setItem('rti-window-cap', String(n));
         this.sendMapCheckWindowCapToWorker();
+      }
+      this.updateCheckStats();
+    }});
+    this.inputWindowMinTotal = Input({type: 'number', value: storedMapCheckWindowMinTotalMs(), min: '0', step: '10', title: 'Scan time budget in ms a map must accumulate before checks may ride windows; 0 rides without any budget', onchange: () => {
+      const raw = this.inputWindowMinTotal.value.trim();
+      const n = Number(raw);
+      // Same silly input guard as the cap: half typed values must not
+      // clobber the live budget. The empty string check matters extra
+      // here because `Number('')` is 0, which would silently turn a
+      // field the user is still typing into ride-always windowing. `0`
+      // typed on purpose still passes, mirroring `minTotalMs()`'s open
+      // fallback.
+      if (raw !== '' && Number.isFinite(n) && n >= 0) {
+        options.mapCheckWindowMinTotalMs = n;
+        localStorage.setItem('rti-window-min-total-ms', String(n));
+        this.sendMapCheckWindowMinTotalMsToWorker();
       }
       this.updateCheckStats();
     }});
@@ -885,6 +916,7 @@ class TypePanel {
     this.spanExact = Span({innerText: ' Exact objects'});
     this.spanWindowed = Span({innerText: ' Windowed checks'});
     this.spanWindowCap = Span({innerText: ' Window cap'});
+    this.spanWindowMinTotal = Span({innerText: ' Min scan time (ms)'});
     this.spanCheckStats = Span({innerText: ' Collect check stats'});
     this.option_spam = Option({text: 'spam'});
     this.option_once = Option({text: 'once'});
@@ -942,6 +974,8 @@ class TypePanel {
                     Div({className: 'rti-setting-row'},
                         Label({}, this.spanWindowCap, this.inputWindowCap)),
                     Div({className: 'rti-setting-row'},
+                        Label({title: 'Scan time budget in ms a map must accumulate before checks may ride windows; 0 rides without any budget'}, this.spanWindowMinTotal, this.inputWindowMinTotal)),
+                    Div({className: 'rti-setting-row'},
                         Label({}, this.inputCheckStats, this.spanCheckStats)),
                     Div({className: 'rti-setting-row'},
                         this.buttonLoadState, this.buttonSaveState));
@@ -989,7 +1023,7 @@ class TypePanel {
     const {
       div, titlebar, toolbar, body,
     } = this;
-    const {inputEnable, inputStrict, inputInfinity, inputExact, inputWindowed, inputWindowCap, inputCheckStats, select} = this;
+    const {inputEnable, inputStrict, inputInfinity, inputExact, inputWindowed, inputWindowCap, inputWindowMinTotal, inputCheckStats, select} = this;
     TypePanel.divAll ??= Div({
       className: 'rti-all',
       style: {position: 'fixed', bottom: '0px', right: '0px', zIndex: '10000', overflow: 'unset'},
@@ -1002,6 +1036,7 @@ class TypePanel {
     inputExact.onchange();
     inputWindowed.onchange();
     inputWindowCap.onchange();
+    inputWindowMinTotal.onchange();
     inputCheckStats.onchange();
     const spamTypeReports = localStorage.getItem('rti-spam-type-reports');
     select.value = options.mode;
@@ -2349,6 +2384,17 @@ class TypePanel {
       });
     });
   }
+  sendMapCheckWindowMinTotalMsToWorker() {
+    const {eventSources} = this;
+    eventSources.forEach(eventSource => {
+      eventSource.postMessage({
+        type: 'rti',
+        action: 'mapCheckWindowMinTotalMs',
+        value: options.mapCheckWindowMinTotalMs,
+        destination: 'worker',
+      });
+    });
+  }
   sendCheckStatsStateToWorker() {
     const {eventSources} = this;
     eventSources.forEach(eventSource => {
@@ -2423,6 +2469,7 @@ class TypePanel {
       '`checkInfinity: false` means +-Infinity passes `number`.',
       '`exactObjects: true` means excess keys fail (stricter than tsc, which only checks fresh literals).',
       '`windowedChecks: true` means map checks ride doubling rescan windows: persistent drift is reported within one window (mapCheckWindowCap checks worst case).',
+      '`mapCheckWindowMinTotalMs` is the scan spend budget for those rides: a map whose scans accumulated less validates every check, so `0` means ride without any budget.',
       '`checkStats: false` turns the per call site hotspot recording off.',
       'Those are settings, not bugs.',
       '`meta.rti` identifies the RTI build: version is always present, commit/subject are stamped by `npm run build` (null from unstamped source).',
@@ -2445,6 +2492,7 @@ class TypePanel {
         logSuperfluousProperty: options.logSuperfluousProperty,
         windowedChecks: options.windowedChecks,
         mapCheckWindowCap: options.mapCheckWindowCap,
+        mapCheckWindowMinTotalMs: options.mapCheckWindowMinTotalMs,
         checkStats: options.checkStats,
       },
       counts: {

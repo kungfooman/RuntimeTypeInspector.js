@@ -65,10 +65,27 @@ const options = {
    * revalidate an unchanged map per call (streaming loads like the
    * PlayCanvas GSplat world state) opt in via
    * `setOptions({windowedChecks: true})`. Applies to maps today; the
-   * intent is one switch for Set/Array windows when they exist.
+   * intent is one switch for Set/Array windows when they exist. Rides
+   * additionally require the map to have accumulated at least
+   * `mapCheckWindowMinTotalMs` of scan time since its content last
+   * changed, so maps nobody ever spent real time scanning keep
+   * validating every check.
    * @type {boolean}
    */
   windowedChecks: false,
+  /**
+   * Scan time budget (in milliseconds) a map must accumulate before its
+   * checks may ride rescan windows when `windowedChecks` is true: every
+   * full scan adds its wall time to the map's running total, and only
+   * once the total reaches this budget do checks start skipping. Cheap
+   * maps never get there, so they keep validating every check, while a
+   * map that already cost real time amortizes from then on. Content
+   * changes restart the total (the spend validated the old content),
+   * and lowering the budget to `0` restores ride-always behavior.
+   * Editable live, like `mapCheckWindowCap`.
+   * @type {number}
+   */
+  mapCheckWindowMinTotalMs: 100,
   /**
    * Largest interval the doubling map rescan scheme may reach when
    * `windowedChecks` is true. A small cap bounds the detection latency

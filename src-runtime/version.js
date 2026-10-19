@@ -7,7 +7,7 @@
  */
 const RTI_INFO = {
   "version": "6.0.0",
-  "commit": "1d55964a537ee8167bd650748012ace29fb9641a",
-  "subject": "re-track src-runtime/version.js"
+  "commit": "ed63976c0866338b7a3c8786250f2b414822169e",
+  "subject": "Add Performance tracer to UI"
 };
 export {RTI_INFO};
