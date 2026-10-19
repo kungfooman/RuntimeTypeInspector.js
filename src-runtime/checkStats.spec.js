@@ -6,6 +6,28 @@ import {recordCheck, recordMapRide, recordMapScan, getCheckStats, resetCheckStat
  * @type {{checkStats: boolean}}
  */
 const virgin = {checkStats: options.checkStats};
+function testNestedScanTimeFoldsIntoCheckTime() {
+  // The reported bug: a loc whose checks do their work in nested map
+  // scans showed thousands of checks at "0us" check time, because every
+  // fast top level check measured 0 under a coarse clock while the scans
+  // accumulated real time. The check takes the larger of its own reading
+  // and the nested scan time, so the row reads as the full cost of
+  // checking the loc; under a fine clock the measured time already
+  // contains the scans and wins, so nothing counts twice.
+  options.checkStats = true;
+  resetCheckStats();
+  recordMapScan('T#fold', 30);
+  recordCheck('T#fold', 0);
+  const coarse = getCheckStats()[0];
+  const coarseOk = coarse.checks === 1 && coarse.scanMs === 30 &&
+    coarse.checkMs === 30 && coarse.maxCheckMs === 30;
+  resetCheckStats();
+  recordMapScan('T#fine', 30);
+  recordCheck('T#fine', 42);
+  const fine = getCheckStats()[0];
+  const fineOk = fine.checkMs === 42 && fine.maxCheckMs === 42 && fine.scanMs === 30;
+  return coarseOk && fineOk;
+}
 function testRowCountsTotalsAndWorst() {
   // One loc accumulates checks, rides and scans in independent ledgers,
   // with sums and per-column maxima for the timed ones.
@@ -128,6 +150,7 @@ function testStackCapturedExactlyOncePerRow() {
   return captures === 2 && getCheckStats().length === 2;
 }
 const tests = [
+  testNestedScanTimeFoldsIntoCheckTime,
   testRowCountsTotalsAndWorst,
   testUndefinedTimingsCountButCostNothing,
   testHotspotSortScanMsThenCheckMsThenChecks,

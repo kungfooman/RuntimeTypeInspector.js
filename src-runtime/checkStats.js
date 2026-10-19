@@ -8,7 +8,7 @@ import {captureStackLines} from "./captureStack.js";
  * `mapCheckWindowCap`) come from measurements instead of guesses. Every
  * row also keeps the call stack captured when the row was first created,
  * so the panel can answer "where does this loc actually live".
- * @type {Map<string, {checks: number, rides: number, scans: number, scanMs: number, maxScanMs: number, checkMs: number, maxCheckMs: number, stack: string}>}
+ * @type {Map<string, {checks: number, rides: number, scans: number, scanMs: number, maxScanMs: number, checkMs: number, maxCheckMs: number, pendingScanMs: number, stack: string}>}
  */
 let checkStats = new Map();
 /**
@@ -36,7 +36,7 @@ const stackFrames = 12;
  * captured exactly once, here, so hot locs (millions of checks) pay the
  * `new Error()` cost a single time instead of per check.
  * @param {string} loc - String like `BoundingBox#compute`.
- * @returns {{checks: number, rides: number, scans: number, scanMs: number, maxScanMs: number, checkMs: number, maxCheckMs: number, stack: string}|undefined} The row, or undefined at the row budget.
+ * @returns {{checks: number, rides: number, scans: number, scanMs: number, maxScanMs: number, checkMs: number, maxCheckMs: number, pendingScanMs: number, stack: string}|undefined} The row, or undefined at the row budget.
  */
 function rowFor(loc) {
   let row = checkStats.get(loc);
@@ -45,7 +45,7 @@ function rowFor(loc) {
       return undefined;
     }
     const stack = captureStackLines(stackFrames).join('\n');
-    row = {checks: 0, rides: 0, scans: 0, scanMs: 0, maxScanMs: 0, checkMs: 0, maxCheckMs: 0, stack};
+    row = {checks: 0, rides: 0, scans: 0, scanMs: 0, maxScanMs: 0, checkMs: 0, maxCheckMs: 0, pendingScanMs: 0, stack};
     checkStats.set(loc, row);
   }
   return row;
@@ -53,7 +53,14 @@ function rowFor(loc) {
 /**
  * Records one top level check of a loc. Called by `inspectType` after
  * validation finished; the measured milliseconds cover the pure
- * validation work, not message building.
+ * validation work, not message building. Scans this check triggered
+ * deeper inside (nested maps) were recorded on the same row under the
+ * same loc, so the check cost takes the larger of the two readings:
+ * under a coarse clock every fast check measures 0 while its scans
+ * still accumulate real time, and reporting "108339 checks, 0us" hides
+ * the very hotspot the table exists to show. Under a fine clock the
+ * measured time already contains the scans, so it wins and nothing is
+ * counted twice.
  * @param {string} loc - String like `BoundingBox#compute`.
  * @param {number|undefined} ms - Measured duration, undefined when timing was off.
  * @example
@@ -70,11 +77,16 @@ function recordCheck(loc, ms) {
     return;
   }
   row.checks++;
-  if (typeof ms === "number" && ms >= 0) {
-    row.checkMs += ms;
-    if (row.maxCheckMs < ms) {
-      row.maxCheckMs = ms;
-    }
+  // Nested scan time already sits in this row's scan ledger: the check's
+  // own clock wrapped those scans, so the true check cost is at least
+  // the scans. Take the best available reading of that one quantity.
+  const nested = row.pendingScanMs;
+  row.pendingScanMs = 0;
+  const own = typeof ms === "number" && ms >= 0 ? ms : 0;
+  const cost = Math.max(own, nested);
+  row.checkMs += cost;
+  if (row.maxCheckMs < cost) {
+    row.maxCheckMs = cost;
   }
 }
 /**
@@ -97,7 +109,10 @@ function recordMapRide(loc) {
   row.rides++;
 }
 /**
- * Records one full map scan at a loc together with its wall time.
+ * Records one full map scan at a loc together with its wall time. The
+ * time also lands in the row's fold buffer: the enclosing top level
+ * check picks it up in `recordCheck`, so scan-heavy locs never report
+ * checks that cost nothing.
  * @param {string} loc - String like `BoundingBox#compute`.
  * @param {number|undefined} ms - Measured duration, undefined when timing was off.
  * @example
@@ -116,6 +131,7 @@ function recordMapScan(loc, ms) {
   row.scans++;
   if (typeof ms === "number" && ms >= 0) {
     row.scanMs += ms;
+    row.pendingScanMs += ms;
     if (row.maxScanMs < ms) {
       row.maxScanMs = ms;
     }
@@ -125,9 +141,9 @@ function recordMapScan(loc, ms) {
  * Snapshot of all rows, sorted by what a hotspot hunter cares about:
  * scan wall time first (the dominant cost of big maps), then top level
  * check time, then raw check counts, loc name last for stable output.
- * @returns {{loc: string, checks: number, rides: number, scans: number, scanMs: number, maxScanMs: number, checkMs: number, maxCheckMs: number, stack: string}[]} Sorted rows.
+ * @returns {{loc: string, checks: number, rides: number, scans: number, scanMs: number, maxScanMs: number, checkMs: number, maxCheckMs: number, pendingScanMs: number, stack: string}[]} Sorted rows.
  * @example
- * getCheckStats(); // [{loc, checks, rides, scans, scanMs, maxScanMs, checkMs, maxCheckMs, stack}, ...]
+ * getCheckStats(); // [{loc, checks, rides, scans, scanMs, maxScanMs, checkMs, maxCheckMs, pendingScanMs, stack}, ...]
  */
 function getCheckStats() {
   const rows = [];

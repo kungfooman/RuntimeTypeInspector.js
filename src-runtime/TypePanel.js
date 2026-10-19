@@ -189,27 +189,34 @@ function niceDiv(div) {
       font-size: 10px;
       text-align: left;
     }
-    .rti-checks-legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 2px 10px;
-      font-size: 9px;
-      font-weight: normal;
-      color: #555;
-      padding-bottom: 3px;
-    }
-    .rti-checks-legend span {
+    .rti-checks-table th[data-sort] {
+      cursor: pointer;
       white-space: nowrap;
     }
-    .rti-checks-loc-detail {
+    .rti-checks-help {
+      cursor: help;
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      line-height: 14px;
+      text-align: center;
+      border: 1px solid #999;
+      border-radius: 50%;
+      color: #555;
+      font-weight: normal;
+      margin-left: 6px;
+    }
+    .rti-checks-loc-detail td {
+      background: #f4f6fa;
+    }
+    .rti-checks-loc-detail pre {
       font-size: 9px;
       max-height: 140px;
       overflow: auto;
       white-space: pre-wrap;
-      background: #f4f6fa;
       border: 1px solid #ccd4e0;
       border-radius: 3px;
-      margin-top: 4px;
+      margin: 2px 0;
       padding: 4px 6px;
     }
     .rti-all {
@@ -604,8 +611,8 @@ const CHECKS_TITLES = [
   'Slowest single top level check at this loc.',
 ];
 /**
- * Plain English glossary under the stats header. Each item carries its
- * column name in `data-col`, so specs can find entries structurally
+ * Plain English glossary of the stats columns. The header (?) button
+ * shows these as its tooltip, so specs can find entries structurally
  * instead of pinning the sentence wording.
  * @type {[string, string][]}
  */
@@ -619,14 +626,20 @@ const CHECKS_LEGEND = [
   ['Check ms', 'wall time of the check itself (validation only, messages excluded)'],
 ];
 /**
- * How many hotspot rows the panel renders before folding the rest into a
- * trailer row; 200 covers honest projects while keeping rebuilds cheap.
- * @type {number}
+ * Sort key of the Skipped % column: the ride share, or -1 when a row has
+ * no map activity at all, so activity-free rows sink below every real
+ * ratio instead of dividing by zero.
+ * @param {{rides: number, scans: number}} row - Stats row.
+ * @returns {number} Ride share in [0, 1], or -1 without map activity.
  */
-const CHECKS_ROWS_SHOWN = 200;
+function skipRatio(row) {
+  return row.rides + row.scans === 0 ? -1 : row.rides / (row.rides + row.scans);
+}
 /**
  * Builds the (empty) check stats table: a header row only, rows stream in
- * via `updateCheckStats`. Returns null outside a DOM, like `createTable`.
+ * via `updateCheckStats`. Header cells sort on click and explain their
+ * column on hover, so every number is both explorable and accountable.
+ * Returns null outside a DOM, like `createTable`.
  * @returns {*} The table node, or null.
  */
 function createChecksTable() {
@@ -634,19 +647,75 @@ function createChecksTable() {
     return null;
   }
   return Table({className: 'rti-checks-table'},
-               Tr({}, ...CHECKS_HEADS.map((_, i) => Th({textContent: _, title: CHECKS_TITLES[i]}))));
+               Tr({}, ...CHECKS_HEADS.map((_, i) => Th({textContent: _, title: CHECKS_TITLES[i], dataset: {sort: String(i)}}))));
 }
 /**
- * Glossary row under the stats header: one `span[data-col]` per column so
- * "Rides" and friends explain themselves without a manual.
- * @returns {*} The legend node, or null outside a DOM.
+ * Glossary (?) button for the stats header: the whole column glossary
+ * lives in one tooltip instead of a wall of tiny text under the header.
+ * @returns {*} The help node, or null outside a DOM.
  */
-function createChecksLegend() {
+function createChecksHelp() {
   if (typeof document === 'undefined') {
     return null;
   }
-  const items = CHECKS_LEGEND.map(([col, desc]) => Span({dataset: {col}, title: desc}, `${col}: ${desc}`));
-  return Div({className: 'rti-checks-legend'}, ...items);
+  const text = CHECKS_LEGEND.map(([col, desc]) => `${col}: ${desc}`).join('\n');
+  return Span({className: 'rti-checks-help', dataset: {help: 'columns'}, title: text}, '?');
+}
+/**
+ * Pre-maximize inline geometry per window element: the shared maximize
+ * core stashes here, so every window (panel, stats, compare) restores
+ * exactly what it had without each keeping its own stash field.
+ * @type {WeakMap<HTMLElement, object>}
+ */
+const maxGeoStore = new WeakMap();
+/**
+ * Maximizes a window to fill the viewport, or restores its stashed
+ * size/position when already maximized. The one piece of window chrome
+ * every window shares: panel, stats and compare all delegate here, so a
+ * new window cannot forget maximize (or restore it wrong). Callers keep
+ * only their own extras around it (container positioning, focus).
+ * Minimized windows must be restored before toggling; the helper does
+ * not second-guess the caller's visibility state.
+ * @param {HTMLElement} el - The window element to maximize or restore.
+ * @param {*} [btn] - Caption button whose glyph flips between maximize/restore.
+ * @returns {boolean} True when the window is maximized now.
+ */
+function toggleWindowMaximize(el, btn) {
+  if (el.dataset.maximized === 'true') {
+    const saved = maxGeoStore.get(el);
+    if (saved) {
+      Object.assign(el.style, saved);
+    }
+    maxGeoStore.delete(el);
+    delete el.dataset.maximized;
+    el.classList.remove('rti-maximized');
+    if (btn) {
+      btn.textContent = '□';
+      btn.title = 'Maximize';
+    }
+    return false;
+  }
+  maxGeoStore.set(el, {
+    left: el.style.left,
+    top: el.style.top,
+    width: el.style.width,
+    height: el.style.height,
+    maxWidth: el.style.maxWidth,
+    maxHeight: el.style.maxHeight,
+  });
+  el.dataset.maximized = 'true';
+  el.classList.add('rti-maximized');
+  el.style.left = '8px';
+  el.style.top = '8px';
+  el.style.width = 'calc(100vw - 16px)';
+  el.style.height = 'calc(100vh - 16px)';
+  el.style.maxWidth = 'none';
+  el.style.maxHeight = 'none';
+  if (btn) {
+    btn.textContent = '❐';
+    btn.title = 'Restore';
+  }
+  return true;
 }
 function isEnabled() {
   const tmp = localStorage.getItem('rti-enabled');
@@ -793,7 +862,7 @@ class TypePanel {
   popoutWin = null;
   /** @type {object | null} */
   panelMaxGeo = null;
-  /** @type {Map<string, {el: HTMLDivElement, titlebar: HTMLDivElement, btnMax: HTMLButtonElement, minimized: boolean, prevGeo: object | null}>} */
+  /** @type {Map<string, {el: HTMLDivElement, titlebar: HTMLDivElement, btnMax: HTMLButtonElement, minimized: boolean}>} */
   compareWins = new Map();
   /** @type {string[]} */
   compareFocus = [];
@@ -997,20 +1066,25 @@ class TypePanel {
     // error arrivals), never on a timer, so idle pages stay idle.
     this.buttonResetCheckStats = Button({textContent: 'Reset stats', title: 'Forget all recorded check statistics', onclick: () => {
       resetCheckStats();
+      this.hideLocDetail();
       this.updateCheckStats();
     }});
     this.buttonRefreshCheckStats = Button({textContent: 'Refresh stats', title: 'Re-read the latest check statistics', onclick: () => this.updateCheckStats()});
     this.checksTable = createChecksTable();
-    this.checksLegend = createChecksLegend();
-    // Per loc detail: clicking a loc button fills this pane with the call
-    // stack captured when that loc's row was born, so "where is this?"
-    // has an answer inside the panel instead of only in the console.
-    this.checksLocDetail = Pre({className: 'rti-checks-loc-detail', style: {display: 'none'}});
+    this.checksHelp = createChecksHelp();
+    // Sort state of the stats table: which column, and which direction.
+    // Starts on total scan time descending, the hotspot view.
+    this.checksSort = {col: 5, desc: true};
+    // Inline call stack: clicking a loc inserts a detail row right under
+    // it, so the answer appears where the user looks instead of at the
+    // bottom of the window. One open at a time, tracked by loc.
+    this.checksDetailLoc = null;
     this.checksHead = Div({className: 'rti-checks-head'},
                           Span({innerText: 'Check stats (hotspots by scan cost)'}),
+                          this.checksHelp,
                           this.buttonRefreshCheckStats, this.buttonResetCheckStats);
     this.checksWrap = Div({className: 'rti-checks'},
-                          this.checksHead, this.checksLegend, this.checksTable, this.checksLocDetail);
+                          this.checksHead, this.checksTable);
     this.statsWin = null;
     this.statsWinHidden = true;
     // Mini taskbar (our stand-in for the missing OS taskbar): the panel is
@@ -1175,18 +1249,22 @@ class TypePanel {
     this.refreshCompareTaskbar();
   }
   /**
-   * Builds the floating stats window on demand: a plain draggable box
-   * holding the hotspot table, appended to the panel container but hidden
-   * until the toolbar Stats button opens it.
+   * Builds the floating stats window on demand: the same caption row as
+   * every other window (`_` hides to the Stats button, `□` maximizes via
+   * the shared core, `×` closes), holding the hotspot table, appended to
+   * the panel container but hidden until the toolbar Stats button opens
+   * it.
    */
   buildStatsWindow() {
     if (this.statsWin) {
       return;
     }
+    const btnMin = Button({textContent: '_', title: 'Hide to the Stats button', onclick: () => this.hideStatsWin()});
+    const btnMax = Button({textContent: '□', title: 'Maximize', onclick: () => this.toggleStatsMaximize()});
     const closeBtn = Button({textContent: '×', title: 'Close', onclick: () => this.hideStatsWin()});
     const titlebar = Div({className: 'rti-titlebar', title: 'Drag to move'},
                          Span({className: 'rti-title', textContent: 'Check stats'}),
-                         Div({className: 'rti-caption'}, closeBtn));
+                         Div({className: 'rti-caption'}, btnMin, btnMax, closeBtn));
     const el = Div({className: 'rti-stats-win'},
                    titlebar,
                    Div({className: 'rti-body'}, this.checksWrap));
@@ -1195,12 +1273,26 @@ class TypePanel {
     el.style.top = '60px';
     el.style.left = '60px';
     this.statsWin = el;
-    this.makeDraggable(titlebar, el, () => {}, () => false);
-    for (const dir of ['e', 's', 'se']) {
+    this.statsWinBtnMax = btnMax;
+    this.makeDraggable(titlebar, el,
+                       () => this.toggleStatsMaximize(),
+                       () => el.dataset?.maximized === 'true');
+    for (const dir of ['n', 'e', 's', 'w', 'ne', 'nw', 'se', 'sw']) {
       const handle = Div({className: `rti-handle rti-handle-${dir}`, dataset: {dir}});
       el.append(handle);
       this.makeResizable(handle, dir, el, el, () => {});
     }
+  }
+  /**
+   * Maximizes the stats window via the shared core, or restores it.
+   * Focus follows, like the compare windows.
+   */
+  toggleStatsMaximize() {
+    if (!this.statsWin) {
+      return;
+    }
+    toggleWindowMaximize(this.statsWin, this.statsWinBtnMax);
+    this.frontStatsWin();
   }
   /**
    * Taskbar entry for the panel: hidden shows it, inactive fronts it,
@@ -1636,9 +1728,9 @@ class TypePanel {
   }
   /**
    * Maximizes the panel to fill the viewport, or restores the last saved
-   * size/position when already maximized. The pre-maximize geometry is
-   * stashed on the instance (like the pop-out styles), so restore brings
-   * back exactly the window that was maximized.
+   * size/position when already maximized. The window geometry itself goes
+   * through the shared core; only the outer container positioning stays
+   * panel-specific, stashed on the instance like before.
    */
   togglePanelMaximize() {
     const {div} = this;
@@ -1649,8 +1741,6 @@ class TypePanel {
     if (div.dataset.maximized === 'true') {
       const saved = this.panelMaxGeo;
       if (saved) {
-        div.style.width = saved.width;
-        div.style.height = saved.height;
         divAll.style.left = saved.left;
         divAll.style.top = saved.top;
         divAll.style.right = saved.right;
@@ -1658,32 +1748,22 @@ class TypePanel {
         divAll.style.position = saved.position;
       }
       this.panelMaxGeo = null;
-      delete div.dataset.maximized;
-      div.classList.remove('rti-maximized');
-      this.buttonMaximize.textContent = '□';
-      this.buttonMaximize.title = 'Maximize';
+      toggleWindowMaximize(div, this.buttonMaximize);
       return;
     }
     this.panelMaxGeo = {
-      width: div.style.width,
-      height: div.style.height,
       left: divAll.style.left,
       top: divAll.style.top,
       right: divAll.style.right,
       bottom: divAll.style.bottom,
       position: divAll.style.position,
     };
-    div.dataset.maximized = 'true';
-    div.classList.add('rti-maximized');
+    toggleWindowMaximize(div, this.buttonMaximize);
     divAll.style.position = 'fixed';
     divAll.style.left = '8px';
     divAll.style.top = '8px';
     divAll.style.right = 'auto';
     divAll.style.bottom = 'auto';
-    div.style.width = 'calc(100vw - 16px)';
-    div.style.height = 'calc(100vh - 16px)';
-    this.buttonMaximize.textContent = '❐';
-    this.buttonMaximize.title = 'Restore';
     this.frontPanel();
   }
   /**
@@ -2034,7 +2114,7 @@ class TypePanel {
     // No per-element focus listener: document-capture (ensureFocus) fronts
     // the window even when a subtree grip stops mousedown propagation.
     hostDoc.body.append(el);
-    this.compareWins.set(key, {el, titlebar, btnMax, minimized: false, prevGeo: null});
+    this.compareWins.set(key, {el, titlebar, btnMax, minimized: false});
     this.makeDraggable(titlebar, el,
                        () => this.toggleCompareMaximize(key),
                        () => el.dataset?.maximized === 'true');
@@ -2136,6 +2216,7 @@ class TypePanel {
    * Maximizes a compare window to fill the viewport, or restores the last
    * saved size/position when already maximized. Minimized windows ignore
    * the toggle; restore brings back exactly the window that was maximized.
+   * Geometry goes through the shared core, focus stays compare-specific.
    * @param {string} key - The warning key.
    */
   toggleCompareMaximize(key) {
@@ -2143,34 +2224,7 @@ class TypePanel {
     if (!win || win.minimized) {
       return;
     }
-    const {el, btnMax} = win;
-    if (el.dataset.maximized === 'true') {
-      Object.assign(el.style, win.prevGeo);
-      win.prevGeo = null;
-      delete el.dataset.maximized;
-      el.classList.remove('rti-maximized');
-      btnMax.textContent = '□';
-      btnMax.title = 'Maximize';
-      return;
-    }
-    win.prevGeo = {
-      left: el.style.left,
-      top: el.style.top,
-      width: el.style.width,
-      height: el.style.height,
-      maxWidth: el.style.maxWidth,
-      maxHeight: el.style.maxHeight,
-    };
-    el.dataset.maximized = 'true';
-    el.classList.add('rti-maximized');
-    el.style.left = '8px';
-    el.style.top = '8px';
-    el.style.width = 'calc(100vw - 16px)';
-    el.style.height = 'calc(100vh - 16px)';
-    el.style.maxWidth = 'none';
-    el.style.maxHeight = 'none';
-    btnMax.textContent = '❐';
-    btnMax.title = 'Restore';
+    toggleWindowMaximize(win.el, win.btnMax);
     this.focusCompare(key);
   }
   /**
@@ -2608,10 +2662,10 @@ class TypePanel {
     location.hash = hash;
   }
   /**
-   * Rebuilds the check stats table from `getCheckStats()`: hotspot rows
-   * (sorted by scan cost) first, one trailer row folding the overflow.
-   * Called on demand (settings flips, buttons, error arrivals), never on
-   * a timer, so idle pages stay idle.
+   * Rebuilds the check stats table from `getCheckStats()`: every row,
+   * never a folded trailer, sorted by the active header (scan cost until
+   * the user picks another column). Called on demand (settings flips,
+   * buttons, error arrivals), never on a timer, so idle pages stay idle.
    * @returns {void}
    */
   updateCheckStats() {
@@ -2622,23 +2676,67 @@ class TypePanel {
     for (const row of stale) {
       row.remove();
     }
-    const rows = getCheckStats();
-    const shown = rows.slice(0, CHECKS_ROWS_SHOWN);
-    for (const row of shown) {
+    const byCol = [
+      (row) => row.loc,
+      (row) => row.checks,
+      (row) => row.rides,
+      (row) => skipRatio(row),
+      (row) => row.scans,
+      (row) => row.scanMs,
+      (row) => row.maxScanMs,
+      (row) => row.checkMs,
+      (row) => row.maxCheckMs,
+    ];
+    const rows = getCheckStats().slice();
+    const {col, desc} = this.checksSort ?? {col: 5, desc: true};
+    const key = byCol[col] ?? byCol[5];
+    rows.sort((a, b) => {
+      const ka = key(a);
+      const kb = key(b);
+      if (ka < kb) {
+        return desc ? 1 : -1;
+      }
+      if (ka > kb) {
+        return desc ? -1 : 1;
+      }
+      return a.loc < b.loc ? -1 : 1;
+    });
+    const [head] = this.checksTable.children;
+    if (head) {
+      // `children` is an HTMLCollection in real browsers (no forEach):
+      // index it, so the fake DOM's plain array keeps agreeing with it.
+      for (let i = 0; i < head.children.length; i++) {
+        const th = head.children[i];
+        // Clicking a header sorts by that column, clicking again flips
+        // the direction; the arrow shows the active column and way.
+        th.onclick = () => {
+          if (this.checksSort?.col === i) {
+            this.checksSort = {col: i, desc: !this.checksSort.desc};
+          } else {
+            this.checksSort = {col: i, desc: i !== 0};
+          }
+          this.updateCheckStats();
+        };
+        const label = CHECKS_HEADS[i] ?? '';
+        const active = this.checksSort?.col === i;
+        th.textContent = active ? `${label} ${this.checksSort.desc ? '▼' : '▲'}` : label;
+      }
+    }
+    const fmtMs = (v) => {
+      if (v <= 0) {
+        return '0µs';
+      }
+      if (v < 0.5) {
+        return (v * 1000).toFixed(1) + 'µs';
+      }
+      if (v < 10) {
+        return v.toFixed(2) + 'ms';
+      }
+      return v.toFixed(1) + 'ms';
+    };
+    for (const row of rows) {
       const skipped = row.rides + row.scans;
       const skipPct = skipped === 0 ? '—' : ((row.rides / skipped) * 100).toFixed(1) + '%';
-      const fmtMs = (v) => {
-        if (v <= 0) {
-          return '0µs';
-        }
-        if (v < 0.5) {
-          return (v * 1000).toFixed(1) + 'µs';
-        }
-        if (v < 10) {
-          return v.toFixed(2) + 'ms';
-        }
-        return v.toFixed(1) + 'ms';
-      };
       const locBtn = Button({textContent: row.loc, title: `${row.loc} (click: call stack, copy)`, onclick: () => {
         try {
           copyText(row.loc);
@@ -2665,42 +2763,28 @@ class TypePanel {
                                  Td({textContent: fmtMs(row.maxScanMs)}),
                                  Td({textContent: fmtMs(row.checkMs)}),
                                  Td({textContent: fmtMs(row.maxCheckMs)})));
+      if (this.checksDetailLoc === row.loc) {
+        this.checksTable.append(Tr({className: 'rti-checks-loc-detail'},
+                                   Td({colSpan: '9'},
+                                      Pre({textContent: `${row.loc}\n\n${row.stack || '(no call stack was captured for this loc)'}`}))));
+      }
     }
-    if (rows.length > shown.length) {
-      this.checksTable.append(Tr({}, Td({textContent: `+ ${rows.length - shown.length} more locs not shown`, colSpan: '9'})));
-    }
-    this.hideLocDetail();
   }
   /**
-   * Fills the loc detail pane with a row's call stack and reveals it, so
-   * clicking a loc answers "where does this check actually come from"
-   * inside the panel. Clicking the same loc again hides the pane.
-   * @param {{loc: string, stack?: string}} row - Stats row of the clicked loc.
+   * Toggles the inline call stack row under a loc: clicking a loc inserts
+   * its stack right where the click happened, clicking again removes it.
+   * Only one detail row is ever open, so the table cannot fill with them.
+   * @param {{loc: string}} row - Stats row of the clicked loc.
    */
   showLocDetail(row) {
-    const pre = this.checksLocDetail;
-    if (!pre) {
-      return;
-    }
-    if (pre.dataset.loc === row.loc && pre.style.display !== 'none') {
-      this.hideLocDetail();
-      return;
-    }
-    pre.dataset.loc = row.loc;
-    pre.textContent = `${row.loc}\n\n${row.stack || '(no call stack was captured for this loc)'}`;
-    pre.style.display = '';
+    this.checksDetailLoc = this.checksDetailLoc === row.loc ? null : row.loc;
+    this.updateCheckStats();
   }
   /**
-   * Hides the loc detail pane (stats rebuilds and reset start fresh).
+   * Closes the inline call stack row (stats rebuilds start fresh).
    */
   hideLocDetail() {
-    const pre = this.checksLocDetail;
-    if (!pre) {
-      return;
-    }
-    pre.textContent = '';
-    pre.style.display = 'none';
-    delete pre.dataset.loc;
+    this.checksDetailLoc = null;
   }
   updateErrorCount() {
     const {count} = options;

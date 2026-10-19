@@ -1986,7 +1986,10 @@ function testCheckStatsResetButtonEmptiesTable() {
     }
   });
 }
-function testTrailerRowFoldsRowOverflow() {
+function testAllRowsAlwaysRender() {
+  // No row is ever folded into a trailer: the table renders every loc,
+  // so a hotspot cannot hide behind a "+ N more not shown" line no user
+  // can expand.
   return withPanel((panel) => {
     resetCheckStats();
     try {
@@ -1995,7 +1998,7 @@ function testTrailerRowFoldsRowOverflow() {
       }
       panel.updateCheckStats();
       const rows = panel.checksTable.children.slice(1);
-      return rows.length === 201 && textOf(rows[rows.length - 1]).includes('5 more locs');
+      return rows.length === 205 && rows.every(_ => !textOf(_).includes('more locs'));
     } finally {
       resetCheckStats();
     }
@@ -2167,19 +2170,121 @@ function testStatsTableFormatsCompactTimes() {
     }
   });
 }
-function testStatsLegendExplainsColumns() {
-  // The raw header names ("Rides", "Skipped %") are insider jargon: the
-  // legend under the header must define every column in plain English, as
-  // span[data-col] entries a spec can find structurally.
+function testStatsRebuildToleratesRealDomChildren() {
+  // Regression: `updateCheckStats` called `head.children.forEach`, but a
+  // real browser's `children` is an HTMLCollection with no array methods,
+  // so opening Stats crashed the panel while the suite (plain arrays)
+  // stayed green. Swapping the header's children for an
+  // HTMLCollection-shaped object (indexed + length, no forEach) must
+  // still rebuild and sort.
   return withPanel((panel) => {
-    const legend = panel.checksLegend;
-    if (!legend || !panel.checksWrap.children.includes(legend)) {
+    resetCheckStats();
+    try {
+      recordCheck('Zzz#checks', 5);
+      recordMapScan('Aaa#scan-heavy', 50);
+      panel.updateCheckStats();
+      const head = panel.checksTable.children[0];
+      const cells = head.children.slice();
+      const collectionShaped = {length: cells.length};
+      cells.forEach((cell, i) => {
+        collectionShaped[i] = cell;
+      });
+      head.children = collectionShaped;
+      panel.updateCheckStats();
+      const rows = panel.checksTable.children.slice(1);
+      return rows.length === 2 && textOf(rows[0]).includes('Aaa#scan-heavy');
+    } finally {
+      resetCheckStats();
+    }
+  });
+}
+function testStatsHeadersSortOnClick() {
+  // Headers are not decoration: clicking one re-sorts the table by that
+  // column, clicking again flips the direction, and the active header
+  // carries an arrow so the order is visible, not guessed.
+  return withPanel((panel) => {
+    resetCheckStats();
+    try {
+      recordCheck('Zzz#checks', 5);
+      recordMapScan('Aaa#scan-heavy', 50);
+      recordMapScan('Bbb#scan-light', 1);
+      panel.checksSort = {col: 5, desc: true};
+      panel.updateCheckStats();
+      const head = panel.checksTable.children[0];
+      const firstByScan = textOf(panel.checksTable.children[1]).includes('Aaa#scan-heavy');
+      const scanArrow = head.children[5].textContent.includes('▼');
+      // Click Loc: alphabetical ascending.
+      head.children[0].onclick();
+      const byLoc = textOf(panel.checksTable.children[1]).includes('Aaa#scan-heavy') &&
+        textOf(panel.checksTable.children[1]) < textOf(panel.checksTable.children[2]);
+      const locArrow = panel.checksTable.children[0].children[0].textContent.includes('▲');
+      // Click Loc again: flipped to descending.
+      panel.checksTable.children[0].children[0].onclick();
+      const flipped = textOf(panel.checksTable.children[1]).includes('Zzz#checks') &&
+        panel.checksTable.children[0].children[0].textContent.includes('▼');
+      return firstByScan && scanArrow && byLoc && locArrow && flipped;
+    } finally {
+      resetCheckStats();
+      panel.checksSort = {col: 5, desc: true};
+    }
+  });
+}
+function testStatsWinMaximizesViaSharedCore() {
+  // The stats window is a real window: maximize fills the viewport and
+  // restore brings back the exact pre-maximize geometry, through the same
+  // core as the panel and compare windows.
+  return withPanel((panel) => {
+    panel.showStatsWin();
+    try {
+      const el = panel.statsWin;
+      const width = el.style.width;
+      const height = el.style.height;
+      panel.toggleStatsMaximize();
+      const maximized = el.dataset.maximized === 'true' &&
+        el.classList.contains('rti-maximized') &&
+        panel.statsWinBtnMax.textContent === '❐';
+      panel.toggleStatsMaximize();
+      const restored = el.dataset.maximized === undefined &&
+        !el.classList.contains('rti-maximized') &&
+        el.style.width === width && el.style.height === height &&
+        panel.statsWinBtnMax.textContent === '□';
+      return maximized && restored;
+    } finally {
+      panel.hideStatsWin();
+    }
+  });
+}
+function testStatsWinCaptionHasMinMaxClose() {
+  // Every window carries the same caption row: hide, maximize, close.
+  // The stats window used to ship close-only, the forgotten-feature
+  // pattern the shared core exists to kill.
+  return withPanel((panel) => {
+    panel.showStatsWin();
+    try {
+      const caption = panel.statsWin.children[0].children[1];
+      const labels = caption.children.map(_ => _.textContent);
+      return labels.join(',') === '_,□,×';
+    } finally {
+      panel.hideStatsWin();
+    }
+  });
+}
+function testStatsHelpExplainsColumns() {
+  // The raw header names ("Rides", "Skipped %") are insider jargon: one
+  // (?) next to the title must carry the whole column glossary in its
+  // tooltip, as span[data-help] a spec can find structurally, instead of
+  // a wall of tiny text under the header.
+  return withPanel((panel) => {
+    const help = panel.checksHelp;
+    if (!help || !panel.checksHead.children.includes(help)) {
       return false;
     }
-    const cols = legend.children.map(_ => _.dataset.col);
-    return cols.includes('Rides') && cols.includes('Skipped %') &&
-      cols.includes('Scans') && cols.includes('Checks') &&
-      legend.children.every(_ => typeof _.title === 'string' && _.title.length > 0);
+    if (help.dataset.help !== 'columns' || textOf(help) !== '?') {
+      return false;
+    }
+    return typeof help.title === 'string' &&
+      help.title.includes('Rides') && help.title.includes('Skipped %') &&
+      help.title.includes('Scans') && help.title.includes('Checks');
   });
 }
 function testStatsHeaderCellsCarryTooltips() {
@@ -2192,29 +2297,30 @@ function testStatsHeaderCellsCarryTooltips() {
   });
 }
 function testStatsLocClickShowsCallStack() {
-  // Clicking a loc must answer "where is this?" in the panel: the row
-  // carries the stack captured at its creation, the click reveals it, a
-  // second click hides it, and a table rebuild starts fresh.
+  // Clicking a loc must answer "where is this?" where the user looks: a
+  // detail row opens right under the clicked row, a second click closes
+  // it again, and a rebuild keeps it open (refresh must not yank away
+  // what the user just opened).
   return withPanel((panel) => {
     resetCheckStats();
     try {
-      if (!panel.checksWrap.children.includes(panel.checksLocDetail)) {
-        return false;
-      }
       recordCheck('Where#x', 1);
       panel.updateCheckStats();
       const btn = panel.checksTable.children[1].children[0].children[0];
       btn.onclick();
-      const shown = panel.checksLocDetail.style.display !== 'none' &&
-        panel.checksLocDetail.dataset.loc === 'Where#x' &&
-        panel.checksLocDetail.textContent.includes('Where#x') &&
-        panel.checksLocDetail.textContent.includes('recordCheck');
+      const detail = panel.checksTable.children[2];
+      const shown = detail.className === 'rti-checks-loc-detail' &&
+        textOf(detail).includes('Where#x') &&
+        textOf(detail).includes('recordCheck');
       btn.onclick();
-      const toggled = panel.checksLocDetail.style.display === 'none';
+      const toggled = panel.checksTable.children.length === 2;
       btn.onclick();
       panel.updateCheckStats();
-      const rebuilt = panel.checksLocDetail.style.display === 'none';
-      return shown && toggled && rebuilt;
+      const kept = panel.checksTable.children.length === 3 &&
+        panel.checksTable.children[2].className === 'rti-checks-loc-detail';
+      panel.buttonResetCheckStats.onclick();
+      const reset = panel.checksTable.children.length === 1;
+      return shown && toggled && kept && reset;
     } finally {
       resetCheckStats();
     }
@@ -2293,14 +2399,18 @@ const tests = [
   testCheckStatsCheckboxWiresOptionStorageAndWorker,
   testCheckStatsTableRendersHotspotsSorted,
   testCheckStatsResetButtonEmptiesTable,
-  testTrailerRowFoldsRowOverflow,
+  testAllRowsAlwaysRender,
   testLogMetaCarriesWindowSettings,
   testStatsWinHiddenByDefault,
   testStatsButtonSitsInToolbarAndOpensWindow,
   testStatsWinOpensPopulatesAndCloses,
   testStatsWinToggleCycles,
   testStatsLocCellIsButtonWithTitle,
-  testStatsLegendExplainsColumns,
+  testStatsHelpExplainsColumns,
+  testStatsRebuildToleratesRealDomChildren,
+  testStatsHeadersSortOnClick,
+  testStatsWinMaximizesViaSharedCore,
+  testStatsWinCaptionHasMinMaxClose,
   testStatsHeaderCellsCarryTooltips,
   testStatsLocClickShowsCallStack,
   testStatsTableShowsSkippedPercent,
