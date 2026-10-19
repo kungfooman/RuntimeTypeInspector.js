@@ -1,4 +1,6 @@
 import {recurse} from "./validators.js";
+import {options} from "./options.js";
+import {recordSetScan, nowMs} from "./checkStats.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -15,15 +17,24 @@ function validateSet(value, expect, loc, name, critical, warn, depth) {
     return false;
   }
   const {elementType} = expect;
+  // Stats only: time the walk so the hotspot table can split a loc's
+  // cost by container. One boolean read when off, no clock calls.
+  const startedMs = options.checkStats ? nowMs() : undefined;
   let i = 0;
   for (const innerValue of value) {
     const test = recurse(innerValue, elementType, loc, name, critical, warn, depth + 1);
     if (!test) {
       const info = {expect: elementType, got: innerValue};
       warn(`validateSet> invalid set member at [...${name}.values()][${i}]`, info);
+      if (startedMs !== undefined) {
+        recordSetScan(loc, nowMs() - startedMs);
+      }
       return false;
     }
     i++;
+  }
+  if (startedMs !== undefined) {
+    recordSetScan(loc, nowMs() - startedMs);
   }
   return true;
 }

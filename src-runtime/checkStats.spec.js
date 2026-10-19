@@ -1,11 +1,68 @@
 import {options} from './options.js';
-import {recordCheck, recordMapRide, recordMapScan, getCheckStats, resetCheckStats} from './checkStats.js';
+import {recordCheck, recordMapRide, recordMapScan, recordSetScan, recordArrayScan, recordObjectScan, getCheckStats, resetCheckStats} from './checkStats.js';
+import {validateType} from './validateType.js';
+import {expandType} from '../src-transpiler/expandType.js';
 /**
  * Untouched options as captured at import time, so tests can flip and
  * restore without turning suite ordering into part of the contract.
  * @type {{checkStats: boolean}}
  */
 const virgin = {checkStats: options.checkStats};
+function testKindWalksAccumulatePerKind() {
+  // Each container kind accumulates its own total and worst: Set, Array
+  // and Object walks land in separate ledgers on the same row, and kinds
+  // that never walked stay zero.
+  options.checkStats = true;
+  resetCheckStats();
+  recordSetScan('T#k', 3);
+  recordSetScan('T#k', 7);
+  recordArrayScan('T#k', 4);
+  recordObjectScan('T#k', 5);
+  const rows = getCheckStats();
+  return rows.length === 1 &&
+    rows[0].setMs === 10 && rows[0].maxSetMs === 7 && rows[0].setWalks === 2 &&
+    rows[0].arrayMs === 4 && rows[0].maxArrayMs === 4 && rows[0].arrayWalks === 1 &&
+    rows[0].objectMs === 5 && rows[0].maxObjectMs === 5 && rows[0].objectWalks === 1 &&
+    rows[0].scanMs === 0 && rows[0].scans === 0;
+}
+function testKindTimeFoldsIntoCheckTime() {
+  // A Set walk followed by a zero-measured check attributes the walk to
+  // the check (same coarse-clock contract as map scans), while a fine
+  // measured check wins without double counting.
+  options.checkStats = true;
+  resetCheckStats();
+  recordSetScan('T#fold-set', 30);
+  recordArrayScan('T#fold-set', 12);
+  recordCheck('T#fold-set', 0);
+  const coarse = getCheckStats()[0];
+  // Both walks fold into the one enclosing check: total and worst both
+  // read 42, since the check is the unit the worst is measured in.
+  const coarseOk = coarse.checkMs === 42 && coarse.maxCheckMs === 42;
+  return coarseOk;
+}
+function testValidatorsRecordTheirKind() {
+  // End to end: validating a Set, an Array and a Record through the real
+  // validators lands walk time in the matching kind ledger at the same
+  // loc, and the enclosing check (simulated here, like `inspectType`
+  // does) attributes it. Failing validations record too: the walk still
+  // cost time.
+  options.checkStats = true;
+  resetCheckStats();
+  const warn = () => undefined;
+  const setExpect = {type: 'set', elementType: 'number'};
+  const arrExpect = {type: 'array', elementType: 'number'};
+  const recExpect = expandType('Record<string, number>');
+  const setOk = validateType(new Set([1, 'x']), setExpect, 'V#kinds', 'v', true, warn, 0) === false;
+  const arrOk = validateType([1, 'x'], arrExpect, 'V#kinds', 'v', true, warn, 0) === false;
+  const recOk = validateType({a: 1, b: 'x'}, recExpect, 'V#kinds', 'v', true, warn, 0) === false;
+  recordCheck('V#kinds', 0);
+  const row = getCheckStats()[0];
+  const ok = setOk && arrOk && recOk &&
+    row.setWalks === 1 && row.arrayWalks === 1 && row.objectWalks === 1 &&
+    row.checks === 1 && row.checkMs === row.setMs + row.arrayMs + row.objectMs;
+  resetCheckStats();
+  return ok;
+}
 function testNestedScanTimeFoldsIntoCheckTime() {
   // The reported bug: a loc whose checks do their work in nested map
   // scans showed thousands of checks at "0us" check time, because every
@@ -150,6 +207,9 @@ function testStackCapturedExactlyOncePerRow() {
   return captures === 2 && getCheckStats().length === 2;
 }
 const tests = [
+  testKindWalksAccumulatePerKind,
+  testKindTimeFoldsIntoCheckTime,
+  testValidatorsRecordTheirKind,
   testNestedScanTimeFoldsIntoCheckTime,
   testRowCountsTotalsAndWorst,
   testUndefinedTimingsCountButCostNothing,

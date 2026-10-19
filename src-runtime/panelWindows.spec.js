@@ -1,6 +1,6 @@
 import {TypePanel} from './TypePanel.js';
 import {options} from './options.js';
-import {recordCheck, recordMapRide, recordMapScan, getCheckStats, resetCheckStats} from './checkStats.js';
+import {recordCheck, recordMapRide, recordMapScan, recordSetScan, recordArrayScan, recordObjectScan, getCheckStats, resetCheckStats} from './checkStats.js';
 import {reportedKeys} from './reportedKeys.js';
 import {expandType} from '../src-transpiler/expandType.js';
 import {collectFailPaths, explainMismatch} from './explainMismatch.js';
@@ -2209,6 +2209,46 @@ function testNeverRanTimeCellsShowDash() {
     }
   });
 }
+function testKindColumnsSplitContainerTime() {
+  // One column per container kind: a loc's Set, Array and Object walk
+  // time lands in its own column, sortable like the rest, while kinds
+  // that never walked show the honest dash.
+  return withPanel((panel) => {
+    resetCheckStats();
+    try {
+      recordSetScan('Kind#set', 3);
+      recordArrayScan('Kind#array', 4);
+      recordObjectScan('Kind#object', 5);
+      panel.updateCheckStats();
+      return statsCell(panel, 'Kind#set', 'setMs') === '3.00ms' &&
+        statsCell(panel, 'Kind#set', 'arrayMs') === '—' &&
+        statsCell(panel, 'Kind#array', 'arrayMs') === '4.00ms' &&
+        statsCell(panel, 'Kind#array', 'objectMs') === '—' &&
+        statsCell(panel, 'Kind#object', 'objectMs') === '5.00ms' &&
+        statsCell(panel, 'Kind#object', 'setMs') === '—';
+    } finally {
+      resetCheckStats();
+    }
+  });
+}
+function testKindColumnsSort() {
+  // The kind columns are real sort keys: sorting by Array time puts the
+  // array-heavy loc first, whatever the scan-time order says.
+  return withPanel((panel) => {
+    resetCheckStats();
+    try {
+      recordMapScan('Kind#mapheavy', 50);
+      recordArrayScan('Kind#arrayheavy', 40);
+      panel.checksSort = {id: 'arrayMs', desc: true};
+      panel.updateCheckStats();
+      const first = textOf(panel.checksTable.children[1]).includes('Kind#arrayheavy');
+      return first;
+    } finally {
+      resetCheckStats();
+      panel.checksSort = {id: 'scanMs', desc: true};
+    }
+  });
+}
 function testSkippedColumnsFollowWindowing() {
   // The Skipped columns answer a windowing question, so they only render
   // while windowing is on: with it off every value would be a confusing
@@ -2222,12 +2262,12 @@ function testSkippedColumnsFollowWindowing() {
       panel.updateCheckStats();
       const hidden = statsColIndex(panel, 'skipped') === -1 &&
         statsColIndex(panel, 'skipPct') === -1 &&
-        panel.checksTable.children[1].children.length === 7;
+        panel.checksTable.children[1].children.length === 13;
       options.windowedChecks = true;
       panel.updateCheckStats();
       const shown = statsColIndex(panel, 'skipped') !== -1 &&
         statsColIndex(panel, 'skipPct') !== -1 &&
-        panel.checksTable.children[1].children.length === 9;
+        panel.checksTable.children[1].children.length === 15;
       return hidden && shown;
     } finally {
       options.windowedChecks = prevWindowed;
@@ -2525,5 +2565,7 @@ const tests = [
   testStatsTableFormatsCompactTimes,
   testNeverRanTimeCellsShowDash,
   testSkippedColumnsFollowWindowing,
+  testKindColumnsSplitContainerTime,
+  testKindColumnsSort,
 ];
 export {tests};

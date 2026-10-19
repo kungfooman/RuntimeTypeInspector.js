@@ -8,7 +8,7 @@ import {captureStackLines} from "./captureStack.js";
  * `mapCheckWindowCap`) come from measurements instead of guesses. Every
  * row also keeps the call stack captured when the row was first created,
  * so the panel can answer "where does this loc actually live".
- * @type {Map<string, {checks: number, rides: number, scans: number, scanMs: number, maxScanMs: number, checkMs: number, maxCheckMs: number, pendingScanMs: number, stack: string}>}
+ * @type {Map<string, {checks: number, rides: number, scans: number, scanMs: number, maxScanMs: number, setMs: number, maxSetMs: number, setWalks: number, arrayMs: number, maxArrayMs: number, arrayWalks: number, objectMs: number, maxObjectMs: number, objectWalks: number, checkMs: number, maxCheckMs: number, pendingScanMs: number, stack: string}>}
  */
 let checkStats = new Map();
 /**
@@ -36,7 +36,7 @@ const stackFrames = 12;
  * captured exactly once, here, so hot locs (millions of checks) pay the
  * `new Error()` cost a single time instead of per check.
  * @param {string} loc - String like `BoundingBox#compute`.
- * @returns {{checks: number, rides: number, scans: number, scanMs: number, maxScanMs: number, checkMs: number, maxCheckMs: number, pendingScanMs: number, stack: string}|undefined} The row, or undefined at the row budget.
+ * @returns {{checks: number, rides: number, scans: number, scanMs: number, maxScanMs: number, setMs: number, maxSetMs: number, setWalks: number, arrayMs: number, maxArrayMs: number, arrayWalks: number, objectMs: number, maxObjectMs: number, objectWalks: number, checkMs: number, maxCheckMs: number, pendingScanMs: number, stack: string}|undefined} The row, or undefined at the row budget.
  */
 function rowFor(loc) {
   let row = checkStats.get(loc);
@@ -45,7 +45,7 @@ function rowFor(loc) {
       return undefined;
     }
     const stack = captureStackLines(stackFrames).join('\n');
-    row = {checks: 0, rides: 0, scans: 0, scanMs: 0, maxScanMs: 0, checkMs: 0, maxCheckMs: 0, pendingScanMs: 0, stack};
+    row = {checks: 0, rides: 0, scans: 0, scanMs: 0, maxScanMs: 0, setMs: 0, maxSetMs: 0, setWalks: 0, arrayMs: 0, maxArrayMs: 0, arrayWalks: 0, objectMs: 0, maxObjectMs: 0, objectWalks: 0, checkMs: 0, maxCheckMs: 0, pendingScanMs: 0, stack};
     checkStats.set(loc, row);
   }
   return row;
@@ -138,12 +138,97 @@ function recordMapScan(loc, ms) {
   }
 }
 /**
+ * Records one full `Set` walk at a loc together with its wall time. The
+ * time also lands in the row's fold buffer: the enclosing top level
+ * check picks it up in `recordCheck`, so set-heavy locs never report
+ * checks that cost nothing.
+ * @param {string} loc - String like `BoundingBox#compute`.
+ * @param {number|undefined} ms - Measured duration, undefined when timing was off.
+ * @example
+ * options.checkStats = true;
+ * recordSetScan("T#m", 0.25);
+ * getCheckStats()[0].setMs; // 0.25
+ */
+function recordSetScan(loc, ms) {
+  if (!options.checkStats) {
+    return;
+  }
+  const row = rowFor(loc);
+  if (row === undefined) {
+    return;
+  }
+  row.setWalks++;
+  if (typeof ms === "number" && ms >= 0) {
+    row.setMs += ms;
+    row.pendingScanMs += ms;
+    if (row.maxSetMs < ms) {
+      row.maxSetMs = ms;
+    }
+  }
+}
+/**
+ * Records one full `Array` (or array-like) walk at a loc together with
+ * its wall time. Same fold contract as `recordSetScan`: the enclosing
+ * check attributes the time.
+ * @param {string} loc - String like `BoundingBox#compute`.
+ * @param {number|undefined} ms - Measured duration, undefined when timing was off.
+ * @example
+ * options.checkStats = true;
+ * recordArrayScan("T#m", 0.25);
+ * getCheckStats()[0].arrayMs; // 0.25
+ */
+function recordArrayScan(loc, ms) {
+  if (!options.checkStats) {
+    return;
+  }
+  const row = rowFor(loc);
+  if (row === undefined) {
+    return;
+  }
+  row.arrayWalks++;
+  if (typeof ms === "number" && ms >= 0) {
+    row.arrayMs += ms;
+    row.pendingScanMs += ms;
+    if (row.maxArrayMs < ms) {
+      row.maxArrayMs = ms;
+    }
+  }
+}
+/**
+ * Records one plain object key walk at a loc together with its wall
+ * time. Same fold contract as `recordSetScan`: the enclosing check
+ * attributes the time.
+ * @param {string} loc - String like `BoundingBox#compute`.
+ * @param {number|undefined} ms - Measured duration, undefined when timing was off.
+ * @example
+ * options.checkStats = true;
+ * recordObjectScan("T#m", 0.25);
+ * getCheckStats()[0].objectMs; // 0.25
+ */
+function recordObjectScan(loc, ms) {
+  if (!options.checkStats) {
+    return;
+  }
+  const row = rowFor(loc);
+  if (row === undefined) {
+    return;
+  }
+  row.objectWalks++;
+  if (typeof ms === "number" && ms >= 0) {
+    row.objectMs += ms;
+    row.pendingScanMs += ms;
+    if (row.maxObjectMs < ms) {
+      row.maxObjectMs = ms;
+    }
+  }
+}
+/**
  * Snapshot of all rows, sorted by what a hotspot hunter cares about:
  * scan wall time first (the dominant cost of big maps), then top level
  * check time, then raw check counts, loc name last for stable output.
- * @returns {{loc: string, checks: number, rides: number, scans: number, scanMs: number, maxScanMs: number, checkMs: number, maxCheckMs: number, pendingScanMs: number, stack: string}[]} Sorted rows.
+ * @returns {{loc: string, checks: number, rides: number, scans: number, scanMs: number, maxScanMs: number, setMs: number, maxSetMs: number, setWalks: number, arrayMs: number, maxArrayMs: number, arrayWalks: number, objectMs: number, maxObjectMs: number, objectWalks: number, checkMs: number, maxCheckMs: number, pendingScanMs: number, stack: string}[]} Sorted rows.
  * @example
- * getCheckStats(); // [{loc, checks, rides, scans, scanMs, maxScanMs, checkMs, maxCheckMs, pendingScanMs, stack}, ...]
+ * getCheckStats(); // [{loc, checks, rides, scans, scanMs, maxScanMs, setMs, ..., checkMs, maxCheckMs, pendingScanMs, stack}, ...]
  */
 function getCheckStats() {
   const rows = [];
@@ -163,4 +248,4 @@ function getCheckStats() {
 function resetCheckStats() {
   checkStats = new Map();
 }
-export {checkStats, recordCheck, recordMapRide, recordMapScan, getCheckStats, resetCheckStats, nowMs};
+export {checkStats, recordCheck, recordMapRide, recordMapScan, recordSetScan, recordArrayScan, recordObjectScan, getCheckStats, resetCheckStats, nowMs};

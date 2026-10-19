@@ -587,15 +587,45 @@ function niceDiv(div) {
  */
 const CHECKS_COLS = [
   {id: 'loc', head: 'Loc', title: 'Call site (class#method or function). Click a loc to see the call stack captured for it.', get: (row) => row.loc},
-  {id: 'checks', head: 'Checks', title: 'How many times this call site was checked.', get: (row) => row.checks},
+  {id: 'checks', head: 'Checks', title: 'How many times this call site was checked. One check validates one value; only Map, Set, Array and object walks add inner cost, split out right of here.', get: (row) => row.checks},
   {id: 'skipped', head: 'Skipped', title: 'Checks skipped without scanning: the map was unchanged and inside its rescan window.', windowed: true, get: (row) => row.rides},
   {id: 'skipPct', head: 'Skipped %', title: 'Share of map checks skipped instead of scanned. The dash means no map checks ran here.', windowed: true, get: (row) => skipRatio(row)},
-  {id: 'scans', head: 'Full scans', title: 'Full map validations that actually ran over every entry.', get: (row) => row.scans},
-  {id: 'scanMs', head: 'Scan time', title: 'Total wall time in full scans. 0us means below what the clock can see, not broken; the slowest column bounds it.', get: (row) => row.scanMs},
-  {id: 'maxScanMs', head: 'Slowest scan', title: 'Slowest single full scan.', get: (row) => row.maxScanMs},
-  {id: 'checkMs', head: 'Check time', title: 'Total wall time checking this call site, nested scans included.', get: (row) => row.checkMs},
+  {id: 'scans', head: 'Map scans', title: 'Full map validations that actually ran over every entry. Only Map arguments scan; everything else validates a single value.', get: (row) => row.scans},
+  {id: 'scanMs', head: 'Map time', title: 'Total wall time in full map scans. Only Map arguments produce this; the Set, Array and Object columns split out the rest.', get: (row) => row.scanMs},
+  {id: 'maxScanMs', head: 'Slowest map scan', title: 'Slowest single full map scan.', get: (row) => row.maxScanMs},
+  {id: 'setMs', head: 'Set time', title: 'Total wall time walking Set members at this call site.', get: (row) => row.setMs},
+  {id: 'maxSetMs', head: 'Slowest set walk', title: 'Slowest single Set walk.', get: (row) => row.maxSetMs},
+  {id: 'arrayMs', head: 'Array time', title: 'Total wall time walking Array elements at this call site.', get: (row) => row.arrayMs},
+  {id: 'maxArrayMs', head: 'Slowest array walk', title: 'Slowest single Array walk.', get: (row) => row.maxArrayMs},
+  {id: 'objectMs', head: 'Object time', title: 'Total wall time walking plain object keys at this call site.', get: (row) => row.objectMs},
+  {id: 'maxObjectMs', head: 'Slowest object walk', title: 'Slowest single object key walk.', get: (row) => row.maxObjectMs},
+  {id: 'checkMs', head: 'Check time', title: 'Total wall time checking this call site, container walks included. Never below the sum of the kind columns.', get: (row) => row.checkMs},
   {id: 'maxCheckMs', head: 'Slowest check', title: 'Slowest single check.', get: (row) => row.maxCheckMs},
 ];
+/**
+ * Whether a time column's own counter ran at all: check columns key off
+ * checks, map columns off scans, each kind column off its own walk
+ * count. Drives the honest dash (no data) versus "0µs" (measured
+ * nothing) distinction in the stats table.
+ * @param {string} id - Column id from `CHECKS_COLS`.
+ * @param {{checks: number, scans: number, setWalks: number, arrayWalks: number, objectWalks: number}} row - Stats row.
+ * @returns {boolean} True when the column's counter ran.
+ */
+function checkTimeRan(id, row) {
+  if (id === 'checkMs' || id === 'maxCheckMs') {
+    return row.checks > 0;
+  }
+  if (id === 'setMs' || id === 'maxSetMs') {
+    return row.setWalks > 0;
+  }
+  if (id === 'arrayMs' || id === 'maxArrayMs') {
+    return row.arrayWalks > 0;
+  }
+  if (id === 'objectMs' || id === 'maxObjectMs') {
+    return row.objectWalks > 0;
+  }
+  return row.scans > 0;
+}
 /**
  * Sort key of the Skipped % column: the ride share, or -1 when a row has
  * no map activity at all, so activity-free rows sink below every real
@@ -2724,8 +2754,9 @@ class TypePanel {
           // Honest zeros: a time cell is only "0µs" when its own counter
           // ran but measured nothing. When the counter never ran, the
           // dash says "no data" instead of pretending a measurement.
-          const ran = col.id === 'checkMs' || col.id === 'maxCheckMs' ? row.checks > 0 : row.scans > 0;
-          if (!ran) {
+          // Map columns key off scans, check columns off checks, and each
+          // kind column off its own walk count.
+          if (!checkTimeRan(col.id, row)) {
             return Td({textContent: '—'});
           }
           if (v <= 0) {
