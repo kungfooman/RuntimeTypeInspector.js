@@ -1,4 +1,4 @@
-import {options} from './options.js';
+import {options} from '../options.js';
 import {windowCap} from './windowCap.js';
 function testCapPassesThrough() {
   // A sane cap comes back unchanged, so normal tuning just works.

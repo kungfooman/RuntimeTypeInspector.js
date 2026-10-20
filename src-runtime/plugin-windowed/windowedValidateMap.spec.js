@@ -1,9 +1,9 @@
-import './validateType.js';
-import {options, setOptions} from './options.js';
-import {validateMap} from './validateMap.js';
-import {validators} from './validators.js';
+import '../validateType.js';
+import {options, setOptions} from '../options.js';
+import {validateMap} from '../validateMap.js';
+import {validators} from '../validators.js';
 import {windowedValidateMap, mapCheckWindowRecord, resetMapCheckWindows} from './windowedValidateMap.js';
-import {recordCheck, recordMapScan, getCheckStats, resetCheckStats} from './checkStats.js';
+import {recordCheck, recordMapScan, getCheckStats, resetCheckStats} from '../checkStats.js';
 /**
  * The options untouched by any test logic: every behavior test opts in
  * or out via `setOptions({windowedChecks})` explicitly after starting,
@@ -285,6 +285,7 @@ function testWindowsSpeedupRatio() {
   const rideOnce = () => validators.validateMap(map, expect, 'RatioTest#check', 'mapProperty', true, warn, 0);
   const windowedUs = perCheckUs(rideOnce, 4096);
   setOptions({windowedChecks: false});
+  options.mapCheckWindowMinTotalMs = virginMapCheckWindowMinTotalMs;
   const demanded = 100;
   const sanity = 20000;
   const actual = Math.round(forcedScanUs / windowedUs);
@@ -384,7 +385,6 @@ function testMapCheckWindowCapIsOptionAndLiveEditable() {
   // at that interval (bounded detection latency), and lowering it
   // mid-flight applies at the next doubling without a reset or reload.
   setOptions({windowedChecks: true});
-  options.mapCheckWindowMinTotalMs = 0; // budget 0 so the scan/ride oscillation this comment describes actually happens
   options.mapCheckWindowCap = 2;
   resetMapCheckWindows();
   const map = new Map([[1, 'a']]);

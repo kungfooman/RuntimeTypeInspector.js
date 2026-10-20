@@ -1,9 +1,9 @@
-import './validateType.js';
-import {validators} from './validators.js';
-import {validateArray} from './validateArray.js';
+import '../validateType.js';
+import {validators} from '../validators.js';
+import {validateArray} from '../validateArray.js';
 import {installWalkTimers, resetWalkTimers, wrapWithWalkTimer} from './installWalkTimers.js';
-import {recordArrayScan, getCheckStats, resetCheckStats} from './checkStats.js';
-import {options, setOptions} from './options.js';
+import {recordArrayScan, getCheckStats, resetCheckStats} from '../checkStats.js';
+import {options, setOptions} from '../options.js';
 const virginCheckStats = options.checkStats;
 function testWrapDelegatesVerdict() {
   // The wrapper preserves the core verdict for good and bad input, and

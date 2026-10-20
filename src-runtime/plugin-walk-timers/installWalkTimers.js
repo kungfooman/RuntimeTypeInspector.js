@@ -1,6 +1,6 @@
-import {validators} from "./validators.js";
-import {options} from "./options.js";
-import {recordArrayScan, recordSetScan, recordObjectScan} from "./checkStats.js";
+import {validators} from "../validators.js";
+import {options} from "../options.js";
+import {recordArrayScan, recordSetScan, recordObjectScan} from "../checkStats.js";
 import {timeWalk} from "./timeWalk.js";
 /**
  * Wraps one container validator with walk timing: the wrapper builds a

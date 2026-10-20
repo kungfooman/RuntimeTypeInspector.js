@@ -1,6 +1,6 @@
 import {timeWalk} from './timeWalk.js';
-import {recordArrayScan, recordCheck, getCheckStats, resetCheckStats} from './checkStats.js';
-import {options} from './options.js';
+import {recordArrayScan, recordCheck, getCheckStats, resetCheckStats} from '../checkStats.js';
+import {options} from '../options.js';
 const virginCheckStats = options.checkStats;
 function testOffIsPassthrough() {
   // Stats off: one boolean read, no clock calls, verdict untouched, no

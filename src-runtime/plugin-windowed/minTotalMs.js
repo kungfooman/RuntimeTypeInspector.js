@@ -1,4 +1,4 @@
-import {options} from "./options.js";
+import {options} from "../options.js";
 /**
  * Fetches the live scan spend budget (see
  * `options.mapCheckWindowMinTotalMs`), where an unusable value (NaN or

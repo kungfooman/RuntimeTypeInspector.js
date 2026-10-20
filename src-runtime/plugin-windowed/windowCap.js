@@ -1,4 +1,4 @@
-import {options} from "./options.js";
+import {options} from "../options.js";
 /**
  * Fetches the live window cap, floored to a sane positive integer so a
  * panel input or misconfigured `setOptions` cannot stall the doubling

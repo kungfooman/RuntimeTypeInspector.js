@@ -1,5 +1,5 @@
-import {options} from "./options.js";
-import {nowMs} from "./checkStats.js";
+import {options} from "../options.js";
+import {nowMs} from "../checkStats.js";
 /**
  * Builds the walk timer for a container validator: times the element or
  * key walk so the hotspot table can split a loc's cost by container, and

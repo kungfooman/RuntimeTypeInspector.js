@@ -1,4 +1,4 @@
-import {options} from './options.js';
+import {options} from '../options.js';
 import {minTotalMs} from './minTotalMs.js';
 function testBudgetPassesThrough() {
   // A positive budget comes back unchanged, so normal tuning just works.

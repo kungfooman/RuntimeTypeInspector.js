@@ -1,6 +1,6 @@
-import {recurse} from "./validators.js";
-import {formatMapKey} from "./formatMapKey.js";
-import {firstBadEntry} from "./firstBadEntry.js";
+import {recurse} from "../validators.js";
+import {formatMapKey} from "../formatMapKey.js";
+import {firstBadEntry} from "../firstBadEntry.js";
 /**
  * Scans every entry of a map and reports the verdict, writing nothing:
  * no window history, no spend, no stats. Policy (doubling, gating,

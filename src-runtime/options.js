@@ -74,31 +74,6 @@ const options = {
    */
   windowedChecks: false,
   /**
-   * Scan time budget (in milliseconds) a map must accumulate before its
-   * checks may ride rescan windows when `windowedChecks` is true: every
-   * full scan adds its wall time to the map's running total, and only
-   * once the total reaches this budget do checks start skipping. Cheap
-   * maps never get there, so they keep validating every check, while a
-   * map that already cost real time amortizes from then on. Content
-   * changes restart the total (the spend validated the old content),
-   * and lowering the budget to `0` restores ride-always behavior.
-   * Editable live, like `mapCheckWindowCap`.
-   * @type {number}
-   */
-  mapCheckWindowMinTotalMs: 100,
-  /**
-   * Largest interval the doubling map rescan scheme may reach when
-   * `windowedChecks` is true. A small cap bounds the detection latency
-   * for persistent drift (at most one window of checks passes before a
-   * rescan reports it) at the price of more frequent scans; a large cap
-   * amortizes scan cost further but staleness grows with it. Editable
-   * live, so a hotspot found via the panel's check stats can be
-   * retuned without a reload. Applies to maps today, like
-   * `windowedChecks`.
-   * @type {number}
-   */
-  mapCheckWindowCap: 1024,
-  /**
    * When `true` (default), RTI records per call site check statistics:
    * how often each `loc` was validated, how many map window rides and
    * full scans happened, and the wall time scans and top level checks
@@ -113,7 +88,17 @@ const options = {
 };
 import {validators} from "./validators.js";
 import {validateMap} from "./validateMap.js";
-import {windowedValidateMap} from "./windowedValidateMap.js";
+import {windowedValidateMap} from "./plugin-windowed/windowedValidateMap.js";
+import {windowedOptions} from "./plugin-windowed/windowedOptions.js";
+/**
+ * The windowing plugin owns its option keys (see
+ * `plugin-windowed/windowedOptions.js`): they are spliced into the
+ * shared object here, so panels, workers and `setOptions` keep reading
+ * and writing the same `options` object with no changes on their side.
+ * The plugin options module imports nothing, so the splice adds no new
+ * module cycle.
+ */
+Object.assign(options, windowedOptions);
 /**
  * Patches RTI's runtime options from a consumer (engine bootstrap, app
  * config). Unknown keys throw, so a typo'd option name cannot pretend
@@ -142,7 +127,7 @@ function setOptions(patch) {
   // installer at load time; disabling needs no work, each wrapper gates
   // on the flag at call time.
   if (patch.checkStats === true) {
-    import("./installWalkTimers.js").then((timers) => timers.installWalkTimers());
+    import("./plugin-walk-timers/installWalkTimers.js").then((timers) => timers.installWalkTimers());
   }
 }
 /**

@@ -1,4 +1,4 @@
-import './validateType.js';
+import '../validateType.js';
 import {scanMapEntries} from './scanMapEntries.js';
 function scan(map, key, val) {
   const messages = [];

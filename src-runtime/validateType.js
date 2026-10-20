@@ -34,7 +34,7 @@ import {validateTypedef     } from "./validateTypedef.js";
 import {validateUnion       } from "./validateUnion.js";
 import {createTypeFromIndexedAccess} from "./createTypeFromIndexedAccess.js";
 import {validators          } from "./validators.js";
-import {installWalkTimers   } from "./installWalkTimers.js";
+import {installWalkTimers   } from "./plugin-walk-timers/installWalkTimers.js";
 /**
  * Populates the dispatch table: every edge points outward from here, so the
  * module graph stays acyclic. Importing this module (or the package index)

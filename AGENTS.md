@@ -117,6 +117,16 @@ Each helper module in `src-runtime/` and `src-transpiler/` holds exactly one fun
 - Every helper module ships with a `<name>.spec.js` next to it (same style: sync boolean tests, `export const tests`, wired into `test_runtime.js`): a function lands only with a spec that fails when the function is stubbed out. Pre-existing spec-less modules are backlog, not precedent.
 - Exception: `src-runtime/jsx.js` stays whole (`genJsx`, `appendChildren` and the tag factories live together) because the factories call `appendChildren` and splitting them only trades a working module for a circular import.
 
+## Plugins
+
+Optional runtime behavior ships as plugins, one folder per plugin at `src-runtime/plugin-<name>/` (e.g. `plugin-windowed/`, `plugin-walk-timers/`). A plugin folder holds the plugin entry, its private helpers, and each module's `<name>.spec.js` next to it; only genuinely shared infrastructure (`options.js`, `checkStats.js`, `validators.js`, the core validators) stays in the root. A plugin owns the option keys it introduces: it exports them as one plain data object that the root `options.js` splices into the shared object with `Object.assign`, so panels, workers and `setOptions` keep reading and writing the same `options` object with no changes on their side.
+- Each plugin folder carries an `index.js` barrel of pure `export *` lines (same pattern as the package index), and the package index re-exports the barrel instead of the individual modules. Barrels hold no behavior.
+- Plugin barrel exports must never collide: `export *` resolves a name clash by silently dropping the name from the namespace, so a collision is a quiet API loss with no error anywhere. When a plugin export would share a name with any other barrel export, rename it with the plugin prefix first (a windowing hook is `mapCheckWindowRecord`, never bare `record`). Re-run the namespace check below whenever a plugin barrel gains an export, so the rule stays verified instead of trusted.
+
+```sh
+node --input-type=module -e "import fs from 'node:fs'; const root = await import('./src-runtime/index.js'); const missing = []; for (const d of fs.readdirSync('src-runtime', {withFileTypes: true})) { if (!d.isDirectory() || !d.name.startsWith('plugin-')) { continue; } const barrel = await import('./src-runtime/' + d.name + '/index.js'); for (const k of Object.keys(barrel)) { if (!(k in root)) { missing.push(d.name + ': ' + k); } } } if (missing.length > 0) { console.error('shadowed barrel exports: ' + missing.join(', ')); process.exit(1); } console.log('no barrel collisions'); }"
+```
+
 ## Markdown style
 
 In every Markdown file you write, never hard-wrap prose with `\n`: each paragraph is a single line and each list item is a single line — text-wrapping is the reader's job (soft-wrap), not the file's. Hard-wrapped lines force manual re-wrapping on every edit and noise up diffs. Code blocks keep their line breaks; nothing else gets any.

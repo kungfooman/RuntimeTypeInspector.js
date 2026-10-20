@@ -2,8 +2,8 @@ import {freshWindow} from "./freshWindow.js";
 import {minTotalMs} from "./minTotalMs.js";
 import {windowCap} from "./windowCap.js";
 import {scanMapEntries} from "./scanMapEntries.js";
-import {recordMapRide, recordMapScan, nowMs} from "./checkStats.js";
-import {options} from "./options.js";
+import {recordMapRide, recordMapScan, nowMs} from "../checkStats.js";
+import {options} from "../options.js";
 /**
  * Validation history per map instance, keyed by instance in a WeakMap,
  * so entries vanish with the map they describe. The module level `let`
@@ -32,7 +32,7 @@ let mapCheckWindows = new WeakMap();
  * @param {number} depth - The depth to detect recursion.
  * @returns {boolean} Boolean indicating if a type is correct.
  * @example
- * import {validators} from "./validators.js";
+ * import {validators} from "../validators.js";
  * validators.validateMap = windowedValidateMap; // opt in to rescan windows
  */
 function windowedValidateMap(value, expect, loc, name, critical, warn, depth) {
