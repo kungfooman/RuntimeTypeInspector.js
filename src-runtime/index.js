@@ -106,6 +106,7 @@ export * from './validateIndexedAccess.js';
 export * from './validateIArguments.js';
 export * from './validateKeyof.js';
 export * from './validateMap.js';
+export * from './windowedValidateMap.js';
 export * from './windowCap.js';
 export * from './minTotalMs.js';
 export * from './freshWindow.js';

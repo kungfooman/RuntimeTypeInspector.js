@@ -111,6 +111,9 @@ const options = {
    */
   checkStats: true,
 };
+import {validators} from "./validators.js";
+import {validateMap} from "./validateMap.js";
+import {windowedValidateMap} from "./windowedValidateMap.js";
 /**
  * Patches RTI's runtime options from a consumer (engine bootstrap, app
  * config). Unknown keys throw, so a typo'd option name cannot pretend
@@ -127,6 +130,12 @@ function setOptions(patch) {
     }
   }
   Object.assign(options, patch);
+  // `windowedChecks` is wiring, not branching: opting in installs the
+  // windowed map validator through the writable table, opting out
+  // restores the pedantic core. Core validators stay policy free.
+  if (Object.hasOwn(patch, 'windowedChecks')) {
+    validators.validateMap = options.windowedChecks ? windowedValidateMap : validateMap;
+  }
 }
 /**
  * Records the host project version (see `options.projectVersion`).
