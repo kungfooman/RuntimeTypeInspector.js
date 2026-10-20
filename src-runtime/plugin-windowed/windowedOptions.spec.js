@@ -9,8 +9,8 @@ function testWindowedOptionsDefaults() {
     windowedOptions.mapCheckWindowCap === 1024;
 }
 function testWindowedOptionsSplicedIntoSharedObject() {
-  // The root `options.js` splices this object into the shared options,
-  // so panels and workers read the same object. If the splice is
+  // The root `options.js` spreads this object into the shared options,
+  // so panels and workers read the same object. If the spread is
   // missing, the keys are absent from `options` and `setOptions` would
   // reject them as unknown.
   return options.windowedChecks === false &&

@@ -1,3 +1,4 @@
+import {windowedOptions} from "./plugin-windowed/windowedOptions.js";
 /**
  * @todo Move everything into TypePanel, since every panel/worker should have its own controls.
  */
@@ -52,28 +53,6 @@ const options = {
    */
   projectVersion: null,
   /**
-   * When `false` (default), every check of a `Map` argument scans the
-   * entire map: 100% pedantic, no check can hide anything between
-   * checks. When `true`, repeated checks of the same unchanged map ride
-   * doubling rescan windows: the first check scans everything, further
-   * checks ride the current interval, the interval doubles on every
-   * clean full scan and it restarts on size changes and failing scans
-   * (up to a cap of 1024 checks). This trades detection latency for
-   * throughput: persistent content mutations (stored value edits or
-   * foreign uninstrumented writes) stay unreported for at most one
-   * window, and false positives stay impossible. Consumers that
-   * revalidate an unchanged map per call (streaming loads like the
-   * PlayCanvas GSplat world state) opt in via
-   * `setOptions({windowedChecks: true})`. Applies to maps today; the
-   * intent is one switch for Set/Array windows when they exist. Rides
-   * additionally require the map to have accumulated at least
-   * `mapCheckWindowMinTotalMs` of scan time since its content last
-   * changed, so maps nobody ever spent real time scanning keep
-   * validating every check.
-   * @type {boolean}
-   */
-  windowedChecks: false,
-  /**
    * When `true` (default), RTI records per call site check statistics:
    * how often each `loc` was validated, how many map window rides and
    * full scans happened, and the wall time scans and top level checks
@@ -85,20 +64,20 @@ const options = {
    * @type {boolean}
    */
   checkStats: true,
+  /**
+   * The windowing plugin owns these keys (see
+   * `plugin-windowed/windowedOptions.js`): spreading them here keeps
+   * them in the literal's inferred shape, so checkJs follows their
+   * `@type` annotations in the normal type flow. Panels, workers and
+   * `setOptions` keep reading and writing the same `options` object
+   * with no changes on their side. The plugin options module imports
+   * nothing, so the spread adds no new module cycle.
+   */
+  ...windowedOptions,
 };
 import {validators} from "./validators.js";
 import {validateMap} from "./validateMap.js";
 import {windowedValidateMap} from "./plugin-windowed/windowedValidateMap.js";
-import {windowedOptions} from "./plugin-windowed/windowedOptions.js";
-/**
- * The windowing plugin owns its option keys (see
- * `plugin-windowed/windowedOptions.js`): they are spliced into the
- * shared object here, so panels, workers and `setOptions` keep reading
- * and writing the same `options` object with no changes on their side.
- * The plugin options module imports nothing, so the splice adds no new
- * module cycle.
- */
-Object.assign(options, windowedOptions);
 /**
  * Patches RTI's runtime options from a consumer (engine bootstrap, app
  * config). Unknown keys throw, so a typo'd option name cannot pretend

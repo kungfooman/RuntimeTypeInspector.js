@@ -1,7 +1,7 @@
 /**
- * The option keys the windowing plugin owns, spliced into the shared
+ * The option keys the windowing plugin owns, spread into the shared
  * `options` object by the root `options.js`. Plain data, no imports, so
- * the splice adds no new module cycle: panels, workers and `setOptions`
+ * the spread adds no new module cycle: panels, workers and `setOptions`
  * keep reading and writing the same object with no changes on their side.
  */
 const windowedOptions = {
