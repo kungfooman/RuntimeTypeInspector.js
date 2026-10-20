@@ -7,19 +7,30 @@ function testOffIsPassthrough() {
   // recorder invoked. The clock is hostile here (`performance.now`
   // throws), so any timing attempt fails the test: the recorder itself
   // early-returns when off, which would hide a missing gate behind an
-  // empty stats table.
+  // empty stats table. Installed with `defineProperty` instead of a
+  // plain assignment because `now` is a read-only prototype method on
+  // some runtimes (Node 18): assignment throws there, while shadowing
+  // the slot works everywhere and the captured descriptor restores it.
   options.checkStats = false;
-  const realNow = performance.now;
-  performance.now = () => {
-    throw new Error('clock must not run when stats are off');
-  };
+  const virginNow = Object.getOwnPropertyDescriptor(performance, 'now');
+  Object.defineProperty(performance, 'now', {
+    value: () => {
+      throw new Error('clock must not run when stats are off');
+    },
+    configurable: true,
+    writable: true,
+  });
   try {
     const done = timeWalk('T#x', 'items', () => {
       throw new Error('recorder must not run when stats are off');
     });
     return done(true) === true && done(false) === false;
   } finally {
-    performance.now = realNow;
+    if (virginNow === undefined) {
+      delete performance.now;
+    } else {
+      Object.defineProperty(performance, 'now', virginNow);
+    }
     options.checkStats = virginCheckStats;
   }
 }
