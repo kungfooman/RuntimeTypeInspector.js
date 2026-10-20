@@ -109,6 +109,10 @@ ASCII punctuation only: no unicode decorations (em dashes, curly quotes,
 arrows), and do not sprinkle hyphens and dashes everywhere; use normal
 sentences with regular word spacing instead.
 
+## Fail closed
+
+Safety relevant flags (option switches, validation verdicts, capability checks) must fail closed: a missing, undefined or garbage value disables the behavior, never enables it. Read a flag with plain truthiness (`if (options.checkStats)`) when it flows straight into a branch, or compare `=== true` with a short comment when the verdict is stored in a local first. Never write `options.<flag> !== false`: that reads every non-`false` value, including `undefined` from a typo or a deleted key, as on, so a broken flag silently widens validation instead of narrowing it.
+
 ## One function per file
 
 Each helper module in `src-runtime/` and `src-transpiler/` holds exactly one function, named after its file (e.g. `stripKey` lives in `src-runtime/stripKey.js`), plus only the module-local constants that function directly needs (e.g. its memoization cache). Spec files (`*.spec.js`) are exempt: they hold one test function per behavior under test.
