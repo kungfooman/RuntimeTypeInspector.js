@@ -75,7 +75,26 @@ function rowFor(loc, name) {
       return undefined;
     }
     const stack = captureStackLines(stackFrames).join('\n');
-    row = {checks: 0, rides: 0, scans: 0, scanMs: 0, maxScanMs: 0, setMs: 0, maxSetMs: 0, setWalks: 0, arrayMs: 0, maxArrayMs: 0, arrayWalks: 0, objectMs: 0, maxObjectMs: 0, objectWalks: 0, checkMs: 0, maxCheckMs: 0, pendingScanMs: 0, stack};
+    row = {
+      checks: 0,
+      rides: 0,
+      scans: 0,
+      scanMs: 0,
+      maxScanMs: 0,
+      setMs: 0,
+      maxSetMs: 0,
+      setWalks: 0,
+      arrayMs: 0,
+      maxArrayMs: 0,
+      arrayWalks: 0,
+      objectMs: 0,
+      maxObjectMs: 0,
+      objectWalks: 0,
+      checkMs: 0,
+      maxCheckMs: 0,
+      pendingScanMs: 0,
+      stack,
+    };
     checkStats.set(key, row);
   }
   return row;
@@ -273,7 +292,8 @@ function getCheckStats() {
     rows.push({loc, ...row});
   }
   const walkMs = (row) => row.scanMs + row.setMs + row.arrayMs + row.objectMs;
-  rows.sort((a, b) => walkMs(b) - walkMs(a) || b.checkMs - a.checkMs || b.checks - a.checks || (a.loc < b.loc ? -1 : 1));
+  rows.sort((a, b) => walkMs(b) - walkMs(a) || b.checkMs - a.checkMs || b.checks - a.checks ||
+    (a.loc < b.loc ? -1 : 1));
   return rows;
 }
 /**
@@ -286,4 +306,15 @@ function getCheckStats() {
 function resetCheckStats() {
   checkStats = new Map();
 }
-export {checkStats, recordCheck, recordMapRide, recordMapScan, recordSetScan, recordArrayScan, recordObjectScan, getCheckStats, resetCheckStats, nowMs};
+export {
+  checkStats,
+  recordCheck,
+  recordMapRide,
+  recordMapScan,
+  recordSetScan,
+  recordArrayScan,
+  recordObjectScan,
+  getCheckStats,
+  resetCheckStats,
+  nowMs,
+};
