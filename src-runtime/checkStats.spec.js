@@ -48,15 +48,15 @@ function testInspectTypeSplitsParams() {
   options.checkStats = true;
   resetCheckStats();
   const exprOk = inspectType('x > 0', 'string', 'E#m', 'expr');
-  const mapExpect = {type: 'map', key: 'string', val: 'string'};
-  const definesOk = inspectType(new Map([['a', 'b']]), mapExpect, 'E#m', 'defines');
+  const arrExpect = {type: 'array', elementType: 'string'};
+  const definesOk = inspectType(['a', 'b'], arrExpect, 'E#m', 'defines');
   const rows = getCheckStats();
   const expr = rows.find(_ => _.loc === 'E#m expr');
   const defines = rows.find(_ => _.loc === 'E#m defines');
   const ok = exprOk && definesOk && rows.length === 2 &&
     expr !== undefined && defines !== undefined &&
     expr.checks === 1 && expr.scans === 0 &&
-    defines.checks === 1 && defines.scans === 1;
+    defines.checks === 1 && defines.arrayWalks === 1;
   resetCheckStats();
   return ok;
 }

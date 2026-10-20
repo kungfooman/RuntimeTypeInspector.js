@@ -1,21 +1,6 @@
-import {timedScan} from "./timedScan.js";
-import {freshWindow} from "./freshWindow.js";
+import {recurse} from "./validators.js";
+import {formatMapKey} from "./formatMapKey.js";
 /**
- * Scratch record for the 100% pedantic mode, which never reads window
- * history nor scan spend. `scanAndSettle` only writes on the record, so
- * reusing a module local scratch avoids a fresh allocation per check
- * without carrying state between checks (every field it reads is
- * rewritten or discarded).
- * @type {import('./freshWindow.js').MapCheckWindow}
- */
-const scratchRecord = freshWindow();
-/**
- * Validates a `Map` argument by scanning every entry, every check: 100%
- * pedantic, no check can hide drift between checks. This is the default
- * `validators.validateMap` entry; the windowed rescan policy lives in
- * `windowedValidateMap.js` and installs through the writable
- * `validators` table (opt in via
- * `setOptions({windowedChecks: true})`).
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
  * @param {string} loc - String like `BoundingBox#compute`
@@ -31,9 +16,25 @@ function validateMap(value, expect, loc, name, critical, warn, depth) {
     warn(`validateMap> value isn't an instance of Map.`);
     return false;
   }
-  // Every check scans the entire map, so no check can hide drift
-  // between checks. The scratch record only receives writes that the
-  // caller discards, and no window history is touched.
-  return timedScan(value, scratchRecord, key, val, loc, name, critical, warn, depth);
+  for (const [k, v] of value) {
+    const nameKey = `${name}.get(${formatMapKey(k)})`;
+    if (key !== undefined) {
+      const goodKey = recurse(k, key, loc, nameKey, critical, warn, depth + 1);
+      if (!goodKey) {
+        const info = {expect: key, value: k};
+        warn(`Map key ${formatMapKey(k)} has wrong type.`, info);
+        return false;
+      }
+    }
+    if (val !== undefined) {
+      const good = recurse(v, val, loc, nameKey, critical, warn, depth + 1);
+      if (!good) {
+        const info = {expect: val, value: v};
+        warn(`Element ${nameKey} has wrong type.`, info);
+        return false;
+      }
+    }
+  }
+  return true;
 }
 export {validateMap};

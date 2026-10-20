@@ -1,7 +1,9 @@
 import {freshWindow} from "./freshWindow.js";
 import {minTotalMs} from "./minTotalMs.js";
-import {timedScan} from "./timedScan.js";
-import {recordMapRide} from "./checkStats.js";
+import {windowCap} from "./windowCap.js";
+import {scanMapEntries} from "./scanMapEntries.js";
+import {recordMapRide, recordMapScan, nowMs} from "./checkStats.js";
+import {options} from "./options.js";
 /**
  * Validation history per map instance, keyed by instance in a WeakMap,
  * so entries vanish with the map they describe. The module level `let`
@@ -68,15 +70,28 @@ function windowedValidateMap(value, expect, loc, name, critical, warn, depth) {
       }
     }
   }
-  const clean = timedScan(value, record, key, val, loc, name, critical, warn, depth);
+  // The plugin owns the window and the spend: a clean scan doubles
+  // the interval (amortized O(1) for unchanged maps), measures its wall
+  // time into the running total (the gate reads the total, even with
+  // stats off), and records the walk for the hotspot table when stats
+  // are on. A failed scan drops the interval back to the start, so
+  // dirty maps are rechecked aggressively.
+  const startedMs = options.checkStats || options.windowedChecks ? nowMs() : undefined;
+  const clean = scanMapEntries(value, key, val, loc, name, critical, warn, depth);
+  if (startedMs !== undefined) {
+    const spentMs = nowMs() - startedMs;
+    record.spentMs += spentMs;
+    recordMapScan(loc, name, spentMs);
+  }
   if (clean) {
+    record.window = Math.min(record.window * 2, windowCap());
+    record.sinceLast = 0;
+    record.lastSize = value.size;
     return true;
   }
-  // A failed scan drops the interval back to the start: dirty maps are
-  // rechecked aggressively, so code with a persistent bug is reported on
-  // every check rather than every Nth.
   record.window = 1;
   record.sinceLast = 0;
+  record.lastSize = value.size;
   return false;
 }
 /**
