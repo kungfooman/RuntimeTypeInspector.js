@@ -602,7 +602,7 @@ const CHECKS_COLS = [
  * kind, so this is usually a single name; union retries can mix kinds on
  * one row and then they all show. Keyed off walk counts, not times, so a
  * walk that ran below clock resolution still names its kind.
- * @param {{scans: number, setWalks: number, arrayWalks: number, objectWalks: number}} row - Stats row.
+ * @param {import('./checkStats.js').CheckStatsRow} row - Stats row.
  * @returns {string} Kind names joined with '+', or a dash when nothing walked.
  */
 function containerKinds(row) {
@@ -623,7 +623,7 @@ function containerKinds(row) {
 }
 /**
  * Total container walks on a row, across every kind.
- * @param {{scans: number, setWalks: number, arrayWalks: number, objectWalks: number}} row - Stats row.
+ * @param {import('./checkStats.js').CheckStatsRow} row - Stats row.
  * @returns {number} Walk count.
  */
 function containerWalks(row) {
@@ -631,7 +631,7 @@ function containerWalks(row) {
 }
 /**
  * Total container walk time on a row, across every kind.
- * @param {{scanMs: number, setMs: number, arrayMs: number, objectMs: number}} row - Stats row.
+ * @param {import('./checkStats.js').CheckStatsRow} row - Stats row.
  * @returns {number} Milliseconds.
  */
 function containerWalkMs(row) {
@@ -639,7 +639,7 @@ function containerWalkMs(row) {
 }
 /**
  * Slowest single container walk on a row, across every kind.
- * @param {{maxScanMs: number, maxSetMs: number, maxArrayMs: number, maxObjectMs: number}} row - Stats row.
+ * @param {import('./checkStats.js').CheckStatsRow} row - Stats row.
  * @returns {number} Milliseconds.
  */
 function slowestWalkMs(row) {
@@ -649,7 +649,7 @@ function slowestWalkMs(row) {
  * Sort key of the Skipped % column: the ride share, or -1 when a row has
  * no map activity at all, so activity-free rows sink below every real
  * ratio instead of dividing by zero.
- * @param {{rides: number, scans: number}} row - Stats row.
+ * @param {import('./checkStats.js').CheckStatsRow} row - Stats row.
  * @returns {number} Ride share in [0, 1], or -1 without map activity.
  */
 function skipRatio(row) {
@@ -2797,7 +2797,7 @@ class TypePanel {
    * Toggles the inline call stack row under a loc: clicking a loc inserts
    * its stack right where the click happened, clicking again removes it.
    * Only one detail row is ever open, so the table cannot fill with them.
-   * @param {{loc: string}} row - Stats row of the clicked loc.
+   * @param {import('./checkStats.js').CheckStatsRow} row - Stats row of the clicked loc.
    */
   showLocDetail(row) {
     this.checksDetailLoc = this.checksDetailLoc === row.loc ? null : row.loc;

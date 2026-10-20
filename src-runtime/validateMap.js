@@ -4,14 +4,20 @@ import {firstBadEntry} from "./firstBadEntry.js";
 import {options} from "./options.js";
 import {recordMapRide, recordMapScan, nowMs} from "./checkStats.js";
 /**
- * Validation history per map instance: how many checks passed since the
- * last full scan, the current rescan interval (doubles while a map keeps
- * validating clean), the size the last scan saw, and the scan wall time
- * accumulated since the content last changed (feeds the spend gate
- * below). Keyed by instance in a WeakMap, so entries vanish with the map
- * they describe. The module level `let` keeps resetting cheap: WeakMap
- * has no `clear`.
- * @type {WeakMap<Map, {sinceLast: number, window: number, lastSize: number, spentMs: number}>}
+ * Validation history of one map instance: checks passed since the last
+ * full scan, the current rescan interval, the size the last scan saw,
+ * and the scan wall time accumulated since the content last changed.
+ * @typedef {object} MapCheckWindow
+ * @property {number} sinceLast - Checks passed since the last full scan.
+ * @property {number} window - Current rescan interval, doubles while clean.
+ * @property {number} lastSize - Map size the last scan saw.
+ * @property {number} spentMs - Scan wall time accumulated since the content last changed.
+ */
+/**
+ * Validation history per map instance, keyed by instance in a WeakMap,
+ * so entries vanish with the map they describe. The module level `let`
+ * keeps resetting cheap: WeakMap has no `clear`.
+ * @type {WeakMap<Map, MapCheckWindow>}
  */
 let mapCheckWindows = new WeakMap();
 /**
@@ -42,7 +48,7 @@ function minTotalMs() {
  * history with the verdict. Shared by the first check, the due check and
  * every rescan source, so all of them stay in lockstep about intervals.
  * @param {Map} value - The map to fully scan.
- * @param {{sinceLast: number, window: number, lastSize: number, spentMs: number}} record - The instance's history record.
+ * @param {MapCheckWindow} record - The instance's history record.
  * @param {*} key - The map node's `key` type (`undefined` means unchecked).
  * @param {*} val - The map node's `val` type (`undefined` means unchecked).
  * @param {string} loc - String like `BoundingBox#compute`
@@ -110,7 +116,7 @@ function scanAndSettle(value, record, key, val, loc, name, critical, warn, depth
  * records it in the check statistics when those are on, so panel users
  * can see which call sites actually pay for scanning.
  * @param {Map} value - The map to fully scan.
- * @param {{sinceLast: number, window: number, lastSize: number, spentMs: number}} record - The instance's history record.
+ * @param {MapCheckWindow} record - The instance's history record.
  * @param {*} key - The map node's `key` type (`undefined` means unchecked).
  * @param {*} val - The map node's `val` type (`undefined` means unchecked).
  * @param {string} loc - String like `BoundingBox#compute`
@@ -138,7 +144,7 @@ function timedScan(value, record, key, val, loc, name, critical, warn, depth) {
 /**
  * New instance history: full scan due at the very first check, intervals
  * doubling from there, no scan spend accumulated yet.
- * @returns {{sinceLast: number, window: number, lastSize: number, spentMs: number}} Fresh history record.
+ * @returns {MapCheckWindow} Fresh history record.
  */
 function freshWindow() {
   // Sizes are non negative integers, so -1 is the unset sentinel: it can
@@ -154,7 +160,7 @@ function freshWindow() {
  * reusing a module local scratch avoids a fresh allocation per check
  * without carrying state between checks (every field it reads is
  * rewritten or discarded).
- * @type {{sinceLast: number, window: number, lastSize: number, spentMs: number}}
+ * @type {MapCheckWindow}
  */
 const scratchRecord = freshWindow();
 /**
@@ -224,7 +230,7 @@ function validateMap(value, expect, loc, name, critical, warn, depth) {
 /**
  * Test and debug hook: the raw validation history of a map instance.
  * @param {Map} value - The map instance to introspect.
- * @returns {{sinceLast: number, window: number, lastSize: number, spentMs: number}|undefined} The record when one exists.
+ * @returns {MapCheckWindow|undefined} The record when one exists.
  * @example
  * const map = new Map([[1, 2]]);
  * validateMap(map, {type: 'map', key: 'number', val: 'number'}, 'T#x', 'map', true, console.warn, 0);

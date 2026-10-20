@@ -1,6 +1,31 @@
 import {options} from "./options.js";
 import {captureStackLines} from "./captureStack.js";
 /**
+ * One hotspot row: per-parameter counters (keyed by loc plus argument
+ * name) for checks, map window rides, container walks of every kind,
+ * their wall times and maxima, the fold buffer the enclosing check
+ * attributes, and the call stack captured at row creation.
+ * @typedef {object} CheckStatsRow
+ * @property {number} checks - Top level checks of this parameter.
+ * @property {number} rides - Window rides (map checks skipped).
+ * @property {number} scans - Full map scans.
+ * @property {number} scanMs - Total map scan time.
+ * @property {number} maxScanMs - Slowest single map scan.
+ * @property {number} setMs - Total Set walk time.
+ * @property {number} maxSetMs - Slowest single Set walk.
+ * @property {number} setWalks - Set walks.
+ * @property {number} arrayMs - Total Array walk time.
+ * @property {number} maxArrayMs - Slowest single Array walk.
+ * @property {number} arrayWalks - Array walks.
+ * @property {number} objectMs - Total object key walk time.
+ * @property {number} maxObjectMs - Slowest single object key walk.
+ * @property {number} objectWalks - Object key walks.
+ * @property {number} checkMs - Total check time, walks folded in.
+ * @property {number} maxCheckMs - Slowest single check.
+ * @property {number} pendingScanMs - Walk time awaiting fold into the next check.
+ * @property {string} stack - Call stack captured at row creation.
+ */
+/**
  * Hotspot statistics per validation call site and parameter (loc plus
  * argument name). Each row counts how often one parameter was checked,
  * how many map window rides and full container walks happened on its
@@ -9,7 +34,7 @@ import {captureStackLines} from "./captureStack.js";
  * `mapCheckWindowCap`) come from measurements instead of guesses. Every
  * row also keeps the call stack captured when the row was first created,
  * so the panel can answer "where does this loc actually live".
- * @type {Map<string, {checks: number, rides: number, scans: number, scanMs: number, maxScanMs: number, setMs: number, maxSetMs: number, setWalks: number, arrayMs: number, maxArrayMs: number, arrayWalks: number, objectMs: number, maxObjectMs: number, objectWalks: number, checkMs: number, maxCheckMs: number, pendingScanMs: number, stack: string}>}
+ * @type {Map<string, CheckStatsRow>}
  */
 let checkStats = new Map();
 /**
@@ -40,7 +65,7 @@ const stackFrames = 12;
  * pay the `new Error()` cost a single time instead of per check.
  * @param {string} loc - String like `BoundingBox#compute`.
  * @param {string} name - Argument name, like `defines`.
- * @returns {{checks: number, rides: number, scans: number, scanMs: number, maxScanMs: number, setMs: number, maxSetMs: number, setWalks: number, arrayMs: number, maxArrayMs: number, arrayWalks: number, objectMs: number, maxObjectMs: number, objectWalks: number, checkMs: number, maxCheckMs: number, pendingScanMs: number, stack: string}|undefined} The row, or undefined at the row budget.
+ * @returns {CheckStatsRow|undefined} The row, or undefined at the row budget.
  */
 function rowFor(loc, name) {
   const key = `${loc} ${name}`;
@@ -238,9 +263,9 @@ function recordObjectScan(loc, name, ms) {
  * container walk wall time first (the dominant cost of big containers),
  * then top level check time, then raw check counts, row key last for
  * stable output.
- * @returns {{loc: string, checks: number, rides: number, scans: number, scanMs: number, maxScanMs: number, setMs: number, maxSetMs: number, setWalks: number, arrayMs: number, maxArrayMs: number, arrayWalks: number, objectMs: number, maxObjectMs: number, objectWalks: number, checkMs: number, maxCheckMs: number, pendingScanMs: number, stack: string}[]} Sorted rows.
+ * @returns {{loc: string, ...CheckStatsRow}[]} Sorted rows.
  * @example
- * getCheckStats(); // [{loc, checks, rides, scans, scanMs, maxScanMs, setMs, ..., checkMs, maxCheckMs, pendingScanMs, stack}, ...]
+ * getCheckStats(); // [{loc, ...CheckStatsRow}, ...]
  */
 function getCheckStats() {
   const rows = [];
