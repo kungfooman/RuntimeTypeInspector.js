@@ -2210,39 +2210,61 @@ function testNeverRanTimeCellsShowDash() {
     }
   });
 }
-function testKindColumnsSplitContainerTime() {
-  // One column per container kind: a loc's Set, Array and Object walk
-  // time lands in its own column, sortable like the rest, while kinds
-  // that never walked show the honest dash.
+function testKindColumnNamesWalkKind() {
+  // One Kind column names what the parameter walked: map, set, array or
+  // object. No container walk, no kind: the dash, same honest rule as
+  // the time columns.
   return withPanel((panel) => {
     resetCheckStats();
     try {
+      recordCheck('Kind#plain', 'v', 1);
       recordSetScan('Kind#set', 'v', 3);
       recordArrayScan('Kind#array', 'v', 4);
       recordObjectScan('Kind#object', 'v', 5);
+      recordMapScan('Kind#map', 'v', 6);
       panel.updateCheckStats();
-      return statsCell(panel, 'Kind#set', 'setMs') === '3.00ms' &&
-        statsCell(panel, 'Kind#set', 'arrayMs') === '—' &&
-        statsCell(panel, 'Kind#array', 'arrayMs') === '4.00ms' &&
-        statsCell(panel, 'Kind#array', 'objectMs') === '—' &&
-        statsCell(panel, 'Kind#object', 'objectMs') === '5.00ms' &&
-        statsCell(panel, 'Kind#object', 'setMs') === '—';
+      return statsCell(panel, 'Kind#plain', 'kind') === '—' &&
+        statsCell(panel, 'Kind#set', 'kind') === 'set' &&
+        statsCell(panel, 'Kind#array', 'kind') === 'array' &&
+        statsCell(panel, 'Kind#object', 'kind') === 'object' &&
+        statsCell(panel, 'Kind#map', 'kind') === 'map';
     } finally {
       resetCheckStats();
     }
   });
 }
-function testKindColumnsSort() {
-  // The kind columns are real sort keys: sorting by Array time puts the
-  // array-heavy loc first, whatever the scan-time order says.
+function testWalkColumnsUnifyContainerTime() {
+  // One Walks column counts every container walk, one Walk time column
+  // totals them: a Set walk of 3ms and a Map scan of 50ms read 1 walk /
+  // 3.00ms and 1 walk / 50.0ms in the SAME columns, whatever the kind.
+  return withPanel((panel) => {
+    resetCheckStats();
+    try {
+      recordSetScan('Kind#set', 'v', 3);
+      recordMapScan('Kind#map', 'v', 50);
+      panel.updateCheckStats();
+      return statsCell(panel, 'Kind#set', 'scans') === '1' &&
+        statsCell(panel, 'Kind#set', 'scanMs') === '3.00ms' &&
+        statsCell(panel, 'Kind#set', 'maxScanMs') === '3.00ms' &&
+        statsCell(panel, 'Kind#map', 'scans') === '1' &&
+        statsCell(panel, 'Kind#map', 'scanMs') === '50.0ms' &&
+        statsCell(panel, 'Kind#map', 'maxScanMs') === '50.0ms';
+    } finally {
+      resetCheckStats();
+    }
+  });
+}
+function testWalkTimeSortsAcrossKinds() {
+  // Walk time is one sort key across kinds: sorting by it puts the
+  // 50ms map row above the 40ms array row, whatever walked them.
   return withPanel((panel) => {
     resetCheckStats();
     try {
       recordMapScan('Kind#mapheavy', 'v', 50);
       recordArrayScan('Kind#arrayheavy', 'v', 40);
-      panel.checksSort = {id: 'arrayMs', desc: true};
+      panel.checksSort = {id: 'scanMs', desc: true};
       panel.updateCheckStats();
-      const first = textOf(panel.checksTable.children[1]).includes('Kind#arrayheavy');
+      const first = textOf(panel.checksTable.children[1]).includes('Kind#mapheavy');
       return first;
     } finally {
       resetCheckStats();
@@ -2263,12 +2285,12 @@ function testSkippedColumnsFollowWindowing() {
       panel.updateCheckStats();
       const hidden = statsColIndex(panel, 'skipped') === -1 &&
         statsColIndex(panel, 'skipPct') === -1 &&
-        panel.checksTable.children[1].children.length === 13;
+        panel.checksTable.children[1].children.length === 8;
       options.windowedChecks = true;
       panel.updateCheckStats();
       const shown = statsColIndex(panel, 'skipped') !== -1 &&
         statsColIndex(panel, 'skipPct') !== -1 &&
-        panel.checksTable.children[1].children.length === 15;
+        panel.checksTable.children[1].children.length === 10;
       return hidden && shown;
     } finally {
       options.windowedChecks = prevWindowed;
@@ -2566,7 +2588,8 @@ const tests = [
   testStatsTableFormatsCompactTimes,
   testNeverRanTimeCellsShowDash,
   testSkippedColumnsFollowWindowing,
-  testKindColumnsSplitContainerTime,
-  testKindColumnsSort,
+  testKindColumnNamesWalkKind,
+  testWalkColumnsUnifyContainerTime,
+  testWalkTimeSortsAcrossKinds,
 ];
 export {tests};

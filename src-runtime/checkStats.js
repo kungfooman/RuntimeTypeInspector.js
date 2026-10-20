@@ -235,8 +235,9 @@ function recordObjectScan(loc, name, ms) {
 }
 /**
  * Snapshot of all rows, sorted by what a hotspot hunter cares about:
- * scan wall time first (the dominant cost of big maps), then top level
- * check time, then raw check counts, loc name last for stable output.
+ * container walk wall time first (the dominant cost of big containers),
+ * then top level check time, then raw check counts, row key last for
+ * stable output.
  * @returns {{loc: string, checks: number, rides: number, scans: number, scanMs: number, maxScanMs: number, setMs: number, maxSetMs: number, setWalks: number, arrayMs: number, maxArrayMs: number, arrayWalks: number, objectMs: number, maxObjectMs: number, objectWalks: number, checkMs: number, maxCheckMs: number, pendingScanMs: number, stack: string}[]} Sorted rows.
  * @example
  * getCheckStats(); // [{loc, checks, rides, scans, scanMs, maxScanMs, setMs, ..., checkMs, maxCheckMs, pendingScanMs, stack}, ...]
@@ -246,7 +247,8 @@ function getCheckStats() {
   for (const [loc, row] of checkStats) {
     rows.push({loc, ...row});
   }
-  rows.sort((a, b) => b.scanMs - a.scanMs || b.checkMs - a.checkMs || b.checks - a.checks || (a.loc < b.loc ? -1 : 1));
+  const walkMs = (row) => row.scanMs + row.setMs + row.arrayMs + row.objectMs;
+  rows.sort((a, b) => walkMs(b) - walkMs(a) || b.checkMs - a.checkMs || b.checks - a.checks || (a.loc < b.loc ? -1 : 1));
   return rows;
 }
 /**

@@ -590,41 +590,60 @@ const CHECKS_COLS = [
   {id: 'checks', head: 'Checks', title: 'Validations of this one parameter: one per call. A 2-parameter method records 2 rows, 1 check each per call.', get: (row) => row.checks},
   {id: 'skipped', head: 'Skipped', title: 'Checks skipped without scanning: the map was unchanged and inside its rescan window.', windowed: true, get: (row) => row.rides},
   {id: 'skipPct', head: 'Skipped %', title: 'Share of map checks skipped instead of scanned. The dash means no map checks ran here.', windowed: true, get: (row) => skipRatio(row)},
-  {id: 'scans', head: 'Map scans', title: 'Full map validations that actually ran over every entry. Only Map arguments scan, and one check can scan zero, one or several maps depending on its parameters.', get: (row) => row.scans},
-  {id: 'scanMs', head: 'Map time', title: 'Total wall time in full map scans. Only Map arguments produce this; the Set, Array and Object columns split out the rest.', get: (row) => row.scanMs},
-  {id: 'maxScanMs', head: 'Slowest map scan', title: 'Slowest single full map scan.', get: (row) => row.maxScanMs},
-  {id: 'setMs', head: 'Set time', title: 'Total wall time walking Set members at this call site.', get: (row) => row.setMs},
-  {id: 'maxSetMs', head: 'Slowest set walk', title: 'Slowest single Set walk.', get: (row) => row.maxSetMs},
-  {id: 'arrayMs', head: 'Array time', title: 'Total wall time walking Array elements at this call site.', get: (row) => row.arrayMs},
-  {id: 'maxArrayMs', head: 'Slowest array walk', title: 'Slowest single Array walk.', get: (row) => row.maxArrayMs},
-  {id: 'objectMs', head: 'Object time', title: 'Total wall time walking plain object keys at this call site.', get: (row) => row.objectMs},
-  {id: 'maxObjectMs', head: 'Slowest object walk', title: 'Slowest single object key walk.', get: (row) => row.maxObjectMs},
+  {id: 'kind', head: 'Kind', title: 'Which container this parameter walked: map, set, array or object. The dash means no container walk ran here.', get: (row) => containerKinds(row)},
+  {id: 'scans', head: 'Walks', title: 'Full container walks that actually ran over every entry or key. One parameter walks one kind; mixed kinds add up here.', get: (row) => containerWalks(row)},
+  {id: 'scanMs', head: 'Walk time', title: 'Total wall time in container walks. 0us means below what the clock can see, not broken; the slowest column bounds it.', get: (row) => containerWalkMs(row)},
+  {id: 'maxScanMs', head: 'Slowest walk', title: 'Slowest single container walk.', get: (row) => slowestWalkMs(row)},
   {id: 'checkMs', head: 'Check time', title: 'Total wall time checking this call site, container walks included. Never below the sum of the kind columns.', get: (row) => row.checkMs},
   {id: 'maxCheckMs', head: 'Slowest check', title: 'Slowest single check.', get: (row) => row.maxCheckMs},
 ];
 /**
- * Whether a time column's own counter ran at all: check columns key off
- * checks, map columns off scans, each kind column off its own walk
- * count. Drives the honest dash (no data) versus "0µs" (measured
- * nothing) distinction in the stats table.
- * @param {string} id - Column id from `CHECKS_COLS`.
- * @param {{checks: number, scans: number, setWalks: number, arrayWalks: number, objectWalks: number}} row - Stats row.
- * @returns {boolean} True when the column's counter ran.
+ * Which containers a row walked, in fixed order. One parameter walks one
+ * kind, so this is usually a single name; union retries can mix kinds on
+ * one row and then they all show. Keyed off walk counts, not times, so a
+ * walk that ran below clock resolution still names its kind.
+ * @param {{scans: number, setWalks: number, arrayWalks: number, objectWalks: number}} row - Stats row.
+ * @returns {string} Kind names joined with '+', or a dash when nothing walked.
  */
-function checkTimeRan(id, row) {
-  if (id === 'checkMs' || id === 'maxCheckMs') {
-    return row.checks > 0;
+function containerKinds(row) {
+  const kinds = [];
+  if (row.scans > 0) {
+    kinds.push('map');
   }
-  if (id === 'setMs' || id === 'maxSetMs') {
-    return row.setWalks > 0;
+  if (row.setWalks > 0) {
+    kinds.push('set');
   }
-  if (id === 'arrayMs' || id === 'maxArrayMs') {
-    return row.arrayWalks > 0;
+  if (row.arrayWalks > 0) {
+    kinds.push('array');
   }
-  if (id === 'objectMs' || id === 'maxObjectMs') {
-    return row.objectWalks > 0;
+  if (row.objectWalks > 0) {
+    kinds.push('object');
   }
-  return row.scans > 0;
+  return kinds.length === 0 ? '—' : kinds.join('+');
+}
+/**
+ * Total container walks on a row, across every kind.
+ * @param {{scans: number, setWalks: number, arrayWalks: number, objectWalks: number}} row - Stats row.
+ * @returns {number} Walk count.
+ */
+function containerWalks(row) {
+  return row.scans + row.setWalks + row.arrayWalks + row.objectWalks;
+}
+/**
+ * Total container walk time on a row, across every kind.
+ * @param {{scanMs: number, setMs: number, arrayMs: number, objectMs: number}} row - Stats row.
+ * @returns {number} Milliseconds.
+ */
+function containerWalkMs(row) {
+  return row.scanMs + row.setMs + row.arrayMs + row.objectMs;
+}
+/**
+ * Slowest single container walk on a row, across every kind.
+ * @param {{maxScanMs: number, maxSetMs: number, maxArrayMs: number, maxObjectMs: number}} row - Stats row.
+ * @returns {number} Milliseconds.
+ */
+function slowestWalkMs(row) {
+  return Math.max(row.maxScanMs, row.maxSetMs, row.maxArrayMs, row.maxObjectMs);
 }
 /**
  * Sort key of the Skipped % column: the ride share, or -1 when a row has
@@ -2754,9 +2773,9 @@ class TypePanel {
           // Honest zeros: a time cell is only "0µs" when its own counter
           // ran but measured nothing. When the counter never ran, the
           // dash says "no data" instead of pretending a measurement.
-          // Map columns key off scans, check columns off checks, and each
-          // kind column off its own walk count.
-          if (!checkTimeRan(col.id, row)) {
+          // Walk columns key off total walks, check columns off checks.
+          const ran = col.id === 'checkMs' || col.id === 'maxCheckMs' ? row.checks > 0 : containerWalks(row) > 0;
+          if (!ran) {
             return Td({textContent: '—'});
           }
           if (v <= 0) {
