@@ -27,14 +27,14 @@ function validateSet(value, expect, loc, name, critical, warn, depth) {
       const info = {expect: elementType, got: innerValue};
       warn(`validateSet> invalid set member at [...${name}.values()][${i}]`, info);
       if (startedMs !== undefined) {
-        recordSetScan(loc, nowMs() - startedMs);
+        recordSetScan(loc, name, nowMs() - startedMs);
       }
       return false;
     }
     i++;
   }
   if (startedMs !== undefined) {
-    recordSetScan(loc, nowMs() - startedMs);
+    recordSetScan(loc, name, nowMs() - startedMs);
   }
   return true;
 }

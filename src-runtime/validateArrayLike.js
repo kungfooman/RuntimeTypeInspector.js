@@ -49,7 +49,7 @@ function validateArrayLike(value, expect, loc, name, critical, warn, depth) {
   const startedMs = options.checkStats ? nowMs() : undefined;
   const done = (ret) => {
     if (startedMs !== undefined) {
-      recordArrayScan(loc, nowMs() - startedMs);
+      recordArrayScan(loc, name, nowMs() - startedMs);
     }
     return ret;
   };

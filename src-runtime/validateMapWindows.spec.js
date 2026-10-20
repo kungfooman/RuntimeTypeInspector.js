@@ -421,7 +421,7 @@ function testCheckStatsCountsRidesAndScans() {
     check(map, expect);
   }
   const rows = getCheckStats();
-  const row = rows.find(_ => _.loc === 'TestSite#method');
+  const row = rows.find(_ => _.loc === 'TestSite#method mapProperty');
   const ok = rows.length === 1 && row !== undefined &&
     row.checks === 0 && row.rides === 4 && row.scans === 3 &&
     row.scanMs >= 0;
@@ -454,7 +454,7 @@ function testStatsScansRecordUnderPedanticToo() {
   check(new Map([[1, 'a']]), {type: 'map', key: 'number', val: 'string'});
   check(new Map([[1, 'a']]), {type: 'map', key: 'number', val: 'string'});
   const rows = getCheckStats();
-  const row = rows.find(_ => _.loc === 'TestSite#method');
+  const row = rows.find(_ => _.loc === 'TestSite#method mapProperty');
   const ok = rows.length === 1 && row !== undefined &&
     row.rides === 0 && row.scans === 2 && row.checks === 0;
   resetCheckStats();
@@ -466,9 +466,9 @@ function testRecordCheckLedgerUsesScanLedgerSeparately() {
   // row, so scan cost never masquerades as check frequency.
   options.checkStats = true;
   resetCheckStats();
-  recordCheck('Ledger#x', 2);
-  recordMapScan('Ledger#x', 20);
-  const row = getCheckStats().find(_ => _.loc === 'Ledger#x');
+  recordCheck('Ledger#x', 'v', 2);
+  recordMapScan('Ledger#x', 'v', 20);
+  const row = getCheckStats().find(_ => _.loc === 'Ledger#x v');
   return row !== undefined && row.checks === 1 && row.scans === 1 && row.rides === 0;
 }
 function testSpendGateShipsAtHundredMs() {
@@ -518,7 +518,7 @@ function testUnearnedSpendForcesFullRescan() {
   mapCheckWindowRecord(map).spentMs = 0.001; // per spec: almost nothing spent yet
   const second = check(map, expect); // gate stays closed: full rescan
   const record = snap(mapCheckWindowRecord(map));
-  const row = getCheckStats().find(_ => _.loc === 'TestSite#method');
+  const row = getCheckStats().find(_ => _.loc === 'TestSite#method mapProperty');
   const ok = second.good === true && record.sinceLast === 0 &&
     record.window === 4 && row !== undefined &&
     row.rides === 0 && row.scans === 2;
@@ -545,7 +545,7 @@ function testEarnedSpendUnlocksRides() {
   mapCheckWindowRecord(map).spentMs = 150; // per spec: the budget is earned
   const second = check(map, expect); // gate open: ride
   const record = snap(mapCheckWindowRecord(map));
-  const row = getCheckStats().find(_ => _.loc === 'TestSite#method');
+  const row = getCheckStats().find(_ => _.loc === 'TestSite#method mapProperty');
   const ok = second.good === true && record.sinceLast === 1 &&
     record.window === 2 && row !== undefined &&
     row.rides === 1 && row.scans === 1;
@@ -578,7 +578,7 @@ function testSpendGrowsWithEveryScan() {
     check(map, expect);
   }
   const later = mapCheckWindowRecord(map).spentMs;
-  const row = getCheckStats().find(_ => _.loc === 'TestSite#method');
+  const row = getCheckStats().find(_ => _.loc === 'TestSite#method mapProperty');
   const ok = later > first && row !== undefined && row.scans === 4 && row.rides === 0;
   resetCheckStats();
   options.checkStats = virginCheckStats;
@@ -633,7 +633,7 @@ function testSpendBudgetIsLiveEditable() {
   options.mapCheckWindowMinTotalMs = 0; // ride always, again
   const riding = check(map, expect); // gate open: ride inside window 4
   const ridingRecord = snap(mapCheckWindowRecord(map));
-  const row = getCheckStats().find(_ => _.loc === 'TestSite#method');
+  const row = getCheckStats().find(_ => _.loc === 'TestSite#method mapProperty');
   const ok = gatedOk && gated.good === true && riding.good === true &&
     ridingRecord.sinceLast === 1 && ridingRecord.window === 4 &&
     row !== undefined && row.rides === 1 && row.scans === 2;
@@ -663,7 +663,7 @@ function testUnusableSpendBudgetStaysOpen() {
   const dueScan = check(map, expect); // window 2 exhausted: due rescan, window 4
   const negRide = check(map, expect); // fallback open: ride again
   const negRecord = snap(mapCheckWindowRecord(map));
-  const row = getCheckStats().find(_ => _.loc === 'TestSite#method');
+  const row = getCheckStats().find(_ => _.loc === 'TestSite#method mapProperty');
   const ok = nanRide.good === true && nanRecord.sinceLast === 1 &&
     nanRecord.window === 2 && dueScan.good === true &&
     negRide.good === true && negRecord.sinceLast === 1 &&

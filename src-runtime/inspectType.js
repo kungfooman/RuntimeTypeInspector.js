@@ -165,7 +165,7 @@ function inspectType(value, expect, loc, name, critical = true) {
     custom(value, expect, loc, name, critical, innerWarn, 0) :
     validateType(value, expect, loc, name, critical, innerWarn, 0);
   if (startedMs !== undefined) {
-    recordCheck(loc, nowMs() - startedMs);
+    recordCheck(loc, name, nowMs() - startedMs);
   }
   if (!ret && critical) {
     options.count++;

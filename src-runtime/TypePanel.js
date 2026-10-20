@@ -586,11 +586,11 @@ function niceDiv(div) {
  * @type {{id: string, head: string, title: string, windowed?: boolean, get: (row: object) => (string|number)}[]}
  */
 const CHECKS_COLS = [
-  {id: 'loc', head: 'Loc', title: 'Call site (class#method or function). Click a loc to see the call stack captured for it.', get: (row) => row.loc},
-  {id: 'checks', head: 'Checks', title: 'How many times this call site was checked. One check validates one value; only Map, Set, Array and object walks add inner cost, split out right of here.', get: (row) => row.checks},
+  {id: 'loc', head: 'Loc', title: 'Call site plus parameter name: one row per checked argument. Click a row to see the call stack captured for it.', get: (row) => row.loc},
+  {id: 'checks', head: 'Checks', title: 'Validations of this one parameter: one per call. A 2-parameter method records 2 rows, 1 check each per call.', get: (row) => row.checks},
   {id: 'skipped', head: 'Skipped', title: 'Checks skipped without scanning: the map was unchanged and inside its rescan window.', windowed: true, get: (row) => row.rides},
   {id: 'skipPct', head: 'Skipped %', title: 'Share of map checks skipped instead of scanned. The dash means no map checks ran here.', windowed: true, get: (row) => skipRatio(row)},
-  {id: 'scans', head: 'Map scans', title: 'Full map validations that actually ran over every entry. Only Map arguments scan; everything else validates a single value.', get: (row) => row.scans},
+  {id: 'scans', head: 'Map scans', title: 'Full map validations that actually ran over every entry. Only Map arguments scan, and one check can scan zero, one or several maps depending on its parameters.', get: (row) => row.scans},
   {id: 'scanMs', head: 'Map time', title: 'Total wall time in full map scans. Only Map arguments produce this; the Set, Array and Object columns split out the rest.', get: (row) => row.scanMs},
   {id: 'maxScanMs', head: 'Slowest map scan', title: 'Slowest single full map scan.', get: (row) => row.maxScanMs},
   {id: 'setMs', head: 'Set time', title: 'Total wall time walking Set members at this call site.', get: (row) => row.setMs},

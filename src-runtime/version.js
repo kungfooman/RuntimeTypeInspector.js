@@ -7,7 +7,7 @@
  */
 const RTI_INFO = {
   "version": "6.0.0",
-  "commit": "d04fbffb628ad400f3f0231c88d516d45a6fc9ac",
-  "subject": "UI rework for performance tracer"
+  "commit": "2ee61db3df98883b443ed69788c78ece7a2128d9",
+  "subject": "Rework UI again (again)"
 };
 export {RTI_INFO};

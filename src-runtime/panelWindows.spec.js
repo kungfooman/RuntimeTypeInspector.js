@@ -1979,9 +1979,9 @@ function testCheckStatsTableRendersHotspotsSorted() {
   return withPanel((panel) => {
     resetCheckStats();
     try {
-      recordCheck('Zzz#checks', 5);
-      recordMapScan('Aaa#scan-heavy', 50);
-      recordMapScan('Bbb#scan-light', 1);
+      recordCheck('Zzz#checks', 'v', 5);
+      recordMapScan('Aaa#scan-heavy', 'v', 50);
+      recordMapScan('Bbb#scan-light', 'v', 1);
       panel.updateCheckStats();
       const rows = panel.checksTable.children.slice(1);
       return rows.length === 3 &&
@@ -1996,7 +1996,7 @@ function testCheckStatsResetButtonEmptiesTable() {
   return withPanel((panel) => {
     resetCheckStats();
     try {
-      recordCheck('Rst#x', 1);
+      recordCheck('Rst#x', 'v', 1);
       panel.updateCheckStats();
       if (panel.checksTable.children.length !== 2) {
         return false;
@@ -2103,7 +2103,7 @@ function testStatsWinOpensPopulatesAndCloses() {
   return withPanel((panel) => {
     resetCheckStats();
     try {
-      recordCheck('W#x', 1);
+      recordCheck('W#x', 'v', 1);
       panel.buttonStats.onclick();
       const shown = panel.statsWin.style.display !== 'none' && panel.statsWinHidden === false;
       const rows = panel.checksTable.children.slice(1);
@@ -2125,19 +2125,20 @@ function testStatsWinToggleCycles() {
   });
 }
 function testStatsLocCellIsButtonWithTitle() {
-  // Every loc renders as a clickable button carrying the full loc in both
-  // its visible text and its tooltip, so cryptic names like `get` can be
-  // inspected (click shows the call stack, logs + copies the loc) instead
-  // of being guessed; the tooltip additionally promises that behavior.
+  // Every row renders as a clickable button carrying the full row key
+  // (loc plus parameter name) in both its visible text and its tooltip,
+  // so cryptic names like `get` can be inspected (click shows the call
+  // stack, logs + copies the key) instead of being guessed; the tooltip
+  // additionally promises that behavior.
   return withPanel((panel) => {
     resetCheckStats();
     try {
-      recordCheck('get', 1);
+      recordCheck('get', 'v', 1);
       panel.updateCheckStats();
       const cell = panel.checksTable.children[1].children[0];
       const btn = cell.children[0];
-      return btn.tag === 'button' && btn.textContent === 'get' &&
-        btn.title.startsWith('get') && btn.title.length > 'get'.length;
+      return btn.tag === 'button' && btn.textContent === 'get v' &&
+        btn.title.startsWith('get v') && btn.title.length > 'get v'.length;
     } finally {
       resetCheckStats();
     }
@@ -2153,12 +2154,12 @@ function testStatsTableShowsSkippedPercent() {
     try {
       options.windowedChecks = true;
       // 3 skipped + 1 scan: 75% skipped.
-      recordMapRide('Skp#m');
-      recordMapRide('Skp#m');
-      recordMapRide('Skp#m');
-      recordMapScan('Skp#m', 1);
+      recordMapRide('Skp#m', 'v');
+      recordMapRide('Skp#m', 'v');
+      recordMapRide('Skp#m', 'v');
+      recordMapScan('Skp#m', 'v', 1);
       // No map activity at all: dash.
-      recordCheck('Flat#x', 1);
+      recordCheck('Flat#x', 'v', 1);
       panel.updateCheckStats();
       return statsCell(panel, 'Skp#m', 'skipPct') === '75.0%' &&
         statsCell(panel, 'Flat#x', 'skipPct') === '—' &&
@@ -2177,9 +2178,9 @@ function testStatsTableFormatsCompactTimes() {
   return withPanel((panel) => {
     resetCheckStats();
     try {
-      recordMapScan('Fmt#tiny', 0.0004);      // 0.4µs -> "0.4µs"
-      recordMapScan('Fmt#mid', 2.345);        // ms -> "2.35ms"
-      recordMapScan('Fmt#big', 42.6);         // ms -> "42.6ms"
+      recordMapScan('Fmt#tiny', 'v', 0.0004);      // 0.4µs -> "0.4µs"
+      recordMapScan('Fmt#mid', 'v', 2.345);        // ms -> "2.35ms"
+      recordMapScan('Fmt#big', 'v', 42.6);         // ms -> "42.6ms"
       panel.updateCheckStats();
       return statsCell(panel, 'Fmt#tiny', 'scanMs') === '0.4µs' &&
         statsCell(panel, 'Fmt#mid', 'scanMs') === '2.35ms' &&
@@ -2196,8 +2197,8 @@ function testNeverRanTimeCellsShowDash() {
   return withPanel((panel) => {
     resetCheckStats();
     try {
-      recordCheck('Chk#only', 1);
-      recordMapScan('Scn#only', 2);
+      recordCheck('Chk#only', 'v', 1);
+      recordMapScan('Scn#only', 'v', 2);
       panel.updateCheckStats();
       return statsCell(panel, 'Chk#only', 'scanMs') === '—' &&
         statsCell(panel, 'Chk#only', 'maxScanMs') === '—' &&
@@ -2216,9 +2217,9 @@ function testKindColumnsSplitContainerTime() {
   return withPanel((panel) => {
     resetCheckStats();
     try {
-      recordSetScan('Kind#set', 3);
-      recordArrayScan('Kind#array', 4);
-      recordObjectScan('Kind#object', 5);
+      recordSetScan('Kind#set', 'v', 3);
+      recordArrayScan('Kind#array', 'v', 4);
+      recordObjectScan('Kind#object', 'v', 5);
       panel.updateCheckStats();
       return statsCell(panel, 'Kind#set', 'setMs') === '3.00ms' &&
         statsCell(panel, 'Kind#set', 'arrayMs') === '—' &&
@@ -2237,8 +2238,8 @@ function testKindColumnsSort() {
   return withPanel((panel) => {
     resetCheckStats();
     try {
-      recordMapScan('Kind#mapheavy', 50);
-      recordArrayScan('Kind#arrayheavy', 40);
+      recordMapScan('Kind#mapheavy', 'v', 50);
+      recordArrayScan('Kind#arrayheavy', 'v', 40);
       panel.checksSort = {id: 'arrayMs', desc: true};
       panel.updateCheckStats();
       const first = textOf(panel.checksTable.children[1]).includes('Kind#arrayheavy');
@@ -2258,7 +2259,7 @@ function testSkippedColumnsFollowWindowing() {
     resetCheckStats();
     try {
       options.windowedChecks = false;
-      recordCheck('Off#x', 1);
+      recordCheck('Off#x', 'v', 1);
       panel.updateCheckStats();
       const hidden = statsColIndex(panel, 'skipped') === -1 &&
         statsColIndex(panel, 'skipPct') === -1 &&
@@ -2299,8 +2300,8 @@ function testStatsRebuildToleratesRealDomChildren() {
   return withPanel((panel) => {
     resetCheckStats();
     try {
-      recordCheck('Zzz#checks', 5);
-      recordMapScan('Aaa#scan-heavy', 50);
+      recordCheck('Zzz#checks', 'v', 5);
+      recordMapScan('Aaa#scan-heavy', 'v', 50);
       panel.updateCheckStats();
       const table = panel.checksTable;
       table.children = collectionShaped(table.children.slice());
@@ -2329,9 +2330,9 @@ function testStatsHeadersSortOnClick() {
   return withPanel((panel) => {
     resetCheckStats();
     try {
-      recordCheck('Zzz#checks', 5);
-      recordMapScan('Aaa#scan-heavy', 50);
-      recordMapScan('Bbb#scan-light', 1);
+      recordCheck('Zzz#checks', 'v', 5);
+      recordMapScan('Aaa#scan-heavy', 'v', 50);
+      recordMapScan('Bbb#scan-light', 'v', 1);
       panel.checksSort = {id: 'scanMs', desc: true};
       panel.updateCheckStats();
       const firstByScan = textOf(panel.checksTable.children[1]).includes('Aaa#scan-heavy');
@@ -2430,7 +2431,7 @@ function testStatsHeaderCellsCarryTooltips() {
   return withPanel((panel) => {
     resetCheckStats();
     try {
-      recordCheck('Tip#x', 1);
+      recordCheck('Tip#x', 'v', 1);
       panel.updateCheckStats();
       const header = panel.checksTable.children[0];
       const ids = [];
@@ -2453,7 +2454,7 @@ function testStatsLocClickShowsCallStack() {
   return withPanel((panel) => {
     resetCheckStats();
     try {
-      recordCheck('Where#x', 1);
+      recordCheck('Where#x', 'v', 1);
       panel.updateCheckStats();
       const btn = panel.checksTable.children[1].children[0].children[0];
       btn.onclick();

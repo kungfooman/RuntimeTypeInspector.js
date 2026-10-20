@@ -1,10 +1,11 @@
 import {options} from "./options.js";
 import {captureStackLines} from "./captureStack.js";
 /**
- * Hotspot statistics per validation call site (loc). Each row counts how
- * often a loc was checked, how many map window rides and full map scans
- * happened on its behalf, and the wall time scans and top level checks
- * took. The panel sorts rows by scan cost, so tuning targets (like the
+ * Hotspot statistics per validation call site and parameter (loc plus
+ * argument name). Each row counts how often one parameter was checked,
+ * how many map window rides and full container walks happened on its
+ * behalf, and the wall time walks and top level checks took. The panel
+ * sorts rows by scan cost, so tuning targets (like the
  * `mapCheckWindowCap`) come from measurements instead of guesses. Every
  * row also keeps the call stack captured when the row was first created,
  * so the panel can answer "where does this loc actually live".
@@ -13,8 +14,8 @@ import {captureStackLines} from "./captureStack.js";
 let checkStats = new Map();
 /**
  * Row budget: pathological code bases with unbounded generated locs must
- * not turn a debug instrument into a leak. Once full, new locs go
- * unrecorded while already known locs keep updating.
+ * not turn a debug instrument into a leak. Once full, new rows go
+ * unrecorded while already known rows keep updating.
  * @type {number}
  */
 const maxRows = 4096;
@@ -32,54 +33,59 @@ function nowMs() {
  */
 const stackFrames = 12;
 /**
- * Fetches (or lazily creates) the row of a loc. The row's call stack is
- * captured exactly once, here, so hot locs (millions of checks) pay the
- * `new Error()` cost a single time instead of per check.
+ * Fetches (or lazily creates) the row of one parameter: the key is the
+ * loc plus the argument name, so each parameter of a call site gets its
+ * own row instead of all parameters dissolving into one. The row's call
+ * stack is captured exactly once, here, so hot rows (millions of checks)
+ * pay the `new Error()` cost a single time instead of per check.
  * @param {string} loc - String like `BoundingBox#compute`.
+ * @param {string} name - Argument name, like `defines`.
  * @returns {{checks: number, rides: number, scans: number, scanMs: number, maxScanMs: number, setMs: number, maxSetMs: number, setWalks: number, arrayMs: number, maxArrayMs: number, arrayWalks: number, objectMs: number, maxObjectMs: number, objectWalks: number, checkMs: number, maxCheckMs: number, pendingScanMs: number, stack: string}|undefined} The row, or undefined at the row budget.
  */
-function rowFor(loc) {
-  let row = checkStats.get(loc);
+function rowFor(loc, name) {
+  const key = `${loc} ${name}`;
+  let row = checkStats.get(key);
   if (row === undefined) {
     if (checkStats.size >= maxRows) {
       return undefined;
     }
     const stack = captureStackLines(stackFrames).join('\n');
     row = {checks: 0, rides: 0, scans: 0, scanMs: 0, maxScanMs: 0, setMs: 0, maxSetMs: 0, setWalks: 0, arrayMs: 0, maxArrayMs: 0, arrayWalks: 0, objectMs: 0, maxObjectMs: 0, objectWalks: 0, checkMs: 0, maxCheckMs: 0, pendingScanMs: 0, stack};
-    checkStats.set(loc, row);
+    checkStats.set(key, row);
   }
   return row;
 }
 /**
- * Records one top level check of a loc. Called by `inspectType` after
- * validation finished; the measured milliseconds cover the pure
- * validation work, not message building. Scans this check triggered
- * deeper inside (nested maps) were recorded on the same row under the
- * same loc, so the check cost takes the larger of the two readings:
- * under a coarse clock every fast check measures 0 while its scans
- * still accumulate real time, and reporting "108339 checks, 0us" hides
- * the very hotspot the table exists to show. Under a fine clock the
- * measured time already contains the scans, so it wins and nothing is
- * counted twice.
+ * Records one top level check of one parameter. Called by `inspectType`
+ * after validation finished; the measured milliseconds cover the pure
+ * validation work, not message building. Walks this check triggered
+ * deeper inside (nested containers) were recorded on the same row under
+ * the same loc plus name, so the check cost takes the larger of the two
+ * readings: under a coarse clock every fast check measures 0 while its
+ * walks still accumulate real time, and reporting "108339 checks, 0us"
+ * hides the very hotspot the table exists to show. Under a fine clock
+ * the measured time already contains the walks, so it wins and nothing
+ * is counted twice.
  * @param {string} loc - String like `BoundingBox#compute`.
+ * @param {string} name - Argument name, like `defines`.
  * @param {number|undefined} ms - Measured duration, undefined when timing was off.
  * @example
  * options.checkStats = true;
- * recordCheck("T#m", 1.5);
- * getCheckStats()[0]; // {loc: "T#m", checks: 1, ..., checkMs: 1.5, ...}
+ * recordCheck("T#m", "v", 1.5);
+ * getCheckStats()[0]; // {loc: "T#m v", checks: 1, ..., checkMs: 1.5, ...}
  */
-function recordCheck(loc, ms) {
+function recordCheck(loc, name, ms) {
   if (!options.checkStats) {
     return;
   }
-  const row = rowFor(loc);
+  const row = rowFor(loc, name);
   if (row === undefined) {
     return;
   }
   row.checks++;
-  // Nested scan time already sits in this row's scan ledger: the check's
-  // own clock wrapped those scans, so the true check cost is at least
-  // the scans. Take the best available reading of that one quantity.
+  // Nested walk time already sits in this row's ledgers: the check's own
+  // clock wrapped those walks, so the true check cost is at least the
+  // walks. Take the best available reading of that one quantity.
   const nested = row.pendingScanMs;
   row.pendingScanMs = 0;
   const own = typeof ms === "number" && ms >= 0 ? ms : 0;
@@ -90,41 +96,43 @@ function recordCheck(loc, ms) {
   }
 }
 /**
- * Records one map window ride at a loc: the check was skipped because
- * the map rode its current rescan interval.
+ * Records one map window ride for one parameter: the check was skipped
+ * because the map rode its current rescan interval.
  * @param {string} loc - String like `BoundingBox#compute`.
+ * @param {string} name - Argument name, like `defines`.
  * @example
  * options.checkStats = true;
- * recordMapRide("T#m");
+ * recordMapRide("T#m", "v");
  * getCheckStats()[0].rides; // 1
  */
-function recordMapRide(loc) {
+function recordMapRide(loc, name) {
   if (!options.checkStats) {
     return;
   }
-  const row = rowFor(loc);
+  const row = rowFor(loc, name);
   if (row === undefined) {
     return;
   }
   row.rides++;
 }
 /**
- * Records one full map scan at a loc together with its wall time. The
- * time also lands in the row's fold buffer: the enclosing top level
- * check picks it up in `recordCheck`, so scan-heavy locs never report
- * checks that cost nothing.
+ * Records one full map scan for one parameter together with its wall
+ * time. The time also lands in the row's fold buffer: the enclosing top
+ * level check picks it up in `recordCheck`, so scan-heavy rows never
+ * report checks that cost nothing.
  * @param {string} loc - String like `BoundingBox#compute`.
+ * @param {string} name - Argument name, like `defines`.
  * @param {number|undefined} ms - Measured duration, undefined when timing was off.
  * @example
  * options.checkStats = true;
- * recordMapScan("T#m", 0.25);
+ * recordMapScan("T#m", "v", 0.25);
  * getCheckStats()[0].scans; // 1
  */
-function recordMapScan(loc, ms) {
+function recordMapScan(loc, name, ms) {
   if (!options.checkStats) {
     return;
   }
-  const row = rowFor(loc);
+  const row = rowFor(loc, name);
   if (row === undefined) {
     return;
   }
@@ -138,22 +146,23 @@ function recordMapScan(loc, ms) {
   }
 }
 /**
- * Records one full `Set` walk at a loc together with its wall time. The
- * time also lands in the row's fold buffer: the enclosing top level
- * check picks it up in `recordCheck`, so set-heavy locs never report
- * checks that cost nothing.
+ * Records one full `Set` walk for one parameter together with its wall
+ * time. The time also lands in the row's fold buffer: the enclosing top
+ * level check picks it up in `recordCheck`, so set-heavy rows never
+ * report checks that cost nothing.
  * @param {string} loc - String like `BoundingBox#compute`.
+ * @param {string} name - Argument name, like `defines`.
  * @param {number|undefined} ms - Measured duration, undefined when timing was off.
  * @example
  * options.checkStats = true;
- * recordSetScan("T#m", 0.25);
+ * recordSetScan("T#m", "v", 0.25);
  * getCheckStats()[0].setMs; // 0.25
  */
-function recordSetScan(loc, ms) {
+function recordSetScan(loc, name, ms) {
   if (!options.checkStats) {
     return;
   }
-  const row = rowFor(loc);
+  const row = rowFor(loc, name);
   if (row === undefined) {
     return;
   }
@@ -167,21 +176,22 @@ function recordSetScan(loc, ms) {
   }
 }
 /**
- * Records one full `Array` (or array-like) walk at a loc together with
- * its wall time. Same fold contract as `recordSetScan`: the enclosing
- * check attributes the time.
+ * Records one full `Array` (or array-like) walk for one parameter
+ * together with its wall time. Same fold contract as `recordSetScan`:
+ * the enclosing check attributes the time.
  * @param {string} loc - String like `BoundingBox#compute`.
+ * @param {string} name - Argument name, like `defines`.
  * @param {number|undefined} ms - Measured duration, undefined when timing was off.
  * @example
  * options.checkStats = true;
- * recordArrayScan("T#m", 0.25);
+ * recordArrayScan("T#m", "v", 0.25);
  * getCheckStats()[0].arrayMs; // 0.25
  */
-function recordArrayScan(loc, ms) {
+function recordArrayScan(loc, name, ms) {
   if (!options.checkStats) {
     return;
   }
-  const row = rowFor(loc);
+  const row = rowFor(loc, name);
   if (row === undefined) {
     return;
   }
@@ -195,21 +205,22 @@ function recordArrayScan(loc, ms) {
   }
 }
 /**
- * Records one plain object key walk at a loc together with its wall
- * time. Same fold contract as `recordSetScan`: the enclosing check
+ * Records one plain object key walk for one parameter together with its
+ * wall time. Same fold contract as `recordSetScan`: the enclosing check
  * attributes the time.
  * @param {string} loc - String like `BoundingBox#compute`.
+ * @param {string} name - Argument name, like `defines`.
  * @param {number|undefined} ms - Measured duration, undefined when timing was off.
  * @example
  * options.checkStats = true;
- * recordObjectScan("T#m", 0.25);
+ * recordObjectScan("T#m", "v", 0.25);
  * getCheckStats()[0].objectMs; // 0.25
  */
-function recordObjectScan(loc, ms) {
+function recordObjectScan(loc, name, ms) {
   if (!options.checkStats) {
     return;
   }
-  const row = rowFor(loc);
+  const row = rowFor(loc, name);
   if (row === undefined) {
     return;
   }

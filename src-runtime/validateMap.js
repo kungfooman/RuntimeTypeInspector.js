@@ -131,7 +131,7 @@ function timedScan(value, record, key, val, loc, name, critical, warn, depth) {
   if (startedMs !== undefined) {
     const spentMs = nowMs() - startedMs;
     record.spentMs += spentMs;
-    recordMapScan(loc, spentMs);
+    recordMapScan(loc, name, spentMs);
   }
   return clean;
 }
@@ -205,7 +205,7 @@ function validateMap(value, expect, loc, name, critical, warn, depth) {
       // clear any positive budget: the conservative direction.
       if (sinceLast < record.window && record.spentMs >= minTotalMs()) {
         record.sinceLast = sinceLast;
-        recordMapRide(loc);
+        recordMapRide(loc, name);
         return true;
       }
     }

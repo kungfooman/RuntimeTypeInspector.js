@@ -26,7 +26,7 @@ function validateRecord(value, expect, loc, name, critical, warn, depth) {
   const startedMs = options.checkStats ? nowMs() : undefined;
   const done = (ret) => {
     if (startedMs !== undefined) {
-      recordObjectScan(loc, nowMs() - startedMs);
+      recordObjectScan(loc, name, nowMs() - startedMs);
     }
     return ret;
   };
