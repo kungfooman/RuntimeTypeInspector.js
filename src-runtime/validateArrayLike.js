@@ -1,7 +1,5 @@
 import {recurse} from "./validators.js";
 import {firstBadIndex} from "./firstBadIndex.js";
-import {recordArrayScan} from "./checkStats.js";
-import {timeWalk} from "./timeWalk.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value: an
@@ -44,9 +42,6 @@ function validateArrayLike(value, expect, loc, name, critical, warn, depth) {
   if (firstBad === -1) {
     return true;
   }
-  // Stats only: time the element walk so the hotspot table can split a
-  // loc's cost by container.
-  const done = timeWalk(loc, name, recordArrayScan);
   for (let i = firstBad; i < length; i++) {
     const valueIndex = value[i];
     const nameIndex = `${name}[${i}]`;
@@ -54,9 +49,9 @@ function validateArrayLike(value, expect, loc, name, critical, warn, depth) {
     if (!ret) {
       const info = {expect: elementType, value: valueIndex};
       warn(`Element at index ${i} has a wrong type.`, info);
-      return done(false);
+      return false;
     }
   }
-  return done(true);
+  return true;
 }
 export {validateArrayLike};

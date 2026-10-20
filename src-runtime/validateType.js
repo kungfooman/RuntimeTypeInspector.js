@@ -34,6 +34,7 @@ import {validateTypedef     } from "./validateTypedef.js";
 import {validateUnion       } from "./validateUnion.js";
 import {createTypeFromIndexedAccess} from "./createTypeFromIndexedAccess.js";
 import {validators          } from "./validators.js";
+import {installWalkTimers   } from "./installWalkTimers.js";
 /**
  * Populates the dispatch table: every edge points outward from here, so the
  * module graph stays acyclic. Importing this module (or the package index)
@@ -71,6 +72,17 @@ Object.assign(validators, {
   validateBigint,
   validateVoid,
 });
+/**
+ * Walk timing is a table plugin, installed once the table is populated.
+ * When stats are off at import (the consumer never opted in), install is
+ * skipped, so the table holds the pure cores and a disabled timer costs
+ * literally nothing per check. Enabling later via `setOptions` installs
+ * then; each wrapper also gates on the flag at call time, so disabling
+ * again costs one boolean read per check with no clock calls.
+ */
+if (options.checkStats !== false) {
+  installWalkTimers();
+}
 /**
  * @typedef {object} TypeObject
  * @property {string} type - Something like 'string', 'number', 'object', 'MeshInstance' etc.

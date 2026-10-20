@@ -136,6 +136,14 @@ function setOptions(patch) {
   if (Object.hasOwn(patch, 'windowedChecks')) {
     validators.validateMap = options.windowedChecks ? windowedValidateMap : validateMap;
   }
+  // Same wiring for walk timing: enabling stats after an install-skipping
+  // import (stats were off then) installs the timed wrappers now. The
+  // import is deferred so this leaf module never cycles back through the
+  // installer at load time; disabling needs no work, each wrapper gates
+  // on the flag at call time.
+  if (patch.checkStats === true) {
+    import("./installWalkTimers.js").then((timers) => timers.installWalkTimers());
+  }
 }
 /**
  * Records the host project version (see `options.projectVersion`).

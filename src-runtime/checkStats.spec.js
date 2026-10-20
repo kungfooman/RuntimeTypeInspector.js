@@ -65,7 +65,8 @@ function testValidatorsRecordTheirKind() {
   // validators lands walk time in the matching kind ledger at the same
   // loc, and the enclosing check (simulated here, like `inspectType`
   // does) attributes it. Failing validations record too: the walk still
-  // cost time.
+  // cost time. Walk timing installs with `validateType.js`, which this
+  // spec already imports, so the table path is timed here.
   options.checkStats = true;
   resetCheckStats();
   const warn = () => undefined;

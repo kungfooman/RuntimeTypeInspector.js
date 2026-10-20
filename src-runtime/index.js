@@ -113,6 +113,7 @@ export * from './freshWindow.js';
 export * from './scanAndSettle.js';
 export * from './timedScan.js';
 export * from './timeWalk.js';
+export * from './installWalkTimers.js';
 export * from './validateMapping.js';
 export * from './validateNull.js';
 export * from './validateNumber.js';

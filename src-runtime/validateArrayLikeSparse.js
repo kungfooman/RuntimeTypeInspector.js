@@ -1,8 +1,6 @@
 import {recurse} from "./validators.js";
 import {validators} from "./validators.js";
 import {firstBadIndex} from "./firstBadIndex.js";
-import {recordArrayScan} from "./checkStats.js";
-import {timeWalk} from "./timeWalk.js";
 /**
  * Holes-tolerant container validation for proven over-allocation: like
  * `validateArray` for `{type: 'array', ...}` and like the `ArrayLike`
@@ -68,9 +66,6 @@ function validateArrayLikeSparse(value, expect, loc, name, critical, warn, depth
   if (firstBad === -1) {
     return true;
   }
-  // Stats only: time the element walk so the hotspot table can split a
-  // loc's cost by container.
-  const done = timeWalk(loc, name, recordArrayScan);
   for (let i = firstBad; i < length; i++) {
     if (checkAbsent && !(i in value)) {
       continue;
@@ -81,10 +76,10 @@ function validateArrayLikeSparse(value, expect, loc, name, critical, warn, depth
     if (!ret) {
       const info = {expect: elementType, value: valueIndex};
       warn(`Element at index ${i} has a wrong type.`, info);
-      return done(false);
+      return false;
     }
   }
-  return done(true);
+  return true;
 }
 // Self-registered like the other runtime helpers: readable and overridable
 // through `validators` without a release.

@@ -1,6 +1,4 @@
 import {recurse} from "./validators.js";
-import {recordSetScan} from "./checkStats.js";
-import {timeWalk} from "./timeWalk.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -17,19 +15,16 @@ function validateSet(value, expect, loc, name, critical, warn, depth) {
     return false;
   }
   const {elementType} = expect;
-  // Stats only: time the walk so the hotspot table can split a loc's
-  // cost by container.
-  const done = timeWalk(loc, name, recordSetScan);
   let i = 0;
   for (const innerValue of value) {
     const test = recurse(innerValue, elementType, loc, name, critical, warn, depth + 1);
     if (!test) {
       const info = {expect: elementType, got: innerValue};
       warn(`validateSet> invalid set member at [...${name}.values()][${i}]`, info);
-      return done(false);
+      return false;
     }
     i++;
   }
-  return done(true);
+  return true;
 }
 export {validateSet};

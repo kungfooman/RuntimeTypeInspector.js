@@ -117,6 +117,7 @@ const tests = [
   ...(await import('./src-runtime/scanAndSettle.spec.js'                )).tests,
   ...(await import('./src-runtime/timedScan.spec.js'                    )).tests,
   ...(await import('./src-runtime/timeWalk.spec.js'                     )).tests,
+  ...(await import('./src-runtime/installWalkTimers.spec.js'            )).tests,
   ...(await import('./src-runtime/checkStats.spec.js'                 )).tests,
   ...(await import('./src-runtime/validateKeyof.spec.js'             )).tests,
   ...(await import('./src-runtime/classShape.spec.js'               )).tests,
@@ -185,7 +186,7 @@ for (const test of tests) {
   clearObject(typedefs); // Each test starts with a clean slate of typedefs
   clearObject(typedefTemplates);
   bumpTypedefVersion(); // Wiping without a bump would serve stale cache entries
-  const ret = test();
+  const ret = await test();
   if (!ret) {
     console.error("Test failed: " + test);
     errors++;

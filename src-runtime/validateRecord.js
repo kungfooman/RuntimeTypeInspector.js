@@ -1,6 +1,4 @@
 import {recurse} from "./validators.js";
-import {recordObjectScan} from "./checkStats.js";
-import {timeWalk} from "./timeWalk.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -21,9 +19,6 @@ function validateRecord(value, expect, loc, name, critical, warn, depth) {
     warn(`> validateType> record> expected object, not '${value}'`);
     return false;
   }
-  // Stats only: time the key walk so the hotspot table can split a
-  // loc's cost by container.
-  const done = timeWalk(loc, name, recordObjectScan);
   for (const prop of Object.keys(value)) {
     const nameKey = `${name}['${prop}']`;
     // Runtime keys are always strings: `string` (and `any`-family) keys
@@ -35,12 +30,12 @@ function validateRecord(value, expect, loc, name, critical, warn, depth) {
       const ok = typeof key === 'number' ? prop === String(key) : String(Number(prop)) === prop;
       if (!ok) {
         warn(`> validateType> record> key '${prop}' is no number.`, {expect: key, value: prop});
-        return done(false);
+        return false;
       }
     } else if (key !== undefined && key !== 'any' && key !== 'unknown' && key !== '*' && key !== 'string') {
       if (!recurse(prop, key, loc, nameKey, critical, warn, depth + 1)) {
         warn(`> validateType> record> key '${prop}' has an invalid type.`, {expect: key, value: prop});
-        return done(false);
+        return false;
       }
     }
     const valueKey = value[prop];
@@ -54,9 +49,9 @@ function validateRecord(value, expect, loc, name, critical, warn, depth) {
         value: valueKey
       };
       warn(`> validateType> record> The ${nameKey} property has an invalid type.`, info);
-      return done(false);
+      return false;
     }
   }
-  return done(true);
+  return true;
 }
 export {validateRecord};
