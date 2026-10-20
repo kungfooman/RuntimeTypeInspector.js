@@ -1,6 +1,6 @@
 import {recurse} from "./validators.js";
-import {options} from "./options.js";
-import {recordObjectScan, nowMs} from "./checkStats.js";
+import {recordObjectScan} from "./checkStats.js";
+import {timeWalk} from "./timeWalk.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -22,14 +22,8 @@ function validateRecord(value, expect, loc, name, critical, warn, depth) {
     return false;
   }
   // Stats only: time the key walk so the hotspot table can split a
-  // loc's cost by container. One boolean read when off, no clock calls.
-  const startedMs = options.checkStats ? nowMs() : undefined;
-  const done = (ret) => {
-    if (startedMs !== undefined) {
-      recordObjectScan(loc, name, nowMs() - startedMs);
-    }
-    return ret;
-  };
+  // loc's cost by container.
+  const done = timeWalk(loc, name, recordObjectScan);
   for (const prop of Object.keys(value)) {
     const nameKey = `${name}['${prop}']`;
     // Runtime keys are always strings: `string` (and `any`-family) keys

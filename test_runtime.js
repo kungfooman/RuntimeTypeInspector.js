@@ -116,6 +116,7 @@ const tests = [
   ...(await import('./src-runtime/freshWindow.spec.js'                  )).tests,
   ...(await import('./src-runtime/scanAndSettle.spec.js'                )).tests,
   ...(await import('./src-runtime/timedScan.spec.js'                    )).tests,
+  ...(await import('./src-runtime/timeWalk.spec.js'                     )).tests,
   ...(await import('./src-runtime/checkStats.spec.js'                 )).tests,
   ...(await import('./src-runtime/validateKeyof.spec.js'             )).tests,
   ...(await import('./src-runtime/classShape.spec.js'               )).tests,

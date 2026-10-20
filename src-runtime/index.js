@@ -111,6 +111,7 @@ export * from './minTotalMs.js';
 export * from './freshWindow.js';
 export * from './scanAndSettle.js';
 export * from './timedScan.js';
+export * from './timeWalk.js';
 export * from './validateMapping.js';
 export * from './validateNull.js';
 export * from './validateNumber.js';

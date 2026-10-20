@@ -1,7 +1,7 @@
 import {recurse} from "./validators.js";
 import {firstBadIndex} from "./firstBadIndex.js";
-import {options} from "./options.js";
-import {recordArrayScan, nowMs} from "./checkStats.js";
+import {recordArrayScan} from "./checkStats.js";
+import {timeWalk} from "./timeWalk.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value: an
@@ -45,14 +45,8 @@ function validateArrayLike(value, expect, loc, name, critical, warn, depth) {
     return true;
   }
   // Stats only: time the element walk so the hotspot table can split a
-  // loc's cost by container. One boolean read when off, no clock calls.
-  const startedMs = options.checkStats ? nowMs() : undefined;
-  const done = (ret) => {
-    if (startedMs !== undefined) {
-      recordArrayScan(loc, name, nowMs() - startedMs);
-    }
-    return ret;
-  };
+  // loc's cost by container.
+  const done = timeWalk(loc, name, recordArrayScan);
   for (let i = firstBad; i < length; i++) {
     const valueIndex = value[i];
     const nameIndex = `${name}[${i}]`;

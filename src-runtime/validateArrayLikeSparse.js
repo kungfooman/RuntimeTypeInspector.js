@@ -1,8 +1,8 @@
 import {recurse} from "./validators.js";
 import {validators} from "./validators.js";
 import {firstBadIndex} from "./firstBadIndex.js";
-import {options} from "./options.js";
-import {recordArrayScan, nowMs} from "./checkStats.js";
+import {recordArrayScan} from "./checkStats.js";
+import {timeWalk} from "./timeWalk.js";
 /**
  * Holes-tolerant container validation for proven over-allocation: like
  * `validateArray` for `{type: 'array', ...}` and like the `ArrayLike`
@@ -69,14 +69,8 @@ function validateArrayLikeSparse(value, expect, loc, name, critical, warn, depth
     return true;
   }
   // Stats only: time the element walk so the hotspot table can split a
-  // loc's cost by container. One boolean read when off, no clock calls.
-  const startedMs = options.checkStats ? nowMs() : undefined;
-  const done = (ret) => {
-    if (startedMs !== undefined) {
-      recordArrayScan(loc, name, nowMs() - startedMs);
-    }
-    return ret;
-  };
+  // loc's cost by container.
+  const done = timeWalk(loc, name, recordArrayScan);
   for (let i = firstBad; i < length; i++) {
     if (checkAbsent && !(i in value)) {
       continue;
