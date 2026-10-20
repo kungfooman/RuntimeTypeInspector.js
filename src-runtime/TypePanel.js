@@ -751,7 +751,7 @@ function isWindowedChecks() {
   const tmp = localStorage.getItem('rti-windowed-checks');
   // No stored choice keeps the current option value, so an engine
   // bootstrap `setOptions({windowedChecks: true})` survives panel loads.
-  return tmp === null ? options.windowedChecks !== false : tmp === 'true';
+  return tmp === null ? options.windowedChecks === true : tmp === 'true';
 }
 function storedMapCheckWindowCap() {
   const tmp = localStorage.getItem('rti-window-cap');
@@ -774,7 +774,7 @@ function storedMapCheckWindowMinTotalMs() {
 }
 function isCheckStats() {
   const tmp = localStorage.getItem('rti-check-stats');
-  return tmp === null ? options.checkStats !== false : tmp === 'true';
+  return tmp === null ? options.checkStats === true : tmp === 'true';
 }
 /**
  * Asserts a panel start position, falling back to the default corner.

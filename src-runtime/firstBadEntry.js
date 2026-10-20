@@ -78,7 +78,9 @@ function firstBadEntry(value, key, val) {
     customTypes.number || customTypes.string || customTypes.boolean) {
     return -2;
   }
-  const checkInfinity = options.checkInfinity !== false;
+  // Fail closed when the option is missing: a deleted or undefined flag
+  // must not silently widen validation to accept infinities.
+  const checkInfinity = options.checkInfinity === true;
   // The Infinity verdict is a pre-picked predicate instead of a boolean
   // threaded through every call: both scanner paths share this pick.
   const numberBad = checkInfinity ? isFailingNumberDisallowingInf : isFailingNumberAllowingInf;

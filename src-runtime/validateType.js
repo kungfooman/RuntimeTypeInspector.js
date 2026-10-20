@@ -80,7 +80,7 @@ Object.assign(validators, {
  * then; each wrapper also gates on the flag at call time, so disabling
  * again costs one boolean read per check with no clock calls.
  */
-if (options.checkStats !== false) {
+if (options.checkStats) {
   installWalkTimers();
 }
 /**
@@ -151,7 +151,7 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
       return false;
     }
     if (!isFinite(value)) {
-      if (options.checkInfinity !== false) {
+      if (options.checkInfinity) {
         warn("value is +-infinite");
         return false;
       }

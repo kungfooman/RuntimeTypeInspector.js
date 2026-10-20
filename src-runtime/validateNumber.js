@@ -27,7 +27,7 @@ function validateNumber(value, expect, loc, name, critical, warn, depth) {
     return false;
   }
   if (!Number.isFinite(value)) {
-    if (options.checkInfinity !== false) {
+    if (options.checkInfinity) {
       warn('Expected finite number, got +-Infinity.', {value});
       return false;
     }
