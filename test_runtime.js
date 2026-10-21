@@ -93,6 +93,9 @@ const tests = [
   ...(await import('./src-runtime/substituteUnion.spec.js'        )).tests,
   ...(await import('./src-runtime/templateCandidates.spec.js'     )).tests,
   ...(await import('./src-runtime/firstBadIndex.spec.js'           )).tests,
+  ...(await import('./src-runtime/firstBadEntry.spec.js'           )).tests,
+  ...(await import('./src-runtime/isFailingNumberDisallowingInf.spec.js'         )).tests,
+  ...(await import('./src-runtime/isFailingNumberAllowingInf.spec.js')).tests,
   ...(await import('./src-runtime/mappedOptionality.spec.js'       )).tests,
   ...(await import('./src-runtime/nominalClassOf.spec.js'         )).tests,
   ...(await import('./src-runtime/matchIndexSignature.spec.js'     )).tests,
@@ -107,6 +110,15 @@ const tests = [
   ...(await import('./src-runtime/validateNamedType.spec.js'        )).tests,
   ...(await import('./src-runtime/validateArguments.spec.js'         )).tests,
   ...(await import('./src-runtime/validateMap.spec.js'               )).tests,
+  ...(await import('./src-runtime/plugin-windowed/scanMapEntries.spec.js'   )).tests,
+  ...(await import('./src-runtime/plugin-windowed/windowedValidateMap.spec.js')).tests,
+  ...(await import('./src-runtime/plugin-windowed/windowedOptions.spec.js'    )).tests,
+  ...(await import('./src-runtime/plugin-windowed/windowCap.spec.js'          )).tests,
+  ...(await import('./src-runtime/plugin-windowed/minTotalMs.spec.js'         )).tests,
+  ...(await import('./src-runtime/plugin-windowed/freshWindow.spec.js'        )).tests,
+  ...(await import('./src-runtime/plugin-walk-timers/timeWalk.spec.js'        )).tests,
+  ...(await import('./src-runtime/plugin-walk-timers/installWalkTimers.spec.js')).tests,
+  ...(await import('./src-runtime/checkStats.spec.js'                 )).tests,
   ...(await import('./src-runtime/validateKeyof.spec.js'             )).tests,
   ...(await import('./src-runtime/classShape.spec.js'               )).tests,
   ...(await import('./src-runtime/instantiateReference.spec.js'    )).tests,
@@ -174,7 +186,7 @@ for (const test of tests) {
   clearObject(typedefs); // Each test starts with a clean slate of typedefs
   clearObject(typedefTemplates);
   bumpTypedefVersion(); // Wiping without a bump would serve stale cache entries
-  const ret = test();
+  const ret = await test();
   if (!ret) {
     console.error("Test failed: " + test);
     errors++;

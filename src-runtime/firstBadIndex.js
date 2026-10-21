@@ -3,6 +3,8 @@ import {validators} from "./validators.js";
 import {validateNumber} from "./validateNumber.js";
 import {validateString} from "./validateString.js";
 import {validateBoolean} from "./validateBoolean.js";
+import {isFailingNumberDisallowingInf} from "./isFailingNumberDisallowingInf.js";
+import {isFailingNumberAllowingInf} from "./isFailingNumberAllowingInf.js";
 /**
  * Scans an array-like range for the first element a primitive check would
  * reject, without building per-element names or recursing: `number`
@@ -32,11 +34,12 @@ function firstBadIndex(value, length, elementType) {
     return 0;
   }
   if (elementType === 'number' && validators.validateNumber === validateNumber) {
-    const checkInfinity = options.checkInfinity !== false;
+    // The Infinity verdict is picked once per scan, so the hot loop runs
+    // a plain predicate per element instead of evaluating a boolean flag
+    // and the options object every element.
+    const isBad = options.checkInfinity ? isFailingNumberDisallowingInf : isFailingNumberAllowingInf;
     for (let i = 0; i < length; i++) {
-      const element = value[i];
-      if (typeof element !== 'number' || Number.isNaN(element) ||
-        (checkInfinity && !Number.isFinite(element))) {
+      if (isBad(value[i])) {
         return i;
       }
     }

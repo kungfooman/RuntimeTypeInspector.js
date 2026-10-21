@@ -382,7 +382,9 @@ function buildObjectNode(expect, value, node, sub) {
       // Excess actual keys render too — otherwise the tree hides half the
       // errors the Diagnosis lists. Marks follow Exact objects: unmarked
       // when excess passes validation.
-      const exact = options.exactObjects !== false;
+      // Fail closed when the option is missing: a deleted or undefined
+      // flag must not silently widen validation to accept excess keys.
+      const exact = options.exactObjects === true;
       for (const key of Object.keys(childValue)) {
         if (expect.properties[key] !== undefined || typeof key !== 'string') {
           continue;

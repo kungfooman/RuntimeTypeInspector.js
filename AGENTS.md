@@ -104,6 +104,15 @@ JSDoc blocks, or specs. Describe the why in plain words instead; the commit
 message / PR is the place for issue links. Pre-existing references stay
 untouched — just don't introduce new ones.
 
+Write comments, commit messages and prose in plain proper English with plain
+ASCII punctuation only: no unicode decorations (em dashes, curly quotes,
+arrows), and do not sprinkle hyphens and dashes everywhere; use normal
+sentences with regular word spacing instead.
+
+## Fail closed
+
+Safety relevant flags (option switches, validation verdicts, capability checks) must fail closed: a missing, undefined or garbage value disables the behavior, never enables it. Read a flag with plain truthiness (`if (options.checkStats)`) when it flows straight into a branch, or compare `=== true` with a short comment when the verdict is stored in a local first. Never write `options.<flag> !== false`: that reads every non-`false` value, including `undefined` from a typo or a deleted key, as on, so a broken flag silently widens validation instead of narrowing it.
+
 ## One function per file
 
 Each helper module in `src-runtime/` and `src-transpiler/` holds exactly one function, named after its file (e.g. `stripKey` lives in `src-runtime/stripKey.js`), plus only the module-local constants that function directly needs (e.g. its memoization cache). Spec files (`*.spec.js`) are exempt: they hold one test function per behavior under test.
@@ -111,6 +120,16 @@ Each helper module in `src-runtime/` and `src-transpiler/` holds exactly one fun
 - When extracting: move the function as-is (no behavior changes), point the old module's import at the new file, add an `export * from './<name>.js';` line to the package index (`src-runtime/index.js` or `src-transpiler/index.js`), update any specs importing from the old path, and finish with the full gate (`npm test` + `npm run lint`).
 - Every helper module ships with a `<name>.spec.js` next to it (same style: sync boolean tests, `export const tests`, wired into `test_runtime.js`): a function lands only with a spec that fails when the function is stubbed out. Pre-existing spec-less modules are backlog, not precedent.
 - Exception: `src-runtime/jsx.js` stays whole (`genJsx`, `appendChildren` and the tag factories live together) because the factories call `appendChildren` and splitting them only trades a working module for a circular import.
+
+## Plugins
+
+Optional runtime behavior ships as plugins, one folder per plugin at `src-runtime/plugin-<name>/` (e.g. `plugin-windowed/`, `plugin-walk-timers/`). A plugin folder holds the plugin entry, its private helpers, and each module's `<name>.spec.js` next to it; only genuinely shared infrastructure (`options.js`, `checkStats.js`, `validators.js`, the core validators) stays in the root. A plugin owns the option keys it introduces: it exports them as one plain data object that the root `options.js` splices into the shared object with `Object.assign`, so panels, workers and `setOptions` keep reading and writing the same `options` object with no changes on their side.
+- Each plugin folder carries an `index.js` barrel of pure `export *` lines (same pattern as the package index), and the package index re-exports the barrel instead of the individual modules. Barrels hold no behavior.
+- Plugin barrel exports must never collide: `export *` resolves a name clash by silently dropping the name from the namespace, so a collision is a quiet API loss with no error anywhere. When a plugin export would share a name with any other barrel export, rename it with the plugin prefix first (a windowing hook is `mapCheckWindowRecord`, never bare `record`). Re-run the namespace check below whenever a plugin barrel gains an export, so the rule stays verified instead of trusted.
+
+```sh
+node --input-type=module -e "import fs from 'node:fs'; const root = await import('./src-runtime/index.js'); const missing = []; for (const d of fs.readdirSync('src-runtime', {withFileTypes: true})) { if (!d.isDirectory() || !d.name.startsWith('plugin-')) { continue; } const barrel = await import('./src-runtime/' + d.name + '/index.js'); for (const k of Object.keys(barrel)) { if (!(k in root)) { missing.push(d.name + ': ' + k); } } } if (missing.length > 0) { console.error('shadowed barrel exports: ' + missing.join(', ')); process.exit(1); } console.log('no barrel collisions'); }"
+```
 
 ## Markdown style
 

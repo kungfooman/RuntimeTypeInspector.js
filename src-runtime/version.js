@@ -7,7 +7,7 @@
  */
 const RTI_INFO = {
   "version": "6.0.0",
-  "commit": "470dd57f679d32240cf4a38589665163dc02c03f",
-  "subject": "Homomorphic `Partial`/`Required` over indexed access, primitives, classes and friends (#302)"
+  "commit": "1c4e20a723c51b0a7054056243f86edb747e776b",
+  "subject": "Surface skip counts on the Stats button, rides split from suppressions"
 };
 export {RTI_INFO};

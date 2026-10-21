@@ -812,7 +812,9 @@ function diffValue(value, expect, path, depth, memberOf) {
         // Excess keys fail validation only with Exact objects on — but the
         // Diagnosis lists everything known, marking lenient extras as
         // informational instead of dropping them silently.
-        const strict = options.exactObjects !== false;
+        // Fail closed when the option is missing: a deleted or undefined
+        // flag must not silently widen validation to accept excess keys.
+        const strict = options.exactObjects === true;
         const subPath = path ? `${path}.${key}` : key;
         const info = mat.__provenance ?? removalInfo(expect, key);
         const rendered = describeExcess(subPath, key, snip(value[key]), Object.keys(mat.properties), info);
