@@ -4,6 +4,7 @@ import {expandTypeDepFree  } from './expandTypeDepFree.js';
 import {harvestClassShape  } from './harvestClassShape.js';
 import {inferTypeFromDefault} from './inferTypeFromDefault.js';
 import {parseInlineParamType} from './parseInlineParamType.js';
+import {quoteName} from './quoteName.js';
 import {nodeIsFunctionLike } from './nodeIsFunctionLike.js';
 import {parseJSDoc         } from './parseJSDoc.js';
 import {parseJSDocSetter   } from './parseJSDocSetter.js';
@@ -697,8 +698,8 @@ class Asserter extends Stringifier {
                 }
                 const t = simplifyTypeToSource(type.elementType).replaceAll('\n', '\n' + spaces);
                 newlineBeforeFirst();
-                const atLoc = this.quoteName(loc);
-                const atName = this.quoteName(nameFancy);
+                const atLoc = quoteName(loc);
+                const atName = quoteName(nameFancy);
                 if (templates) {
                   out += `${spaces}if (!inspectTypeWithTemplates(${element.name}, ${t}, ${atLoc}, ${atName}, rtiTemplates)) {\n`;
                 } else {
@@ -737,8 +738,8 @@ class Asserter extends Stringifier {
                   }
                   const t = simplifyTypeToSource(subType).replaceAll('\n', '\n' + spaces);
                   newlineBeforeFirst();
-                  const atLoc = this.quoteName(loc);
-                  const atName = this.quoteName(nameFancy);
+                  const atLoc = quoteName(loc);
+                  const atName = quoteName(nameFancy);
                   if (templates) {
                     out += `${spaces}if (!inspectTypeWithTemplates(${keyName}, ${t}, ${atLoc}, ${atName}, rtiTemplates)) {\n`;
                   } else {
@@ -783,8 +784,8 @@ class Asserter extends Stringifier {
         prevCheck = 'arguments.length !== 0 && ';
       }
       newlineBeforeFirst();
-      const atLoc = this.quoteName(loc);
-      const atName = this.quoteName(nameFancy);
+      const atLoc = quoteName(loc);
+      const atName = quoteName(nameFancy);
       if (templates) {
         out += `${spaces}if (${prevCheck}!inspectTypeWithTemplates(${name}, ${t}, ${atLoc}, ${atName}, rtiTemplates)) {\n`;
       } else {
@@ -861,7 +862,7 @@ class Asserter extends Stringifier {
       return '';
     }
     const {spaces} = this;
-    const atLoc = this.quoteName(this.getName(node));
+    const atLoc = quoteName(this.getName(node));
     let out = prefixNewline ? '\n' : '';
     for (const {name, type} of checks) {
       const t = simplifyTypeToSource(type).replaceAll('\n', '\n' + spaces);
@@ -875,7 +876,7 @@ class Asserter extends Stringifier {
    * given separator, a plain literal joins bracket-quoted, a computed key
    * stays in source-text brackets. The key node type decides the shape, so
    * no classification of the rendered text is ever needed. Plain display
-   * text only: quoting for the emitted literal happens in `quoteName`.
+   * text only: quoting for the emitted literal happens in `quoteName.js`.
    * @example
    * keyPart({type: 'Identifier', name: 'set'}, false, '.'); // '.set'
    * @param {Node} key - The property key node.
@@ -892,21 +893,6 @@ class Asserter extends Stringifier {
       return `[${JSON.stringify(String(key.value))}]`;
     }
     return `[${this.toSource(key)}]`;
-  }
-  /**
-   * Quotes a display name for the single-quoted literal of an emitted
-   * `inspectType` call. Double quotes travel raw, single quotes escape
-   * as `\'`, so every key stays valid output syntax. This is the only
-   * place that knows about literal escaping: name builders above return
-   * plain human-readable text.
-   * @example
-   * quoteName('BitPacking.set'); // "'BitPacking.set'"
-   * quoteName("o[\"ap's\"]"); // "'o[\"ap\\'s\"]'"
-   * @param {string} name - The display name.
-   * @returns {string} The quoted literal including its quotes.
-   */
-  quoteName(name) {
-    return `'${name.replaceAll("\\", "\\\\").replaceAll("'", "\\'")}'`;
   }
   /**
    * Detects the `Object.assign(X.prototype, <child>)` mixin pattern: instance
