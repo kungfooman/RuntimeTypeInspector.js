@@ -118,9 +118,9 @@ function testThisAssignmentBare() {
   return out.includes(`'m', 'a'`) && !out.includes('.m') && !out.includes('#m');
 }
 function testApostropheKeyQuoted() {
-  // Keys with single quotes encode as unicode escapes, never raw.
+  // Keys with single quotes escape as `\'`, never raw.
   const out = convert(`const o = { ${doc1}"ap's"(a) { return a; } };`);
-  return out.includes(`'o["ap\\u0027s"]', 'a'`);
+  return out.includes(`'o["ap\\'s"]', 'a'`);
 }
 function testUnicodeKeyQuoted() {
   // Non-ASCII keys render bracket-quoted and keep the output valid.

@@ -3,7 +3,6 @@ import {requiredTypeofs    } from './expandType.js';
 import {expandTypeDepFree  } from './expandTypeDepFree.js';
 import {harvestClassShape  } from './harvestClassShape.js';
 import {inferTypeFromDefault} from './inferTypeFromDefault.js';
-import {isValidKey} from './isValidKey.js';
 import {parseInlineParamType} from './parseInlineParamType.js';
 import {nodeIsFunctionLike } from './nodeIsFunctionLike.js';
 import {parseJSDoc         } from './parseJSDoc.js';
@@ -698,10 +697,12 @@ class Asserter extends Stringifier {
                 }
                 const t = simplifyTypeToSource(type.elementType).replaceAll('\n', '\n' + spaces);
                 newlineBeforeFirst();
+                const atLoc = this.quoteName(loc);
+                const atName = this.quoteName(nameFancy);
                 if (templates) {
-                  out += `${spaces}if (!inspectTypeWithTemplates(${element.name}, ${t}, '${loc}', '${nameFancy}', rtiTemplates)) {\n`;
+                  out += `${spaces}if (!inspectTypeWithTemplates(${element.name}, ${t}, ${atLoc}, ${atName}, rtiTemplates)) {\n`;
                 } else {
-                  out += `${spaces}if (!inspectType(${element.name}, ${t}, '${loc}', '${nameFancy}')) {\n`;
+                  out += `${spaces}if (!inspectType(${element.name}, ${t}, ${atLoc}, ${atName})) {\n`;
                 }
                 out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
               }
@@ -736,10 +737,12 @@ class Asserter extends Stringifier {
                   }
                   const t = simplifyTypeToSource(subType).replaceAll('\n', '\n' + spaces);
                   newlineBeforeFirst();
+                  const atLoc = this.quoteName(loc);
+                  const atName = this.quoteName(nameFancy);
                   if (templates) {
-                    out += `${spaces}if (!inspectTypeWithTemplates(${keyName}, ${t}, '${loc}', '${nameFancy}', rtiTemplates)) {\n`;
+                    out += `${spaces}if (!inspectTypeWithTemplates(${keyName}, ${t}, ${atLoc}, ${atName}, rtiTemplates)) {\n`;
                   } else {
-                    out += `${spaces}if (!inspectType(${keyName}, ${t}, '${loc}', '${nameFancy}')) {\n`;
+                    out += `${spaces}if (!inspectType(${keyName}, ${t}, ${atLoc}, ${atName})) {\n`;
                   }
                   out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
                 }
@@ -780,10 +783,12 @@ class Asserter extends Stringifier {
         prevCheck = 'arguments.length !== 0 && ';
       }
       newlineBeforeFirst();
+      const atLoc = this.quoteName(loc);
+      const atName = this.quoteName(nameFancy);
       if (templates) {
-        out += `${spaces}if (${prevCheck}!inspectTypeWithTemplates(${name}, ${t}, '${loc}', '${nameFancy}', rtiTemplates)) {\n`;
+        out += `${spaces}if (${prevCheck}!inspectTypeWithTemplates(${name}, ${t}, ${atLoc}, ${atName}, rtiTemplates)) {\n`;
       } else {
-        out += `${spaces}if (${prevCheck}!inspectType(${name}, ${t}, '${loc}', '${nameFancy}')) {\n`;
+        out += `${spaces}if (${prevCheck}!inspectType(${name}, ${t}, ${atLoc}, ${atName})) {\n`;
       }
       out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
     }
@@ -856,70 +861,52 @@ class Asserter extends Stringifier {
       return '';
     }
     const {spaces} = this;
-    const loc = this.getName(node);
+    const atLoc = this.quoteName(this.getName(node));
     let out = prefixNewline ? '\n' : '';
     for (const {name, type} of checks) {
       const t = simplifyTypeToSource(type).replaceAll('\n', '\n' + spaces);
-      out += `${spaces}if (!inspectType(${name}, ${t}, '${loc}', '${name}')) {\n`;
+      out += `${spaces}if (!inspectType(${name}, ${t}, ${atLoc}, '${name}')) {\n`;
       out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
     }
     return out;
   }
   /**
-   * Builds the full display name from an owner and key path: `BitPacking`,
-   * `BitPacking.nested.deep`, `ScopeSpace#resolve`, `computed[key]`.
-   *
-   * Scope: the issue asks for two renames (owner-prefixed object methods,
-   * dot-joined static members); the walk around it only keeps those renames
-   * honest on hostile input. Returned, passed, array-nested and
-   * `new`-constructed literals keep the bare key: the object outlives any
-   * lexical binding, so naming it after one would mislead. Likewise only
-   * the `Object.assign(X.prototype, ...)` call shape and direct
-   * `X.prototype = ...` assignment count as prototype members; every other
-   * assignment needs a plain `Identifier` target (`o.x = ...` keeps the
-   * chain, `a.b.c = ...` and `this.o.x = ...` stay bare).
-   *
-   * Identifiers render raw, exotic spellings render bracket-quoted,
-   * computed expressions stay in brackets. Single quotes encode as
-   * unicode escapes: the name stays valid inside the single-quoted
-   * literal of the emitted `inspectType` call and readable in reports.
-   * @param {string} owner - The owning binding name.
-   * @param {string[]} parts - Raw key segments from owner down to the leaf.
-   * @param {boolean} instance - Whether the leaf is an instance member.
-   * @returns {string} The qualified display name.
-   */
-  qualifyName(owner, parts, instance) {
-    return parts.reduce((acc, part, i) => {
-      const last = i === parts.length - 1;
-      if (part.startsWith('[') && part.endsWith(']')) {
-        return `${acc}${part}`;
-      }
-      if (isValidKey(part)) {
-        const separator = last && instance ? '#' : '.';
-        return acc + separator + part;
-      }
-      // Bracket-quoted with JSON spelling: double quotes survive the
-      // single-quoted `inspectType` literal raw, single quotes encode as
-      // unicode escapes, so exotic keys can never break output syntax.
-      return `${acc}[${JSON.stringify(part).replaceAll("'", "\\u0027")}]`;
-    }, owner);
-  }
-  /**
-   * Renders one key of a qualified name: raw text for simple keys and
-   * literals, source text in brackets for computed keys. Encoding happens
-   * once in `qualifyName`, so no quoting here: raw text in, raw text out.
+   * Renders one key of a qualified name: an Identifier joins raw with the
+   * given separator, a plain literal joins bracket-quoted, a computed key
+   * stays in source-text brackets. The key node type decides the shape, so
+   * no classification of the rendered text is ever needed. Plain display
+   * text only: quoting for the emitted literal happens in `quoteName`.
+   * @example
+   * keyPart({type: 'Identifier', name: 'set'}, false, '.'); // '.set'
    * @param {Node} key - The property key node.
    * @param {boolean} computed - Whether the key was computed.
-   * @returns {string} The segment without separator.
+   * @param {string} separator - `.` for object chains, `#` for the leaf of
+   * instance members.
+   * @returns {string} The segment including its separator.
    */
-  keyPart(key, computed) {
+  keyPart(key, computed, separator) {
     if (!computed && key.type === 'Identifier') {
-      return key.name;
+      return separator + key.name;
     }
     if (!computed && (key.type === 'StringLiteral' || key.type === 'NumericLiteral')) {
-      return String(key.value);
+      return `[${JSON.stringify(String(key.value))}]`;
     }
     return `[${this.toSource(key)}]`;
+  }
+  /**
+   * Quotes a display name for the single-quoted literal of an emitted
+   * `inspectType` call. Double quotes travel raw, single quotes escape
+   * as `\'`, so every key stays valid output syntax. This is the only
+   * place that knows about literal escaping: name builders above return
+   * plain human-readable text.
+   * @example
+   * quoteName('BitPacking.set'); // "'BitPacking.set'"
+   * quoteName("o[\"ap's\"]"); // "'o[\"ap\\'s\"]'"
+   * @param {string} name - The display name.
+   * @returns {string} The quoted literal including its quotes.
+   */
+  quoteName(name) {
+    return `'${name.replaceAll("\\", "\\\\").replaceAll("'", "\\'")}'`;
   }
   /**
    * Detects the `Object.assign(X.prototype, <child>)` mixin pattern: instance
@@ -1003,14 +990,21 @@ class Asserter extends Stringifier {
   }
   /**
    * Walks up from a method, function or class node through pure object
-   * composition (`{a: {b() {}}}`) to the owning binding: `const o = ...`
-   * gives `o`, `foo.bar = ...` gives `foo.bar`, `X.prototype = ...` gives
-   * `X` as instance members, `Object.assign(X.prototype, ...)` likewise.
-   * Anything else (calls, classes, bare blocks) ends the walk with no
-   * owner, so the bare method name survives unchanged.
+   * composition (`{a: {b() {}}}`) to the owning binding.
+   *
+   * Scope: the issue asks for two renames (owner-prefixed object methods,
+   * dot-joined static members); the walk only keeps those renames honest
+   * on hostile input. Returned, passed, array-nested and `new`-constructed
+   * literals keep the bare key: the object outlives any lexical binding,
+   * so naming it after one would mislead. Likewise only the
+   * `Object.assign(X.prototype, ...)` call shape and direct `X.prototype
+   * = ...` assignment count as prototype members; every other assignment
+   * needs a plain `Identifier` target (`o.x = ...` keeps the chain,
+   * `a.b.c = ...` and `this.o.x = ...` stay bare).
    * @param {Node} node - The method, function or class node to qualify.
-   * @returns {{owner: string, segments: string[], instance: boolean}|null}
-   * Owner plus key path, if any. `instance` marks prototype members.
+   * @returns {{owner: string, prefix: string, instance: boolean}|null}
+   * Owner plus the already-joined middle path, if any. `instance` marks
+   * prototype members, whose leaf joins with `#` instead of `.`.
    */
   locateObjectOwner(node) {
     const idx = this.parents.findLastIndex(_ => _ === node);
@@ -1019,11 +1013,13 @@ class Asserter extends Stringifier {
     }
     // Ancestors sit below the node in the parents stack (root first), so
     // the walk descends: the node's own body is above and never visited.
+    // Middle segments always join with `.`; only the leaf consults the
+    // `instance` flag, so no classification of rendered text is needed.
     // Object literals extend the chain only while a binding holds them
     // (see `bindingHolds`): `const o = {...}` or `o.x = {...}` qualify,
     // `Object.assign(X.prototype, {...})` qualifies as instance members,
     // everything else keeps the bare key.
-    const parts = [];
+    let prefix = '';
     let child = node;
     let bound = this.objectHolds(node);
     for (let i = idx - 1; i >= 0; i--) {
@@ -1037,7 +1033,7 @@ class Asserter extends Stringifier {
         if (parent.value !== child || !bound) {
           return null;
         }
-        parts.unshift(this.keyPart(parent.key, parent.computed));
+        prefix = this.keyPart(parent.key, parent.computed, '.') + prefix;
         child = parent;
         bound = this.objectHolds(child);
         continue;
@@ -1046,7 +1042,7 @@ class Asserter extends Stringifier {
         if (parent.init !== child || parent.id.type !== 'Identifier') {
           return null;
         }
-        return {owner: this.toSource(parent.id), parts, instance: false};
+        return {owner: this.toSource(parent.id), prefix, instance: false};
       }
       if (parent.type === 'AssignmentExpression') {
         if (parent.right !== child || child.type !== 'ObjectExpression') {
@@ -1055,20 +1051,20 @@ class Asserter extends Stringifier {
         const {left} = parent;
         if (left.type === 'MemberExpression' && !left.computed &&
             left.property.type === 'Identifier' && left.property.name === 'prototype') {
-          return {owner: this.toSource(left.object), parts, instance: true};
+          return {owner: this.toSource(left.object), prefix, instance: true};
         }
         // `o.x = {m() {}}` keeps the declared chain; other shapes
         // (`this.o.x = ...`, `a.b.c = ...`) stay bare: the method outlives
         // any single lexical binding.
         if (left.type === 'Identifier') {
-          return {owner: this.toSource(left), parts, instance: false};
+          return {owner: this.toSource(left), prefix, instance: false};
         }
         return null;
       }
       if (parent.type === 'CallExpression') {
         const owner = this.assignPrototypeOwner(parent, child);
         if (owner) {
-          return {owner, parts, instance: true};
+          return {owner, prefix, instance: true};
         }
         return null;
       }
@@ -1079,6 +1075,23 @@ class Asserter extends Stringifier {
     return null;
   }
   /**
+   * Qualifies a leaf key with its owner chain.
+   * @example
+   * qualifyLeaf({type: 'Identifier', name: 'set'}, false, 'BitPacking', '', false); // 'BitPacking.set'
+   * @param {Node} key - The method or property key node.
+   * @param {boolean} computed - Whether the key was computed.
+   * @param {string} owner - The owning binding name.
+   * @param {string} prefix - The already-joined middle path, if any.
+   * @param {boolean} instance - Whether the leaf is an instance member.
+   * @returns {string} Owner-qualified name like `BitPacking.set`.
+   */
+  qualifyLeaf(key, computed, owner, prefix, instance) {
+    // Middle segments always join with `.`; only the leaf consults the
+    // `instance` flag (`ScopeSpace#resolve`, `BitPacking.set`).
+    const separator = instance ? '#' : '.';
+    return owner + prefix + this.keyPart(key, computed, separator);
+  }
+  /**
    * Qualifies an object property with its owner chain.
    * @param {Node} property - The ObjectProperty node holding the function.
    * @returns {string} Owner-qualified name or the bare property key.
@@ -1087,10 +1100,11 @@ class Asserter extends Stringifier {
     const found = this.locateObjectOwner(property);
     if (found && found.owner) {
       // Prototype mixins (`Object.assign(X.prototype, ...)`) name real
-      // instance members; other object properties keep the declared chain.
-      return this.qualifyName(found.owner, [...found.parts, this.keyPart(property.key, property.computed)], found.instance);
+      // instance members (`ScopeSpace#resolve`); other properties keep the
+      // declared chain (`object.method`).
+      return this.qualifyLeaf(property.key, property.computed, found.owner, found.prefix, found.instance);
     }
-    return this.keyPart(property.key, property.computed);
+    return this.keyPart(property.key, property.computed, '.').slice(1);
   }
   /**
    * @param {Node} node - The Babel AST node.
@@ -1180,7 +1194,7 @@ class Asserter extends Stringifier {
   getNameForObjectMethod(node) {
     const found = this.locateObjectOwner(node);
     if (found && found.owner) {
-      return this.qualifyName(found.owner, [...found.parts, this.keyPart(node.key, node.computed)], found.instance);
+      return this.qualifyLeaf(node.key, node.computed, found.owner, found.prefix, found.instance);
     }
     return this.toSource(node.key);
   }
@@ -1191,14 +1205,15 @@ class Asserter extends Stringifier {
    */
   getNameForArrowFunction(node) {
     // Arrow as object value (`arrow: (y) => y`): the property key plus the
-    // owner chain name it, mirroring function expressions.
+    // owner chain name it, mirroring function expressions. Bare arrows
+    // have no key of their own, so the walk result is already complete.
     const property = this.findParentOfType(node, 'ObjectProperty');
     if (property && property.value === node) {
       return this.getNameForObjectProperty(property);
     }
     const found = this.locateObjectOwner(node);
     if (found && found.owner) {
-      return this.qualifyName(found.owner, found.parts, false);
+      return found.owner + found.prefix;
     }
     const parent = this.findParentOfType(node, 'VariableDeclarator');
     if (parent && parent.id.type === 'Identifier') {

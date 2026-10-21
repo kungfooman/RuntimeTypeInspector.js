@@ -20,7 +20,6 @@ export * from './braceDepth.js';
 export * from './noneUnchecked.js';
 export * from './markTypeofRequirements.js';
 export * from './ignoredParamsIn.js';
-export * from './isValidKey.js';
 export * from './runtimeImportNames.js';
 export * from './JSDocAnnotator.js';
 export * from './nodeChildren.js';
