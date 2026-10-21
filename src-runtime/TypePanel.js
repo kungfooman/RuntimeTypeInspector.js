@@ -759,24 +759,61 @@ function isWindowedChecks() {
   // bootstrap `setOptions({windowedChecks: true})` survives panel loads.
   return tmp === null ? options.windowedChecks === true : tmp === 'true';
 }
-function storedMapCheckWindowCap() {
-  const tmp = localStorage.getItem('rti-window-cap');
+/**
+ * Reads a numeric knob back from storage with the code value it was set
+ * against. Stored as `value|base`: `base` is the `options` value the
+ * panel saw when the user last touched the knob. At load the stored
+ * value wins only when the code value still matches that base; a moved
+ * code default (engine `setOptions` changed) means the tuning targeted
+ * an old world, so the code value wins and the storage is repaired. A
+ * legacy bare number (written before stamping) never matches a base and
+ * heals the same way, which is exactly how a stale pre-tune value stops
+ * clobbering a fresh code default.
+ * @param {string} key - Storage key, e.g. `rti-window-cap`.
+ * @param {number} codeValue - Live `options` value (code authority).
+ * @param {(n: number) => boolean} valid - Range check for the stored value.
+ * @returns {number} Stored value when it still applies, else the code value.
+ * @example
+ * localStorage.setItem('rti-window-cap', '256|1024');
+ * storedNumberKnob('rti-window-cap', 1024, (n) => n >= 1); // 256
+ */
+function storedNumberKnob(key, codeValue, valid) {
+  const tmp = localStorage.getItem(key);
   if (tmp === null) {
-    return options.mapCheckWindowCap;
+    return codeValue;
   }
-  const n = Math.floor(Number(tmp));
-  return Number.isFinite(n) && n >= 1 ? n : options.mapCheckWindowCap;
+  const pipe = tmp.indexOf('|');
+  if (pipe === -1) {
+    // Legacy unstamped value: cannot prove it still applies, so the
+    // code value wins and the stale entry is repaired on next write.
+    return codeValue;
+  }
+  const n = Number(tmp.slice(0, pipe));
+  const base = Number(tmp.slice(pipe + 1));
+  if (!Number.isFinite(n) || !valid(n) || base !== codeValue) {
+    return codeValue;
+  }
+  return n;
+}
+/**
+ * Persists a numeric knob the user just touched, stamped with the code
+ * value it overrides so a later code change can tell the tuning stale.
+ * @param {string} key - Storage key, e.g. `rti-window-cap`.
+ * @param {number} value - User chosen value.
+ * @param {number} codeValue - Live `options` value being overridden.
+ * @returns {void}
+ * @example
+ * rememberNumberKnob('rti-window-cap', 256, 1024);
+ * localStorage.getItem('rti-window-cap'); // '256|1024'
+ */
+function rememberNumberKnob(key, value, codeValue) {
+  localStorage.setItem(key, `${value}|${codeValue}`);
+}
+function storedMapCheckWindowCap() {
+  return storedNumberKnob('rti-window-cap', options.mapCheckWindowCap, (n) => n >= 1);
 }
 function storedMapCheckWindowMinTotalMs() {
-  const tmp = localStorage.getItem('rti-window-min-total-ms');
-  if (tmp === null) {
-    return options.mapCheckWindowMinTotalMs;
-  }
-  // Unlike the cap, fractional milliseconds are valid here, so the
-  // stored value is only range checked, never floored; `0` is a real
-  // choice (ride without any budget), only NaN and negatives are not.
-  const n = Number(tmp);
-  return Number.isFinite(n) && n >= 0 ? n : options.mapCheckWindowMinTotalMs;
+  return storedNumberKnob('rti-window-min-total-ms', options.mapCheckWindowMinTotalMs, (n) => n >= 0);
 }
 function isCheckStats() {
   const tmp = localStorage.getItem('rti-check-stats');
@@ -843,6 +880,8 @@ class TypePanel {
   buttonLoadState;
   /** @type {HTMLButtonElement} */
   buttonSaveState;
+  /** @type {HTMLButtonElement} */
+  buttonResetStorage;
   /** @type {HTMLButtonElement} */
   buttonClear;
   /** @type {HTMLButtonElement} */
@@ -965,14 +1004,22 @@ class TypePanel {
       this.sendWindowedStateToWorker();
       this.updateCheckStats();
     }});
+    // The constructor runs after engine `setOptions`, so the code
+    // values below are already the host's: the inputs display the stored
+    // tuning only when it still applies, and every user edit is stamped
+    // with the base it overrides. Stale storage never reaches `options`.
+    const inputWindowCapBase = options.mapCheckWindowCap;
+    const inputWindowMinTotalBase = options.mapCheckWindowMinTotalMs;
     this.inputWindowCap = Input({type: 'number', value: storedMapCheckWindowCap(), min: '1', step: '1', title: 'Longest rescan window in checks: bounds how long drift can hide', onchange: () => {
+      // Captured at construction: the code value this session's edits
+      // override, so the stored entry records what it was set against.
       const n = Math.floor(Number(this.inputWindowCap.value));
       // Silly input guard: a half typed value ("", "3.7", "-5") must not
       // clobber the live cap; the checkbox styled minimum of 1 mirrors
       // `windowCap()`'s floor in validateMap.
       if (Number.isFinite(n) && n >= 1) {
         options.mapCheckWindowCap = n;
-        localStorage.setItem('rti-window-cap', String(n));
+        rememberNumberKnob('rti-window-cap', n, inputWindowCapBase);
         this.sendMapCheckWindowCapToWorker();
       }
       this.updateCheckStats();
@@ -988,7 +1035,7 @@ class TypePanel {
       // fallback.
       if (raw !== '' && Number.isFinite(n) && n >= 0) {
         options.mapCheckWindowMinTotalMs = n;
-        localStorage.setItem('rti-window-min-total-ms', String(n));
+        rememberNumberKnob('rti-window-min-total-ms', n, inputWindowMinTotalBase);
         this.sendMapCheckWindowMinTotalMsToWorker();
       }
       this.updateCheckStats();
@@ -1027,8 +1074,9 @@ class TypePanel {
                                  this.option_pos_bottom_right, this.option_pos_bottom_left,
                                  this.option_pos_top_right, this.option_pos_top_left, this.option_pos_center);
     this.buttonHide = Button({textContent: '_', title: 'Hide', onclick: () => this.hide()});
-    this.buttonLoadState = Button({textContent: 'Load state', onclick: () => this.loadState()});
-    this.buttonSaveState = Button({textContent: 'Save state', onclick: () => this.saveState()});
+    this.buttonLoadState = Button({textContent: 'Load', title: 'Load warning states from the #typepanel URL hash', onclick: () => this.loadState()});
+    this.buttonSaveState = Button({textContent: 'Save', title: 'Save warning states into the #typepanel URL hash', onclick: () => this.saveState()});
+    this.buttonResetStorage = Button({textContent: 'RESET', title: 'Forget every stored panel setting (all rti-* keys) for a fresh test', onclick: () => this.resetStorage()});
     this.buttonClear = Button({textContent: 'Clear', onclick: () => this.clear()});
     this.buttonDownloadLog = Button({textContent: 'Download log', onclick: () => this.downloadLog()});
     this.buttonPopout = Button({textContent: '⧉', title: 'Pop out to own window', onclick: () => this.popout()});
@@ -1068,7 +1116,7 @@ class TypePanel {
                     Div({className: 'rti-setting-row'},
                         Label({}, this.inputCheckStats, this.spanCheckStats)),
                     Div({className: 'rti-setting-row'},
-                        this.buttonLoadState, this.buttonSaveState));
+                        this.buttonLoadState, this.buttonSaveState, this.buttonResetStorage));
     this.menu.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         this.toggleMenu(false);
@@ -2682,6 +2730,30 @@ class TypePanel {
     location.hash = hash;
   }
   /**
+   * Forgets every stored panel setting (all `rti-*` keys) for a fresh
+   * test: the next load behaves like a first visit, with code defaults
+   * winning everywhere. Warning states in the URL hash are untouched
+   * (that is what Load/Save are for); live `options` are untouched too,
+   * only the persisted overrides go.
+   * @returns {void}
+   * @example
+   * localStorage.setItem('rti-window-cap', '256|1024');
+   * panel.resetStorage();
+   * localStorage.getItem('rti-window-cap'); // null
+   */
+  resetStorage() {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (typeof key === 'string' && key.startsWith('rti-')) {
+        keys.push(key);
+      }
+    }
+    for (const key of keys) {
+      localStorage.removeItem(key);
+    }
+  }
+  /**
    * Refreshes the Stats toolbar button: plain `Stats` when no check was
    * ever skipped or suppressed, otherwise each nonzero kind named with
    * its own count (`Stats (10 skipped, 20 suppressed)`, either part
@@ -2956,4 +3028,4 @@ class TypePanel {
     this.sendEnabledDisabledStateToWorker();
   }
 }
-export {niceDiv, TypePanel, refreshWarning};
+export {niceDiv, TypePanel, refreshWarning, storedMapCheckWindowCap, storedMapCheckWindowMinTotalMs, storedNumberKnob, rememberNumberKnob};

@@ -1,4 +1,4 @@
-import {TypePanel} from './TypePanel.js';
+import {TypePanel, storedMapCheckWindowCap, storedMapCheckWindowMinTotalMs} from './TypePanel.js';
 import {options} from './options.js';
 import {recordCheck, recordMapRide, recordSkip, recordMapScan, recordSetScan, recordArrayScan, recordObjectScan, getCheckStats, resetCheckStats} from './checkStats.js';
 import {reportedKeys} from './reportedKeys.js';
@@ -252,6 +252,10 @@ function installFakeBrowser() {
     },
     removeItem: (key) => {
       delete store[key];
+    },
+    key: (i) => Object.keys(store)[i] ?? null,
+    get length() {
+      return Object.keys(store).length;
     },
   };
   globalThis.location = {hash: '', href: 'http://localhost/'};
@@ -1876,6 +1880,8 @@ function testWindowedCheckboxWiresOptionStorageAndWorker() {
   });
 }
 function testWindowCapInputClampsAndForwards() {
+  // A user cap round trips into option, stamped storage and worker, and
+  // garbage input never clobbers the live value.
   return withPanel((panel) => {
     const prevCap = options.mapCheckWindowCap;
     const sink = {messages: [], postMessage(data) {
@@ -1889,7 +1895,7 @@ function testWindowCapInputClampsAndForwards() {
       panel.inputWindowCap.value = '256';
       panel.inputWindowCap.onchange();
       const applied = options.mapCheckWindowCap === 256 &&
-        localStorage.getItem('rti-window-cap') === '256' &&
+        localStorage.getItem('rti-window-cap') === `256|${prevCap}` &&
         sink.messages.some(_ => _.action === 'mapCheckWindowCap' && _.value === 256 && _.destination === 'worker');
       // Garbage input (half typed) must not clobber the live cap.
       panel.inputWindowCap.value = '';
@@ -1915,25 +1921,31 @@ function testWindowMinTotalInputClampsAndForwards() {
       options.mode = 'never';
       feedError(panel, sink);
       options.mode = prevMode;
-      // A whole millisecond budget round trips into option, storage and
-      // worker message.
+      // A whole millisecond budget round trips into option, stamped
+      // storage (value plus the code base it overrides) and worker
+      // message. The stamp is `prevMin`, the live code value the panel
+      // saw at construction.
       panel.inputWindowMinTotal.value = '100';
       panel.inputWindowMinTotal.onchange();
       const applied = options.mapCheckWindowMinTotalMs === 100 &&
-        localStorage.getItem('rti-window-min-total-ms') === '100' &&
+        localStorage.getItem('rti-window-min-total-ms') === `100|${prevMin}` &&
         sink.messages.some(_ => _.action === 'mapCheckWindowMinTotalMs' && _.value === 100 && _.destination === 'worker');
       // A deliberately typed 0 (ride without any budget) passes,
       // mirroring the open fallback in `minTotalMs()`.
       panel.inputWindowMinTotal.value = '0';
       panel.inputWindowMinTotal.onchange();
       const zeroOk = options.mapCheckWindowMinTotalMs === 0 &&
+        localStorage.getItem('rti-window-min-total-ms') === `0|${prevMin}` &&
         sink.messages.some(_ => _.action === 'mapCheckWindowMinTotalMs' && _.value === 0 && _.destination === 'worker');
       // Back to a non zero baseline so the two rejections below are
       // distinguishable: a guard that silently applied the garbage would
-      // land on a different value, not on the baseline by luck.
+      // land on a different value, not on the baseline by luck. Each
+      // user edit restamps against the construction base, not the
+      // current option value.
       panel.inputWindowMinTotal.value = '250';
       panel.inputWindowMinTotal.onchange();
-      const baseline = options.mapCheckWindowMinTotalMs === 250;
+      const baseline = options.mapCheckWindowMinTotalMs === 250 &&
+        localStorage.getItem('rti-window-min-total-ms') === `250|${prevMin}`;
       // Garbage input must not clobber the live budget, and the empty
       // string deserves its own trip: `Number('')` is 0, which would
       // silently turn a half typed field into ride-always windowing.
@@ -1945,13 +1957,65 @@ function testWindowMinTotalInputClampsAndForwards() {
       const noNegative = options.mapCheckWindowMinTotalMs === 250;
       return applied && zeroOk && baseline && kept && noNegative;
     } finally {
-      // Clean the stored budget up (unlike the cap above): the shipped
-      // default is pinned by a virgin capture taken at import time, so
-      // a leaked stored value must not be able to rewrite what later
-      // panel constructions apply to `options`.
       options.mapCheckWindowMinTotalMs = prevMin;
       localStorage.removeItem('rti-window-min-total-ms');
     }
+  });
+}
+function testStoredTweakSurvivesReloadStaleHealsCodeWins() {
+  // One spec for the three-way contract, with no panel construction in
+  // the way: the helpers read storage against the live code value
+  // directly. A user tweak stamped against the code base survives
+  // (storage `250|prevMin`, code still at `prevMin`); a legacy bare
+  // number carries no stamp and heals to the code value, so a stale
+  // pre-tune entry can never clobber a fresh code default; a moved code
+  // default invalidates the stamp, so the code value wins.
+  const prevMin = options.mapCheckWindowMinTotalMs;
+  return withPanel(() => {
+    try {
+      localStorage.setItem('rti-window-min-total-ms', `250|${prevMin}`);
+      const keptTweak = storedMapCheckWindowMinTotalMs() === 250;
+      localStorage.setItem('rti-window-min-total-ms', '100');
+      const healedLegacy = storedMapCheckWindowMinTotalMs() === prevMin;
+      options.mapCheckWindowMinTotalMs = 20;
+      localStorage.setItem('rti-window-min-total-ms', `250|${prevMin}`);
+      const codeWins = storedMapCheckWindowMinTotalMs() === 20;
+      // Same contract for the cap knob.
+      const prevCap = options.mapCheckWindowCap;
+      localStorage.setItem('rti-window-cap', `7|${prevCap}`);
+      const capKept = storedMapCheckWindowCap() === 7;
+      options.mapCheckWindowCap = 4096;
+      const capCodeWins = storedMapCheckWindowCap() === 4096;
+      options.mapCheckWindowCap = prevCap;
+      return keptTweak && healedLegacy && codeWins && capKept && capCodeWins;
+    } finally {
+      options.mapCheckWindowMinTotalMs = prevMin;
+      localStorage.removeItem('rti-window-min-total-ms');
+      localStorage.removeItem('rti-window-cap');
+    }
+  });
+}
+function testResetStorageForgetsPanelSettings() {
+  // RESET is the fresh test button: every `rti-*` key goes, URL hash and
+  // live options stay. A stale budget entry is gone, so the next stored
+  // read falls back to the code value instead of the stale tuning.
+  return withPanel((panel) => {
+    localStorage.setItem('rti-window-min-total-ms', '100');
+    panel.buttonResetStorage.onclick();
+    return localStorage.getItem('rti-window-min-total-ms') === null &&
+      storedMapCheckWindowMinTotalMs() === options.mapCheckWindowMinTotalMs;
+  });
+}
+function testStateButtonsAreShortVerbsWithReset() {
+  // The menu row carries Load, Save and RESET: labels are short verbs,
+  // and RESET sits next to them so a stale tuning is one click away.
+  return withPanel((panel) => {
+    const labels = panel.menu.children
+      .filter((_) => _.tag === 'div')
+      .flatMap((_) => _.children)
+      .filter((_) => _.tag === 'button')
+      .map((_) => _.textContent);
+    return labels.includes('Load') && labels.includes('Save') && labels.includes('RESET');
   });
 }
 function testCheckStatsCheckboxWiresOptionStorageAndWorker() {
@@ -2619,6 +2683,9 @@ const tests = [
   testWindowCapInputClampsAndForwards,
   testWindowMinTotalInputClampsAndForwards,
   testCheckStatsCheckboxWiresOptionStorageAndWorker,
+  testStoredTweakSurvivesReloadStaleHealsCodeWins,
+  testResetStorageForgetsPanelSettings,
+  testStateButtonsAreShortVerbsWithReset,
   testCheckStatsTableRendersHotspotsSorted,
   testCheckStatsResetButtonEmptiesTable,
   testAllRowsAlwaysRender,

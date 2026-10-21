@@ -7,7 +7,7 @@
  */
 const RTI_INFO = {
   "version": "6.0.0",
-  "commit": "d4e25d14bfa1ad482705823b1654da741890fc4b",
-  "subject": "Install the hostile test clock via defineProperty"
+  "commit": "1c4e20a723c51b0a7054056243f86edb747e776b",
+  "subject": "Surface skip counts on the Stats button, rides split from suppressions"
 };
 export {RTI_INFO};
