@@ -580,16 +580,21 @@ function niceDiv(div) {
  * Column metadata of the check stats table, in render order. Headers
  * sort on click (by `id`, so hiding columns cannot misalign anything)
  * and explain their column on hover, so every number is both explorable
- * and accountable. The two `windowed` columns only render while
- * `windowedChecks` is on: with windowing off every ride count is 0 by
- * construction, so the columns would be dead weight.
+ * and accountable. The three skipping columns only render while
+ * `windowedChecks` is on: Skipped counts window rides (checks not run
+ * because the map rode its rescan window, which requires 100ms of prior
+ * scan spend by construction), while Suppressed counts host-suppressed
+ * checks (`ignoredChecks`) that never validate and never accrue time.
+ * The split keeps the spend invariant readable: a ride implies prior
+ * measured cost, a suppression never does.
  * @type {{id: string, head: string, title: string, windowed?: boolean, get: (row: object) => (string|number)}[]}
  */
 const CHECKS_COLS = [
   {id: 'loc', head: 'Loc', title: 'Call site plus parameter name: one row per checked argument. Click a row to see the call stack captured for it.', get: (row) => row.loc},
   {id: 'checks', head: 'Checks', title: 'Validations of this one parameter: one per call. A 2-parameter method records 2 rows, 1 check each per call.', get: (row) => row.checks},
-  {id: 'skipped', head: 'Skipped', title: 'Checks skipped without scanning: the map was unchanged and inside its rescan window.', windowed: true, get: (row) => row.rides},
-  {id: 'skipPct', head: 'Skipped %', title: 'Share of map checks skipped instead of scanned. The dash means no map checks ran here.', windowed: true, get: (row) => skipRatio(row)},
+  {id: 'skipped', head: 'Skipped', title: 'Map checks skipped by riding the rescan window: the map was unchanged and had earned its scan spend (100ms default).', windowed: true, get: (row) => row.rides},
+  {id: 'suppressed', head: 'Suppressed', title: 'Checks the host suppressed via ignoredChecks: never validated, never timed, no spend implied.', windowed: true, get: (row) => row.skips},
+  {id: 'skipPct', head: 'Skipped %', title: 'Share of map checks skipped by riding the rescan window instead of scanning. The dash means no map checks ran here.', windowed: true, get: (row) => skipRatio(row)},
   {id: 'kind', head: 'Kind', title: 'Which container this parameter walked: map, set, array or object. The dash means no container walk ran here.', get: (row) => containerKinds(row)},
   {id: 'scans', head: 'Walks', title: 'Full container walks that actually ran over every entry or key. One parameter walks one kind; mixed kinds add up here.', get: (row) => containerWalks(row)},
   {id: 'scanMs', head: 'Walk time', title: 'Total wall time in container walks. 0us means below what the clock can see, not broken; the slowest column bounds it.', get: (row) => containerWalkMs(row)},
@@ -646,9 +651,10 @@ function slowestWalkMs(row) {
   return Math.max(row.maxScanMs, row.maxSetMs, row.maxArrayMs, row.maxObjectMs);
 }
 /**
- * Sort key of the Skipped % column: the ride share, or -1 when a row has
- * no map activity at all, so activity-free rows sink below every real
- * ratio instead of dividing by zero.
+ * Sort key of the Skipped % column: window rides over all map outcomes
+ * (rides plus scans), or -1 when a row has no map activity at all, so
+ * activity-free rows sink below every real ratio instead of dividing by
+ * zero. Host-suppressed checks never enter here: they imply no spend.
  * @param {import('./checkStats.js').CheckStatsRow} row - Stats row.
  * @returns {number} Ride share in [0, 1], or -1 without map activity.
  */
@@ -2676,14 +2682,39 @@ class TypePanel {
     location.hash = hash;
   }
   /**
-   * Rebuilds the check stats table from `getCheckStats()`: every row,
-   * never a folded trailer, sorted by the active header (scan time until
-   * the user picks another column). The Skipped columns only render while
-   * `windowedChecks` is on. Called on demand (settings flips, buttons,
-   * error arrivals), never on a timer, so idle pages stay idle.
+   * Refreshes the Stats toolbar button: plain `Stats` when no check was
+   * ever skipped or suppressed, otherwise each nonzero kind named with
+   * its own count (`Stats (10 skipped, 20 suppressed)`, either part
+   * omitted when zero). Window rides and host-suppressed checks are
+   * different phenomena (spend-earning rides versus never-validated
+   * suppressions), so the label keeps them separate instead of folding
+   * them into one number that reads like the table's Skipped column but
+   * is not. Runs on every stats refresh (settings flips, reset, window
+   * open), never on a timer.
    * @returns {void}
    */
+  updateStatsButton() {
+    if (!this.buttonStats) {
+      return;
+    }
+    let rides = 0;
+    let suppressed = 0;
+    for (const row of getCheckStats()) {
+      rides += row.rides;
+      suppressed += row.skips;
+    }
+    const parts = [];
+    if (rides > 0) {
+      parts.push(`${rides} skipped`);
+    }
+    if (suppressed > 0) {
+      parts.push(`${suppressed} suppressed`);
+    }
+    this.buttonStats.textContent = parts.length === 0 ? 'Stats' : `Stats (${parts.join(', ')})`;
+    this.buttonStats.title = parts.length === 0 ? 'Check stats (hotspots)' : `Check stats (hotspots): ${parts.join(', ')}`;
+  }
   updateCheckStats() {
+    this.updateStatsButton();
     if (!this.checksTable) {
       return;
     }
@@ -2765,8 +2796,8 @@ class TypePanel {
           return Td({}, locBtn);
         }
         if (col.id === 'skipPct') {
-          const skipped = row.rides + row.scans;
-          return Td({textContent: skipped === 0 ? '—' : ((row.rides / skipped) * 100).toFixed(1) + '%'});
+          const total = row.rides + row.scans;
+          return Td({textContent: total === 0 ? '—' : ((row.rides / total) * 100).toFixed(1) + '%'});
         }
         const v = col.get(row);
         if (typeof v === 'number' && col.id.endsWith('Ms')) {

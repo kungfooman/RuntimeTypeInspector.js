@@ -8,6 +8,7 @@ import {captureStackLines} from "./captureStack.js";
  * @typedef {object} CheckStatsRow
  * @property {number} checks - Top level checks of this parameter.
  * @property {number} rides - Window rides (map checks skipped).
+ * @property {number} skips - Host-suppressed checks (ignoredChecks).
  * @property {number} scans - Full map scans.
  * @property {number} scanMs - Total map scan time.
  * @property {number} maxScanMs - Slowest single map scan.
@@ -78,6 +79,7 @@ function rowFor(loc, name) {
     row = {
       checks: 0,
       rides: 0,
+      skips: 0,
       scans: 0,
       scanMs: 0,
       maxScanMs: 0,
@@ -158,6 +160,29 @@ function recordMapRide(loc, name) {
     return;
   }
   row.rides++;
+}
+/**
+ * Records one host-suppressed check for one parameter: `inspectType`
+ * skipped validation because the loc sits in `ignoredChecks`. Creating
+ * the row captures its call stack once (same as every recorder), which
+ * is bounded by the row budget; the per-check snapshotting the
+ * suppression avoids never runs, so suppressed checks stay cheap.
+ * @param {string} loc - String like `BoundingBox#compute`.
+ * @param {string} name - Argument name, like `defines`.
+ * @example
+ * options.checkStats = true;
+ * recordSkip("T#m", "v");
+ * getCheckStats()[0].skips; // 1
+ */
+function recordSkip(loc, name) {
+  if (!options.checkStats) {
+    return;
+  }
+  const row = rowFor(loc, name);
+  if (row === undefined) {
+    return;
+  }
+  row.skips++;
 }
 /**
  * Records one full map scan for one parameter together with its wall
@@ -310,6 +335,7 @@ export {
   checkStats,
   recordCheck,
   recordMapRide,
+  recordSkip,
   recordMapScan,
   recordSetScan,
   recordArrayScan,

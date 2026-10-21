@@ -1,6 +1,6 @@
 import {TypePanel} from './TypePanel.js';
 import {options} from './options.js';
-import {recordCheck, recordMapRide, recordMapScan, recordSetScan, recordArrayScan, recordObjectScan, getCheckStats, resetCheckStats} from './checkStats.js';
+import {recordCheck, recordMapRide, recordSkip, recordMapScan, recordSetScan, recordArrayScan, recordObjectScan, getCheckStats, resetCheckStats} from './checkStats.js';
 import {reportedKeys} from './reportedKeys.js';
 import {expandType} from '../src-transpiler/expandType.js';
 import {collectFailPaths, explainMismatch} from './explainMismatch.js';
@@ -2101,7 +2101,6 @@ function testStatsButtonSitsInToolbarAndOpensWindow() {
 }
 function testStatsWinOpensPopulatesAndCloses() {
   return withPanel((panel) => {
-    resetCheckStats();
     try {
       recordCheck('W#x', 'v', 1);
       panel.buttonStats.onclick();
@@ -2111,6 +2110,41 @@ function testStatsWinOpensPopulatesAndCloses() {
       panel.hideStatsWin();
       const hidden = panel.statsWin.style.display === 'none' && panel.statsWinHidden === true;
       return shown && populated && hidden;
+    } finally {
+      resetCheckStats();
+    }
+  });
+}
+function testStatsButtonShowsSkippedCount() {
+  // The toolbar button names each nonzero skip kind with its own count:
+  // plain `Stats` with nothing skipped or suppressed, `Stats (2 skipped,
+  // 1 suppressed)` once both accumulate, either part omitted when zero,
+  // and back to plain after reset. Rides and suppressions are different
+  // phenomena, so the label keeps them separate instead of folding them
+  // into one number. The count rides along every stats refresh, so no
+  // separate update path can drift out of sync.
+  return withPanel((panel) => {
+    resetCheckStats();
+    try {
+      panel.updateCheckStats();
+      const plain = panel.buttonStats.textContent === 'Stats' &&
+        panel.buttonStats.title === 'Check stats (hotspots)';
+      recordMapRide('B#x', 'v');
+      recordMapRide('B#x', 'v');
+      panel.updateCheckStats();
+      const ridesOnly = panel.buttonStats.textContent === 'Stats (2 skipped)';
+      recordSkip('B#y', 'v');
+      panel.updateCheckStats();
+      const both = panel.buttonStats.textContent === 'Stats (2 skipped, 1 suppressed)' &&
+        panel.buttonStats.title === 'Check stats (hotspots): 2 skipped, 1 suppressed';
+      resetCheckStats();
+      recordSkip('B#z', 'v');
+      panel.updateCheckStats();
+      const suppressedOnly = panel.buttonStats.textContent === 'Stats (1 suppressed)';
+      resetCheckStats();
+      panel.updateCheckStats();
+      const cleared = panel.buttonStats.textContent === 'Stats';
+      return plain && ridesOnly && both && suppressedOnly && cleared;
     } finally {
       resetCheckStats();
     }
@@ -2145,25 +2179,34 @@ function testStatsLocCellIsButtonWithTitle() {
   });
 }
 function testStatsTableShowsSkippedPercent() {
-  // Skipped % is skipped/(skipped+scans): how often a map check was
-  // skipped instead of scanned. The columns only exist with windowing
-  // on; rows without map activity show a dash rather than a bogus 0%.
+  // Skipped % is rides/(rides+scans): how often a windowed map check
+  // rode instead of scanning. Suppressed checks stay out of the ratio:
+  // they never validate and imply no spend, so they get their own column
+  // instead of inflating the ride share. Rows without map activity show
+  // a dash rather than a bogus 0%.
   return withPanel((panel) => {
     const prevWindowed = options.windowedChecks;
     resetCheckStats();
     try {
       options.windowedChecks = true;
-      // 3 skipped + 1 scan: 75% skipped.
+      // 3 rides + 1 scan: 75% skipped; 1 suppression on its own row.
       recordMapRide('Skp#m', 'v');
       recordMapRide('Skp#m', 'v');
       recordMapRide('Skp#m', 'v');
+      recordSkip('Skp#s', 'v');
       recordMapScan('Skp#m', 'v', 1);
+      // A suppressed check on a riding row must not leak into the ride
+      // count: the Skipped column answers the spend question (rides need
+      // 100ms of prior scan time), suppressions never imply spend.
+      recordSkip('Skp#m', 'v');
       // No map activity at all: dash.
       recordCheck('Flat#x', 'v', 1);
       panel.updateCheckStats();
       return statsCell(panel, 'Skp#m', 'skipPct') === '75.0%' &&
         statsCell(panel, 'Flat#x', 'skipPct') === '—' &&
-        statsCell(panel, 'Skp#m', 'skipped') === '3';
+        statsCell(panel, 'Skp#m', 'skipped') === '3' &&
+        statsCell(panel, 'Skp#m', 'suppressed') === '1' &&
+        statsCell(panel, 'Skp#s', 'suppressed') === '1';
     } finally {
       options.windowedChecks = prevWindowed;
       resetCheckStats();
@@ -2275,7 +2318,8 @@ function testWalkTimeSortsAcrossKinds() {
 function testSkippedColumnsFollowWindowing() {
   // The Skipped columns answer a windowing question, so they only render
   // while windowing is on: with it off every value would be a confusing
-  // wall of zeros, with it on they explain the savings.
+  // wall of zeros, with it on they explain the savings. All three (rides,
+  // suppressed, ratio) follow the flag together.
   return withPanel((panel) => {
     const prevWindowed = options.windowedChecks;
     resetCheckStats();
@@ -2284,13 +2328,15 @@ function testSkippedColumnsFollowWindowing() {
       recordCheck('Off#x', 'v', 1);
       panel.updateCheckStats();
       const hidden = statsColIndex(panel, 'skipped') === -1 &&
+        statsColIndex(panel, 'suppressed') === -1 &&
         statsColIndex(panel, 'skipPct') === -1 &&
         panel.checksTable.children[1].children.length === 8;
       options.windowedChecks = true;
       panel.updateCheckStats();
       const shown = statsColIndex(panel, 'skipped') !== -1 &&
+        statsColIndex(panel, 'suppressed') !== -1 &&
         statsColIndex(panel, 'skipPct') !== -1 &&
-        panel.checksTable.children[1].children.length === 10;
+        panel.checksTable.children[1].children.length === 11;
       return hidden && shown;
     } finally {
       options.windowedChecks = prevWindowed;
@@ -2432,17 +2478,21 @@ function statsColIndex(panel, id) {
   return -1;
 }
 /**
- * Text of one stats cell, found by loc and column id instead of brittle
- * numeric indices.
+ * Text of one stats cell, located by column id and the row whose loc
+ * cell matches, instead of brittle positional assumptions about sort
+ * order or detail rows.
  * @param {object} panel - The panel.
- * @param {string} loc - Row locator.
- * @param {string} id - Column id from `CHECKS_COLS`.
+ * @param {string} loc - Row key to find.
+ * @param {string} id - Column id to read.
  * @returns {string} Cell text.
  */
 function statsCell(panel, loc, id) {
   const idx = statsColIndex(panel, id);
   const rows = panel.checksTable.children.slice(1);
-  const row = rows.find(_ => _.className !== 'rti-checks-loc-detail' && textOf(_).includes(loc));
+  const row = rows.find(_ => _.className !== 'rti-checks-loc-detail' && textOf(_.children[0]).includes(loc));
+  if (idx === -1 || row === undefined) {
+    throw new Error(`statsCell> no ${id} cell for ${loc}`);
+  }
   return row.children[idx].textContent;
 }
 function testStatsHeaderCellsCarryTooltips() {
@@ -2575,6 +2625,7 @@ const tests = [
   testLogMetaCarriesWindowSettings,
   testStatsWinHiddenByDefault,
   testStatsButtonSitsInToolbarAndOpensWindow,
+  testStatsButtonShowsSkippedCount,
   testStatsWinOpensPopulatesAndCloses,
   testStatsWinToggleCycles,
   testStatsLocCellIsButtonWithTitle,

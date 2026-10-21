@@ -1,5 +1,5 @@
 import {options} from './options.js';
-import {recordCheck, recordMapRide, recordMapScan, recordSetScan, recordArrayScan, recordObjectScan, getCheckStats, resetCheckStats} from './checkStats.js';
+import {recordCheck, recordMapRide, recordSkip, recordMapScan, recordSetScan, recordArrayScan, recordObjectScan, getCheckStats, resetCheckStats} from './checkStats.js';
 import {validateType} from './validateType.js';
 import {inspectType} from './inspectType.js';
 import {expandType} from '../src-transpiler/expandType.js';
@@ -191,6 +191,7 @@ function testCheckStatsOffMeansNoRecording() {
   resetCheckStats();
   recordCheck('T#off', 'v', 1);
   recordMapRide('T#off', 'v');
+  recordSkip('T#off', 'v');
   recordMapScan('T#off', 'v', 1);
   const empty = getCheckStats().length === 0;
   options.checkStats = true;
@@ -247,6 +248,7 @@ function testStackCapturedExactlyOncePerRow() {
 const tests = [
   testParamsSplitRows,
   testInspectTypeSplitsParams,
+  testSkipsAccumulatePerRow,
   testKindWalksAccumulatePerKind,
   testKindTimeFoldsIntoCheckTime,
   testValidatorsRecordTheirKind,
@@ -262,3 +264,17 @@ const tests = [
   testStackCapturedExactlyOncePerRow,
 ];
 export {tests};
+function testSkipsAccumulatePerRow() {
+  // Host-suppressed checks land in their own ledger on the row: two
+  // suppressions make one row with two skips and no checks.
+  options.checkStats = true;
+  resetCheckStats();
+  try {
+    recordSkip('T#s', 'v');
+    recordSkip('T#s', 'v');
+    const rows = getCheckStats();
+    return rows.length === 1 && rows[0].skips === 2 && rows[0].checks === 0;
+  } finally {
+    resetCheckStats();
+  }
+}

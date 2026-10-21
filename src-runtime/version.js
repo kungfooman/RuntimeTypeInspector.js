@@ -7,7 +7,7 @@
  */
 const RTI_INFO = {
   "version": "6.0.0",
-  "commit": "03d93421dfce3714ff7a57d76560b4384f486fda",
-  "subject": "Per-parameter check stats rows keyed by loc plus argument name"
+  "commit": "d4e25d14bfa1ad482705823b1654da741890fc4b",
+  "subject": "Install the hostile test clock via defineProperty"
 };
 export {RTI_INFO};

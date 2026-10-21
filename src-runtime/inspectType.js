@@ -15,7 +15,7 @@ import {reportedKeys             } from './reportedKeys.js';
 import {tagValue                 } from './tagValue.js';
 import {captureStackLines        } from './captureStack.js';
 import {globalMessageHost        } from './globalMessageHost.js';
-import {recordCheck, nowMs       } from './checkStats.js';
+import {recordCheck, recordSkip, nowMs       } from './checkStats.js';
 const breakpoints = new Set();
 /**
  * Snapshot budgets for panel-bound values: the tree batches rows on click,
@@ -120,8 +120,10 @@ function inspectType(value, expect, loc, name, critical = true) {
     return false;
   }
   // Host-suppressed checks pass silently before any validation or preview
-  // work runs (suppression also skips the expensive snapshotting below).
+  // work runs (suppression also skips the expensive snapshotting below),
+  // but the skip is recorded so the Stats button can surface it.
   if (ignoredChecks.has(loc) || ignoredChecks.has(`${loc}.${name}`)) {
+    recordSkip(loc, name);
     return true;
   }
   if (typeof expect === 'string' && expect.includes('.')) {
