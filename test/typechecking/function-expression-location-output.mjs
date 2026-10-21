@@ -75,7 +75,7 @@ const object = {
    * @returns {number} Y plus one.
    */
   method: function (y) {
-    if (!inspectType(y, "number", 'method', 'y')) {
+    if (!inspectType(y, "number", 'object.method', 'y')) {
       youCanAddABreakpointHere();
     }
     return y + 1;
@@ -134,10 +134,10 @@ var x = {
    * @returns {number} Sum.
    */
   add(a, b) {
-    if (!inspectType(a, "number", 'add', 'a')) {
+    if (!inspectType(a, "number", 'x.add', 'a')) {
       youCanAddABreakpointHere();
     }
-    if (!inspectType(b, "number", 'add', 'b')) {
+    if (!inspectType(b, "number", 'x.add', 'b')) {
       youCanAddABreakpointHere();
     }
     return a + b;

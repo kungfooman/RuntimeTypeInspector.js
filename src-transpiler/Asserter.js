@@ -3,6 +3,7 @@ import {requiredTypeofs    } from './expandType.js';
 import {expandTypeDepFree  } from './expandTypeDepFree.js';
 import {harvestClassShape  } from './harvestClassShape.js';
 import {inferTypeFromDefault} from './inferTypeFromDefault.js';
+import {isValidKey} from './isValidKey.js';
 import {parseInlineParamType} from './parseInlineParamType.js';
 import {nodeIsFunctionLike } from './nodeIsFunctionLike.js';
 import {parseJSDoc         } from './parseJSDoc.js';
@@ -865,34 +866,345 @@ class Asserter extends Stringifier {
     return out;
   }
   /**
+   * Builds the full display name from an owner and key path: `BitPacking`,
+   * `BitPacking.nested.deep`, `ScopeSpace#resolve`, `computed[key]`.
+   *
+   * Scope: the issue asks for two renames (owner-prefixed object methods,
+   * dot-joined static members); the walk around it only keeps those renames
+   * honest on hostile input. Returned, passed, array-nested and
+   * `new`-constructed literals keep the bare key: the object outlives any
+   * lexical binding, so naming it after one would mislead. Likewise only
+   * the `Object.assign(X.prototype, ...)` call shape and direct
+   * `X.prototype = ...` assignment count as prototype members; every other
+   * assignment needs a plain `Identifier` target (`o.x = ...` keeps the
+   * chain, `a.b.c = ...` and `this.o.x = ...` stay bare).
+   *
+   * Identifiers render raw, exotic spellings render bracket-quoted,
+   * computed expressions stay in brackets. Single quotes encode as
+   * unicode escapes: the name stays valid inside the single-quoted
+   * literal of the emitted `inspectType` call and readable in reports.
+   * @param {string} owner - The owning binding name.
+   * @param {string[]} parts - Raw key segments from owner down to the leaf.
+   * @param {boolean} instance - Whether the leaf is an instance member.
+   * @returns {string} The qualified display name.
+   */
+  qualifyName(owner, parts, instance) {
+    return parts.reduce((acc, part, i) => {
+      const last = i === parts.length - 1;
+      if (part.startsWith('[') && part.endsWith(']')) {
+        return `${acc}${part}`;
+      }
+      if (isValidKey(part)) {
+        const separator = last && instance ? '#' : '.';
+        return acc + separator + part;
+      }
+      // Bracket-quoted with JSON spelling: double quotes survive the
+      // single-quoted `inspectType` literal raw, single quotes encode as
+      // unicode escapes, so exotic keys can never break output syntax.
+      return `${acc}[${JSON.stringify(part).replaceAll("'", "\\u0027")}]`;
+    }, owner);
+  }
+  /**
+   * Renders one key of a qualified name: raw text for simple keys and
+   * literals, source text in brackets for computed keys. Encoding happens
+   * once in `qualifyName`, so no quoting here: raw text in, raw text out.
+   * @param {Node} key - The property key node.
+   * @param {boolean} computed - Whether the key was computed.
+   * @returns {string} The segment without separator.
+   */
+  keyPart(key, computed) {
+    if (!computed && key.type === 'Identifier') {
+      return key.name;
+    }
+    if (!computed && (key.type === 'StringLiteral' || key.type === 'NumericLiteral')) {
+      return String(key.value);
+    }
+    return `[${this.toSource(key)}]`;
+  }
+  /**
+   * Detects the `Object.assign(X.prototype, <child>)` mixin pattern: instance
+   * members contributed to `X` from an object literal argument.
+   * @param {Node} call - The enclosing CallExpression node.
+   * @param {Node} child - The node on the path from the method upward.
+   * @returns {string|null} The class name `X`, or null when no match.
+   */
+  assignPrototypeOwner(call, child) {
+    const {callee, arguments: args} = call;
+    if (!Array.isArray(args) || args.indexOf(child) < 1) {
+      return null;
+    }
+    if (!callee || callee.type !== 'MemberExpression' || callee.computed) {
+      return null;
+    }
+    const {object, property} = callee;
+    if (object.type !== 'Identifier' || object.name !== 'Object' ||
+        property.type !== 'Identifier' || property.name !== 'assign') {
+      return null;
+    }
+    const target = args[0];
+    if (!target || target.type !== 'MemberExpression' || target.computed) {
+      return null;
+    }
+    if (target.property.type !== 'Identifier' || target.property.name !== 'prototype') {
+      return null;
+    }
+    return this.toSource(target.object);
+  }
+  /**
+   * Checks whether a node sits in a held object literal: an object in the
+   * init of a `const o = ...` declarator or the right side of an
+   * assignment, or a method or property directly in such a held literal.
+   * Everything else fails: returned, passed, array-nested and constructed
+   * objects outlive any lexical binding, so naming their methods after one
+   * would mislead.
+   * @param {Node} node - The ObjectExpression, ObjectProperty or method
+   * node to test.
+   * @returns {boolean} True for declared bindings.
+   */
+  bindingHolds(node) {
+    const i = this.parents.findLastIndex(_ => _ === node);
+    // Ancestors sit below the node in the parents stack (root first).
+    const parent = this.parents[i - 1];
+    if (!parent) {
+      return false;
+    }
+    if (parent.type === 'ObjectExpression') {
+      return this.objectHolds(parent);
+    }
+    if (parent.type === 'ObjectProperty') {
+      return parent.value === node && this.objectHolds(parent);
+    }
+    if (parent.type === 'VariableDeclarator') {
+      return parent.init === node && parent.init.type === 'ObjectExpression';
+    }
+    if (parent.type === 'AssignmentExpression') {
+      return parent.right === node;
+    }
+    return false;
+  }
+  /**
+   * Checks whether an object literal itself is held: declared in a binding
+   * above, or the `Object.assign(X.prototype, {...})` mixin argument whose
+   * members resolve to `X#member` one level up.
+   * @param {Node} literal - The ObjectExpression node to test.
+   * @returns {boolean} True when the literal is a held argument.
+   */
+  objectHolds(literal) {
+    if (this.bindingHolds(literal)) {
+      return true;
+    }
+    const i = this.parents.findLastIndex(_ => _ === literal);
+    // Ancestors sit below the node in the parents stack (root first).
+    const parent = this.parents[i - 1];
+    if (!parent || !Array.isArray(parent.arguments) || !parent.arguments.includes(literal)) {
+      return false;
+    }
+    return parent.type === 'CallExpression' && this.assignPrototypeOwner(parent, literal) !== null;
+  }
+  /**
+   * Walks up from a method, function or class node through pure object
+   * composition (`{a: {b() {}}}`) to the owning binding: `const o = ...`
+   * gives `o`, `foo.bar = ...` gives `foo.bar`, `X.prototype = ...` gives
+   * `X` as instance members, `Object.assign(X.prototype, ...)` likewise.
+   * Anything else (calls, classes, bare blocks) ends the walk with no
+   * owner, so the bare method name survives unchanged.
+   * @param {Node} node - The method, function or class node to qualify.
+   * @returns {{owner: string, segments: string[], instance: boolean}|null}
+   * Owner plus key path, if any. `instance` marks prototype members.
+   */
+  locateObjectOwner(node) {
+    const idx = this.parents.findLastIndex(_ => _ === node);
+    if (idx === -1) {
+      return null;
+    }
+    // Ancestors sit below the node in the parents stack (root first), so
+    // the walk descends: the node's own body is above and never visited.
+    // Object literals extend the chain only while a binding holds them
+    // (see `bindingHolds`): `const o = {...}` or `o.x = {...}` qualify,
+    // `Object.assign(X.prototype, {...})` qualifies as instance members,
+    // everything else keeps the bare key.
+    const parts = [];
+    let child = node;
+    let bound = this.objectHolds(node);
+    for (let i = idx - 1; i >= 0; i--) {
+      const parent = this.parents[i];
+      if (parent.type === 'ObjectExpression') {
+        bound = this.objectHolds(parent);
+        child = parent;
+        continue;
+      }
+      if (parent.type === 'ObjectProperty') {
+        if (parent.value !== child || !bound) {
+          return null;
+        }
+        parts.unshift(this.keyPart(parent.key, parent.computed));
+        child = parent;
+        bound = this.objectHolds(child);
+        continue;
+      }
+      if (parent.type === 'VariableDeclarator') {
+        if (parent.init !== child || parent.id.type !== 'Identifier') {
+          return null;
+        }
+        return {owner: this.toSource(parent.id), parts, instance: false};
+      }
+      if (parent.type === 'AssignmentExpression') {
+        if (parent.right !== child || child.type !== 'ObjectExpression') {
+          return null;
+        }
+        const {left} = parent;
+        if (left.type === 'MemberExpression' && !left.computed &&
+            left.property.type === 'Identifier' && left.property.name === 'prototype') {
+          return {owner: this.toSource(left.object), parts, instance: true};
+        }
+        // `o.x = {m() {}}` keeps the declared chain; other shapes
+        // (`this.o.x = ...`, `a.b.c = ...`) stay bare: the method outlives
+        // any single lexical binding.
+        if (left.type === 'Identifier') {
+          return {owner: this.toSource(left), parts, instance: false};
+        }
+        return null;
+      }
+      if (parent.type === 'CallExpression') {
+        const owner = this.assignPrototypeOwner(parent, child);
+        if (owner) {
+          return {owner, parts, instance: true};
+        }
+        return null;
+      }
+      // Anything else (functions, classes, calls, blocks) ends the walk:
+      // the method outlives any object composition, so the bare name wins.
+      return null;
+    }
+    return null;
+  }
+  /**
+   * Qualifies an object property with its owner chain.
+   * @param {Node} property - The ObjectProperty node holding the function.
+   * @returns {string} Owner-qualified name or the bare property key.
+   */
+  getNameForObjectProperty(property) {
+    const found = this.locateObjectOwner(property);
+    if (found && found.owner) {
+      // Prototype mixins (`Object.assign(X.prototype, ...)`) name real
+      // instance members; other object properties keep the declared chain.
+      return this.qualifyName(found.owner, [...found.parts, this.keyPart(property.key, property.computed)], found.instance);
+    }
+    return this.keyPart(property.key, property.computed);
+  }
+  /**
    * @param {Node} node - The Babel AST node.
    * @returns {string} Best possible human-readable name of given node.
    */
   getNameForFunctionExpression(node) {
-    const objectProperty = this.findParentOfType(node, 'ObjectProperty');
-    if (objectProperty) {
-      // See good-old-es5.mjs example for a test case
-      // TODO: Make an even better name based on Object.assign(ScopeSpace.prototype
-      // Ideally we would figure out the name: ScopeSpace#resolve
-      // Currently we only find "resolve" (still better than 'unnamed function expression'...)
-      return this.toSource(objectProperty.key);
+    // Anonymous `name: function (...)` inside an object: the property key
+    // plus the owner chain name it (`object.method`, `ScopeSpace#resolve`).
+    const property = this.findParentOfType(node, 'ObjectProperty');
+    if (property && property.value === node) {
+      return this.getNameForObjectProperty(property);
     }
-    const expressionStatement = this.findParentOfType(node, 'ExpressionStatement');
-    if (expressionStatement) {
-      // There are many kinds of expressions
-      // type Expression = ArrayExpression | AssignmentExpression | BinaryExpression | CallExpression | ...
-      const {left} = expressionStatement.expression;
-      if (left) {
-        return this.toSource(left);
-      }
-      console.warn("Asserter#getNameForFunctionExpression> expression without left");
+    // `add = function (...)`: the assignment target names the binding,
+    // including `a.b = ...` member paths as written in the source. The
+    // statement wrapper may be skipped when comments attach directly to
+    // the assignment, so scan for the assignment instead of the statement.
+    const assignmentTarget = this.assignmentTargetOf(node);
+    if (assignmentTarget) {
+      return assignmentTarget;
     }
     const variableDeclarator = this.findParentOfType(node, 'VariableDeclarator');
-    if (variableDeclarator) {
+    if (variableDeclarator && variableDeclarator.id.type === 'Identifier') {
       // e.g. `var ScopeSpace = function (name) {...}` (issue #82)
       return this.toSource(variableDeclarator.id);
     }
     return 'unnamed function expression';
+  }
+  /**
+   * Names the target of `target = function ...`: the source text of the
+   * assigned-to side (`add`, `a.b.c`), whatever the statement shape.
+   * @param {Node} node - The function node on the assigned path.
+   * @returns {string|null} The target name, or null when not assigned.
+   */
+  assignmentTargetOf(node) {
+    const i = this.parents.findLastIndex(_ => _ === node);
+    // Ancestors sit below the node in the parents stack (root first), so
+    // the assignment sits above the function on the path.
+    for (let j = i - 1; j >= 0; j--) {
+      const parent = this.parents[j];
+      if (parent.type === 'AssignmentExpression' && parent.right === this.parents[j + 1]) {
+        return this.toSource(parent.left);
+      }
+      if (nodeIsFunctionLike(parent)) {
+        return null;
+      }
+    }
+    return null;
+  }
+  /**
+   * @param {Node} node - The ClassMethod or ClassPrivateMethod node.
+   * @returns {string} Class-qualified name: `C#m` for instance members,
+   * `C.m` for static ones, bare `m` when the class stays anonymous.
+   */
+  getNameForClassMethod(node) {
+    const toSource = this.toSource.bind(this);
+    const classDecl = this.parents.findLast(_ => _.type === 'ClassDeclaration' || _.type === 'ClassExpression');
+    if (!classDecl) {
+      return toSource(node.key);
+    }
+    let prefix = '';
+    if (classDecl.id) {
+      prefix = toSource(classDecl.id);
+    } else if (classDecl.type === 'ClassDeclaration') {
+      // `export default class {m() {}}`: no name anywhere, stay bare.
+    } else {
+      // Anonymous class expression: only a direct `const Name = class {}`
+      // binding names it; deeper nesting (properties, call args) stays bare
+      // because the borrow chain is not the method owner.
+      const declarator = this.parents.findLast(_ => _.type === 'VariableDeclarator');
+      if (declarator && declarator.init === classDecl && declarator.id.type === 'Identifier') {
+        prefix = toSource(declarator.id);
+      }
+    }
+    if (!prefix) {
+      return toSource(node.key);
+    }
+    // Static members join with a dot (`C.make`), instance members and
+    // constructors with a hash (`C#run`, `C#constructor`); private names
+    // render their own `#`, so static privates read `C.#q`.
+    return prefix + (node.static ? '.' : '#') + toSource(node.key);
+  }
+  /**
+   * @param {Node} node - The ObjectMethod node.
+   * @returns {string} Owner-qualified name like `BitPacking.set`, or the
+   * bare method name when no owning binding is visible.
+   */
+  getNameForObjectMethod(node) {
+    const found = this.locateObjectOwner(node);
+    if (found && found.owner) {
+      return this.qualifyName(found.owner, [...found.parts, this.keyPart(node.key, node.computed)], found.instance);
+    }
+    return this.toSource(node.key);
+  }
+  /**
+   * @param {Node} node - The ArrowFunctionExpression node.
+   * @returns {string} Owner-qualified name when the arrow sits in an
+   * object or declarator, legacy fallback otherwise.
+   */
+  getNameForArrowFunction(node) {
+    // Arrow as object value (`arrow: (y) => y`): the property key plus the
+    // owner chain name it, mirroring function expressions.
+    const property = this.findParentOfType(node, 'ObjectProperty');
+    if (property && property.value === node) {
+      return this.getNameForObjectProperty(property);
+    }
+    const found = this.locateObjectOwner(node);
+    if (found && found.owner) {
+      return this.qualifyName(found.owner, found.parts, false);
+    }
+    const parent = this.findParentOfType(node, 'VariableDeclarator');
+    if (parent && parent.id.type === 'Identifier') {
+      return this.toSource(parent.id);
+    }
+    return 'getName> missing parent for ' + node.type;
   }
   /**
    * @param {Node} node - The Babel AST node.
@@ -903,32 +1215,22 @@ class Asserter extends Stringifier {
     if (node.type === 'BlockStatement') {
       node = this.parent;
     }
-    const {type, key, id} = node;
+    const {type, id} = node;
     switch (type) {
       case 'FunctionDeclaration':
         return toSource(id);
       case 'ClassMethod':
       case 'ClassPrivateMethod':
-        const classDecl = this.parents.findLast(_ => _.type === 'ClassDeclaration');
-        let out = '';
-        if (classDecl) {
-          out += toSource(classDecl.id) + '#';
-        }
-        out += toSource(key);
-        return out;
+        return this.getNameForClassMethod(node);
       case 'FunctionExpression':
         if (id) {
           return toSource(id);
         }
         return this.getNameForFunctionExpression(node);
       case 'ArrowFunctionExpression':
-        const parent = this.findParentOfType(node, 'VariableDeclarator');
-        if (parent) {
-          return toSource(parent.id);
-        }
-        return 'getName> missing parent for ' + node.type;
+        return this.getNameForArrowFunction(node);
       case 'ObjectMethod':
-        return toSource(key);
+        return this.getNameForObjectMethod(node);
       case 'BinaryExpression':
         const goodNames = ['FunctionDeclaration', 'ClassMethod', 'ClassPrivateMethod'];
         const goodParent = this.parents.findLast(_ => goodNames.includes(_.type));

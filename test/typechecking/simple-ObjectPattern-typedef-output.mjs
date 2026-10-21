@@ -1,4 +1,5 @@
 class Tokenizer {
+  
   /**
    * Loads a pre-trained tokenizer from the given `pretrained_model_name_or_path`. 
    * 
@@ -15,11 +16,11 @@ class Tokenizer {
     local_files_only = false,
     revision = 'main',
     legacy = null,
-  } = {}) {
-    if (!inspectType(pretrained_model_name_or_path, "string", 'Tokenizer#from_pretrained', 'pretrained_model_name_or_path')) {
+} = {}) {
+    if (!inspectType(pretrained_model_name_or_path, "string", 'Tokenizer.from_pretrained', 'pretrained_model_name_or_path')) {
       youCanAddABreakpointHere();
     }
-    if (!inspectType(arguments[1], "PretrainedTokenizerOptions", 'Tokenizer#from_pretrained', 'options')) {
+    if (!inspectType(arguments[1], "PretrainedTokenizerOptions", 'Tokenizer.from_pretrained', 'options')) {
       youCanAddABreakpointHere();
     }
     const info = await loadTokenizer(pretrained_model_name_or_path, {
@@ -31,6 +32,7 @@ class Tokenizer {
       legacy,
     });
     // @ts-ignore
+
     return new this(...info);
   }
 }
