@@ -147,6 +147,30 @@ function testAssignmentBinding() {
   const out = convert(`let add;\n${doc1}add = function (a) {\nreturn a;\n};`);
   return out.includes(`'add', 'a'`) && !out.includes('unnamed');
 }
+function testMultilineComputedKeyEscapes() {
+  // A computed template key spanning lines escapes, so the check stays one line.
+  const out = convert(`const o = {\n${doc1}[\`a\nb\`](a) {\nreturn a;\n},\n};`);
+  return out.includes("'o[`a\\nb`]', 'a'");
+}
+function testEscapedNewlineKeySurvives() {
+  // Keys can only carry real newlines via escapes ('a\\nb'), which the
+  // transpiler cannot reach raw: Babel rejects raw newlines in source
+  // string keys at parse time. The escaped key still checks correctly.
+  const out = convert(`const o = { ${doc1}'a\\nb'(a) { return a; } };`);
+  return out.includes(`'o["a\\\\nb"]', 'a'`);
+}
+function testNullByteKeySurvives() {
+  // Null bytes ride inside bracket quotes without breaking the literal.
+  // `JSON.stringify` escapes them, so the check compiles and runs.
+  const out = convert(`const o = { ${doc1}'a\0b'(a) { return a; } };`);
+  const check = `'o["a\\\\u0000b"]', 'a'`;
+  if (!out.includes(check)) {
+    return false;
+  }
+  // eslint-disable-next-line no-new -- must execute converted code to prove the emitted literal parses
+  new (Object.getPrototypeOf(async function () {}).constructor)(`const inspectType = () => true;\nconst youCanAddABreakpointHere = () => {};\n${out}`);
+  return true;
+}
 export const tests = [
   testObjectMethodOwner,
   testObjectPropertyFunctionOwner,
@@ -175,4 +199,7 @@ export const tests = [
   testBareArrowFallback,
   testPassedPropertyFunctionBare,
   testAssignmentBinding,
+  testMultilineComputedKeyEscapes,
+  testEscapedNewlineKeySurvives,
+  testNullByteKeySurvives,
 ];

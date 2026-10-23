@@ -698,12 +698,10 @@ class Asserter extends Stringifier {
                 }
                 const t = simplifyTypeToSource(type.elementType).replaceAll('\n', '\n' + spaces);
                 newlineBeforeFirst();
-                const atLoc = quoteName(loc);
-                const atName = quoteName(nameFancy);
                 if (templates) {
-                  out += `${spaces}if (!inspectTypeWithTemplates(${element.name}, ${t}, ${atLoc}, ${atName}, rtiTemplates)) {\n`;
+                  out += quoteName`${spaces}if (!inspectTypeWithTemplates(${element.name}, ${t}, '${[loc]}', '${[nameFancy]}', rtiTemplates)) {\n`;
                 } else {
-                  out += `${spaces}if (!inspectType(${element.name}, ${t}, ${atLoc}, ${atName})) {\n`;
+                  out += quoteName`${spaces}if (!inspectType(${element.name}, ${t}, '${[loc]}', '${[nameFancy]}')) {\n`;
                 }
                 out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
               }
@@ -738,12 +736,10 @@ class Asserter extends Stringifier {
                   }
                   const t = simplifyTypeToSource(subType).replaceAll('\n', '\n' + spaces);
                   newlineBeforeFirst();
-                  const atLoc = quoteName(loc);
-                  const atName = quoteName(nameFancy);
                   if (templates) {
-                    out += `${spaces}if (!inspectTypeWithTemplates(${keyName}, ${t}, ${atLoc}, ${atName}, rtiTemplates)) {\n`;
+                    out += quoteName`${spaces}if (!inspectTypeWithTemplates(${keyName}, ${t}, '${[loc]}', '${[nameFancy]}', rtiTemplates)) {\n`;
                   } else {
-                    out += `${spaces}if (!inspectType(${keyName}, ${t}, ${atLoc}, ${atName})) {\n`;
+                    out += quoteName`${spaces}if (!inspectType(${keyName}, ${t}, '${[loc]}', '${[nameFancy]}')) {\n`;
                   }
                   out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
                 }
@@ -784,12 +780,10 @@ class Asserter extends Stringifier {
         prevCheck = 'arguments.length !== 0 && ';
       }
       newlineBeforeFirst();
-      const atLoc = quoteName(loc);
-      const atName = quoteName(nameFancy);
       if (templates) {
-        out += `${spaces}if (${prevCheck}!inspectTypeWithTemplates(${name}, ${t}, ${atLoc}, ${atName}, rtiTemplates)) {\n`;
+        out += quoteName`${spaces}if (${prevCheck}!inspectTypeWithTemplates(${name}, ${t}, '${[loc]}', '${[nameFancy]}', rtiTemplates)) {\n`;
       } else {
-        out += `${spaces}if (${prevCheck}!inspectType(${name}, ${t}, ${atLoc}, ${atName})) {\n`;
+        out += quoteName`${spaces}if (${prevCheck}!inspectType(${name}, ${t}, '${[loc]}', '${[nameFancy]}')) {\n`;
       }
       out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
     }
@@ -862,11 +856,14 @@ class Asserter extends Stringifier {
       return '';
     }
     const {spaces} = this;
-    const atLoc = quoteName(this.getName(node));
+    // Array markers quote the loc (`'${[loc]}'`); the checked variable
+    // name stays raw since `collectDefaultChecks` only yields plain
+    // Identifiers.
+    const atLoc = [this.getName(node)];
     let out = prefixNewline ? '\n' : '';
     for (const {name, type} of checks) {
       const t = simplifyTypeToSource(type).replaceAll('\n', '\n' + spaces);
-      out += `${spaces}if (!inspectType(${name}, ${t}, ${atLoc}, '${name}')) {\n`;
+      out += quoteName`${spaces}if (!inspectType(${name}, ${t}, '${atLoc}', '${name}')) {\n`;
       out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
     }
     return out;

@@ -1,16 +1,32 @@
 /**
- * Quotes a display name for the single-quoted literal of an emitted
- * `inspectType` call. Double quotes travel raw, backslashes double,
- * single quotes escape as `\'`, so every name stays valid output
- * syntax. This is the only place that knows about literal escaping:
- * name builders return plain human-readable text.
+ * Tagged template for an emitted `inspectType` line: the tag sits in
+ * front of the whole template string and escapes every interpolated
+ * value in place. Code and quotes stay in the template itself; only
+ * display names are wrapped (`'${[loc]}'`), so adding a slot can never
+ * leak a raw value.
  * @example
- * quoteName('BitPacking.set'); // "'BitPacking.set'"
- * quoteName("o[\"ap's\"]"); // "'o[\"ap\\'s\"]'"
- * @param {string} name - The display name.
- * @returns {string} The quoted literal including its quotes.
+ * quoteName`if (!inspectType(a, "number", '${['BitPacking.set']}', 'a')) {`; // "if (!inspectType(a, \"number\", 'BitPacking.set', 'a')) {"
+ * @param {TemplateStringsArray} strings - The literal template chunks.
+ * @param {...any} values - Interpolated chunks; arrays escape as names.
+ * @returns {string} The assembled line with every name escaped in place.
  */
-function quoteName(name) {
-  return `'${name.replaceAll("\\", "\\\\").replaceAll("'", "\\'")}'`;
+function quoteName(strings, ...values) {
+  const escape = (value) => String(value)
+    .replaceAll("\\", "\\\\")
+    .replaceAll("'", "\\'")
+    .replaceAll("\n", "\\n")
+    .replaceAll("\r", "\\r")
+    .replaceAll("\u2028", "\\u2028")
+    .replaceAll("\u2029", "\\u2029");
+  return strings.reduce((out, chunk, i) => {
+    if (i >= values.length) {
+      return out + chunk;
+    }
+    const value = values[i];
+    if (Array.isArray(value)) {
+      return out + chunk + escape(value[0]);
+    }
+    return out + chunk + value;
+  }, '');
 }
 export {quoteName};
