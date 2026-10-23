@@ -1,3 +1,4 @@
+
 /**
  * @class
  * @name pc.ScopeSpace
@@ -9,13 +10,16 @@ var ScopeSpace = function (name) {
   if (!inspectType(name, "string", 'ScopeSpace', 'name')) {
     youCanAddABreakpointHere();
   }
+
   // Store the name
   this.name = name;
   // Create the empty tables
+
   this.variables = {};
   this.namespaces = {};
 };
 Object.assign(ScopeSpace.prototype, {
+  
   /**
    * @function
    * @name pc.ScopeSpace#resolve
@@ -24,15 +28,18 @@ Object.assign(ScopeSpace.prototype, {
    * @returns {pc.ScopeId} The variable instance.
    */
   resolve: function (name) {
-    if (!inspectType(name, "string", 'resolve', 'name')) {
+    if (!inspectType(name, "string", 'ScopeSpace#resolve', 'name')) {
       youCanAddABreakpointHere();
     }
+
     // Check if the ScopeId already exists
     if (!this.variables.hasOwnProperty(name)) {
+
       // Create and add to the table
       this.variables[name] = new pc.ScopeId(name);
     }
     // Now return the ScopeId instance
+
     return inspectIndexedAccess(this.variables, name, "repl.js:30");
   }
 });

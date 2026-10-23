@@ -176,6 +176,10 @@
     "output": "./test/typechecking/literal-numbers-output.mjs"
   },
   {
+    "input": "./test/typechecking/location-owners-input.mjs",
+    "output": "./test/typechecking/location-owners-output.mjs"
+  },
+  {
     "input": "./test/typechecking/map-keys-input.mjs",
     "output": "./test/typechecking/map-keys-output.mjs"
   },

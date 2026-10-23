@@ -1,5 +1,13 @@
 # AGENTS.md
 
+## Commits
+
+Never commit, amend, push, or open pull requests unless the user explicitly
+asks for it ("commit", "push", "open a PR", and the like). Do the work,
+leave it staged or unstaged in the working tree, and report what changed.
+When a commit is requested, inspect `git status` and `git diff` first, stage
+only the intended files, and write the message in the established repo style.
+
 ## Scratch files
 
 Always use the repo-local `./tmp/` directory for scratch, repro and
