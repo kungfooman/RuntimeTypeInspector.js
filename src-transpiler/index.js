@@ -28,7 +28,7 @@ export * from './parseJSDoc.js';
 export * from './parseJSDocSetter.js';
 export * from './parseJSDocTemplates.js';
 export * from './parseJSDocTypedef.js';
-export * from './quoteName.js';
+export * from './escapeName.js';
 export * from './parserOptions.js';
 export * from './annotateOptional.js';
 export * from './simplifyType.js';

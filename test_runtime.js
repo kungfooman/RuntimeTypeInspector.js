@@ -161,7 +161,7 @@ const tests = [
   ...(await import('./src-transpiler/extractCurlyContent.spec.js'       )).tests,
   ...(await import('./src-transpiler/markTypeofRequirements.spec.js'    )).tests,
   ...(await import('./src-transpiler/ignoredParamsIn.spec.js'           )).tests,
-  ...(await import('./src-transpiler/quoteName.spec.js'               )).tests,
+  ...(await import('./src-transpiler/escapeName.spec.js'               )).tests,
   ...(await import('./src-transpiler/runtimeImportNames.spec.js'        )).tests,
   ...(await import('./src-transpiler/runChecks.spec.js'                 )).tests,
   ...(await import('./src-transpiler/noneUnchecked.spec.js'             )).tests,

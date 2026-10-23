@@ -4,7 +4,7 @@ import {expandTypeDepFree  } from './expandTypeDepFree.js';
 import {harvestClassShape  } from './harvestClassShape.js';
 import {inferTypeFromDefault} from './inferTypeFromDefault.js';
 import {parseInlineParamType} from './parseInlineParamType.js';
-import {quoteName} from './quoteName.js';
+import {escapeName} from './escapeName.js';
 import {nodeIsFunctionLike } from './nodeIsFunctionLike.js';
 import {parseJSDoc         } from './parseJSDoc.js';
 import {parseJSDocSetter   } from './parseJSDocSetter.js';
@@ -698,10 +698,12 @@ class Asserter extends Stringifier {
                 }
                 const t = simplifyTypeToSource(type.elementType).replaceAll('\n', '\n' + spaces);
                 newlineBeforeFirst();
+                const atLoc = escapeName(loc);
+                const atName = escapeName(nameFancy);
                 if (templates) {
-                  out += quoteName`${spaces}if (!inspectTypeWithTemplates(${element.name}, ${t}, '${[loc]}', '${[nameFancy]}', rtiTemplates)) {\n`;
+                  out += `${spaces}if (!inspectTypeWithTemplates(${element.name}, ${t}, '${atLoc}', '${atName}', rtiTemplates)) {\n`;
                 } else {
-                  out += quoteName`${spaces}if (!inspectType(${element.name}, ${t}, '${[loc]}', '${[nameFancy]}')) {\n`;
+                  out += `${spaces}if (!inspectType(${element.name}, ${t}, '${atLoc}', '${atName}')) {\n`;
                 }
                 out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
               }
@@ -736,10 +738,12 @@ class Asserter extends Stringifier {
                   }
                   const t = simplifyTypeToSource(subType).replaceAll('\n', '\n' + spaces);
                   newlineBeforeFirst();
+                  const atLoc = escapeName(loc);
+                  const atName = escapeName(nameFancy);
                   if (templates) {
-                    out += quoteName`${spaces}if (!inspectTypeWithTemplates(${keyName}, ${t}, '${[loc]}', '${[nameFancy]}', rtiTemplates)) {\n`;
+                    out += `${spaces}if (!inspectTypeWithTemplates(${keyName}, ${t}, '${atLoc}', '${atName}', rtiTemplates)) {\n`;
                   } else {
-                    out += quoteName`${spaces}if (!inspectType(${keyName}, ${t}, '${[loc]}', '${[nameFancy]}')) {\n`;
+                    out += `${spaces}if (!inspectType(${keyName}, ${t}, '${atLoc}', '${atName}')) {\n`;
                   }
                   out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
                 }
@@ -780,10 +784,12 @@ class Asserter extends Stringifier {
         prevCheck = 'arguments.length !== 0 && ';
       }
       newlineBeforeFirst();
+      const atLoc = escapeName(loc);
+      const atName = escapeName(nameFancy);
       if (templates) {
-        out += quoteName`${spaces}if (${prevCheck}!inspectTypeWithTemplates(${name}, ${t}, '${[loc]}', '${[nameFancy]}', rtiTemplates)) {\n`;
+        out += `${spaces}if (${prevCheck}!inspectTypeWithTemplates(${name}, ${t}, '${atLoc}', '${atName}', rtiTemplates)) {\n`;
       } else {
-        out += quoteName`${spaces}if (${prevCheck}!inspectType(${name}, ${t}, '${[loc]}', '${[nameFancy]}')) {\n`;
+        out += `${spaces}if (${prevCheck}!inspectType(${name}, ${t}, '${atLoc}', '${atName}')) {\n`;
       }
       out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
     }
@@ -856,14 +862,11 @@ class Asserter extends Stringifier {
       return '';
     }
     const {spaces} = this;
-    // Array markers quote the loc (`'${[loc]}'`); the checked variable
-    // name stays raw since `collectDefaultChecks` only yields plain
-    // Identifiers.
-    const atLoc = [this.getName(node)];
+    const atLoc = escapeName(this.getName(node));
     let out = prefixNewline ? '\n' : '';
     for (const {name, type} of checks) {
       const t = simplifyTypeToSource(type).replaceAll('\n', '\n' + spaces);
-      out += quoteName`${spaces}if (!inspectType(${name}, ${t}, '${atLoc}', '${name}')) {\n`;
+      out += `${spaces}if (!inspectType(${name}, ${t}, '${atLoc}', '${name}')) {\n`;
       out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
     }
     return out;
