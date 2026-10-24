@@ -1,6 +1,5 @@
 import {parse} from '@babel/parser';
-/** @typedef {import('./expandedType.js').ExpandedType} ExpandedType */
-/** @typedef {import('./expandedType.js').ExpandParameterNode} ExpandParameterNode */
+/** @import {ExpandedType, ExpandParameterNode, ExpandTupleMemberNode, ExpandMappingNode, ExpandIndexSignatureNode, ExpandObjectNode} from './expandedType.js' */
 /**
  * @todo Better handling of weird case: Array<>
  * @example
@@ -182,7 +181,7 @@ function toSourceBabelTS(node) {
     case 'TSNamedTupleMember': {
       const nName = typeof node.label === 'string' ? node.label : node.label?.name;
       const nType = toSourceBabelTS(node.elementType);
-      /** @type {import('./expandedType.js').ExpandTupleMemberNode} */
+      /** @type {ExpandTupleMemberNode} */
       const mem = {
         type: 'tupleMember',
         name: /** @type {string} */ (nName),
@@ -197,7 +196,7 @@ function toSourceBabelTS(node) {
       // carrying the label; convert like expandTypeDepFree does.
       if (inner && inner.type === 'TSNamedTupleMember') {
         const nName = typeof inner.label === 'string' ? inner.label : inner.label?.name;
-        /** @type {import('./expandedType.js').ExpandTupleMemberNode} */
+        /** @type {ExpandTupleMemberNode} */
         const mem = {
           type: 'tupleMember',
           name: /** @type {string} */ (nName),
@@ -304,7 +303,7 @@ function toSourceBabelTS(node) {
       const element = typeof nameNode === 'string' ? nameNode : toSourceBabelTS(nameNode);
       const iterable = toSourceBabelTS(param?.constraint);
       const result = toSourceBabelTS(node.typeAnnotation);
-      /** @type {import('./expandedType.js').ExpandMappingNode} */
+      /** @type {ExpandMappingNode} */
       const out = {
         type: 'mapping',
         iterable: /** @type {ExpandedType} */ (iterable),
@@ -327,12 +326,12 @@ function toSourceBabelTS(node) {
     case 'TSTypeLiteral': {
       /** @type {Object<string, ExpandedType>} */
       const properties = {};
-      /** @type {import('./expandedType.js').ExpandIndexSignatureNode[] | undefined} */
+      /** @type {ExpandIndexSignatureNode[] | undefined} */
       let indexSignatures;
       for (const member of node.members ?? []) {
         if (member.type === 'TSIndexSignature') {
           indexSignatures = indexSignatures ?? [];
-          const indexSignature = /** @type {import('./expandedType.js').ExpandIndexSignatureNode | undefined} */ (toSourceBabelTS(member));
+          const indexSignature = /** @type {ExpandIndexSignatureNode | undefined} */ (toSourceBabelTS(member));
           if (indexSignature !== undefined) {
             indexSignatures.push(indexSignature);
           }
@@ -355,7 +354,7 @@ function toSourceBabelTS(node) {
           console.warn('TSTypeLiteral: unhandled member', member.type);
         }
       }
-      /** @type {import('./expandedType.js').ExpandObjectNode} */
+      /** @type {ExpandObjectNode} */
       const ret = {type: 'object'};
       if (Object.keys(properties).length) {
         ret.properties = properties;

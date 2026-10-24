@@ -1,8 +1,5 @@
 import ts from 'typescript';
-/** @typedef {import('./expandedType.js').ExpandedType} ExpandedType */
-/** @typedef {import('./expandedType.js').ExpandConditionNode} ExpandConditionNode */
-/** @typedef {import('./expandedType.js').ExpandMappingNode} ExpandMappingNode */
-/** @typedef {import('./expandedType.js').ExpandParameterNode} ExpandParameterNode */
+/** @import {ExpandedType, ExpandConditionNode, ExpandMappingNode, ExpandParameterNode, ExpandTupleMemberNode, ExpandIndexSignatureNode, ExpandObjectNode} from './expandedType.js' */
 /**
  * Transforms a type string into a structured type representation.
  *
@@ -313,7 +310,7 @@ function toSourceTS(node) {
       const dot = !!node.dotDotDotToken;
       // Preserve label for docs: [a: string, b: number] -> keep name
       // Use tupleMember shape so stringify can round-trip
-      /** @type {import('./expandedType.js').ExpandTupleMemberNode} */
+      /** @type {ExpandTupleMemberNode} */
       const mem = {
         type: 'tupleMember',
         name: /** @type {string} */ (nName),
@@ -367,12 +364,12 @@ function toSourceTS(node) {
       }
       /** @type {Object<string, ExpandedType>} */
       const properties = {};
-      /** @type {import('./expandedType.js').ExpandIndexSignatureNode[] | undefined} */
+      /** @type {ExpandIndexSignatureNode[] | undefined} */
       let indexSignatures;
       node.members.forEach(/** @param {ts.Node} member - The type literal member. @returns {void} */ (member) => {
         if (member.kind === IndexSignature) {
           indexSignatures = indexSignatures ?? [];
-          const indexSignature = /** @type {import('./expandedType.js').ExpandIndexSignatureNode | undefined} */ (toSourceTS(member));
+          const indexSignature = /** @type {ExpandIndexSignatureNode | undefined} */ (toSourceTS(member));
           if (indexSignature !== undefined) {
             indexSignatures.push(indexSignature);
           }
@@ -399,7 +396,7 @@ function toSourceTS(node) {
           console.warn('TypeLiteral: unhandled member', member);
         }
       });
-      /** @type {import('./expandedType.js').ExpandObjectNode} */
+      /** @type {ExpandObjectNode} */
       const ret = {type: 'object'};
       if (Object.keys(properties).length) {
         ret.properties = properties;

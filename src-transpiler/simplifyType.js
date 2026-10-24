@@ -1,5 +1,5 @@
 import {mapValues} from './mapValues.js';
-/** @typedef {import('./expandedType.js').ExpandedType} ExpandedType */
+/** @import {ExpandedType, ExpandIndexSignatureNode} from './expandedType.js' */
 /**
  * Recursively clones and simplifies a type for emission into source code.
  * Empty `properties` are preserved (not deleted) and empty `object` types
@@ -21,7 +21,7 @@ function simplifyType(type) {
     out.properties = mapValues(out.properties, simplifyType);
   }
   if ('indexSignatures' in out && out.indexSignatures && Array.isArray(out.indexSignatures)) {
-    out.indexSignatures = /** @type {import('./expandedType.js').ExpandIndexSignatureNode[]} */ (out.indexSignatures.map(simplifyType));
+    out.indexSignatures = /** @type {ExpandIndexSignatureNode[]} */ (out.indexSignatures.map(simplifyType));
   }
   if ('members' in out && out.members) {
     out.members = out.members.map(simplifyType);

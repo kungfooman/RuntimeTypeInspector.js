@@ -114,6 +114,15 @@ return (
 );
 ```
 
+Import each shared typedef once per file with `@import` at the top and use the bare name everywhere else, so `@type` casts stay short and diffs stay local:
+
+```js
+/** @import {ExpandedType, ExpandAnnotatedAtomNode} from './expandedType.js' */
+/** @type {ExpandAnnotatedAtomNode} */ ({type, optional})
+```
+
+never `@type {import('./expandedType.js').ExpandAnnotatedAtomNode}` inline.
+
 ## Comment style
 
 Do not add issue-number references (e.g. `(issue #123)`) to code comments,

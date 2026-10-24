@@ -8,8 +8,7 @@
  * const tooComplex = 'Array<string|{chunks?: undefined|Array<{language: string|null, timestamp: Array<number|null>, text: string}>}>';
  * console.log(expandTypeDepFree(tooComplex));
  */
-/** @typedef {import('./expandedType.js').ExpandedType} ExpandedType */
-/** @typedef {import('./expandedType.js').ExpandMappingNode} ExpandMappingNode */
+/** @import {ExpandedType, ExpandMappingNode, ExpandMappedRaw, ExpandTupleMemberNode, ExpandIndexSignatureNode, ExpandAnnotatedAtomNode, ExpandObjectNode} from './expandedType.js' */
 /**
  * Splits a string by a delimiter, ignoring delimiters nested inside <>, {}, [], ().
  * Quote-aware: delimiters inside '...', "..." or `...` never split.
@@ -225,12 +224,9 @@ function parseGenericReference(type) {
   return {name, args};
 }
 /**
- * @typedef {import('./expandedType.js').ExpandMappedRaw} ExpandMappedRaw
- * Raw mapped type parts, before `iterable`/`result`/`nameType` are expanded.
- */
-/**
  * Parses `{[K in Iterable as NameType]?: Result}` mapped syntax.
- * Returns undefined when input isn't a mapped type.
+ * Returns raw mapped type parts, before `iterable`/`result`/`nameType`
+ * are expanded. Returns undefined when input isn't a mapped type.
  * @param {string} type - Trimmed type string starting with `{`.
  * @returns {ExpandMappedRaw | undefined} Mapping struct with raw strings, or undefined.
  */
@@ -518,7 +514,7 @@ function parseFunctionRaw(type) {
  * Returns undefined for ordinary `name: type` entries, null for malformed
  * bracket entries.
  * @param {string} entry - The raw entry text.
- * @returns {import('./expandedType.js').ExpandIndexSignatureNode | undefined | null} The signature, undefined for ordinary entries, null when malformed.
+ * @returns {ExpandIndexSignatureNode | undefined | null} The signature, undefined for ordinary entries, null when malformed.
  */
 function parseIndexSignatureEntry(entry) {
   const trimmed = entry.trim();
@@ -675,7 +671,7 @@ function expandTupleElement(raw) {
   if (!name) {
     return;
   }
-  /** @type {import('./expandedType.js').ExpandTupleMemberNode} */
+  /** @type {ExpandTupleMemberNode} */
   const member = {type: 'tupleMember', name, elementType: expandTypeDepFree(typeRaw)};
   if (optional) {
     member.optional = true;
@@ -832,7 +828,7 @@ function expandTypeDepFree(type) {
     const propertiesArray = splitTopLevel(type.slice(1, -1), ','); // ['entity: Entity', ' app: AppBase']
     /** @type {Object<string, ExpandedType>} */
     const properties = {};
-    /** @type {import('./expandedType.js').ExpandIndexSignatureNode[] | undefined} */
+    /** @type {ExpandIndexSignatureNode[] | undefined} */
     let indexSignatures;
     for (const entry of propertiesArray) {
       // Index signature entries `[n: number]: T` before the `name: type` split.
@@ -882,7 +878,7 @@ function expandTypeDepFree(type) {
           if (propOptional) /** @type {{optional?: boolean}} */ (expanded).optional = true;
           if (propReadonly) /** @type {{readonly?: boolean}} */ (expanded).readonly = true;
         } else {
-          /** @type {import('./expandedType.js').ExpandAnnotatedAtomNode} */
+          /** @type {ExpandAnnotatedAtomNode} */
           const wrapped = {type: expanded};
           if (propOptional) wrapped.optional = true;
           if (propReadonly) wrapped.readonly = true;
@@ -896,7 +892,7 @@ function expandTypeDepFree(type) {
     if (!Object.keys(properties).length && indexSignatures === undefined) {
       return {type: 'object'};
     }
-    /** @type {import('./expandedType.js').ExpandObjectNode} */
+    /** @type {ExpandObjectNode} */
     const out = {type: 'object'};
     if (Object.keys(properties).length) {
       out.properties = properties;
