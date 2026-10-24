@@ -2,13 +2,15 @@ import {expandType} from './expandType.js';
 import {expandTypeBabelTS} from './expandTypeBabelTS.js';
 import {expandTypeDepFree} from './expandTypeDepFree.js';
 import {validateType} from '../src-runtime/validateType.js';
+import {deepEqualType} from '../src-runtime/deepEqualType.js';
 const warn = () => undefined;
 function assertParity(type) {
   const fromTS = expandType(type);
   const fromBabel = expandTypeBabelTS(type);
   const fromDepFree = expandTypeDepFree(type);
-  const jsonTS = JSON.stringify(fromTS);
-  if (JSON.stringify(fromBabel) !== jsonTS || JSON.stringify(fromDepFree) !== jsonTS) {
+  // Canonical comparison: key order, explicit undefined, and `false`
+  // flags never count as differences.
+  if (!deepEqualType(fromBabel, fromTS) || !deepEqualType(fromDepFree, fromTS)) {
     console.warn(`Parity mismatch for '${type}'`, {fromTS, fromBabel, fromDepFree});
     return false;
   }

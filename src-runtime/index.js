@@ -25,6 +25,8 @@ export * from './logFilename.js';
 export * from './globalMessageHost.js';
 export * from './instantiateReference.js';
 export * from './canonicalKey.js';
+export * from './canonicalize.js';
+export * from './deepEqualType.js';
 export * from './registeredNameOf.js';
 export * from './resolveTemplateLiteralCandidates.js';
 export * from './resolveTemplateLiteralValues.js';

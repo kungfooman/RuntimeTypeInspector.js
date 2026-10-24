@@ -7,7 +7,8 @@ import {mergedClassShape, prototypeShape} from "./classShape.js";
 import {nominalClassOf} from "./nominalClassOf.js";
 import {getTypeKeys, resolveUtilityShape} from "./getTypeKeys.js";
 import {instantiateReference} from "./instantiateReference.js";
-import {extendsCheck, resolveForExtends, stripLiteral, deepEqualType, evaluateCondition} from "./evaluateCondition.js";
+import {extendsCheck, resolveForExtends, stripLiteral, evaluateCondition} from "./evaluateCondition.js";
+import {deepEqualType} from "./deepEqualType.js";
 /**
  * Follows strings through typedefs (and materializes mappings) to object
  * shapes, distributing over unions like homomorphic mapped types do.
