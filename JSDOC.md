@@ -38,28 +38,56 @@ out.question = ...;
 
 Without the declaration cast the literal widens (`type: string`), so later assignments (`out.question`, `out.nameType`, indexed pushes) fail with `TS2339`/`TS7053`. Proven by delete-and-watch-it-fail. The declaration cast sets the construction context; the properties inside it must still be honestly typed (guarded, not cast: see previous rule).
 
-## Untagged union members defeat narrowing: verify shape, then cast once with a comment
+## Untagged union members defeat narrowing: verify shape with a predicate (was: cast once with a comment)
 
-`ExpandedType` members `ExpandParameterNode` (`{type, name}`) and `ExpandAnnotatedAtomNode` (`{type, optional}`) carry no literal `type` tag, so no discriminant check can exclude them:
+`ExpandedType` members `ExpandParameterNode` (`{type, name}`) and `ExpandAnnotatedAtomNode` (`{type, optional}`) carry no literal `type` tag, so no discriminant check can exclude them. This used to require a documented cast at the push site; the `in`-based `isIndexSignatureNode` predicate above retires that pattern: verify tag plus structural keys, no cast anywhere. The old advice (narrow past the untagged members, then cast with a comment recording the proof) remains the fallback only when a predicate is disproportionate (single site, no shared meaning).
+
+## Structural flag writes go through a predicate, not a cast
+
+`typeof` narrowing does not survive JSDoc typedef unions: narrowing `ExpandedType` (or even a single `ExpandArrayNode | string`) by `typeof x === 'object'` yields `never`, so every flag write needed a `/** @type {{optional?: boolean}} */` cast. The fix is one type predicate used at all seven sites:
 
 ```js
-const indexSignature = toSourceTS(member);
-if (typeof indexSignature === 'object' && indexSignature !== null && indexSignature.type === 'indexSignature') {
-  // member.kind === IndexSignature guarantees the node shape;
-  // the check above only narrows past the untagged union members.
-  indexSignatures.push(/** @type {ExpandIndexSignatureNode} */ (indexSignature));
+/**
+ * @param {ExpandedType | undefined} type - The expanded type to check.
+ * @returns {type is {optional?: boolean, readonly?: boolean}} Whether the type is a flag-carrying object node.
+ */
+function isExpandedObject(type) {
+  return typeof type === 'object' && type !== null;
 }
 ```
 
-The runtime checks exclude everything checkable (`undefined`, primitives, wrongly tagged objects); the remaining cast asserts only what the `member.kind` discriminant proves and tsc cannot connect. Keep the comment: it records the proof tsc cannot see.
+`x is T` predicates work in checkJs, and the structural claim is honest: every object node carries those flags. Call sites read naturally (`if (isExpandedObject(type)) type.optional = true;`) with no cast. The predicate lives in `src-transpiler/isExpandedObject.js` with its own spec, exported from the barrel. Side benefit found by testing: the old `instanceof Object` check in `annotateOptional.js` missed prototype-less nodes (`Object.create(null)`); the predicate handles them. Do not use `instanceof Object` for narrowing JSDoc unions: it errors on atom-including unions (`TS2358`) and narrows backwards where it applies.
 
-## Structural flag writes go through minimal casts: keep them
+## Untagged union members yield to `in`-based predicates, not casts
+
+Discriminant checks cannot exclude `ExpandParameterNode`/`ExpandAnnotatedAtomNode` (no literal tag), so the index-signature push needed a documented cast. The replacement verifies tag plus structure with `in`, which narrows untagged members where `===` cannot:
 
 ```js
-if (typeof type === 'object') /** @type {{optional?: boolean}} */ (type).optional = true;
+/**
+ * @param {ExpandedType | undefined} type - The expanded type to check.
+ * @returns {type is ExpandIndexSignatureNode} Whether the type is an index signature node.
+ */
+function isIndexSignatureNode(type) {
+  return (
+    typeof type === 'object' &&
+    type !== null &&
+    type.type === 'indexSignature' &&
+    'indexType' in type &&
+    'indexParameters' in type
+  );
+}
 ```
 
-The flag is read structurally off any node at runtime, so the write needs no specific node type, only the flag. A narrower cast would lie about which node it is; a wider approach (declaring the variable as the full union) would force every reader to narrow. The minimal structural cast is the honest shape of the operation.
+No cast inside or at the call sites (`if (isIndexSignatureNode(indexSignature)) indexSignatures.push(indexSignature);`). `src-transpiler/isIndexSignatureNode.js`, spec alongside, barrel-exported. Same pattern applies wherever an untagged member defeats `===` narrowing: check the tag if present, then the structural keys with `in`.
+
+## What stays cast, and why
+
+After the cleanup the remaining casts each survived a delete-and-watch-tsc-fail round:
+
+* Declaration casts on incrementally built objects (`ExpandMappingNode`, `ExpandObjectNode`, `ExpandedType[]`, `Record<...>` containers, the `'-' | '+' | '?'` modifier locals which widen to `string` without them). They state the construction target; the properties inside must still be honestly typed (guarded, never cast).
+* The `ExpandAnnotatedAtomNode` wrap and the tuple `(ExpandedType | undefined)[]` pair in `expandTypeDepFree.js`: the tuple wart (`undefined` for unnamed `?` elements) is deliberate three-parser parity, not a hole.
+* `simplifyType.js` index-signature map: asserts the shape-preserving invariant by construction; verifying per call would be dead-code paranoia, filtering would silently drop corruption (fail-open).
+* External untyped inputs: the Babel `parse()` result is `any`, so the synthesized-alias read needed no cast at all; where the parser lib IS typed (`Statement`), a kind guard (`first.type !== 'TSTypeAliasDeclaration'` throws) beats the old blind cast and fails closed.
 
 ## Observed: `.map()` over `ts.NodeArray` assigns cleanly, over plain arrays it does not (empirical)
 
