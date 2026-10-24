@@ -14,6 +14,18 @@ function assertParity(type) {
   }
   return true;
 }
+function assertTsBabelParity(type) {
+  // Two-way parity for shapes expandTypeDepFree does not support (functions,
+  // object flags, index signatures, named tuples, template literals): the
+  // dep-free parser is a best-effort fallback, not the production path.
+  const fromTS = expandType(type);
+  const fromBabel = expandTypeBabelTS(type);
+  if (JSON.stringify(fromBabel) !== JSON.stringify(fromTS)) {
+    console.warn(`TS/Babel parity mismatch for '${type}'`, {fromTS, fromBabel});
+    return false;
+  }
+  return true;
+}
 function testArrayLikeParity() {
   return assertParity('ArrayLike<number>');
 }
@@ -155,6 +167,103 @@ function testMappedNestedParity() {
   }
   return true;
 }
+function testFunctionNewParity() {
+  // Function and constructor types: Babel builds `{type, name}` params
+  // and rest-array wrapping exactly like the TS parser.
+  for (const type of [
+    '(a: number) => string',
+    '(a: number, ...rest: string[]) => void',
+    '() => void',
+    'new (a: number) => any',
+    'new (...args: any[]) => any',
+  ]) {
+    if (!assertTsBabelParity(type)) {
+      return false;
+    }
+  }
+  return true;
+}
+function testObjectFlagsParity() {
+  // Optionality and readonly flags land on the property node, not the key.
+  for (const type of [
+    '{a?: string, readonly b: number}',
+    '{a: string, b?: number}',
+  ]) {
+    if (!assertTsBabelParity(type)) {
+      return false;
+    }
+  }
+  return true;
+}
+function testIndexSignatureParity() {
+  // Index parameters are `{type, name}` nodes, so the runtime can read
+  // `params[0].type` for string/number matching.
+  for (const type of [
+    '{[n: number]: string}',
+    '{[k: string]: number}',
+  ]) {
+    if (!assertTsBabelParity(type)) {
+      return false;
+    }
+  }
+  return true;
+}
+function testNamedTupleParity() {
+  // Labels, optionality, and named rest become `tupleMember` nodes.
+  for (const type of [
+    '[a: string, b?: number]',
+    '[first: string, ...rest: number[]]',
+    '[...number[]]',
+  ]) {
+    if (!assertTsBabelParity(type)) {
+      return false;
+    }
+  }
+  return true;
+}
+function testTemplateLiteralParity() {
+  // Babel `TemplateLiteral` quasis/expressions become the shared node shape.
+  for (const type of [
+    '`${A}_id`', // eslint-disable-line no-template-curly-in-string
+    '`id`',
+  ]) {
+    if (!assertTsBabelParity(type)) {
+      return false;
+    }
+  }
+  return true;
+}
+function testJSDocAllParity() {
+  // `*` has no Babel AST support; both keep the raw keyword.
+  return assertParity('*');
+}
+function testBabelIndexSignatureValidates() {
+  // End-to-end: Babel-parsed `{[n: number]: string}` validates canonical
+  // numeric keys and rejects non-numeric ones, like the TS-parsed shape.
+  const expect = expandTypeBabelTS('{[n: number]: string}');
+  if (!validateType({0: 'a'}, expect, 'test', 'a', true, warn, 0)) {
+    return false;
+  }
+  if (validateType({a: 'x'}, expect, 'test', 'a', true, warn, 0)) {
+    return false;
+  }
+  return true;
+}
+function testBabelNamedTupleValidates() {
+  // End-to-end: Babel-parsed `[first: string, ...rest: number[]]` accepts
+  // the head plus any number tail, rejects mistyped elements.
+  const expect = expandTypeBabelTS('[first: string, ...rest: number[]]');
+  if (!validateType(['a', 1, 2], expect, 'test', 'a', true, warn, 0)) {
+    return false;
+  }
+  if (!validateType(['a'], expect, 'test', 'a', true, warn, 0)) {
+    return false;
+  }
+  if (validateType(['a', 'b'], expect, 'test', 'a', true, warn, 0)) {
+    return false;
+  }
+  return true;
+}
 export const tests = [
   testArrayLikeParity,
   testArrayLikeStringParity,
@@ -173,4 +282,12 @@ export const tests = [
   testMappedModifierParity,
   testMappedAsRemapParity,
   testMappedNestedParity,
+  testFunctionNewParity,
+  testObjectFlagsParity,
+  testIndexSignatureParity,
+  testNamedTupleParity,
+  testTemplateLiteralParity,
+  testJSDocAllParity,
+  testBabelIndexSignatureValidates,
+  testBabelNamedTupleValidates,
 ];
