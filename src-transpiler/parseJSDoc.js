@@ -20,7 +20,7 @@ function parseJSDoc(src, expandType = expandTypeDepFree) {
   const matches = [...src.matchAll(regex)];
   /** @type {Record<string, ExpandTypeReturnType>} */
   const params = Object.create(null);
-  matches.forEach(_ => {
+  matches.forEach(/** @param {RegExpMatchArray} _ - The match. @returns {void} */ (_) => {
     const type = expandType(_[1].trim());
     let name = _[2].trim();
     let optional = false;
@@ -52,19 +52,21 @@ function parseJSDoc(src, expandType = expandTypeDepFree) {
     const annotatedType = annotateOptional(type, optional);
     // Turn "options.stats[].unitsName" into ['options', 'stats', 'unitsName'].
     const parts = name.split(/[\[\]]*\./);
+    /** @type {Record<string, any>} */
     let properties = params;
     for (const part of parts) {
+      /** @type {any} */
       const toptype = properties[part];
       if (!toptype) {
         // No toptype means we resolved as far as possible, now we can add `annotatedType`.
         console.assert(part === parts.at(-1), 'Current part and last part should be the same.');
         properties[part] = annotatedType;
-      } else if (toptype.type === "union") {
-        const typeObject = toptype.members.find(_ => _?.type === 'object');
+      } else if (typeof toptype === 'object' && toptype.type === "union") {
+        const typeObject = toptype.members.find(isObjectNode);
         properties = typeObject.properties;
-      } else if (toptype.type === "array") {
+      } else if (typeof toptype === 'object' && toptype.type === "array") {
         properties = toptype.elementType.properties;
-      } else if (toptype.type === "object") {
+      } else if (typeof toptype === 'object' && toptype.type === "object") {
         toptype.properties = toptype.properties || Object.create(null);
         properties = toptype.properties;
       } else {
@@ -79,5 +81,13 @@ function parseJSDoc(src, expandType = expandTypeDepFree) {
     return;
   }
   return params;
+}
+/**
+ * Checks whether an expanded type node is an object node.
+ * @param {any} node - The expanded type node.
+ * @returns {boolean} Whether it is an object node.
+ */
+function isObjectNode(node) {
+  return node?.type === 'object';
 }
 export {parseJSDoc};

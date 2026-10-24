@@ -13,7 +13,7 @@
  * `'transpiler-error'` is an explicit fallback member: the TS parser
  * already returns it on a mapped miss, so the type says so instead of
  * leaving a hole.
- * @typedef {string | number | boolean | 'transpiler-error' | ExpandArrayNode | ExpandRecordNode | ExpandMapNode | ExpandSetNode | ExpandUnionNode | ExpandIntersectionNode | ExpandTupleNode | ExpandObjectNode | ExpandPromiseNode | ExpandTypeofNode | ExpandKeyofNode | ExpandIndexedAccessNode | ExpandConditionNode | ExpandMappingNode | ExpandReferenceNode | ExpandFunctionNode | ExpandNewNode | ExpandRestNode | ExpandTupleMemberNode | ExpandBigintNode | ExpandTemplateLiteralNode | ExpandIndexSignatureNode | ExpandParameterNode} ExpandedType
+ * @typedef {string | number | boolean | 'transpiler-error' | ExpandArrayNode | ExpandRecordNode | ExpandMapNode | ExpandSetNode | ExpandUnionNode | ExpandIntersectionNode | ExpandTupleNode | ExpandObjectNode | ExpandPromiseNode | ExpandTypeofNode | ExpandKeyofNode | ExpandIndexedAccessNode | ExpandConditionNode | ExpandMappingNode | ExpandReferenceNode | ExpandFunctionNode | ExpandNewNode | ExpandRestNode | ExpandTupleMemberNode | ExpandBigintNode | ExpandTemplateLiteralNode | ExpandIndexSignatureNode | ExpandParameterNode | ExpandAnnotatedAtomNode} ExpandedType
  */
 /**
  * @typedef {object} ExpandArrayNode
@@ -128,6 +128,12 @@
  * @property {'reference'} type - The type.
  * @property {string} name - The referenced name.
  * @property {ExpandedType[]} args - The type arguments.
+ * @property {boolean} [optional] - Whether the type may be absent.
+ * @property {boolean} [readonly] - Whether the type is readonly.
+ */
+/**
+ * @typedef {object} ExpandAnnotatedAtomNode
+ * @property {ExpandedType} type - The wrapped atom (usually a bare string).
  * @property {boolean} [optional] - Whether the type may be absent.
  * @property {boolean} [readonly] - Whether the type is readonly.
  */

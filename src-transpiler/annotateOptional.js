@@ -1,7 +1,4 @@
-/**
- * @typedef DocType
- * @property {boolean} optional - Type is optional.
- */
+/** @typedef {import('./expandedType.js').ExpandedType} ExpandedType */
 /**
  * Annotates a type with optionality for internal use (parseJSDoc navigation).
  * Sets optionality on object types and wraps bare strings that need to be
@@ -12,25 +9,27 @@
  * mutate them (e.g. appending nested @param lines).
  * Literal types (numbers/booleans) pass through bare unless optional,
  * mirroring the string path.
- * @param {string | number | boolean | DocType} type - The type.
+ * @param {ExpandedType} type - The type.
  * @param {boolean} optional - Optionality
- * @returns {string | number | boolean | DocType} The annotated type.
+ * @returns {ExpandedType} The annotated type.
  */
 function annotateOptional(type, optional) {
-  // If it's already an object, just set optionality.
+  // If it's already an object, just set optionality. The flag is read
+  // structurally off any node (see validateTypedef, substituteAtom), so
+  // the write goes through a minimal structural cast.
   if (type instanceof Object) {
-    type.optional = optional;
+    /** @type {{optional?: boolean}} */ (type).optional = optional;
   } else if (typeof type === 'number' || typeof type === 'boolean') {
     if (!optional) {
       return type;
     }
-    type = {type, optional};
+    type = /** @type {import('./expandedType.js').ExpandAnnotatedAtomNode} */ ({type, optional});
   } else if (typeof type === 'string') {
     type = type.trim();
     if (type !== 'object' && type !== 'object[]' && type !== 'union' && !optional) {
       return type;
     }
-    type = {type, optional};
+    type = /** @type {import('./expandedType.js').ExpandAnnotatedAtomNode} */ ({type, optional});
   } else {
     debugger;
     console.warn("annotateOptional> neither object nor string for type", type);
