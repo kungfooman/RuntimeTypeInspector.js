@@ -142,12 +142,19 @@ function toSourceTS(node) {
       // Keys on node:
       // ['pos', 'end', 'flags', 'modifierFlagsCache', 'transformFlags', 'parent', 'kind', 'checkType',
       // 'extendsType', 'trueType', 'falseType', 'locals', 'nextContainer']
-      return /** @type {ExpandConditionNode} */ ({
+      const checkType = toSourceTS(node.checkType);
+      const extendsType = toSourceTS(node.extendsType);
+      const trueType = toSourceTS(node.trueType);
+      const falseType = toSourceTS(node.falseType);
+      if (checkType === undefined || extendsType === undefined || trueType === undefined || falseType === undefined) {
+        return undefined;
+      }
+      return ({
         type: 'condition',
-        checkType: toSourceTS(node.checkType),
-        extendsType: toSourceTS(node.extendsType),
-        trueType: toSourceTS(node.trueType),
-        falseType: toSourceTS(node.falseType),
+        checkType,
+        extendsType,
+        trueType,
+        falseType,
       });
     case ConstructorType: {
       if (!ts.isConstructorTypeNode(node)) {
@@ -155,21 +162,21 @@ function toSourceTS(node) {
       }
       const parameters = node.parameters.map(toSourceTS);
       const ret = toSourceTS(node.type);
-      return /** @type {ExpandedType} */ ({type: 'new', parameters, ret});
+      return ({type: 'new', parameters, ret});
     }
     case FunctionType: {
       if (!ts.isFunctionTypeNode(node)) {
         throw Error("Impossible");
       }
       const parameters = node.parameters.map(toSourceTS);
-      return /** @type {ExpandedType} */ ({type: 'function', parameters});
+      return ({type: 'function', parameters});
     }
     case JSDocFunctionType: {
       if (!ts.isJSDocFunctionType(node)) {
         throw Error("Impossible");
       }
       const parameters = node.parameters.map(toSourceTS);
-      return /** @type {ExpandedType} */ ({type: 'function', parameters});
+      return ({type: 'function', parameters});
     }
     case IndexedAccessType:
       if (!ts.isIndexedAccessTypeNode(node)) {
@@ -177,19 +184,28 @@ function toSourceTS(node) {
       }
       const index  = toSourceTS(node.indexType);
       const object = toSourceTS(node.objectType);
-      return /** @type {ExpandedType} */ ({type: 'indexedAccess', index, object});
+      if (index === undefined || object === undefined) {
+        return undefined;
+      }
+      return ({type: 'indexedAccess', index, object});
     case RestType:
       if (!ts.isRestTypeNode(node)) {
         throw Error("Impossible");
       }
       const annotation = toSourceTS(node.type);
-      return /** @type {ExpandedType} */ ({type: 'rest', annotation});
+      if (annotation === undefined) {
+        return undefined;
+      }
+      return ({type: 'rest', annotation});
     case JSDocNullableType:
       if (!ts.isJSDocNullableType(node)) {
         throw Error("Impossible");
       }
       const t = toSourceTS(node.type);
-      return /** @type {ExpandedType} */ ({type: 'union', members: [t, 'null']});
+      if (t === undefined) {
+        return undefined;
+      }
+      return ({type: 'union', members: [t, 'null']});
     case MappedType: {
       if (!ts.isMappedTypeNode(node)) {
         throw Error("Impossible");
@@ -198,12 +214,18 @@ function toSourceTS(node) {
       const parameter = node.typeParameter;
       if (parameter.kind === TypeParameter) {
         // For example: {[K in TaskType]: InstanceType etc.
+        const iterable = toSourceTS(parameter.constraint);
+        const element = toSourceTS(parameter.name);
+        const result = toSourceTS(node.type);
+        if (iterable === undefined || typeof element !== 'string' || result === undefined) {
+          return 'transpiler-error';
+        }
         /** @type {ExpandMappingNode} */
         const out = {
           type: 'mapping',
-          iterable: /** @type {ExpandedType} */ (toSourceTS(parameter.constraint)),
-          element: /** @type {string} */ (toSourceTS(parameter.name)),
-          result: /** @type {ExpandedType} */ (toSourceTS(node.type)),
+          iterable,
+          element,
+          result,
         };
         if (node.nameType) {
           // `as` key remapping, e.g. {[K in keyof T as K extends string ? K : never]: ...}
@@ -231,10 +253,13 @@ function toSourceTS(node) {
       }
       const type = node.type ? toSourceTS(node.type) : 'any';
       const name = toSourceTS(node.name);
+      if (type === undefined || name === undefined) {
+        return undefined;
+      }
       /** @type {ExpandParameterNode} */
-      const ret = {type: /** @type {ExpandedType} */ (type), name: /** @type {ExpandedType} */ (name)};
+      const ret = {type, name};
       if (node.dotDotDotToken) {
-        return /** @type {ExpandedType} */ ({type: 'array', elementType: ret});
+        return ({type: 'array', elementType: ret});
       }
       return ret;
     case TypeQuery:
@@ -246,14 +271,14 @@ function toSourceTS(node) {
       if (typeof argument === 'string' && !requiredTypeofs[argument]) {
         requiredTypeofs[argument] = 'missing';
       }
-      return /** @type {ExpandedType} */ ({type: 'typeof', argument});
+      return ({type: 'typeof', argument});
     case TypeOperator:
       if (!ts.isTypeOperatorNode(node)) {
         throw Error("Impossible");
       }
       if (node.operator === KeyOfKeyword) {
         const argument = toSourceTS(node.type);
-        return /** @type {ExpandedType} */ ({type: 'keyof', argument});
+        return ({type: 'keyof', argument});
       }
       if (node.operator === ReadonlyKeyword) {
         // readonly erased at runtime, same shape as the inner type.
@@ -271,7 +296,7 @@ function toSourceTS(node) {
         throw Error("Impossible");
       }
       if ((typeName.text === 'Object' || typeName.text === 'Record') && typeArguments?.length === 2) {
-        return /** @type {ExpandedType} */ ({
+        return ({
           type: 'record',
           key: toSourceTS(typeArguments[0]),
           val: toSourceTS(typeArguments[1]),
@@ -281,16 +306,16 @@ function toSourceTS(node) {
       } else if (typeName.text === 'Map' && typeArguments?.length === 2) {
         const key = toSourceTS(typeArguments[0]);
         const val = toSourceTS(typeArguments[1]);
-        return /** @type {ExpandedType} */ ({type: 'map', key, val});
+        return ({type: 'map', key, val});
       } else if (typeName.text === 'Array' && typeArguments?.length === 1) {
         const elementType = toSourceTS(typeArguments[0]);
-        return /** @type {ExpandedType} */ ({type: 'array', elementType});
+        return ({type: 'array', elementType});
       } else if (typeName.text === 'Promise' && typeArguments?.length === 1) {
         const elementType = toSourceTS(typeArguments[0]);
-        return /** @type {ExpandedType} */ ({type: 'promise', elementType});
+        return ({type: 'promise', elementType});
       } else if (typeName.text === 'Set' && typeArguments?.length === 1) {
         const elementType = toSourceTS(typeArguments[0]);
-        return /** @type {ExpandedType} */ ({type: 'set', elementType});
+        return ({type: 'set', elementType});
       }
       if (!typeArguments) {
         return typeName.getText();
@@ -298,7 +323,7 @@ function toSourceTS(node) {
       // Qualified names (e.g. `some.name.space.Array<T>`) have no `.text`.
       const name = typeName.text ?? typeName.getText();
       const args = typeArguments.map(toSourceTS);
-      return /** @type {ExpandedType} */ ({type: 'reference', name, args});
+      return ({type: 'reference', name, args});
     }
     case NamedTupleMember: {
       if (!ts.isNamedTupleMember(node)) {
@@ -308,13 +333,16 @@ function toSourceTS(node) {
       const nType = toSourceTS(node.type);
       const opt = !!node.questionToken;
       const dot = !!node.dotDotDotToken;
+      if (typeof nName !== 'string' || nType === undefined) {
+        return undefined;
+      }
       // Preserve label for docs: [a: string, b: number] -> keep name
       // Use tupleMember shape so stringify can round-trip
       /** @type {ExpandTupleMemberNode} */
       const mem = {
         type: 'tupleMember',
-        name: /** @type {string} */ (nName),
-        elementType: /** @type {ExpandedType} */ (nType),
+        name: nName,
+        elementType: nType,
       };
       if (opt) mem.optional = true;
       if (dot) mem.dotDot = true;
@@ -325,14 +353,14 @@ function toSourceTS(node) {
         throw Error("Impossible");
       }
       const members = node.types.map(toSourceTS);
-      return /** @type {ExpandedType} */ ({type: 'intersection', members});
+      return ({type: 'intersection', members});
     }
     case TupleType:
       if (!ts.isTupleTypeNode(node)) {
         throw Error("Impossible");
       }
       const elements = node.elements.map(toSourceTS);
-      return /** @type {ExpandedType} */ ({type: 'tuple', elements});
+      return ({type: 'tuple', elements});
     case TemplateLiteralType: {
       if (!ts.isTemplateLiteralTypeNode(node)) {
         throw Error("Impossible");
@@ -344,10 +372,14 @@ function toSourceTS(node) {
       /** @type {ExpandedType[]} */
       const types = [];
       for (const span of node.templateSpans) {
-        types.push(/** @type {ExpandedType} */ (toSourceTS(span.type)));
+        const spanType = toSourceTS(span.type);
+        if (spanType === undefined) {
+          return 'transpiler-error';
+        }
+        types.push(spanType);
         quasis.push(span.literal.text);
       }
-      return /** @type {ExpandedType} */ ({type: 'templateLiteral', quasis, types});
+      return ({type: 'templateLiteral', quasis, types});
     }
     case NoSubstitutionTemplateLiteral:
       // A template literal type without interpolations, e.g. `id`
@@ -357,7 +389,7 @@ function toSourceTS(node) {
         throw Error("Impossible");
       }
       const members = node.types.map(toSourceTS);
-      return /** @type {ExpandedType} */ ({type: 'union', members});
+      return ({type: 'union', members});
     case TypeLiteral: {
       if (!ts.isTypeLiteralNode(node)) {
         throw Error("Impossible");
@@ -369,9 +401,11 @@ function toSourceTS(node) {
       node.members.forEach(/** @param {ts.Node} member - The type literal member. @returns {void} */ (member) => {
         if (member.kind === IndexSignature) {
           indexSignatures = indexSignatures ?? [];
-          const indexSignature = /** @type {ExpandIndexSignatureNode | undefined} */ (toSourceTS(member));
-          if (indexSignature !== undefined) {
-            indexSignatures.push(indexSignature);
+          const indexSignature = toSourceTS(member);
+          if (typeof indexSignature === 'object' && indexSignature !== null && indexSignature.type === 'indexSignature') {
+            // member.kind === IndexSignature guarantees the node shape;
+            // the check above only narrows past the untagged union members.
+            indexSignatures.push(/** @type {ExpandIndexSignatureNode} */ (indexSignature));
           }
         } else if (member.kind === PropertySignature) {
           if (!ts.isPropertySignature(member)) {
@@ -382,12 +416,12 @@ function toSourceTS(node) {
           let type = toSourceTS(member.type);
           if (member.questionToken && type !== undefined) {
             if (typeof type === 'object') /** @type {{optional?: boolean}} */ (type).optional = true;
-            else type = /** @type {ExpandedType} */ ({ type, optional: true });
+            else type = ({ type, optional: true });
           }
           if (type !== undefined && Array.isArray(member.modifiers) && member.modifiers.some(isReadonlyKeyword)) {
             // Tracked for IfEquals-style comparisons; ignored by validation.
             if (typeof type === 'object') /** @type {{readonly?: boolean}} */ (type).readonly = true;
-            else type = /** @type {ExpandedType} */ ({type, readonly: true});
+            else type = ({type, readonly: true});
           }
           if (typeof name === 'string' && type !== undefined) {
             properties[name] = type;
@@ -420,7 +454,7 @@ function toSourceTS(node) {
       //   {readonly [n: number]: string, length: number}
       const indexType = toSourceTS(node.type);
       const indexParameters = node.parameters.map(toSourceTS);
-      return /** @type {ExpandedType} */ ({type: 'indexSignature', indexType, indexParameters});
+      return ({type: 'indexSignature', indexType, indexParameters});
     case Identifier:
       if (!ts.isIdentifier(node)) {
         throw Error("Impossible");
@@ -431,7 +465,7 @@ function toSourceTS(node) {
         throw Error("Impossible");
       }
       const elementType = toSourceTS(node.elementType);
-      return /** @type {ExpandedType} */ ({type: 'array', elementType});
+      return ({type: 'array', elementType});
     }
     case LiteralType:
       if (!ts.isLiteralTypeNode(node)) {

@@ -1,4 +1,4 @@
-/** @import {ExpandedType, ExpandAnnotatedAtomNode} from './expandedType.js' */
+/** @import {ExpandedType} from './expandedType.js' */
 /**
  * Annotates a type with optionality for internal use (parseJSDoc navigation).
  * Sets optionality on object types and wraps bare strings that need to be
@@ -23,13 +23,13 @@ function annotateOptional(type, optional) {
     if (!optional) {
       return type;
     }
-    type = /** @type {ExpandAnnotatedAtomNode} */ ({type, optional});
+    type = ({type, optional});
   } else if (typeof type === 'string') {
     type = type.trim();
     if (type !== 'object' && type !== 'object[]' && type !== 'union' && !optional) {
       return type;
     }
-    type = /** @type {ExpandAnnotatedAtomNode} */ ({type, optional});
+    type = ({type, optional});
   } else {
     debugger;
     console.warn("annotateOptional> neither object nor string for type", type);
