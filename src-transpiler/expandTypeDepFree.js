@@ -9,15 +9,100 @@
  * console.log(expandTypeDepFree(tooComplex));
  */
 /**
- * @typedef {object} ExpandTypeReturnValue
- * @property {'array' | 'union' | 'record' | 'tuple' | 'object' | 'promise' | 'typeof'} type - The type.
- * @property {object | string} [elementType] - For Array.
- * @property {object | string} [key] - For Record<key, val>
- * @property {object | string} [val] - For Record<key, val>
- * @property {(object | string)[]} [members] - For unions.
- * @property {object | string} [properties] - For objects.
- * @property {(object | string)[]} [elements] - For tuples.
- * @property {object | string} [argument] - For typeof.
+ * Recursive expanded type: a bare type string (keywords, literals kept as
+ * strings), a normalized literal (`true`/`false` become booleans, numeric
+ * literals become numbers), or one of the node shapes below.
+ * @typedef {string | number | boolean | ExpandArrayNode | ExpandRecordNode | ExpandMapNode | ExpandSetNode | ExpandUnionNode | ExpandIntersectionNode | ExpandTupleNode | ExpandObjectNode | ExpandPromiseNode | ExpandTypeofNode | ExpandKeyofNode | ExpandIndexedAccessNode | ExpandConditionNode | ExpandMappingNode | ExpandReferenceNode} ExpandedType
+ */
+/**
+ * @typedef {object} ExpandArrayNode
+ * @property {'array'} type - The type.
+ * @property {ExpandedType} elementType - The element type.
+ */
+/**
+ * @typedef {object} ExpandRecordNode
+ * @property {'record'} type - The type.
+ * @property {ExpandedType} key - The key type.
+ * @property {ExpandedType} val - The value type.
+ */
+/**
+ * @typedef {object} ExpandMapNode
+ * @property {'map'} type - The type.
+ * @property {ExpandedType} key - The key type.
+ * @property {ExpandedType} val - The value type.
+ */
+/**
+ * @typedef {object} ExpandSetNode
+ * @property {'set'} type - The type.
+ * @property {ExpandedType} elementType - The element type.
+ */
+/**
+ * @typedef {object} ExpandUnionNode
+ * @property {'union'} type - The type.
+ * @property {ExpandedType[]} members - The members.
+ */
+/**
+ * @typedef {object} ExpandIntersectionNode
+ * @property {'intersection'} type - The type.
+ * @property {ExpandedType[]} members - The members.
+ */
+/**
+ * @typedef {object} ExpandTupleNode
+ * @property {'tuple'} type - The type.
+ * @property {ExpandedType[]} elements - The elements.
+ */
+/**
+ * @typedef {object} ExpandObjectNode
+ * @property {'object'} type - The type.
+ * @property {Object<string, ExpandedType>} [properties] - The properties, absent for bare `{}`.
+ */
+/**
+ * @typedef {object} ExpandPromiseNode
+ * @property {'promise'} type - The type.
+ * @property {ExpandedType} elementType - The element type.
+ */
+/**
+ * @typedef {object} ExpandTypeofNode
+ * @property {'typeof'} type - The type.
+ * @property {ExpandedType} argument - The queried expression.
+ */
+/**
+ * @typedef {object} ExpandKeyofNode
+ * @property {'keyof'} type - The type.
+ * @property {ExpandedType} argument - The target type.
+ */
+/**
+ * @typedef {object} ExpandIndexedAccessNode
+ * @property {'indexedAccess'} type - The type.
+ * @property {ExpandedType} object - The object type.
+ * @property {ExpandedType} index - The index type.
+ */
+/**
+ * @typedef {object} ExpandConditionNode
+ * @property {'condition'} type - The type.
+ * @property {ExpandedType} checkType - The checked type.
+ * @property {ExpandedType} extendsType - The constraint type.
+ * @property {ExpandedType} trueType - The true branch.
+ * @property {ExpandedType} falseType - The false branch.
+ */
+/**
+ * @typedef {object} ExpandMappingNode
+ * @property {'mapping'} type - The type.
+ * @property {ExpandedType} iterable - The iterated type.
+ * @property {string} element - The bound key name.
+ * @property {ExpandedType} result - The result type.
+ * @property {ExpandedType} [nameType] - The `as` remap type.
+ * @property {'-' | '+' | '?' | 'readonly'} [question] - The optionality modifier.
+ * @property {'-' | '+' | 'readonly'} [readonly] - The readonly modifier.
+ */
+/**
+ * @typedef {object} ExpandReferenceNode
+ * @property {'reference'} type - The type.
+ * @property {string} name - The referenced name.
+ * @property {ExpandedType[]} args - The type arguments.
+ */
+/**
+ * @typedef {ExpandedType} ExpandTypeReturnValue
  */
 /**
  * Splits a string by a delimiter, ignoring delimiters nested inside <>, {}, [], ().
@@ -103,7 +188,7 @@ function depthsAt(str, upto) {
  * @returns {number} Start index or -1.
  */
 function findTopLevelKeyword(str, keyword) {
-  const isWord = (c) => /[A-Za-z0-9_$]/.test(c);
+  const isWord = (/** @type {string} */ c) => /[A-Za-z0-9_$]/.test(c);
   for (let i = 0; i <= str.length - keyword.length; i++) {
     if (str.slice(i, i + keyword.length) !== keyword) continue;
     const before = i > 0 ? str[i - 1] : ' ';
@@ -234,16 +319,27 @@ function parseGenericReference(type) {
   return {name, args};
 }
 /**
+ * Raw mapped type parts, before `iterable`/`result`/`nameType` are expanded.
+ * @typedef {object} ExpandMappedRaw
+ * @property {string} element - The bound key name.
+ * @property {string} iterableRaw - The raw iterated type.
+ * @property {string | undefined} nameRaw - The raw `as` remap type.
+ * @property {string} resultRaw - The raw result type.
+ * @property {('-' | '+' | '?') | undefined} question - The optionality modifier.
+ * @property {('-' | '+' | 'readonly') | undefined} readonly - The readonly modifier.
+ */
+/**
  * Parses `{[K in Iterable as NameType]?: Result}` mapped syntax.
  * Returns undefined when input isn't a mapped type.
  * @param {string} type - Trimmed type string starting with `{`.
- * @returns {object|undefined} Mapping struct with raw strings, or undefined.
+ * @returns {ExpandMappedRaw | undefined} Mapping struct with raw strings, or undefined.
  */
 function parseMappedRaw(type) {
   if (type[0] !== '{' || type[type.length - 1] !== '}') {
     return;
   }
   let inner = type.slice(1, -1).trim();
+  /** @type {('-' | '+' | 'readonly') | undefined} */
   let readonly;
   if (inner.startsWith('-readonly') && (inner[9] === ' ' || inner[9] === '[')) {
     readonly = '-';
@@ -286,6 +382,7 @@ function parseMappedRaw(type) {
   }
   const bracket = inner.slice(1, close);
   let rest = inner.slice(close + 1).trim();
+  /** @type {('-' | '+' | '?') | undefined} */
   let question;
   if (rest.startsWith('-?')) {
     question = '-';
@@ -332,7 +429,7 @@ function parseMappedRaw(type) {
  * Splits `Check extends Extends ? True : False` at top level.
  * Returns undefined when input isn't a conditional type.
  * @param {string} type - Trimmed type string.
- * @returns {{check: string, extends_: string, true_: string, false_: string}|undefined} Raw parts.
+ * @returns {{check: string, extends_: string, true_: string, false_: string} | undefined} Raw parts, or undefined when not a conditional.
  */
 function parseConditionRaw(type) {
   const qIdx = findTopLevelChar(type, '?');
@@ -366,7 +463,7 @@ function parseConditionRaw(type) {
  * Splits `Object[Index]` at top level. Excludes tuples (`[...]`) and
  * empty-index arrays (`T[]`, handled earlier).
  * @param {string} type - Trimmed type string.
- * @returns {{objectRaw: string, indexRaw: string}|undefined} Raw parts.
+ * @returns {{objectRaw: string, indexRaw: string} | undefined} Raw parts, or undefined when not indexed access.
  */
 function parseIndexedAccessRaw(type) {
   if (!type.endsWith(']') || type.endsWith('[]')) {
@@ -527,6 +624,7 @@ function expandTypeDepFree(type) {
   if (type[0] === '{' && type[type.length - 1] === '}') {
     const mapped = parseMappedRaw(type);
     if (mapped) {
+      /** @type {ExpandMappingNode} */
       const out = {
         type: 'mapping',
         iterable: expandTypeDepFree(mapped.iterableRaw),
@@ -545,6 +643,7 @@ function expandTypeDepFree(type) {
       return out;
     }
     const propertiesArray = splitTopLevel(type.slice(1, -1), ','); // ['entity: Entity', ' app: AppBase']
+    /** @type {Object<string, ExpandedType>} */
     const properties = {};
     for (const entry of propertiesArray) {
       const colonIdx = findTopLevelChar(entry, ':');
