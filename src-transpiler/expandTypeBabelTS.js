@@ -1,4 +1,6 @@
 import {parse} from '@babel/parser';
+import {isExpandedObject} from './isExpandedObject.js';
+import {isIndexSignatureNode} from './isIndexSignatureNode.js';
 /** @import {ExpandedType, ExpandParameterNode, ExpandTupleMemberNode, ExpandMappingNode, ExpandIndexSignatureNode, ExpandObjectNode} from './expandedType.js' */
 /**
  * @todo Better handling of weird case: Array<>
@@ -60,7 +62,10 @@ function parseTypeBabelTS(str) {
   const ast = parse(str, {plugins: ['typescript']});
   const first = ast.program.body[0];
   // Input is always the synthesized `type tmp = ...` alias above.
-  return /** @type {{typeAnnotation: *}} */ (first).typeAnnotation;
+  if (first.type !== 'TSTypeAliasDeclaration') {
+    throw Error('parseTypeBabelTS> expected synthesized type alias, got ' + first.type);
+  }
+  return first.typeAnnotation;
 }
 /**
  * Converts a Babel function parameter to a `{type, name}` parameter node,
@@ -143,7 +148,7 @@ function toSourceBabelTS(node) {
           return {type: 'object', properties: {}};
         }
         // Bare reference: Identifier gives name, TSQualifiedName gives dotted path.
-        return /** @type {ExpandedType | undefined} */ (name);
+        return name;
       }
       console.assert(node.typeParameters.type === 'TSTypeParameterInstantiation');
       const typeArguments = node.typeParameters.params;
@@ -360,21 +365,19 @@ function toSourceBabelTS(node) {
         if (member.type === 'TSIndexSignature') {
           indexSignatures = indexSignatures ?? [];
           const indexSignature = toSourceBabelTS(member);
-          if (typeof indexSignature === 'object' && indexSignature !== null && indexSignature.type === 'indexSignature') {
-            // member.type === 'TSIndexSignature' guarantees the node shape;
-            // the check above only narrows past the untagged union members.
-            indexSignatures.push(/** @type {ExpandIndexSignatureNode} */ (indexSignature));
+          if (isIndexSignatureNode(indexSignature)) {
+            indexSignatures.push(indexSignature);
           }
         } else if (member.type === 'TSPropertySignature') {
           const name = toSourceBabelTS(member.key);
           /** @type {ExpandedType | undefined} */
           let type = toSourceBabelTS(member.typeAnnotation);
           if (member.optional && type !== undefined) {
-            if (typeof type === 'object') /** @type {{optional?: boolean}} */ (type).optional = true;
+            if (isExpandedObject(type)) type.optional = true;
             else type = ({type, optional: true});
           }
           if (member.readonly && type !== undefined) {
-            if (typeof type === 'object') /** @type {{readonly?: boolean}} */ (type).readonly = true;
+            if (isExpandedObject(type)) type.readonly = true;
             else type = ({type, readonly: true});
           }
           if (typeof name === 'string' && type !== undefined) {

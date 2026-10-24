@@ -31,6 +31,8 @@ export * from './parseJSDocTypedef.js';
 export * from './escapeName.js';
 export * from './parserOptions.js';
 export * from './annotateOptional.js';
+export * from './isExpandedObject.js';
+export * from './isIndexSignatureNode.js';
 export * from './simplifyType.js';
 export * from './simplifyTypeToSource.js';
 export * from './Stringifier.js';

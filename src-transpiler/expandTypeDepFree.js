@@ -8,6 +8,7 @@
  * const tooComplex = 'Array<string|{chunks?: undefined|Array<{language: string|null, timestamp: Array<number|null>, text: string}>}>';
  * console.log(expandTypeDepFree(tooComplex));
  */
+import {isExpandedObject} from './isExpandedObject.js';
 /** @import {ExpandedType, ExpandMappingNode, ExpandMappedRaw, ExpandTupleMemberNode, ExpandIndexSignatureNode, ExpandAnnotatedAtomNode, ExpandObjectNode} from './expandedType.js' */
 /**
  * Splits a string by a delimiter, ignoring delimiters nested inside <>, {}, [], ().
@@ -874,9 +875,9 @@ function expandTypeDepFree(type) {
       }
       let expanded = expandTypeDepFree(propTypeRaw);
       if (propOptional || propReadonly) {
-        if (expanded !== null && typeof expanded === 'object') {
-          if (propOptional) /** @type {{optional?: boolean}} */ (expanded).optional = true;
-          if (propReadonly) /** @type {{readonly?: boolean}} */ (expanded).readonly = true;
+        if (isExpandedObject(expanded)) {
+          if (propOptional) expanded.optional = true;
+          if (propReadonly) expanded.readonly = true;
         } else {
           /** @type {ExpandAnnotatedAtomNode} */
           const wrapped = {type: expanded};

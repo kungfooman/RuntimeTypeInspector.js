@@ -1,3 +1,4 @@
+import {isExpandedObject} from './isExpandedObject.js';
 /** @import {ExpandedType} from './expandedType.js' */
 /**
  * Annotates a type with optionality for internal use (parseJSDoc navigation).
@@ -14,11 +15,11 @@
  * @returns {ExpandedType} The annotated type.
  */
 function annotateOptional(type, optional) {
-  // If it's already an object, just set optionality. The flag is read
-  // structurally off any node (see validateTypedef, substituteAtom), so
-  // the write goes through a minimal structural cast.
-  if (type instanceof Object) {
-    /** @type {{optional?: boolean}} */ (type).optional = optional;
+  // If it's already an object node, just set optionality; the flag is read
+  // structurally off any node (see validateTypedef, substituteAtom).
+  // The predicate narrows past the atoms tsc cannot exclude by itself.
+  if (isExpandedObject(type)) {
+    type.optional = optional;
   } else if (typeof type === 'number' || typeof type === 'boolean') {
     if (!optional) {
       return type;

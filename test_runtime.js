@@ -168,6 +168,8 @@ const tests = [
   ...(await import('./src-transpiler/runChecks.spec.js'                 )).tests,
   ...(await import('./src-transpiler/noneUnchecked.spec.js'             )).tests,
   ...(await import('./src-transpiler/expandTypeParity.spec.js'   )).tests,
+  ...(await import('./src-transpiler/isExpandedObject.spec.js'   )).tests,
+  ...(await import('./src-transpiler/isIndexSignatureNode.spec.js')).tests,
   ...(await import('./src-transpiler/projectVersionHeader.spec.js')).tests,
   ...(await import('./src-transpiler/inferTypeFromDefault.spec.js')).tests,
   ...(await import('./src-transpiler/parseInlineParamType.spec.js')).tests,

@@ -1,4 +1,6 @@
 import ts from 'typescript';
+import {isExpandedObject} from './isExpandedObject.js';
+import {isIndexSignatureNode} from './isIndexSignatureNode.js';
 /** @import {ExpandedType, ExpandConditionNode, ExpandMappingNode, ExpandParameterNode, ExpandTupleMemberNode, ExpandIndexSignatureNode, ExpandObjectNode} from './expandedType.js' */
 /**
  * Transforms a type string into a structured type representation.
@@ -402,10 +404,8 @@ function toSourceTS(node) {
         if (member.kind === IndexSignature) {
           indexSignatures = indexSignatures ?? [];
           const indexSignature = toSourceTS(member);
-          if (typeof indexSignature === 'object' && indexSignature !== null && indexSignature.type === 'indexSignature') {
-            // member.kind === IndexSignature guarantees the node shape;
-            // the check above only narrows past the untagged union members.
-            indexSignatures.push(/** @type {ExpandIndexSignatureNode} */ (indexSignature));
+          if (isIndexSignatureNode(indexSignature)) {
+            indexSignatures.push(indexSignature);
           }
         } else if (member.kind === PropertySignature) {
           if (!ts.isPropertySignature(member)) {
@@ -415,12 +415,12 @@ function toSourceTS(node) {
           /** @type {ExpandedType | undefined} */
           let type = toSourceTS(member.type);
           if (member.questionToken && type !== undefined) {
-            if (typeof type === 'object') /** @type {{optional?: boolean}} */ (type).optional = true;
+            if (isExpandedObject(type)) type.optional = true;
             else type = ({ type, optional: true });
           }
           if (type !== undefined && Array.isArray(member.modifiers) && member.modifiers.some(isReadonlyKeyword)) {
             // Tracked for IfEquals-style comparisons; ignored by validation.
-            if (typeof type === 'object') /** @type {{readonly?: boolean}} */ (type).readonly = true;
+            if (isExpandedObject(type)) type.readonly = true;
             else type = ({type, readonly: true});
           }
           if (typeof name === 'string' && type !== undefined) {
