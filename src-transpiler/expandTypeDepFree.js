@@ -408,6 +408,281 @@ function parseIndexedAccessRaw(type) {
   return {objectRaw, indexRaw};
 }
 /**
+ * Splits a raw function parameter list into `{type, name}` parameter nodes,
+ * mirroring the TS parser's `Parameter` case. `...args: T[]` wraps like
+ * `dotDotDotToken` does there.
+ * @param {string} paramsRaw - The raw text between the parameter parens.
+ * @returns {ExpandedType[] | undefined} Parameter nodes, or undefined when
+ * the list does not parse.
+ */
+function parseFunctionParams(paramsRaw) {
+  if (paramsRaw.trim() === '') {
+    return [];
+  }
+  const parts = splitTopLevel(paramsRaw, ',');
+  const parameters = [];
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (!trimmed) {
+      return;
+    }
+    if (trimmed.startsWith('...')) {
+      const inner = trimmed.slice(3).trim();
+      const colonIdx = findTopLevelChar(inner, ':');
+      if (colonIdx === -1) {
+        return;
+      }
+      const name = inner.slice(0, colonIdx).trim();
+      const typeRaw = inner.slice(colonIdx + 1).trim();
+      if (!name || !typeRaw) {
+        return;
+      }
+      const innerParam = {type: expandTypeDepFree(typeRaw), name};
+      parameters.push({type: 'array', elementType: innerParam});
+      continue;
+    }
+    const colonIdx = findTopLevelChar(trimmed, ':');
+    if (colonIdx === -1) {
+      return;
+    }
+    const name = trimmed.slice(0, colonIdx).trim();
+    // Strip `?` optional markers (`(a?: number)`), matching expandType().
+    const cleanName = name.endsWith('?') ? name.slice(0, -1).trim() : name;
+    const typeRaw = trimmed.slice(colonIdx + 1).trim();
+    if (!cleanName || !typeRaw) {
+      return;
+    }
+    parameters.push({type: expandTypeDepFree(typeRaw), name: cleanName});
+  }
+  return parameters;
+}
+/**
+ * Splits `(params) => ret` and `new (params) => ret` at top level.
+ * Returns undefined when input isn't a function type.
+ * @param {string} type - Trimmed type string.
+ * @returns {{paramsRaw: string, retRaw: string, isNew: boolean} | undefined} Raw parts.
+ */
+function parseFunctionRaw(type) {
+  let rest = type;
+  let isNew = false;
+  if (rest.startsWith('new ')) {
+    const after = rest.slice(4).trim();
+    if (!after.startsWith('(')) {
+      return;
+    }
+    isNew = true;
+    rest = after;
+  }
+  if (!rest.startsWith('(')) {
+    return;
+  }
+  // Find the matching close paren for the parameter list, quote-aware.
+  let paren = 0;
+  let inSingle = false;
+  let inDouble = false;
+  let inBacktick = false;
+  let close = -1;
+  for (let i = 0; i < rest.length; i++) {
+    const c = rest[i];
+    const prev = i > 0 ? rest[i - 1] : '';
+    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') inSingle = !inSingle;
+    else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') inDouble = !inDouble;
+    else if (c === '`' && !inSingle && !inDouble && prev !== '\\') inBacktick = !inBacktick;
+    else if (!inSingle && !inDouble && !inBacktick) {
+      if (c === '(') paren++;
+      else if (c === ')') {
+        paren--;
+        if (paren === 0) {
+          close = i;
+          break;
+        }
+      }
+    }
+  }
+  if (close === -1) {
+    return;
+  }
+  const paramsRaw = rest.slice(1, close);
+  const afterParams = rest.slice(close + 1).trim();
+  if (!afterParams.startsWith('=>')) {
+    return;
+  }
+  const retRaw = afterParams.slice(2).trim();
+  if (!retRaw) {
+    return;
+  }
+  return {paramsRaw, retRaw, isNew};
+}
+/**
+ * Parses an object-literal entry as an index signature (`[n: number]: T`).
+ * Returns undefined for ordinary `name: type` entries, null for malformed
+ * bracket entries.
+ * @param {string} entry - The raw entry text.
+ * @returns {import('./expandedType.js').ExpandIndexSignatureNode | undefined | null} The signature, undefined for ordinary entries, null when malformed.
+ */
+function parseIndexSignatureEntry(entry) {
+  const trimmed = entry.trim();
+  if (trimmed === '') {
+    return undefined;
+  }
+  if (!trimmed.startsWith('[')) {
+    return undefined;
+  }
+  // Find the matching `]` for the opening `[`, quote-aware.
+  let square = 0;
+  let inSingle = false;
+  let inDouble = false;
+  let inBacktick = false;
+  let closeIdx = -1;
+  for (let i = 0; i < trimmed.length; i++) {
+    const c = trimmed[i];
+    const prev = i > 0 ? trimmed[i - 1] : '';
+    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') inSingle = !inSingle;
+    else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') inDouble = !inDouble;
+    else if (c === '`' && !inSingle && !inDouble && prev !== '\\') inBacktick = !inBacktick;
+    else if (!inSingle && !inDouble && !inBacktick) {
+      if (c === '[') square++;
+      else if (c === ']') {
+        square--;
+        if (square === 0) {
+          closeIdx = i;
+          break;
+        }
+      }
+    }
+  }
+  if (closeIdx === -1) {
+    return null;
+  }
+  const paramRaw = trimmed.slice(1, closeIdx).trim();
+  const afterBracket = trimmed.slice(closeIdx + 1).trim();
+  if (!afterBracket.startsWith(':')) {
+    return null;
+  }
+  const valueRaw = afterBracket.slice(1).trim();
+  const paramColon = findTopLevelChar(paramRaw, ':');
+  if (paramColon === -1 || !valueRaw) {
+    return null;
+  }
+  const paramName = paramRaw.slice(0, paramColon).trim();
+  const paramTypeRaw = paramRaw.slice(paramColon + 1).trim();
+  if (!paramName || !paramTypeRaw) {
+    return null;
+  }
+  return {
+    type: 'indexSignature',
+    indexType: expandTypeDepFree(valueRaw),
+    indexParameters: [{type: expandTypeDepFree(paramTypeRaw), name: paramName}],
+  };
+}
+/**
+ * Splits a backtick template literal into quasis and `${...}` type raws.
+ * Returns undefined when the literal is malformed (unbalanced backticks
+ * or braces).
+ * @param {string} type - The raw literal including backticks.
+ * @returns {{quasis: string[], typeRaws: string[]} | undefined} Parts.
+ */
+function parseTemplateLiteralRaw(type) {
+  const inner = type.slice(1, -1);
+  const quasis = [];
+  const typeRaws = [];
+  let current = '';
+  let i = 0;
+  while (i < inner.length) {
+    const dollar = inner.indexOf('${', i);
+    if (dollar === -1) {
+      current += inner.slice(i);
+      break;
+    }
+    current += inner.slice(i, dollar);
+    // Find the matching `}` for this interpolation, nesting-aware.
+    let depth = 0;
+    let j = dollar + 2;
+    let closed = false;
+    while (j < inner.length) {
+      const c = inner[j];
+      if (c === '{') depth++;
+      else if (c === '}') {
+        if (depth === 0) {
+          closed = true;
+          break;
+        }
+        depth--;
+      }
+      j++;
+    }
+    if (!closed) {
+      return;
+    }
+    quasis.push(current);
+    current = '';
+    typeRaws.push(inner.slice(dollar + 2, j).trim());
+    i = j + 1;
+  }
+  quasis.push(current);
+  return {quasis, typeRaws};
+}
+/**
+ * Expands one tuple element: `...T` becomes a rest node, `...b: T[]`
+ * becomes a named `tupleMember` with `dotDot`, `label: T` and
+ * `label?: T` become `tupleMember` nodes, a bare trailing `?` without a
+ * label yields undefined (matching the TS and Babel parsers, which leave
+ * unnamed optional elements unhandled), and anything else expands plainly.
+ * @param {string} raw - The trimmed element text.
+ * @returns {ExpandedType | undefined} The element node.
+ */
+function expandTupleElement(raw) {
+  if (raw.startsWith('...')) {
+    const rest = raw.slice(3).trim();
+    if (!rest) {
+      return;
+    }
+    const colonIdx = findTopLevelChar(rest, ':');
+    if (colonIdx !== -1) {
+      const name = rest.slice(0, colonIdx).trim();
+      const typeRaw = rest.slice(colonIdx + 1).trim();
+      if (!name || !typeRaw) {
+        return;
+      }
+      return {
+        type: 'tupleMember',
+        name,
+        elementType: expandTypeDepFree(typeRaw),
+        dotDot: true,
+      };
+    }
+    return {type: 'rest', annotation: expandTypeDepFree(rest)};
+  }
+  const colonIdx = findTopLevelChar(raw, ':');
+  if (colonIdx === -1) {
+    // Unnamed trailing `?` (`[string, number?]`): the TS and Babel parsers
+    // leave OptionalType unhandled, so match their undefined.
+    if (raw.endsWith('?') && raw.length > 1) {
+      return;
+    }
+    return expandTypeDepFree(raw);
+  }
+  let name = raw.slice(0, colonIdx).trim();
+  const typeRaw = raw.slice(colonIdx + 1).trim();
+  if (!name || !typeRaw) {
+    return;
+  }
+  let optional = false;
+  if (name.endsWith('?') && name.length > 1) {
+    optional = true;
+    name = name.slice(0, -1).trim();
+  }
+  if (!name) {
+    return;
+  }
+  /** @type {import('./expandedType.js').ExpandTupleMemberNode} */
+  const member = {type: 'tupleMember', name, elementType: expandTypeDepFree(typeRaw)};
+  if (optional) {
+    member.optional = true;
+  }
+  return member;
+}
+/**
  * 'DepFree' refers to the fact that this function has no dependencies,
  * while `expandType` depends on TypeScript itself for maximum compatibility.
  * @example
@@ -455,6 +730,18 @@ function expandTypeDepFree(type) {
   }
   if (type.startsWith('?') && type.length > 1) {
     return {type: 'union', members: [expandTypeDepFree(type.slice(1).trim()), 'null']};
+  }
+  // (0) Function and constructor types `(a: T, ...) => R`, `new (a: T) => R`.
+  const func = parseFunctionRaw(type);
+  if (func) {
+    const parameters = parseFunctionParams(func.paramsRaw);
+    if (parameters !== undefined) {
+      const ret = expandTypeDepFree(func.retRaw);
+      if (func.isNew) {
+        return {type: 'new', parameters, ret};
+      }
+      return {type: 'function', parameters};
+    }
   }
   // (1) Rest parameters like ...string
   if (type[0] === '.' && type[1] === '.' && type[2] === '.') {
@@ -545,7 +832,20 @@ function expandTypeDepFree(type) {
     const propertiesArray = splitTopLevel(type.slice(1, -1), ','); // ['entity: Entity', ' app: AppBase']
     /** @type {Object<string, ExpandedType>} */
     const properties = {};
+    /** @type {import('./expandedType.js').ExpandIndexSignatureNode[] | undefined} */
+    let indexSignatures;
     for (const entry of propertiesArray) {
+      // Index signature entries `[n: number]: T` before the `name: type` split.
+      const signature = parseIndexSignatureEntry(entry);
+      if (signature === null) {
+        console.warn('expandTypeDepFree> unexpected type format, fix');
+        continue;
+      }
+      if (signature !== undefined) {
+        indexSignatures = indexSignatures ?? [];
+        indexSignatures.push(signature);
+        continue;
+      }
       const colonIdx = findTopLevelChar(entry, ':');
       if (colonIdx === -1) {
         // Empty `{}` yields one empty entry: the empty object type.
@@ -555,20 +855,56 @@ function expandTypeDepFree(type) {
         console.warn('expandTypeDepFree> unexpected type format, fix');
         continue;
       }
-      const propName = entry.slice(0, colonIdx).trim();
+      let propName = entry.slice(0, colonIdx).trim();
       const propTypeRaw = entry.slice(colonIdx + 1).trim();
       if (!propName || !propTypeRaw) {
         console.warn('expandTypeDepFree> unexpected type format, fix');
         continue;
       }
-      properties[propName] = expandTypeDepFree(propTypeRaw);
+      // `readonly a: T` prefix and `a?: T` suffix, matching expandType().
+      let propReadonly = false;
+      if (propName.startsWith('readonly ') && propName.length > 9) {
+        propReadonly = true;
+        propName = propName.slice(9).trim();
+      }
+      let propOptional = false;
+      if (propName.endsWith('?') && propName.length > 1) {
+        propOptional = true;
+        propName = propName.slice(0, -1).trim();
+      }
+      if (!propName) {
+        console.warn('expandTypeDepFree> unexpected type format, fix');
+        continue;
+      }
+      let expanded = expandTypeDepFree(propTypeRaw);
+      if (propOptional || propReadonly) {
+        if (expanded !== null && typeof expanded === 'object') {
+          if (propOptional) /** @type {{optional?: boolean}} */ (expanded).optional = true;
+          if (propReadonly) /** @type {{readonly?: boolean}} */ (expanded).readonly = true;
+        } else {
+          /** @type {import('./expandedType.js').ExpandAnnotatedAtomNode} */
+          const wrapped = {type: expanded};
+          if (propOptional) wrapped.optional = true;
+          if (propReadonly) wrapped.readonly = true;
+          expanded = wrapped;
+        }
+      }
+      properties[propName] = expanded;
     }
     // Bare `{}` carries no `properties` key, matching the TS/Babel parsers
     // (and distinguishing it from the `object` keyword, which does).
-    if (!Object.keys(properties).length) {
+    if (!Object.keys(properties).length && indexSignatures === undefined) {
       return {type: 'object'};
     }
-    return {type: 'object', properties};
+    /** @type {import('./expandedType.js').ExpandObjectNode} */
+    const out = {type: 'object'};
+    if (Object.keys(properties).length) {
+      out.properties = properties;
+    }
+    if (indexSignatures !== undefined) {
+      out.indexSignatures = indexSignatures;
+    }
+    return out;
   }
   // (5) Unions and intersections via top-level splits (`&` binds tighter, so `|` first).
   // Note: conditionals already handled up front (before nullable) so `D?`
@@ -619,10 +955,26 @@ function expandTypeDepFree(type) {
       return {type: 'tuple', elements: []};
     }
     const elements = splitTopLevel(inner, ','); // ['null', ' Texture', ...]
+    /** @type {(ExpandedType | undefined)[]} */
+    const expanded = elements.map((_) => expandTupleElement(_.trim()));
+    // Unnamed optional elements (`[string, number?]`) expand to undefined,
+    // matching the TS and Babel parsers, which leave OptionalType unhandled.
     return {
       type: 'tuple',
-      elements: elements.map((_) => expandTypeDepFree(_.trim()))
+      elements: /** @type {ExpandedType[]} */ (expanded),
     };
+  }
+  // Template literals `` `id` `` / `` `${A}_id` ``, matching expandType().
+  // Must come before the bare backtick-quoted literal fallthrough below.
+  if (type.startsWith('`') && type.endsWith('`') && type.length >= 2) {
+    const template = parseTemplateLiteralRaw(type);
+    if (template) {
+      return {
+        type: 'templateLiteral',
+        quasis: template.quasis,
+        types: template.typeRaws.map((_) => expandTypeDepFree(_)),
+      };
+    }
   }
   // (11) expand typeof expressions
   if (type.startsWith('typeof ')) {
@@ -645,6 +997,13 @@ function expandTypeDepFree(type) {
   }
   if (/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(type)) {
     return Number(type);
+  }
+  // Bigint: `bigint` keyword and `123n` literals, matching expandType().
+  if (type === 'bigint') {
+    return {type: 'bigint'};
+  }
+  if (/^\d+n$/.test(type)) {
+    return {type: 'bigint', literal: type.slice(0, -1)};
   }
   return type;
 }

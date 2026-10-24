@@ -14,18 +14,6 @@ function assertParity(type) {
   }
   return true;
 }
-function assertTsBabelParity(type) {
-  // Two-way parity for shapes expandTypeDepFree does not support (functions,
-  // object flags, index signatures, named tuples, template literals): the
-  // dep-free parser is a best-effort fallback, not the production path.
-  const fromTS = expandType(type);
-  const fromBabel = expandTypeBabelTS(type);
-  if (JSON.stringify(fromBabel) !== JSON.stringify(fromTS)) {
-    console.warn(`TS/Babel parity mismatch for '${type}'`, {fromTS, fromBabel});
-    return false;
-  }
-  return true;
-}
 function testArrayLikeParity() {
   return assertParity('ArrayLike<number>');
 }
@@ -177,7 +165,7 @@ function testFunctionNewParity() {
     'new (a: number) => any',
     'new (...args: any[]) => any',
   ]) {
-    if (!assertTsBabelParity(type)) {
+    if (!assertParity(type)) {
       return false;
     }
   }
@@ -189,7 +177,7 @@ function testObjectFlagsParity() {
     '{a?: string, readonly b: number}',
     '{a: string, b?: number}',
   ]) {
-    if (!assertTsBabelParity(type)) {
+    if (!assertParity(type)) {
       return false;
     }
   }
@@ -202,7 +190,7 @@ function testIndexSignatureParity() {
     '{[n: number]: string}',
     '{[k: string]: number}',
   ]) {
-    if (!assertTsBabelParity(type)) {
+    if (!assertParity(type)) {
       return false;
     }
   }
@@ -215,7 +203,7 @@ function testNamedTupleParity() {
     '[first: string, ...rest: number[]]',
     '[...number[]]',
   ]) {
-    if (!assertTsBabelParity(type)) {
+    if (!assertParity(type)) {
       return false;
     }
   }
@@ -227,7 +215,7 @@ function testTemplateLiteralParity() {
     '`${A}_id`', // eslint-disable-line no-template-curly-in-string
     '`id`',
   ]) {
-    if (!assertTsBabelParity(type)) {
+    if (!assertParity(type)) {
       return false;
     }
   }

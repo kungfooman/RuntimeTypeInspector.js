@@ -13,7 +13,14 @@
  * `'transpiler-error'` is an explicit fallback member: the TS parser
  * already returns it on a mapped miss, so the type says so instead of
  * leaving a hole.
- * @typedef {string | number | boolean | 'transpiler-error' | ExpandArrayNode | ExpandRecordNode | ExpandMapNode | ExpandSetNode | ExpandUnionNode | ExpandIntersectionNode | ExpandTupleNode | ExpandObjectNode | ExpandPromiseNode | ExpandTypeofNode | ExpandKeyofNode | ExpandIndexedAccessNode | ExpandConditionNode | ExpandMappingNode | ExpandReferenceNode | ExpandFunctionNode | ExpandNewNode | ExpandRestNode | ExpandTupleMemberNode | ExpandBigintNode | ExpandTemplateLiteralNode | ExpandIndexSignatureNode | ExpandParameterNode | ExpandAnnotatedAtomNode} ExpandedType
+ * @typedef {string | number | boolean | 'transpiler-error'
+ *   | ExpandArrayNode | ExpandRecordNode | ExpandMapNode | ExpandSetNode
+ *   | ExpandUnionNode | ExpandIntersectionNode | ExpandTupleNode | ExpandObjectNode
+ *   | ExpandPromiseNode | ExpandTypeofNode | ExpandKeyofNode | ExpandIndexedAccessNode
+ *   | ExpandConditionNode | ExpandMappingNode | ExpandReferenceNode | ExpandFunctionNode
+ *   | ExpandNewNode | ExpandRestNode | ExpandTupleMemberNode | ExpandBigintNode
+ *   | ExpandTemplateLiteralNode | ExpandIndexSignatureNode | ExpandParameterNode
+ *   | ExpandAnnotatedAtomNode} ExpandedType
  */
 /**
  * @typedef {object} ExpandArrayNode
