@@ -63,6 +63,7 @@ const tests = [
   ...(await import('./src-runtime/templateMemo.spec.js'            )).tests,
   ...(await import('./src-runtime/towerMemo.spec.js'               )).tests,
   ...(await import('./src-runtime/canonicalKey.spec.js'           )).tests,
+  ...(await import('./src-runtime/canonicalize.spec.js'          )).tests,
   ...(await import('./src-runtime/deepEqualType.spec.js'          )).tests,
   ...(await import('./src-runtime/substituteTypeof.spec.js'       )).tests,
   ...(await import('./src-runtime/substitutes.spec.js'            )).tests,
