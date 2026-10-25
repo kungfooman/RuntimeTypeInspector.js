@@ -445,12 +445,12 @@ function toSourceTS(node) {
           let type = toSourceTS(member.type) ?? 'any';
           if (member.questionToken) {
             if (isExpandedObject(type)) type.optional = true;
-            else type = ({ type, optional: true });
+            else type = {type, optional: true};
           }
           if (Array.isArray(member.modifiers) && member.modifiers.some(isReadonlyKeyword)) {
             // Tracked for IfEquals-style comparisons; ignored by validation.
             if (isExpandedObject(type)) type.readonly = true;
-            else type = ({type, readonly: true});
+            else type = {type, readonly: true};
           }
           if (typeof name === 'string') {
             properties[name] = type;

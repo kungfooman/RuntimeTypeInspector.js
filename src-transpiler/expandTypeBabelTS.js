@@ -440,11 +440,11 @@ function toSourceBabelTS(node) {
           let type = toSourceBabelTSOrAny(member.typeAnnotation);
           if (member.optional) {
             if (isExpandedObject(type)) type.optional = true;
-            else type = ({type, optional: true});
+            else type = {type, optional: true};
           }
           if (member.readonly) {
             if (isExpandedObject(type)) type.readonly = true;
-            else type = ({type, readonly: true});
+            else type = {type, readonly: true};
           }
           if (typeof name === 'string') {
             properties[name] = type;
