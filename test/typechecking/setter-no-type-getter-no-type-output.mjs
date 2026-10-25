@@ -1,14 +1,18 @@
 class Test {
   _abc = 123;
+  
   /**
    * Only description for getter.
    */
+
   get abc() {
     return this._abc;
   }
+  
   /**
    * Only description for setter.
    */
+
   set abc(val) {
     this._abc = val;
   }

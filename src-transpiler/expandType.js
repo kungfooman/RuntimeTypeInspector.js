@@ -267,10 +267,10 @@ function toSourceTS(node) {
       if (!ts.isParameter(node)) {
         throw Error("Impossible");
       }
-      const type = node.type ? toSourceTS(node.type) ?? 'any' : 'any';
+      const paramType = node.type ? toSourceTS(node.type) ?? 'any' : 'any';
       const name = toSourceTS(node.name) ?? 'arg';
       /** @type {ExpandParameterNode} */
-      const ret = {type, name};
+      const ret = {type: 'parameter', paramType, name};
       if (node.dotDotDotToken) {
         return ({type: 'array', elementType: ret});
       }
@@ -445,12 +445,12 @@ function toSourceTS(node) {
           let type = toSourceTS(member.type) ?? 'any';
           if (member.questionToken) {
             if (isExpandedObject(type)) type.optional = true;
-            else type = {type, optional: true};
+            else type = {type: 'atom', atomType: type, optional: true};
           }
           if (Array.isArray(member.modifiers) && member.modifiers.some(isReadonlyKeyword)) {
             // Tracked for IfEquals-style comparisons; ignored by validation.
             if (isExpandedObject(type)) type.readonly = true;
-            else type = {type, readonly: true};
+            else type = {type: 'atom', atomType: type, readonly: true};
           }
           if (typeof name === 'string') {
             properties[name] = type;

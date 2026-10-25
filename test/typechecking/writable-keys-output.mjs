@@ -15,7 +15,8 @@ registerTypedef('Shape', {
   "type": "object",
   "properties": {
     "id": {
-      "type": "string",
+      "type": "atom",
+      "atomType": "string",
       "readonly": true
     },
     "enabled": "boolean"

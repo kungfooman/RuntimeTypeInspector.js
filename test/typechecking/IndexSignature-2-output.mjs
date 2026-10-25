@@ -6,7 +6,8 @@ registerTypedef('Arrayish', {
       "indexType": "boolean",
       "indexParameters": [
         {
-          "type": "number",
+          "type": "parameter",
+          "paramType": "number",
           "name": "n"
         }
       ]
@@ -21,17 +22,20 @@ registerTypedef('Mapish', {
       "indexType": "boolean",
       "indexParameters": [
         {
-          "type": "string",
+          "type": "parameter",
+          "paramType": "string",
           "name": "k"
         }
       ]
     }
   ]
 });
+
 /**
  * @typedef {{[n: number]: boolean}} Arrayish
  * @typedef {{[k: string]: boolean}} Mapish
  */
+
 /**
  * @param {Arrayish} arrayish - Arrayish.
  */
@@ -40,9 +44,11 @@ function takeArrayish(arrayish) {
     youCanAddABreakpointHere();
   }
 }
+
 /**
  * @param {Mapish} mapish - Mapish.
  */
+
 function takeMapish(mapish) {
   if (!inspectType(mapish, "Mapish", 'takeMapish', 'mapish')) {
     youCanAddABreakpointHere();

@@ -348,6 +348,10 @@
     "output": "./test/typechecking/stringifier-ArrowFunctionExpression-spaces-output.mjs"
   },
   {
+    "input": "./test/typechecking/tagged-shapes-input.mjs",
+    "output": "./test/typechecking/tagged-shapes-output.mjs"
+  },
+  {
     "input": "./test/typechecking/template-abstract-new-input.mjs",
     "output": "./test/typechecking/template-abstract-new-output.mjs"
   },

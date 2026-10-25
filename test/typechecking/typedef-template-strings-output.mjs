@@ -48,3 +48,4 @@ registerTypedef('LocaleMessageIDs', {
     "AllLocaleIDs"
   ]
 });
+

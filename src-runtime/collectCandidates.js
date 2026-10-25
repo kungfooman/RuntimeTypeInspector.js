@@ -42,13 +42,11 @@ function collectCandidates(value, expect, out = []) {
     // Numeric/boolean literal expects carry no template refs.
     return out;
   }
-  // Annotated atoms like `{type: 'T', optional: true}` (what annotateOptional
-  // emits for `@param {T} [a]`): the inner name is the inference site.
-  if (typeof expect.type === 'string' || typeof expect.type === 'number' || typeof expect.type === 'boolean') {
-    const keys = Object.keys(expect);
-    if (keys.every((key) => key === 'type' || key === 'optional' || key === 'readonly')) {
-      return collectCandidates(value, expect.type, out);
-    }
+  // Tagged annotated atoms (`{type: 'atom', atomType: 'T', optional:
+  // true}`, what annotateOptional emits for `@param {T} [a]`): the inner
+  // name is the inference site.
+  if (expect.type === 'atom') {
+    return collectCandidates(value, expect.atomType, out);
   }
   switch (expect.type) {
     case 'object': {

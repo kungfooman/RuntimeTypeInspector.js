@@ -14,7 +14,8 @@ function takeFn(f) {
     "type": "function",
     "parameters": [
       {
-        "type": "number",
+        "type": "parameter",
+        "paramType": "number",
         "name": "a"
       }
     ],
@@ -54,7 +55,8 @@ function takeNew(C) {
     "type": "new",
     "parameters": [
       {
-        "type": "number",
+        "type": "parameter",
+        "paramType": "number",
         "name": "a"
       }
     ],
@@ -93,11 +95,13 @@ function takeFlags(o) {
     "type": "object",
     "properties": {
       "a": {
-        "type": "string",
+        "type": "atom",
+        "atomType": "string",
         "optional": true
       },
       "b": {
-        "type": "number",
+        "type": "atom",
+        "atomType": "number",
         "readonly": true
       }
     },
@@ -138,7 +142,8 @@ function takeIndex(m) {
         "indexType": "string",
         "indexParameters": [
           {
-            "type": "number",
+            "type": "parameter",
+            "paramType": "number",
             "name": "n"
           }
         ]

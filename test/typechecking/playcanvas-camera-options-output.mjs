@@ -198,7 +198,8 @@ registerTypedef('ComponentOptionsOverrides', {
       "type": "object",
       "properties": {
         "calculateProjection": {
-          "type": "Function",
+          "type": "atom",
+          "atomType": "Function",
           "optional": true
         },
         "clearColor": {

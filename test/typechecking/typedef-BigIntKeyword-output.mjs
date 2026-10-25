@@ -7,3 +7,4 @@ registerTypedef('BigIntOrNull', {
     "null"
   ]
 });
+

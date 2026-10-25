@@ -40,22 +40,22 @@ function captureMessage(fn) {
 // value must pass silently (used to warn `unchecked` + `@todo unhandled`).
 function testOptionalBareInstantiates() {
   const templates = {T: 'any'};
-  const {ret, warnings} = captureWarns(() => inspectTypeWithTemplates('x', {type: 'T', optional: true}, 'f', 'a', templates));
+  const {ret, warnings} = captureWarns(() => inspectTypeWithTemplates('x', {type: 'atom', atomType: 'T', optional: true}, 'f', 'a', templates));
   return ret === true && warnings.length === 0 && templates.T === '"x"';
 }
 // Omitted optional bare params pass without poisoning the template.
 function testOptionalBareOmitted() {
   const templates = {T: 'any'};
-  const {ret, warnings} = captureWarns(() => inspectTypeWithTemplates(undefined, {type: 'T', optional: true}, 'f', 'a', templates));
+  const {ret, warnings} = captureWarns(() => inspectTypeWithTemplates(undefined, {type: 'atom', atomType: 'T', optional: true}, 'f', 'a', templates));
   return ret === true && warnings.length === 0 && templates.T === 'any';
 }
 // Optional non-template params stay silent when an unrelated template exists.
 function testOptionalUnrelatedSilent() {
   let warns = 0;
   const noisy = () => warns++;
-  const out = substituteType({type: 'string', optional: true}, 'T', 'any', noisy);
-  const out2 = substituteType({type: 'MyBox', optional: true}, 'T', 'any', noisy);
-  return warns === 0 && out.type === 'string' && out2.type === 'MyBox';
+  const out = substituteType({type: 'atom', atomType: 'string', optional: true}, 'T', 'any', noisy);
+  const out2 = substituteType({type: 'atom', atomType: 'MyBox', optional: true}, 'T', 'any', noisy);
+  return warns === 0 && out.atomType === 'string' && out2.atomType === 'MyBox';
 }
 // `typeof X` is a value position: never rewritten, never warns.
 function testTypeofSilent() {
@@ -71,7 +71,7 @@ function testIndexSignatureSubstitutes() {
   const type = {
     type: 'object',
     properties: {},
-    indexSignatures: [{type: 'indexSignature', indexType: 'T', indexParameters: [{type: 'string', name: 'k'}]}],
+    indexSignatures: [{type: 'indexSignature', indexType: 'T', indexParameters: [{type: 'parameter', paramType: 'string', name: 'k'}]}],
   };
   const out = substituteType(type, 'T', 'number', noisy);
   return warns === 0 && out.indexSignatures[0].indexType === 'number';

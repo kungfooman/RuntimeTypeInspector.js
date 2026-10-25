@@ -21,8 +21,8 @@ function testPrimitivesAndAtoms() {
     }
   }
   // Flag-only wrappers substitute inside `.type`.
-  const atom = substituteType({type: 'K', optional: true}, 'K', '"a"', () => {});
-  return same(atom, {type: '"a"', optional: true});
+  const atom = substituteType({type: 'atom', atomType: 'K', optional: true}, 'K', '"a"', () => {});
+  return same(atom, {type: 'atom', atomType: '"a"', optional: true});
 }
 function testObjects() {
   // Properties substitute per key; index signatures follow.
@@ -102,8 +102,8 @@ function testConditionsIndexedKeyof() {
 }
 function testFunctions() {
   // Only `.type` positions of descriptors and returns substitute.
-  const fn = substituteType({type: 'function', parameters: [{type: 'K', name: 'a'}]}, 'K', '"a"', () => {});
-  if (!same(fn, {type: 'function', parameters: [{type: '"a"', name: 'a'}]})) {
+  const fn = substituteType({type: 'function', parameters: [{type: 'parameter', paramType: 'K', name: 'a'}]}, 'K', '"a"', () => {});
+  if (!same(fn, {type: 'function', parameters: [{type: 'parameter', paramType: '"a"', name: 'a'}]})) {
     return false;
   }
   const tupleMember = substituteType({type: 'tupleMember', elementType: 'K'}, 'K', '"a"', () => {});

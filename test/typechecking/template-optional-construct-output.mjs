@@ -20,7 +20,8 @@ class MaybePool {
           {
             "type": "array",
             "elementType": {
-              "type": {
+              "type": "parameter",
+              "paramType": {
                 "type": "array",
                 "elementType": "any"
               },
@@ -32,7 +33,8 @@ class MaybePool {
       }
     };
     if (!inspectTypeWithTemplates(constructorFunc, {
-      "type": "T",
+      "type": "atom",
+      "atomType": "T",
       "optional": true
     }, 'MaybePool#constructor', 'constructorFunc', rtiTemplates)) {
       youCanAddABreakpointHere();

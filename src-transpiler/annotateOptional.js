@@ -24,13 +24,13 @@ function annotateOptional(type, optional) {
     if (!optional) {
       return type;
     }
-    type = {type, optional};
+    type = {type: 'atom', atomType: type, optional};
   } else if (typeof type === 'string') {
     type = type.trim();
     if (type !== 'object' && type !== 'object[]' && type !== 'union' && !optional) {
       return type;
     }
-    type = {type, optional};
+    type = {type: 'atom', atomType: type, optional};
   } else {
     debugger;
     console.warn("annotateOptional> neither object nor string for type", type);

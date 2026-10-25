@@ -105,6 +105,12 @@ function resolveKeys(target, warn, depth) {
     }
     return [...new Set(keys)];
   }
+  if (target.type === 'atom') {
+    // Tagged atom wrapper (e.g. `{camera?: CameraComponent}` reads the prop
+    // as `{type: 'atom', atomType: 'CameraComponent'}`): keys come from the
+    // wrapped type; `optional` never affects key names.
+    return resolveKeys(target.atomType, warn, depth + 1);
+  }
   if (target.type === 'reference' || target.type === 'keyof' || target.type === 'condition') {
     if (target.type === 'reference' && (target.name === 'NonNullable' || target.name === 'Readonly' || target.name === 'NoInfer') && target.args?.length) {
       return resolveKeys(target.args[0], warn, depth + 1);
@@ -279,6 +285,11 @@ function resolveObject(type, warn, depth) {
   }
   if (type.type === 'object') {
     return type;
+  }
+  if (type.type === 'atom') {
+    // Same unwrap as resolveKeys: the wrapper carries flags, the keys live
+    // on the wrapped type.
+    return resolveObject(type.atomType, warn, depth + 1);
   }
   if (type.type === 'union' && Array.isArray(type.members)) {
     // `NonNullable<T>` unwraps above, but a bare indexed access like
@@ -657,6 +668,9 @@ function getTypeKeys(expect, warn, depth = 0) {
     return Object.keys(variable);
   } else if (type === 'union') {
     return expect.members;
+  } else if (type === 'atom') {
+    // Same unwrap as resolveKeys: keys of the wrapped type.
+    return getTypeKeys(expect.atomType, warn, depth + 1);
   } else if (type === 'object') {
     var _expect$properties;
     return Object.keys((_expect$properties = expect.properties) != null ? _expect$properties : {});

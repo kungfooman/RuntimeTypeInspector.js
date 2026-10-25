@@ -31,7 +31,7 @@ function testLiteralsAreNotSites() {
 }
 // Annotated atoms (`@param {T} [a]`) collect through the wrapper.
 function testAtomWrapperCollects() {
-  return keysOf('x', {type: 'T', optional: true}) === 'T="\\"x\\""';
+  return keysOf('x', {type: 'atom', atomType: 'T', optional: true}) === 'T="\\"x\\""';
 }
 // Nested positions contribute: arrays, tuples, objects, index signatures.
 function testNestedCollects() {

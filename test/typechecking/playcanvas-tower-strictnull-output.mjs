@@ -30,7 +30,8 @@ registerTypedef('OptionalCamera', {
   "type": "object",
   "properties": {
     "camera": {
-      "type": "CameraComponent",
+      "type": "atom",
+      "atomType": "CameraComponent",
       "optional": true
     }
   }

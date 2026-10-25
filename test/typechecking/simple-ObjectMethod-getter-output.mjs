@@ -5,3 +5,4 @@ const vec2 = {
   y: 2
 };
 console.log('vec2', vec2.x, vec2.y); // 1 2
+

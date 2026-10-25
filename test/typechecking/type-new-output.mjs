@@ -1,4 +1,5 @@
 class ObjectPool {
+  
   /**
    * @param {new (...args: any[]) => any} constructorFunc - The constructor function for the
    * objects in the pool.
@@ -10,7 +11,8 @@ class ObjectPool {
         {
           "type": "array",
           "elementType": {
-            "type": {
+            "type": "parameter",
+            "paramType": {
               "type": "array",
               "elementType": "any"
             },

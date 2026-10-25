@@ -4,7 +4,8 @@ registerTypedef('ConstructorLike', {
     {
       "type": "array",
       "elementType": {
-        "type": {
+        "type": "parameter",
+        "paramType": {
           "type": "array",
           "elementType": "any"
         },
@@ -14,3 +15,4 @@ registerTypedef('ConstructorLike', {
   ],
   "ret": "any"
 });
+

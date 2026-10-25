@@ -29,7 +29,7 @@ function testBareInlineNotOptional() {
 function testInlineWithDefaultIsOptional() {
   // Inline type plus default: same type, optional flag added.
   const {out, warnings} = checksFor('function f(/** @type {number} */ b = 1) { return b; }');
-  if (!out.includes('"type": "number"') || !out.includes('"optional": true')) {
+  if (!out.includes('"atomType": "number"') || !out.includes('"optional": true')) {
     return false;
   }
   if (warnings.length) {
@@ -52,7 +52,7 @@ function testJSDocBeatsInline() {
 function testInlineBeatsDefaultInference() {
   // Inline string wins over numeric default; default still marks optional.
   const {out, warnings} = checksFor('function f(/** @type {string} */ s = 0) { return s; }');
-  if (!out.includes('"type": "string"') || !out.includes('"optional": true')) {
+  if (!out.includes('"atomType": "string"') || !out.includes('"optional": true')) {
     return false;
   }
   if (out.includes('"number"') || warnings.length) {
@@ -63,7 +63,7 @@ function testInlineBeatsDefaultInference() {
 function testDefaultOnlyIsOptional() {
   // No inline type: widened default inference with optional flag.
   const {out, warnings} = checksFor('function f(x = 0) { return x; }');
-  if (!out.includes('"type": "number"') || !out.includes('"optional": true')) {
+  if (!out.includes('"atomType": "number"') || !out.includes('"optional": true')) {
     return false;
   }
   if (warnings.length) {
@@ -81,7 +81,7 @@ function testNoCheckWithoutTypeOrDefault() {
 }
 function testArrowWithDeclaratorChecked() {
   const {out, warnings} = checksFor('const make = (svc = new Service()) => svc;');
-  if (!out.includes('"type": "Service"') || !out.includes('"optional": true')) {
+  if (!out.includes('"atomType": "Service"') || !out.includes('"optional": true')) {
     return false;
   }
   if (warnings.length) {

@@ -1,4 +1,5 @@
 class Test {
+  
   /**
    * Only description.
    */

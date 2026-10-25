@@ -179,7 +179,8 @@ function takeRequired(opts) {
         "type": "object",
         "properties": {
           "a": {
-            "type": "number",
+            "type": "atom",
+            "atomType": "number",
             "optional": true
           }
         }

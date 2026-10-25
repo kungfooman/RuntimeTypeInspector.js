@@ -118,7 +118,7 @@ Import each shared typedef once per file with `@import` at the top and use the b
 
 ```js
 /** @import {ExpandedType, ExpandAnnotatedAtomNode} from './expandedType.js' */
-/** @type {ExpandAnnotatedAtomNode} */ ({type, optional})
+/** @type {ExpandAnnotatedAtomNode} */ ({type: 'atom', atomType, optional})
 ```
 
 never `@type {import('./expandedType.js').ExpandAnnotatedAtomNode}` inline.

@@ -43,7 +43,7 @@ function testDispatcherDelegates() {
       a: 'K',
       els: {type: 'array', elementType: 'K'},
       u: {type: 'union', members: ['K', 'number']},
-      f: {type: 'function', parameters: [{type: 'K', name: 'x'}]},
+      f: {type: 'function', parameters: [{type: 'parameter', paramType: 'K', name: 'x'}]},
     },
   };
   const direct = substituteType(tree, 'K', '"a"', noop);
@@ -52,7 +52,7 @@ function testDispatcherDelegates() {
     viaTable.properties.a === '"a"' &&
     viaTable.properties.els.elementType === '"a"' &&
     viaTable.properties.u.members[0] === '"a"' &&
-    viaTable.properties.f.parameters[0].type === '"a"';
+    viaTable.properties.f.parameters[0].paramType === '"a"';
 }
 function testDispatcherThrowsWhenUnregistered() {
   // Without a registered entry the dispatcher fails loudly instead of
@@ -82,13 +82,13 @@ function testOverrideComposes() {
         a: 'K',
         els: {type: 'array', elementType: 'K'},
         u: {type: 'union', members: ['K', 'number']},
-        f: {type: 'function', parameters: [{type: 'K', name: 'x'}]},
+        f: {type: 'function', parameters: [{type: 'parameter', paramType: 'K', name: 'x'}]},
       },
     }, 'K', '"a"', noop);
     return out.properties.a === '"winning"' &&
       out.properties.els.elementType === '"winning"' &&
       out.properties.u.members[0] === '"winning"' &&
-      out.properties.f.parameters[0].type === '"winning"';
+      out.properties.f.parameters[0].paramType === '"winning"';
   });
 }
 function testUnknownKindWarnsAndKeepsSearch() {

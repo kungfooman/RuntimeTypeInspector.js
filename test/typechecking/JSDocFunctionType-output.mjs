@@ -1,3 +1,4 @@
+
 /**
  * @param {function (number, number): number} cb
  */
@@ -6,11 +7,13 @@ function op(cb, a, b) {
     "type": "function",
     "parameters": [
       {
-        "type": "number",
+        "type": "parameter",
+        "paramType": "number",
         "name": "undefined"
       },
       {
-        "type": "number",
+        "type": "parameter",
+        "paramType": "number",
         "name": "undefined"
       }
     ],
