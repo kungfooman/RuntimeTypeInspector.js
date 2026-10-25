@@ -8,17 +8,8 @@
  * const tooComplex = 'Array<string|{chunks?: undefined|Array<{language: string|null, timestamp: Array<number|null>, text: string}>}>';
  * console.log(expandTypeDepFree(tooComplex));
  */
-/**
- * @typedef {object} ExpandTypeReturnValue
- * @property {'array' | 'union' | 'record' | 'tuple' | 'object' | 'promise' | 'typeof'} type - The type.
- * @property {object | string} [elementType] - For Array.
- * @property {object | string} [key] - For Record<key, val>
- * @property {object | string} [val] - For Record<key, val>
- * @property {(object | string)[]} [members] - For unions.
- * @property {object | string} [properties] - For objects.
- * @property {(object | string)[]} [elements] - For tuples.
- * @property {object | string} [argument] - For typeof.
- */
+import {isExpandedObject} from './isExpandedObject.js';
+/** @import {ExpandedType, ExpandMappingNode, ExpandMappedRaw, ExpandTupleMemberNode, ExpandIndexSignatureNode, ExpandAnnotatedAtomNode, ExpandObjectNode} from './expandedType.js' */
 /**
  * Splits a string by a delimiter, ignoring delimiters nested inside <>, {}, [], ().
  * Quote-aware: delimiters inside '...', "..." or `...` never split.
@@ -103,7 +94,7 @@ function depthsAt(str, upto) {
  * @returns {number} Start index or -1.
  */
 function findTopLevelKeyword(str, keyword) {
-  const isWord = (c) => /[A-Za-z0-9_$]/.test(c);
+  const isWord = (/** @type {string} */ c) => /[A-Za-z0-9_$]/.test(c);
   for (let i = 0; i <= str.length - keyword.length; i++) {
     if (str.slice(i, i + keyword.length) !== keyword) continue;
     const before = i > 0 ? str[i - 1] : ' ';
@@ -235,15 +226,17 @@ function parseGenericReference(type) {
 }
 /**
  * Parses `{[K in Iterable as NameType]?: Result}` mapped syntax.
- * Returns undefined when input isn't a mapped type.
+ * Returns raw mapped type parts, before `iterable`/`result`/`nameType`
+ * are expanded. Returns undefined when input isn't a mapped type.
  * @param {string} type - Trimmed type string starting with `{`.
- * @returns {object|undefined} Mapping struct with raw strings, or undefined.
+ * @returns {ExpandMappedRaw | undefined} Mapping struct with raw strings, or undefined.
  */
 function parseMappedRaw(type) {
   if (type[0] !== '{' || type[type.length - 1] !== '}') {
     return;
   }
   let inner = type.slice(1, -1).trim();
+  /** @type {('-' | '+' | 'readonly') | undefined} */
   let readonly;
   if (inner.startsWith('-readonly') && (inner[9] === ' ' || inner[9] === '[')) {
     readonly = '-';
@@ -286,6 +279,7 @@ function parseMappedRaw(type) {
   }
   const bracket = inner.slice(1, close);
   let rest = inner.slice(close + 1).trim();
+  /** @type {('-' | '+' | '?') | undefined} */
   let question;
   if (rest.startsWith('-?')) {
     question = '-';
@@ -332,7 +326,7 @@ function parseMappedRaw(type) {
  * Splits `Check extends Extends ? True : False` at top level.
  * Returns undefined when input isn't a conditional type.
  * @param {string} type - Trimmed type string.
- * @returns {{check: string, extends_: string, true_: string, false_: string}|undefined} Raw parts.
+ * @returns {{check: string, extends_: string, true_: string, false_: string} | undefined} Raw parts, or undefined when not a conditional.
  */
 function parseConditionRaw(type) {
   const qIdx = findTopLevelChar(type, '?');
@@ -366,7 +360,7 @@ function parseConditionRaw(type) {
  * Splits `Object[Index]` at top level. Excludes tuples (`[...]`) and
  * empty-index arrays (`T[]`, handled earlier).
  * @param {string} type - Trimmed type string.
- * @returns {{objectRaw: string, indexRaw: string}|undefined} Raw parts.
+ * @returns {{objectRaw: string, indexRaw: string} | undefined} Raw parts, or undefined when not indexed access.
  */
 function parseIndexedAccessRaw(type) {
   if (!type.endsWith(']') || type.endsWith('[]')) {
@@ -411,6 +405,312 @@ function parseIndexedAccessRaw(type) {
   return {objectRaw, indexRaw};
 }
 /**
+ * Splits a raw function parameter list into `{type, name}` parameter nodes,
+ * mirroring the TS parser's `Parameter` case. `...args: T[]` wraps like
+ * `dotDotDotToken` does there.
+ * @param {string} paramsRaw - The raw text between the parameter parens.
+ * @returns {ExpandedType[] | undefined} Parameter nodes, or undefined when
+ * the list does not parse.
+ */
+function parseFunctionParams(paramsRaw) {
+  if (paramsRaw.trim() === '') {
+    return [];
+  }
+  const parts = splitTopLevel(paramsRaw, ',');
+  const parameters = [];
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (!trimmed) {
+      return;
+    }
+    if (trimmed.startsWith('...')) {
+      const inner = trimmed.slice(3).trim();
+      const colonIdx = findTopLevelChar(inner, ':');
+      if (colonIdx === -1) {
+        return;
+      }
+      const name = inner.slice(0, colonIdx).trim();
+      const typeRaw = inner.slice(colonIdx + 1).trim();
+      if (!name || !typeRaw) {
+        return;
+      }
+      const innerParam = {type: expandTypeDepFreeOrAny(typeRaw), name};
+      parameters.push({type: 'array', elementType: innerParam});
+      continue;
+    }
+    const colonIdx = findTopLevelChar(trimmed, ':');
+    if (colonIdx === -1) {
+      return;
+    }
+    const name = trimmed.slice(0, colonIdx).trim();
+    // Strip `?` optional markers (`(a?: number)`), matching expandType().
+    const cleanName = name.endsWith('?') ? name.slice(0, -1).trim() : name;
+    const typeRaw = trimmed.slice(colonIdx + 1).trim();
+    if (!cleanName || !typeRaw) {
+      return;
+    }
+    const paramType = expandTypeDepFreeOrAny(typeRaw);
+    parameters.push({type: paramType, name: cleanName});
+  }
+  return parameters;
+}
+/**
+ * Splits `(params) => ret` and `new (params) => ret` at top level.
+ * Returns undefined when input isn't a function type.
+ * @param {string} type - Trimmed type string.
+ * @returns {{paramsRaw: string, retRaw: string, isNew: boolean} | undefined} Raw parts.
+ */
+function parseFunctionRaw(type) {
+  let rest = type;
+  let isNew = false;
+  if (rest.startsWith('new ')) {
+    const after = rest.slice(4).trim();
+    if (!after.startsWith('(')) {
+      return;
+    }
+    isNew = true;
+    rest = after;
+  }
+  if (!rest.startsWith('(')) {
+    return;
+  }
+  // Find the matching close paren for the parameter list, quote-aware.
+  let paren = 0;
+  let inSingle = false;
+  let inDouble = false;
+  let inBacktick = false;
+  let close = -1;
+  for (let i = 0; i < rest.length; i++) {
+    const c = rest[i];
+    const prev = i > 0 ? rest[i - 1] : '';
+    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') inSingle = !inSingle;
+    else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') inDouble = !inDouble;
+    else if (c === '`' && !inSingle && !inDouble && prev !== '\\') inBacktick = !inBacktick;
+    else if (!inSingle && !inDouble && !inBacktick) {
+      if (c === '(') paren++;
+      else if (c === ')') {
+        paren--;
+        if (paren === 0) {
+          close = i;
+          break;
+        }
+      }
+    }
+  }
+  if (close === -1) {
+    return;
+  }
+  const paramsRaw = rest.slice(1, close);
+  const afterParams = rest.slice(close + 1).trim();
+  if (!afterParams.startsWith('=>')) {
+    return;
+  }
+  const retRaw = afterParams.slice(2).trim();
+  if (!retRaw) {
+    return;
+  }
+  return {paramsRaw, retRaw, isNew};
+}
+/**
+ * Parses an object-literal entry as an index signature (`[n: number]: T`).
+ * Returns undefined for ordinary `name: type` entries, null for malformed
+ * bracket entries.
+ * @param {string} entry - The raw entry text.
+ * @returns {ExpandIndexSignatureNode | undefined | null} The signature, undefined for ordinary entries, null when malformed.
+ */
+function parseIndexSignatureEntry(entry) {
+  const trimmed = entry.trim();
+  if (trimmed === '') {
+    return undefined;
+  }
+  if (!trimmed.startsWith('[')) {
+    return undefined;
+  }
+  // Find the matching `]` for the opening `[`, quote-aware.
+  let square = 0;
+  let inSingle = false;
+  let inDouble = false;
+  let inBacktick = false;
+  let closeIdx = -1;
+  for (let i = 0; i < trimmed.length; i++) {
+    const c = trimmed[i];
+    const prev = i > 0 ? trimmed[i - 1] : '';
+    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') inSingle = !inSingle;
+    else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') inDouble = !inDouble;
+    else if (c === '`' && !inSingle && !inDouble && prev !== '\\') inBacktick = !inBacktick;
+    else if (!inSingle && !inDouble && !inBacktick) {
+      if (c === '[') square++;
+      else if (c === ']') {
+        square--;
+        if (square === 0) {
+          closeIdx = i;
+          break;
+        }
+      }
+    }
+  }
+  if (closeIdx === -1) {
+    return null;
+  }
+  const paramRaw = trimmed.slice(1, closeIdx).trim();
+  const afterBracket = trimmed.slice(closeIdx + 1).trim();
+  if (!afterBracket.startsWith(':')) {
+    return null;
+  }
+  const valueRaw = afterBracket.slice(1).trim();
+  const paramColon = findTopLevelChar(paramRaw, ':');
+  if (paramColon === -1 || !valueRaw) {
+    return null;
+  }
+  const paramName = paramRaw.slice(0, paramColon).trim();
+  const paramTypeRaw = paramRaw.slice(paramColon + 1).trim();
+  if (!paramName || !paramTypeRaw) {
+    return null;
+  }
+  const indexType = expandTypeDepFreeOrAny(valueRaw);
+  const indexParamType = expandTypeDepFreeOrAny(paramTypeRaw);
+  return {
+    type: 'indexSignature',
+    indexType,
+    indexParameters: [{type: indexParamType, name: paramName}],
+  };
+}
+/**
+ * Splits a backtick template literal into quasis and `${...}` type raws.
+ * Returns undefined when the literal is malformed (unbalanced backticks
+ * or braces).
+ * @param {string} type - The raw literal including backticks.
+ * @returns {{quasis: string[], typeRaws: string[]} | undefined} Parts.
+ */
+function parseTemplateLiteralRaw(type) {
+  const inner = type.slice(1, -1);
+  const quasis = [];
+  const typeRaws = [];
+  let current = '';
+  let i = 0;
+  while (i < inner.length) {
+    const dollar = inner.indexOf('${', i);
+    if (dollar === -1) {
+      current += inner.slice(i);
+      break;
+    }
+    current += inner.slice(i, dollar);
+    // Find the matching `}` for this interpolation, nesting-aware.
+    let depth = 0;
+    let j = dollar + 2;
+    let closed = false;
+    while (j < inner.length) {
+      const c = inner[j];
+      if (c === '{') depth++;
+      else if (c === '}') {
+        if (depth === 0) {
+          closed = true;
+          break;
+        }
+        depth--;
+      }
+      j++;
+    }
+    if (!closed) {
+      return;
+    }
+    quasis.push(current);
+    current = '';
+    typeRaws.push(inner.slice(dollar + 2, j).trim());
+    i = j + 1;
+  }
+  quasis.push(current);
+  return {quasis, typeRaws};
+}
+/**
+ * Expands one tuple element, defaulting structurally broken results to
+ * `any`, matching the `OrAny` policy of the other slots.
+ * @param {string} raw - The trimmed element text.
+ * @returns {ExpandedType} The element node, or `any` when broken.
+ */
+function expandTupleElementOrAny(raw) {
+  return expandTupleElement(raw) ?? 'any';
+}
+/**
+ * Expands one tuple element: `...T` becomes a rest node, `...b: T[]`
+ * becomes a named `tupleMember` with `dotDot`, `label: T` and
+ * `label?: T` become `tupleMember` nodes, unnamed trailing `?`
+ * (`[string, number?]`) becomes an optional member with an empty label
+ * (matching tsc and the TS/Babel parsers), and anything else expands plainly.
+ * @param {string} raw - The trimmed element text.
+ * @returns {ExpandedType | undefined} The element node.
+ */
+function expandTupleElement(raw) {
+  if (raw.startsWith('...')) {
+    const rest = raw.slice(3).trim();
+    if (!rest) {
+      return;
+    }
+    const colonIdx = findTopLevelChar(rest, ':');
+    if (colonIdx !== -1) {
+      const name = rest.slice(0, colonIdx).trim();
+      const typeRaw = rest.slice(colonIdx + 1).trim();
+      if (!name || !typeRaw) {
+        return;
+      }
+      const elementType = expandTypeDepFreeOrAny(typeRaw);
+      return {
+        type: 'tupleMember',
+        name,
+        elementType,
+        dotDot: true,
+      };
+    }
+    const annotation = expandTypeDepFreeOrAny(rest);
+    return {type: 'rest', annotation};
+  }
+  const colonIdx = findTopLevelChar(raw, ':');
+  if (colonIdx === -1) {
+    // Unnamed trailing `?` (`[string, number?]`) becomes an optional member
+    // with an empty label, matching tsc and the TS/Babel parsers.
+    if (raw.endsWith('?') && raw.length > 1) {
+      const inner = expandTypeDepFreeOrAny(raw.slice(0, -1).trim());
+      return {type: 'tupleMember', name: '', elementType: inner, optional: true};
+    }
+    return expandTypeDepFree(raw);
+  }
+  let name = raw.slice(0, colonIdx).trim();
+  const typeRaw = raw.slice(colonIdx + 1).trim();
+  if (!name || !typeRaw) {
+    return;
+  }
+  let optional = false;
+  if (name.endsWith('?') && name.length > 1) {
+    optional = true;
+    name = name.slice(0, -1).trim();
+  }
+  if (!name) {
+    return;
+  }
+  const member = expandTypeDepFreeOrAny(typeRaw);
+  /** @type {ExpandTupleMemberNode} */
+  const mem = {type: 'tupleMember', name, elementType: member};
+  if (optional) {
+    mem.optional = true;
+  }
+  return mem;
+}
+/**
+ * Expands a type string, defaulting unrepresentable results to `any`.
+ * Every inner slot of every node shape uses this instead of a bare
+ * `expandTypeDepFree` call, so no `undefined` ever lands in a shape: tsc
+ * reads unknown JSDoc parts as `any` too (notably `?`), and the runtime
+ * validates `any` without crashing. Only structurally broken lists
+ * (malformed parameter lists) still bail the whole node via `undefined`.
+ * Degenerate empty fragments (from `?` operands) become `any` here too.
+ * @param {string} type - The input type to expand.
+ * @returns {ExpandedType} The expansion, or `any` when unrepresentable.
+ */
+function expandTypeDepFreeOrAny(type) {
+  const expanded = expandTypeDepFree(type);
+  return expanded === undefined || expanded === '' ? 'any' : expanded;
+}
+/**
  * 'DepFree' refers to the fact that this function has no dependencies,
  * while `expandType` depends on TypeScript itself for maximum compatibility.
  * @example
@@ -421,10 +721,17 @@ function parseIndexedAccessRaw(type) {
  * expandTypeDepFree('  (string ) |(number )  '); // Outputs: { type: 'union', members: ['string', 'number'] }
  * expandTypeDepFree(' ((  Object  ) )        '); // Outputs: { type: 'object', properties: {} }
  * @param {string} type - The input type to expand.
- * @returns {string | ExpandTypeReturnValue} Object containing parsed information from type string.
+ * @returns {ExpandedType | undefined} The expanded type, or undefined when
+ * the input has no representable shape.
  */
 function expandTypeDepFree(type) {
   type = type.trim();
+  // Bare `?` is just unknown: `any`, matching tsc (and the TS parser's
+  // JSDocNullable-empty rule above). Empty fragments from top-level splits
+  // become `any` here instead of a corrupt `''` shape.
+  if (type === '?' || type === '') {
+    return 'any';
+  }
   // '(123)' -> '123': strip balanced outer parens first so `(cond)?`
   // nullable and `(A|B)` unions see through them.
   const stripped = stripOuterParens(type);
@@ -444,37 +751,97 @@ function expandTypeDepFree(type) {
   // to nullable below.)
   const earlyCond = parseConditionRaw(type);
   if (earlyCond) {
+    const checkType = expandTypeDepFree(earlyCond.check);
+    const extendsType = expandTypeDepFree(earlyCond.extends_);
+    const trueType = expandTypeDepFree(earlyCond.true_);
+    const falseType = expandTypeDepFree(earlyCond.false_);
+    if (checkType === undefined || extendsType === undefined || trueType === undefined || falseType === undefined) {
+      return;
+    }
     return {
       type: 'condition',
-      checkType: expandTypeDepFree(earlyCond.check),
-      extendsType: expandTypeDepFree(earlyCond.extends_),
-      trueType: expandTypeDepFree(earlyCond.true_),
-      falseType: expandTypeDepFree(earlyCond.false_),
+      checkType,
+      extendsType,
+      trueType,
+      falseType,
     };
   }
-  // JSDocNullableType (`T?` / `?T`): union with null, matching expandType().
-  if (type.endsWith('?') && type.length > 1) {
-    return {type: 'union', members: [expandTypeDepFree(type.slice(0, -1).trim()), 'null']};
+  // Unions and intersections split before nullable/keyof/typeof, matching
+  // TS precedence (`&` binds tighter than `|`, both tighter than postfix
+  // `?`): `string | ?` nests the nullable on the `?` operand, and
+  // `keyof T?` applies keyof to the nullable operand. A leading `?` is the
+  // exception: prefix `?` binds loosest in TS (`?A|B` nullables the whole
+  // union), so the splits defer to the nullable check below for it.
+  // (5) Unions and intersections via top-level splits (`&` binds tighter, so `|` first).
+  // Note: conditionals already handled up front (before nullable) so `D?`
+  // false branches keep their nullability; this slot is intentionally union-only.
+  if (!type.startsWith('?')) {
+    const unionParts = splitTopLevel(type, "|");
+    if (unionParts.length >= 2) {
+      return {
+        type: 'union',
+        members: unionParts.map((_) => expandTypeDepFreeOrAny(_.trim())),
+      };
+    }
+    const interParts = splitTopLevel(type, "&");
+    if (interParts.length >= 2) {
+      return {
+        type: 'intersection',
+        members: interParts.map((_) => expandTypeDepFreeOrAny(_.trim())),
+      };
+    }
   }
-  if (type.startsWith('?') && type.length > 1) {
-    return {type: 'union', members: [expandTypeDepFree(type.slice(1).trim()), 'null']};
+  // (7) `keyof T` before typeof so `keyof typeof X` nests correctly, and
+  // before nullable so `keyof T?` applies the operator to the nullable
+  // operand, matching TS. (`typeof` stays after nullable: TS binds
+  // postfix-`?` loosest for `typeof`, so `typeof X?` nullables the whole
+  // operator there; moving it would regress that agreement.)
+  if (type.startsWith('keyof ') || type.startsWith('keyof(')) {
+    const after = type.startsWith('keyof(') ? type.slice(5).trim() : type.slice(6).trim();
+    if (after) {
+      return {type: 'keyof', argument: expandTypeDepFreeOrAny(after)};
+    }
+  }
+  // JSDocNullableType (`T?` / `?T`): union with null, matching expandType().
+  // Bare `?` flows here too (no length guard): the inner fragment is empty,
+  // which expands to `any`, so `?` is `union[any, null]` (accept-all,
+  // matching tsc leniency).
+  if (type.endsWith('?')) {
+    const inner = expandTypeDepFreeOrAny(type.slice(0, -1).trim());
+    return {type: 'union', members: [inner, 'null']};
+  }
+  if (type.startsWith('?')) {
+    const inner = expandTypeDepFreeOrAny(type.slice(1).trim());
+    return {type: 'union', members: [inner, 'null']};
+  }
+  // (0) Function and constructor types `(a: T, ...) => R`, `new (a: T) => R`.
+  const func = parseFunctionRaw(type);
+  if (func) {
+    const parameters = parseFunctionParams(func.paramsRaw);
+    if (parameters !== undefined) {
+      const ret = expandTypeDepFreeOrAny(func.retRaw);
+      if (func.isNew) {
+        return {type: 'new', parameters, ret};
+      }
+      return {type: 'function', parameters};
+    }
   }
   // (1) Rest parameters like ...string
   if (type[0] === '.' && type[1] === '.' && type[2] === '.') {
-    const elementType = expandTypeDepFree(type.slice(3).trim());
+    const elementType = expandTypeDepFreeOrAny(type.slice(3).trim());
     return {type: 'array', elementType};
   }
   // (2)
   // Array<...>
   if (type.startsWith("Array<") && type.endsWith('>')) {
     const typeSlice = type.slice(6, -1);
-    const elementType = expandTypeDepFree(typeSlice);
+    const elementType = expandTypeDepFreeOrAny(typeSlice);
     return {type: "array", elementType};
   }
   // Promise<...>
   if (type.startsWith("Promise<") && type.endsWith('>')) {
     const typeSlice = type.slice(8, -1);
-    const elementType = expandTypeDepFree(typeSlice);
+    const elementType = expandTypeDepFreeOrAny(typeSlice);
     return {type: "promise", elementType};
   }
   // (3) Object<...> or Record<...>
@@ -492,8 +859,8 @@ function expandTypeDepFree(type) {
       const val = recordSlice.slice(commaIdx + 1).trim();
       return {
         type: "record",
-        key: expandTypeDepFree(key),
-        val: expandTypeDepFree(val),
+        key: expandTypeDepFreeOrAny(key),
+        val: expandTypeDepFreeOrAny(val),
       };
     }
   }
@@ -504,8 +871,8 @@ function expandTypeDepFree(type) {
     if (parts.length === 2) {
       return {
         type: "map",
-        key: expandTypeDepFree(parts[0].trim()),
-        val: expandTypeDepFree(parts[1].trim()),
+        key: expandTypeDepFreeOrAny(parts[0].trim()),
+        val: expandTypeDepFreeOrAny(parts[1].trim()),
       };
     }
   }
@@ -513,28 +880,32 @@ function expandTypeDepFree(type) {
     const inner = type.slice(4, -1);
     return {
       type: "set",
-      elementType: expandTypeDepFree(inner.trim()),
+      elementType: expandTypeDepFreeOrAny(inner.trim()),
     };
   }
   // (3c) Generic reference types like ArrayLike<T>, ReadonlyArray<T> etc.
   // Keep structured so the runtime can validate them instead of warning 'unchecked'.
+  // Unrepresentable args become `any`, matching tsc leniency.
   const genericRef = parseGenericReference(type);
   if (genericRef) {
     const {name, args} = genericRef;
-    return {type: 'reference', name, args: args.map(expandTypeDepFree)};
+    return {type: 'reference', name, args: args.map((_) => expandTypeDepFreeOrAny(_))};
   }
   // (4) Mapped types `{[K in X as Y]?: Z}` before the object-literal fallback.
   if (type[0] === '{' && type[type.length - 1] === '}') {
     const mapped = parseMappedRaw(type);
     if (mapped) {
+      const iterable = expandTypeDepFreeOrAny(mapped.iterableRaw);
+      const result = expandTypeDepFreeOrAny(mapped.resultRaw);
+      /** @type {ExpandMappingNode} */
       const out = {
         type: 'mapping',
-        iterable: expandTypeDepFree(mapped.iterableRaw),
+        iterable,
         element: mapped.element,
-        result: expandTypeDepFree(mapped.resultRaw),
+        result,
       };
       if (mapped.nameRaw !== undefined) {
-        out.nameType = expandTypeDepFree(mapped.nameRaw);
+        out.nameType = expandTypeDepFreeOrAny(mapped.nameRaw);
       }
       if (mapped.question !== undefined) {
         out.question = mapped.question;
@@ -545,8 +916,22 @@ function expandTypeDepFree(type) {
       return out;
     }
     const propertiesArray = splitTopLevel(type.slice(1, -1), ','); // ['entity: Entity', ' app: AppBase']
+    /** @type {Object<string, ExpandedType>} */
     const properties = {};
+    /** @type {ExpandIndexSignatureNode[] | undefined} */
+    let indexSignatures;
     for (const entry of propertiesArray) {
+      // Index signature entries `[n: number]: T` before the `name: type` split.
+      const signature = parseIndexSignatureEntry(entry);
+      if (signature === null) {
+        console.warn('expandTypeDepFree> unexpected type format, fix');
+        continue;
+      }
+      if (signature !== undefined) {
+        indexSignatures = indexSignatures ?? [];
+        indexSignatures.push(signature);
+        continue;
+      }
       const colonIdx = findTopLevelChar(entry, ':');
       if (colonIdx === -1) {
         // Empty `{}` yields one empty entry: the empty object type.
@@ -556,52 +941,64 @@ function expandTypeDepFree(type) {
         console.warn('expandTypeDepFree> unexpected type format, fix');
         continue;
       }
-      const propName = entry.slice(0, colonIdx).trim();
+      let propName = entry.slice(0, colonIdx).trim();
       const propTypeRaw = entry.slice(colonIdx + 1).trim();
       if (!propName || !propTypeRaw) {
         console.warn('expandTypeDepFree> unexpected type format, fix');
         continue;
       }
-      properties[propName] = expandTypeDepFree(propTypeRaw);
+      // `readonly a: T` prefix and `a?: T` suffix, matching expandType().
+      let propReadonly = false;
+      if (propName.startsWith('readonly ') && propName.length > 9) {
+        propReadonly = true;
+        propName = propName.slice(9).trim();
+      }
+      let propOptional = false;
+      if (propName.endsWith('?') && propName.length > 1) {
+        propOptional = true;
+        propName = propName.slice(0, -1).trim();
+      }
+      if (!propName) {
+        console.warn('expandTypeDepFree> unexpected type format, fix');
+        continue;
+      }
+      let expanded = expandTypeDepFreeOrAny(propTypeRaw);
+      if (propOptional || propReadonly) {
+        if (isExpandedObject(expanded)) {
+          if (propOptional) expanded.optional = true;
+          if (propReadonly) expanded.readonly = true;
+        } else {
+          /** @type {ExpandAnnotatedAtomNode} */
+          const wrapped = {type: expanded};
+          if (propOptional) wrapped.optional = true;
+          if (propReadonly) wrapped.readonly = true;
+          expanded = wrapped;
+        }
+      }
+      properties[propName] = expanded;
     }
     // Bare `{}` carries no `properties` key, matching the TS/Babel parsers
     // (and distinguishing it from the `object` keyword, which does).
-    if (!Object.keys(properties).length) {
+    if (!Object.keys(properties).length && indexSignatures === undefined) {
       return {type: 'object'};
     }
-    return {type: 'object', properties};
-  }
-  // (5) Unions and intersections via top-level splits (`&` binds tighter, so `|` first).
-  // Note: conditionals already handled up front (before nullable) so `D?`
-  // false branches keep their nullability; this slot is intentionally union-only.
-  const unionParts = splitTopLevel(type, "|");
-  if (unionParts.length >= 2) {
-    return {
-      type: 'union',
-      members: unionParts.map((_) => expandTypeDepFree(_.trim())),
-    };
-  }
-  const interParts = splitTopLevel(type, "&");
-  if (interParts.length >= 2) {
-    return {
-      type: 'intersection',
-      members: interParts.map((_) => expandTypeDepFree(_.trim())),
-    };
-  }
-  // (7) `keyof T` before typeof so `keyof typeof X` nests correctly.
-  if (type.startsWith('keyof ') || type.startsWith('keyof(')) {
-    const after = type.startsWith('keyof(') ? type.slice(5).trim() : type.slice(6).trim();
-    if (after) {
-      return {type: 'keyof', argument: expandTypeDepFree(after)};
+    /** @type {ExpandObjectNode} */
+    const out = {type: 'object'};
+    if (Object.keys(properties).length) {
+      out.properties = properties;
     }
+    if (indexSignatures !== undefined) {
+      out.indexSignatures = indexSignatures;
+    }
+    return out;
   }
   // (8) Indexed access `T[K]` (arrays `T[]` handled below, tuples above start with `[`).
   const indexed = parseIndexedAccessRaw(type);
   if (indexed) {
     return {
       type: 'indexedAccess',
-      index: expandTypeDepFree(indexed.indexRaw),
-      object: expandTypeDepFree(indexed.objectRaw),
+      index: expandTypeDepFreeOrAny(indexed.indexRaw),
+      object: expandTypeDepFreeOrAny(indexed.objectRaw),
     };
   }
   // (9) expand [] Arrays
@@ -610,7 +1007,7 @@ function expandTypeDepFree(type) {
     const typeSlice = type.slice(0, -2);
     return {
       type: 'array',
-      elementType: expandTypeDepFree(typeSlice)
+      elementType: expandTypeDepFreeOrAny(typeSlice)
     };
   }
   // (10) expand tuples
@@ -622,19 +1019,41 @@ function expandTypeDepFree(type) {
     const elements = splitTopLevel(inner, ','); // ['null', ' Texture', ...]
     return {
       type: 'tuple',
-      elements: elements.map((_) => expandTypeDepFree(_.trim()))
+      elements: elements.map((_) => expandTupleElementOrAny(_.trim())),
     };
   }
-  // (11) expand typeof expressions
-  if (type.startsWith('typeof ')) {
-    const argument = expandTypeDepFree(type.substring(7).trim());
-    return {type: 'typeof', argument};
+  // Template literals `` `id` `` / `` `${A}_id` ``, matching expandType().
+  // Must come before the bare backtick-quoted literal fallthrough below.
+  if (type.startsWith('`') && type.endsWith('`') && type.length >= 2) {
+    const template = parseTemplateLiteralRaw(type);
+    if (template) {
+      return {
+        type: 'templateLiteral',
+        quasis: template.quasis,
+        types: template.typeRaws.map((_) => expandTypeDepFreeOrAny(_)),
+      };
+    }
   }
   if (type === 'object' || type === 'Object') {
     return {
       type: 'object',
       properties: {},
     };
+  }
+  // (11) expand typeof expressions. Stays after nullable: TS binds
+  // postfix-`?` loosest for `typeof`, so `typeof X?` nullables the whole
+  // operator there (see the keyof comment above for the contrast).
+  // A bare `typeof` (no operand, only reachable as a nullable-strip
+  // artifact like `typeof ?`) is typeof-unknown, matching the TS parser.
+  if (type === 'typeof') {
+    return {type: 'typeof', argument: 'any'};
+  }
+  if (type.startsWith('typeof ')) {
+    const after = type.substring(7).trim();
+    if (after) {
+      return {type: 'typeof', argument: expandTypeDepFreeOrAny(after)};
+    }
+    return {type: 'typeof', argument: 'any'};
   }
   // Literal normalization for parity with expandType():
   // numeric literals become numbers, true/false become booleans.
@@ -646,6 +1065,13 @@ function expandTypeDepFree(type) {
   }
   if (/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(type)) {
     return Number(type);
+  }
+  // Bigint: `bigint` keyword and `123n` literals, matching expandType().
+  if (type === 'bigint') {
+    return {type: 'bigint'};
+  }
+  if (/^\d+n$/.test(type)) {
+    return {type: 'bigint', literal: type.slice(0, -1)};
   }
   return type;
 }

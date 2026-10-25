@@ -1,9 +1,10 @@
 import {expandTypeDepFree} from "./expandTypeDepFree.js";
 import {annotateOptional} from "./annotateOptional.js";
+/** @import {ExpandedType} from './expandedType.js' */
 /**
  * @param {string} src - JSDoc comment of the setter.
  * @param {Function} expandType - The expandType function.
- * @returns {string | DocType | undefined} The parsed and possibly expanded type from
+ * @returns {ExpandedType | undefined} The parsed and possibly expanded type from
  * the JSDoc comment, or undefined if parsing fails to find `@type`.
  */
 function parseJSDocSetter(src, expandType = expandTypeDepFree) {

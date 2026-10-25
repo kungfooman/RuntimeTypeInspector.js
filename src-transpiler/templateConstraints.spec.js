@@ -25,11 +25,11 @@ function testUnionConstraintExpands() {
   const out = convert('/** @template {string | number} T */\nclass Box {\n /**\n  * @param {T} value - The value.\n  */\n constructor(value) {\n  this._v = value;\n }\n}');
   return out.includes('"type": "union"');
 }
-function testDepFreeKeepsPassthrough() {
-  // The dependency-free expander cannot parse every shape: unparseable
-  // constraints keep today's source-text behavior instead of failing.
+function testDepFreeParsesNewConstraint() {
+  // The dependency-free expander parses construct signatures into type
+  // trees, so template constraints validate instead of passing through.
   const out = convert('/** @template {new (...args: any[]) => any} T */\nclass Pool {\n /**\n  * @param {T} constructorFunc - The constructor.\n  */\n constructor(constructorFunc) {\n  this._c = constructorFunc;\n }\n}', {expandType: expandTypeDepFree});
-  return out.includes('"T": "new (...args: any[]) => any"');
+  return out.includes('"type": "new"') && !out.includes('"T": "new (...args: any[]) => any"');
 }
 function testBareTemplateStaysAny() {
   // Unconstrained templates still stand in as `any`.
@@ -44,7 +44,7 @@ function testDefaultConstraintExpands() {
 export const tests = [
   testNewConstraintExpandsWithTsExpander,
   testUnionConstraintExpands,
-  testDepFreeKeepsPassthrough,
+  testDepFreeParsesNewConstraint,
   testBareTemplateStaysAny,
   testDefaultConstraintExpands,
 ];

@@ -1,7 +1,5 @@
-/**
- * @typedef DocType
- * @property {boolean} optional - Type is optional.
- */
+import {isExpandedObject} from './isExpandedObject.js';
+/** @import {ExpandedType} from './expandedType.js' */
 /**
  * Annotates a type with optionality for internal use (parseJSDoc navigation).
  * Sets optionality on object types and wraps bare strings that need to be
@@ -12,13 +10,15 @@
  * mutate them (e.g. appending nested @param lines).
  * Literal types (numbers/booleans) pass through bare unless optional,
  * mirroring the string path.
- * @param {string | number | boolean | DocType} type - The type.
+ * @param {ExpandedType} type - The type.
  * @param {boolean} optional - Optionality
- * @returns {string | number | boolean | DocType} The annotated type.
+ * @returns {ExpandedType} The annotated type.
  */
 function annotateOptional(type, optional) {
-  // If it's already an object, just set optionality.
-  if (type instanceof Object) {
+  // If it's already an object node, just set optionality; the flag is read
+  // structurally off any node (see validateTypedef, substituteAtom).
+  // The predicate narrows past the atoms tsc cannot exclude by itself.
+  if (isExpandedObject(type)) {
     type.optional = optional;
   } else if (typeof type === 'number' || typeof type === 'boolean') {
     if (!optional) {

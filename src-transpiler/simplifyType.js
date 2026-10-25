@@ -1,8 +1,5 @@
 import {mapValues} from './mapValues.js';
-/**
- * @typedef DocType
- * @property {boolean} optional - Type is optional.
- */
+/** @import {ExpandedType, ExpandIndexSignatureNode} from './expandedType.js' */
 /**
  * Recursively clones and simplifies a type for emission into source code.
  * Empty `properties` are preserved (not deleted) and empty `object` types
@@ -12,40 +9,39 @@ import {mapValues} from './mapValues.js';
  * primitives). Collapsing either form would erase that distinction.
  * Numbers/booleans (literal types) pass through.
  * Non-destructive — the original type tree is never mutated.
- * @param {string | DocType | number | boolean} type - The type.
- * @returns {string | DocType | number | boolean} The simplified type.
+ * @param {ExpandedType} type - The type.
+ * @returns {ExpandedType} The simplified type.
  */
 function simplifyType(type) {
   if (!(type instanceof Object)) {
     return type;
   }
   const out = {...type};
-  if (out.properties) {
+  if ('properties' in out && out.properties) {
     out.properties = mapValues(out.properties, simplifyType);
   }
-  if (out.indexSignatures && Array.isArray(out.indexSignatures)) {
-    out.indexSignatures = out.indexSignatures.map(simplifyType);
+  if ('indexSignatures' in out && out.indexSignatures && Array.isArray(out.indexSignatures)) {
+    out.indexSignatures = /** @type {ExpandIndexSignatureNode[]} */ (out.indexSignatures.map(simplifyType));
   }
-  if (out.type === 'union' && out.members) {
+  if ('members' in out && out.members) {
     out.members = out.members.map(simplifyType);
   }
-  if (out.type === 'array' && out.elementType) {
+  if ('elementType' in out && out.elementType) {
     out.elementType = simplifyType(out.elementType);
   }
-  if (out.type === 'tuple' && out.elements) {
+  if ('elements' in out && out.elements) {
     out.elements = out.elements.map(simplifyType);
   }
-  if (out.type === 'promise' && out.elementType) {
-    out.elementType = simplifyType(out.elementType);
-  }
-  if (out.type === 'reference' && Array.isArray(out.args)) {
+  if ('args' in out && Array.isArray(out.args)) {
     out.args = out.args.map(simplifyType);
   }
-  if (out.type === 'record') {
-    if (out.key) out.key = simplifyType(out.key);
-    if (out.val) out.val = simplifyType(out.val);
+  if ('key' in out && out.key) {
+    out.key = simplifyType(out.key);
   }
-  if (out.type === 'typeof' && out.argument) {
+  if ('val' in out && out.val) {
+    out.val = simplifyType(out.val);
+  }
+  if ('argument' in out && out.argument) {
     out.argument = simplifyType(out.argument);
   }
   return out;

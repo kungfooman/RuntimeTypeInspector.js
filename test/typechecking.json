@@ -80,6 +80,10 @@
     "output": "./test/typechecking/defaults-inference-output.mjs"
   },
   {
+    "input": "./test/typechecking/depfree-gaps-input.mjs",
+    "output": "./test/typechecking/depfree-gaps-output.mjs"
+  },
+  {
     "input": "./test/typechecking/empty-object-input.mjs",
     "output": "./test/typechecking/empty-object-output.mjs"
   },

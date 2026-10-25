@@ -2,13 +2,15 @@ import {expandType} from './expandType.js';
 import {expandTypeBabelTS} from './expandTypeBabelTS.js';
 import {expandTypeDepFree} from './expandTypeDepFree.js';
 import {validateType} from '../src-runtime/validateType.js';
+import {deepEqualType} from '../src-runtime/deepEqualType.js';
 const warn = () => undefined;
 function assertParity(type) {
   const fromTS = expandType(type);
   const fromBabel = expandTypeBabelTS(type);
   const fromDepFree = expandTypeDepFree(type);
-  const jsonTS = JSON.stringify(fromTS);
-  if (JSON.stringify(fromBabel) !== jsonTS || JSON.stringify(fromDepFree) !== jsonTS) {
+  // Canonical comparison: key order, explicit undefined, and `false`
+  // flags never count as differences.
+  if (!deepEqualType(fromBabel, fromTS) || !deepEqualType(fromDepFree, fromTS)) {
     console.warn(`Parity mismatch for '${type}'`, {fromTS, fromBabel, fromDepFree});
     return false;
   }
@@ -155,6 +157,168 @@ function testMappedNestedParity() {
   }
   return true;
 }
+function testFunctionNewParity() {
+  // Function and constructor types: Babel builds `{type, name}` params
+  // and rest-array wrapping exactly like the TS parser.
+  for (const type of [
+    '(a: number) => string',
+    '(a: number, ...rest: string[]) => void',
+    '() => void',
+    'new (a: number) => any',
+    'new (...args: any[]) => any',
+  ]) {
+    if (!assertParity(type)) {
+      return false;
+    }
+  }
+  return true;
+}
+function testObjectFlagsParity() {
+  // Optionality and readonly flags land on the property node, not the key.
+  for (const type of [
+    '{a?: string, readonly b: number}',
+    '{a: string, b?: number}',
+  ]) {
+    if (!assertParity(type)) {
+      return false;
+    }
+  }
+  return true;
+}
+function testIndexSignatureParity() {
+  // Index parameters are `{type, name}` nodes, so the runtime can read
+  // `params[0].type` for string/number matching.
+  for (const type of [
+    '{[n: number]: string}',
+    '{[k: string]: number}',
+  ]) {
+    if (!assertParity(type)) {
+      return false;
+    }
+  }
+  return true;
+}
+function testNamedTupleParity() {
+  // Labels, optionality, and named rest become `tupleMember` nodes.
+  for (const type of [
+    '[a: string, b?: number]',
+    '[first: string, ...rest: number[]]',
+    '[...number[]]',
+  ]) {
+    if (!assertParity(type)) {
+      return false;
+    }
+  }
+  return true;
+}
+function testTemplateLiteralParity() {
+  // Babel `TemplateLiteral` quasis/expressions become the shared node shape.
+  for (const type of [
+    '`${A}_id`', // eslint-disable-line no-template-curly-in-string
+    '`id`',
+  ]) {
+    if (!assertParity(type)) {
+      return false;
+    }
+  }
+  return true;
+}
+function testJSDocAllParity() {
+  // `*` has no Babel AST support; both keep the raw keyword.
+  return assertParity('*');
+}
+function testBabelIndexSignatureValidates() {
+  // End-to-end: Babel-parsed `{[n: number]: string}` validates canonical
+  // numeric keys and rejects non-numeric ones, like the TS-parsed shape.
+  const expect = expandTypeBabelTS('{[n: number]: string}');
+  if (!validateType({0: 'a'}, expect, 'test', 'a', true, warn, 0)) {
+    return false;
+  }
+  if (validateType({a: 'x'}, expect, 'test', 'a', true, warn, 0)) {
+    return false;
+  }
+  return true;
+}
+function testBabelNamedTupleValidates() {
+  // End-to-end: Babel-parsed `[first: string, ...rest: number[]]` accepts
+  // the head plus any number tail, rejects mistyped elements.
+  const expect = expandTypeBabelTS('[first: string, ...rest: number[]]');
+  if (!validateType(['a', 1, 2], expect, 'test', 'a', true, warn, 0)) {
+    return false;
+  }
+  if (!validateType(['a'], expect, 'test', 'a', true, warn, 0)) {
+    return false;
+  }
+  if (validateType(['a', 'b'], expect, 'test', 'a', true, warn, 0)) {
+    return false;
+  }
+  return true;
+}
+function testUnnamedOptionalTupleParity() {
+  // Unnamed `?` elements become optional members with an empty label on all
+  // three parsers, matching tsc (`[string, (number | undefined)?]`).
+  return assertParity('[string, number?]');
+}
+function testUnnamedOptionalTupleValidates() {
+  // End-to-end: the optional member accepts missing tails, rejects bad types.
+  const expect = expandTypeDepFree('[string, number?]');
+  if (!validateType(['a', 1], expect, 'test', 'a', true, warn, 0)) {
+    return false;
+  }
+  if (!validateType(['a'], expect, 'test', 'a', true, warn, 0)) {
+    return false;
+  }
+  if (validateType(['a', 'b'], expect, 'test', 'a', true, warn, 0)) {
+    return false;
+  }
+  if (validateType('a', expect, 'test', 'a', true, warn, 0)) {
+    return false;
+  }
+  return true;
+}
+function testMissBecomesAnyParity() {
+  // Unrepresentable innards default to `any`, matching tsc leniency
+  // (`?` is `any` there too): no shape ever embeds undefined. Babel cannot
+  // parse `?` at all (pre-existing babel/babel#16073), so this pins the two
+  // parsers that can; tsc agreement for the same inputs lives in
+  // test/parity/cases/unparseable-innards.mjs. Bare `?` (missing or empty
+  // operand) is `any` itself, not a null-union.
+  const exact = {
+    '?': 'any',
+    'Array<?>': {type: 'array', elementType: 'any'},
+    'Promise<?>': {type: 'promise', elementType: 'any'},
+    'Set<?>': {type: 'set', elementType: 'any'},
+    'Map<?, number>': {type: 'map', key: 'any', val: 'number'},
+    'Record<?, number>': {type: 'record', key: 'any', val: 'number'},
+    'keyof ?': {type: 'keyof', argument: 'any'},
+    '{a: ?}': {type: 'object', properties: {a: 'any'}},
+    'string | ?': {type: 'union', members: ['string', 'any']},
+    '(a: ?) => string': {type: 'function', parameters: [{type: 'any', name: 'a'}]},
+    'typeof ?': {type: 'union', members: [{type: 'typeof', argument: 'any'}, 'null']},
+  };
+  for (const [type, want] of Object.entries(exact)) {
+    for (const got of [expandType(type), expandTypeDepFree(type)]) {
+      if (!deepEqualType(got, want)) {
+        console.warn(`Miss shape wrong for '${type}'`, {got, want});
+        return false;
+      }
+    }
+  }
+  return true;
+}
+function testBareUnknownParity() {
+  // Covered by testMissBecomesAnyParity's exact shapes now; kept as a
+  // behavioral pin: lone `?` must accept everything like tsc's `any`.
+  for (const got of [expandType('?'), expandTypeDepFree('?')]) {
+    for (const value of [1, 'a', null]) {
+      if (validateType(value, got, 'test', 'a', true, warn, 0) !== true) {
+        console.warn(`Bare-? rejects`, {value});
+        return false;
+      }
+    }
+  }
+  return true;
+}
 export const tests = [
   testArrayLikeParity,
   testArrayLikeStringParity,
@@ -173,4 +337,16 @@ export const tests = [
   testMappedModifierParity,
   testMappedAsRemapParity,
   testMappedNestedParity,
+  testFunctionNewParity,
+  testObjectFlagsParity,
+  testIndexSignatureParity,
+  testNamedTupleParity,
+  testTemplateLiteralParity,
+  testJSDocAllParity,
+  testBabelIndexSignatureValidates,
+  testBabelNamedTupleValidates,
+  testUnnamedOptionalTupleParity,
+  testUnnamedOptionalTupleValidates,
+  testMissBecomesAnyParity,
+  testBareUnknownParity,
 ];

@@ -1,5 +1,9 @@
 import {expandTypeDepFree} from "./expandTypeDepFree.js";
 import {annotateOptional} from "./annotateOptional.js";
+import {isUnionNode} from "./isUnionNode.js";
+import {isArrayNode} from "./isArrayNode.js";
+import {isObjectNode} from "./isObjectNode.js";
+/** @import {ExpandedType} from './expandedType.js' */
 /**
  * @typedef {ReturnType<typeof parseJSDoc>} ParseJSDocReturnType
  */
@@ -20,8 +24,15 @@ function parseJSDoc(src, expandType = expandTypeDepFree) {
   const matches = [...src.matchAll(regex)];
   /** @type {Record<string, ExpandTypeReturnType>} */
   const params = Object.create(null);
-  matches.forEach(_ => {
-    const type = expandType(_[1].trim());
+  matches.forEach((_) => {
+    const rawType = expandType(_[1].trim());
+    if (rawType === undefined) {
+      console.warn(
+        "parseJSDoc> Skipping @param, type is unrepresentable. Please check if your JSDoc is valid or open an issue about this!",
+        {src, match: _[0]}
+      );
+      return;
+    }
     let name = _[2].trim();
     let optional = false;
     // Examples:
@@ -49,24 +60,43 @@ function parseJSDoc(src, expandType = expandTypeDepFree) {
     }
     // Strip the rest (either leftover of optional value or description)
     name = name.split(' ')[0].split('=')[0].trim();
-    const annotatedType = annotateOptional(type, optional);
+    const annotatedType = annotateOptional(rawType, optional);
     // Turn "options.stats[].unitsName" into ['options', 'stats', 'unitsName'].
     const parts = name.split(/[\[\]]*\./);
+    /** @type {Record<string, ExpandedType | undefined>} */
     let properties = params;
     for (const part of parts) {
       const toptype = properties[part];
-      if (!toptype) {
+      if (toptype === undefined) {
         // No toptype means we resolved as far as possible, now we can add `annotatedType`.
         console.assert(part === parts.at(-1), 'Current part and last part should be the same.');
         properties[part] = annotatedType;
-      } else if (toptype.type === "union") {
-        const typeObject = toptype.members.find(_ => _?.type === 'object');
-        properties = typeObject.properties;
-      } else if (toptype.type === "array") {
-        properties = toptype.elementType.properties;
-      } else if (toptype.type === "object") {
+      } else if (isUnionNode(toptype)) {
+        const typeObject = toptype.members.find(isObjectNode);
+        if (typeObject === undefined || typeObject.properties === undefined) {
+          console.warn(
+            "parseJSDoc> Skipping @param, union has no object member to navigate into. Please check if your JSDoc is valid or open an issue about this!",
+            {src, toptype, parts, annotatedType}
+          );
+        } else {
+          properties = typeObject.properties;
+        }
+      } else if (isArrayNode(toptype)) {
+        const elementType = toptype.elementType;
+        if (!isObjectNode(elementType) || elementType.properties === undefined) {
+          console.warn(
+            "parseJSDoc> Skipping @param, array element has no properties to navigate into. Please check if your JSDoc is valid or open an issue about this!",
+            {src, toptype, parts, annotatedType}
+          );
+        } else {
+          properties = elementType.properties;
+        }
+      } else if (isObjectNode(toptype)) {
         toptype.properties = toptype.properties || Object.create(null);
-        properties = toptype.properties;
+        const props = toptype.properties;
+        if (props !== undefined) {
+          properties = props;
+        }
       } else {
         console.warn(
           "parseJSDoc> Skipping @param, unseen syntax detected. Please check if your JSDoc is valid or open an issue about this!",

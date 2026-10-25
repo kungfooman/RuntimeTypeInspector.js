@@ -7,6 +7,7 @@
  */
 function mapValues(obj, fn) {
   if (!obj) return obj;
+  /** @type {Record<string, any>} */
   const result = {};
   for (const key in obj) {
     result[key] = fn(obj[key], key);

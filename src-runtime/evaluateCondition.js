@@ -3,6 +3,7 @@ import {classes} from "./registerClass.js";
 import {mergedClassShape} from "./classShape.js";
 import {getTypeKeys} from "./getTypeKeys.js";
 import {validators} from "./validators.js";
+import {deepEqualType} from "./deepEqualType.js";
 validators.evaluateCondition = evaluateCondition;
 validators.decideIfEquals = decideIfEquals;
 /**
@@ -144,41 +145,6 @@ const primitives = new Set(['string', 'number', 'boolean', 'bigint', 'symbol', '
  * @param {...any} _args - Ignored.
  */
 function noopWarn(..._args) {}
-/**
- * Canonicalizes a type for structural comparison: sorted keys, `false`
- * flags normalized to absent (both mean the same in RTI semantics).
- * @param {*} type - The type.
- * @returns {*} Canonical form safe for JSON comparison.
- */
-function canonicalize(type) {
-  if (Array.isArray(type)) {
-    return type.map(canonicalize);
-  }
-  if (type && typeof type === 'object') {
-    const out = {};
-    for (const key of Object.keys(type).sort()) {
-      const value = type[key];
-      if (value === undefined) {
-        continue;
-      }
-      if ((key === 'optional' || key === 'readonly') && value === false) {
-        continue;
-      }
-      out[key] = canonicalize(value);
-    }
-    return out;
-  }
-  return type;
-}
-/**
- * Structural type identity for IfEquals-style comparisons.
- * @param {*} a - First type.
- * @param {*} b - Second type.
- * @returns {boolean} True when structurally identical.
- */
-function deepEqualType(a, b) {
-  return JSON.stringify(canonicalize(a)) === JSON.stringify(canonicalize(b));
-}
 /**
  * Decides a string literal against a template literal type. Only single
  * interpolation is decided (`_${string}`, `` `${A}_id` `` with literal
@@ -508,4 +474,4 @@ function decideIfEquals(X, Y, warn) {
 function evaluateCondition(checkType, extendsType, warn) {
   return extendsCheck(resolveForExtends(checkType, warn), resolveForExtends(extendsType, warn));
 }
-export {evaluateCondition, extendsCheck, resolveForExtends, literalType, stripLiteral, deepEqualType, decideIfEquals};
+export {evaluateCondition, extendsCheck, resolveForExtends, literalType, stripLiteral, decideIfEquals};
