@@ -89,24 +89,28 @@ After the cleanup the remaining casts each survived a delete-and-watch-tsc-fail 
 * `simplifyType.js` index-signature map: asserts the shape-preserving invariant by construction; verifying per call would be dead-code paranoia, filtering would silently drop corruption (fail-open).
 * External untyped inputs: the Babel `parse()` result is `any`, so the synthesized-alias read needed no cast at all; where the parser lib IS typed (`Statement`), a kind guard (`first.type !== 'TSTypeAliasDeclaration'` throws) beats the old blind cast and fails closed.
 
-## Observed: `.map()` over `ts.NodeArray` assigns cleanly, over plain arrays it does not (empirical)
+## Unrepresentable innards default to `any`, never `undefined`
+
+Every inner slot of every node shape uses an `OrAny` wrapper (`toSourceTSOrAny`, `toSourceBabelTSOrAny`, `expandTypeDepFreeOrAny`, `expandTupleElementOrAny`, `toBabelParameterOrAny`, `toBabelIndexParameterOrAny`) instead of a bare expander call, so no `undefined` ever lands in a shape. Rationale, in order:
+
+* tsc reads unknown JSDoc parts as `any` (notably `?`), so `any` is the tsc-agreeing miss value; verified per input by `test/parity/cases/unparseable-innards.mjs` (tsc oracle, 9 cases).
+* The runtime validates `any` without crashing; `undefined` in a slot crashes `validateType` (`Array<?>` threw `TypeError` reading properties of `undefined`) or crashes the Asserter downstream (`simplifyTypeToSource(undefined)`).
+* Only structurally broken lists (malformed parameter lists) still bail the whole node via `undefined`, and only where the caller already handles it.
+
+Bare `?` and empty fragments are `any` at the top of `expandType`/`expandTypeDepFree` for the same reason. Unnamed optional tuple elements (`[string, number?]`) are the exception that proves the rule: tsc parses them as proper optional members (`[string, (number | undefined)?]`), so all three parsers build `{type: 'tupleMember', name: '', elementType, optional: true}` instead of defaulting. Garbage tsc cannot parse at all (`keyof ?`, `typeof ?` are file-level syntax errors) is documented-but-unasserted: TS and dep-free read them differently, both crash-free.
+
+## Observed: `.map()` over `ts.NodeArray` neither types its callback nor checks its result (empirical)
 
 ```js
-const members = node.types.map(toSourceTS); // node.types: ts.NodeArray<ts.TypeNode>
-return ({type: 'union', members}); // clean, no cast needed
+const members = node.types.map(toSourceTS); // NodeArray: no contextual param type, lenient result
+const members = plain.map((_) => f(_)); // string[]: param typed, result strictly checked
 ```
 
-The same shape over a plain array errors:
+In checkJs, `.map()` on `ts.NodeArray` does not provide a contextual parameter type to arrow callbacks (bare `(_)` errors `TS7006`), while `.map()` on plain arrays does. Conversely, a `NodeArray.map` result containing `ExpandedType | undefined` assigns into node slots without complaint, while the identical shape from a plain-array `.map` errors `TS2322`. `NodeArray` declares no `map` override (it inherits `ReadonlyArray.map`), so no mechanism is known; treat as observed checkJs behavior. Practical consequences:
 
-```js
-/** @param {string[]} plain - Probe. @returns {ExpandedType | undefined} probe */
-export function probePlain(plain) {
-  const m = plain.map(conv); // conv returns ExpandedType | undefined
-  return ({type: 'union', members: m}); // TS2322: undefined not assignable
-}
-```
-
-while the `NodeArray` version with the identical callback passes. `NodeArray` declares no `map` override (it inherits `ReadonlyArray.map`), so no mechanism is known; treat as an observed checkJs behavior, not a rule to lean on. Practical consequence: tuple, union, and intersection element arrays built by `.map()` over `ts.NodeArray` need no cast and get none; do not "fix" them by adding casts, and do not copy the pattern to plain arrays expecting the same leniency. If tsc ever tightens this, the declared `@returns` will flag every site at once.
+* Prefer direct function references (`.map(toSourceTSOrAny)`) over arrows: they dodge the missing-context problem entirely.
+* Arrows that need logic (optional-tuple detection) carry an inline `/** @param {ts.TypeNode} el */` JSDoc comment.
+* `.includes(undefined)` guards after a `NodeArray.map` are runtime-correct but tsc-vacuous (tsc already believes the array is clean); the `?? 'any'` / `OrAny` policy makes the check structural instead of advisory.
 
 ## Keep the parser trio symmetric when touching one
 

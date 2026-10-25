@@ -254,6 +254,89 @@ function testBabelNamedTupleValidates() {
   }
   return true;
 }
+function testUnnamedOptionalTupleParity() {
+  // Unnamed `?` elements become optional members with an empty label on all
+  // three parsers, matching tsc (`[string, (number | undefined)?]`).
+  return assertParity('[string, number?]');
+}
+function testUnnamedOptionalTupleValidates() {
+  // End-to-end: the optional member accepts missing tails, rejects bad types.
+  const expect = expandTypeDepFree('[string, number?]');
+  if (!validateType(['a', 1], expect, 'test', 'a', true, warn, 0)) {
+    return false;
+  }
+  if (!validateType(['a'], expect, 'test', 'a', true, warn, 0)) {
+    return false;
+  }
+  if (validateType(['a', 'b'], expect, 'test', 'a', true, warn, 0)) {
+    return false;
+  }
+  if (validateType('a', expect, 'test', 'a', true, warn, 0)) {
+    return false;
+  }
+  return true;
+}
+function testMissBecomesAnyParity() {
+  // Unrepresentable innards default to `any`, matching tsc leniency
+  // (`?` is `any` there too): no shape ever embeds undefined. Babel cannot
+  // parse `?` at all (pre-existing babel/babel#16073), so this pins the two
+  // parsers that can; tsc agreement for the same inputs lives in
+  // test/parity/cases/unparseable-innards.mjs.
+  const exact = {
+    'Array<?>': {type: 'array', elementType: 'any'},
+    'Map<?, number>': {type: 'map', key: 'any', val: 'number'},
+    '{a: ?}': {type: 'object', properties: {a: 'any'}},
+    '(a: ?) => string': {type: 'function', parameters: [{type: 'any', name: 'a'}]},
+  };
+  for (const [type, want] of Object.entries(exact)) {
+    for (const got of [expandType(type), expandTypeDepFree(type)]) {
+      if (!deepEqualType(got, want)) {
+        console.warn(`Miss shape wrong for '${type}'`, {got, want});
+        return false;
+      }
+    }
+  }
+  for (const type of [
+    'Promise<?>',
+    'Set<?>',
+    'Record<?, number>',
+  ]) {
+    const fromTS = expandType(type);
+    const fromDepFree = expandTypeDepFree(type);
+    if (!deepEqualType(fromTS, fromDepFree)) {
+      console.warn(`Parity mismatch for '${type}'`, {fromTS, fromDepFree});
+      return false;
+    }
+  }
+  // `string | ?` nests differently (TS binds the nullable to the `?`
+  // operand, dep-free lifts it over the whole union) but both shapes
+  // accept everything, so behavior agrees while structure does not.
+  // The harness (case07) pins the behavioral agreement.
+  for (const value of [1, 'a', null, undefined]) {
+    const tsAccepts = validateType(value, expandType('string | ?'), 'test', 'a', true, warn, 0);
+    const freeAccepts = validateType(value, expandTypeDepFree('string | ?'), 'test', 'a', true, warn, 0);
+    if (tsAccepts !== freeAccepts || tsAccepts !== true) {
+      console.warn(`Behavior mismatch for 'string | ?' on`, {value, tsAccepts, freeAccepts});
+      return false;
+    }
+  }
+  // `keyof ?` / `typeof ?` are file-level syntax errors under tsc, so no
+  // oracle constrains them; the parsers read them differently (TS applies
+  // the operator first, dep-free reads a nullable bare keyword) and both
+  // stay crash-free. Documented, not asserted.
+  return true;
+}
+function testBareUnknownParity() {
+  // Lone `?` is `any` on the TS and dep-free parsers (Babel cannot parse it
+  // at all, so it stays out of the three-way check); both must agree.
+  const fromTS = expandType('?');
+  const fromDepFree = expandTypeDepFree('?');
+  if (!deepEqualType(fromTS, fromDepFree)) {
+    console.warn(`Parity mismatch for '?'`, {fromTS, fromDepFree});
+    return false;
+  }
+  return fromTS === 'any' && fromDepFree === 'any';
+}
 export const tests = [
   testArrayLikeParity,
   testArrayLikeStringParity,
@@ -280,4 +363,8 @@ export const tests = [
   testJSDocAllParity,
   testBabelIndexSignatureValidates,
   testBabelNamedTupleValidates,
+  testUnnamedOptionalTupleParity,
+  testUnnamedOptionalTupleValidates,
+  testMissBecomesAnyParity,
+  testBareUnknownParity,
 ];
