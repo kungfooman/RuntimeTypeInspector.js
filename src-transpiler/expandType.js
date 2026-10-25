@@ -29,10 +29,6 @@ import {isIndexSignatureNode} from './isIndexSignatureNode.js';
  * representation obtained from parsing and converting the provided type string.
  */
 function expandType(type) {
-  // Bare `?` is `any` (tsc leniency); the parsers below need more syntax.
-  if (type.trim() === '?') {
-    return 'any';
-  }
   const ast = parseType(type);
   if (!ast) {
     return 'never';
@@ -67,11 +63,13 @@ export const requiredTypeofs = {};
  * unknown JSDoc parts as `any` too (notably `?`), and the runtime
  * validates `any` without crashing. Only structurally broken lists
  * (malformed parameter lists) still bail the whole node via `undefined`.
+ * Degenerate empty fragments (from `?` operands) become `any` here too.
  * @param {ts.TypeNode} node - The TypeScript AST node to convert.
  * @returns {ExpandedType} The expansion, or `any` when unrepresentable.
  */
 function toSourceTSOrAny(node) {
-  return toSourceTS(node) ?? 'any';
+  const expanded = toSourceTS(node);
+  return expanded === undefined || expanded === '' ? 'any' : expanded;
 }
 /**
  * Converts a TypeScript AST node to a source string representation or to an intermediate object describing the type.
@@ -212,10 +210,14 @@ function toSourceTS(node) {
       const annotation = toSourceTS(node.type) ?? 'any';
       return ({type: 'rest', annotation});
     case JSDocNullableType: {
-      // No ts.isJSDocNullableTypeNode in this TS version; the case label
-      // already discriminates the kind, which is all the narrowing needed
-      // for node.type below.
-      const t = toSourceTS(node.type) ?? 'any';
+      // Bare `?` (missing or empty operand) is just unknown: `any`,
+      // matching tsc. A real operand wraps in a null-union as usual.
+      // (No ts.isJSDocNullableTypeNode in this TS version; the case label
+      // already discriminates the kind.)
+      if (!node.type || node.type.getText().trim() === '') {
+        return 'any';
+      }
+      const t = toSourceTSOrAny(node.type);
       return ({type: 'union', members: [t, 'null']});
     }
     case MappedType: {
@@ -277,7 +279,7 @@ function toSourceTS(node) {
       if (!ts.isTypeQueryNode(node)) {
         throw Error("Impossible");
       }
-      const argument = toSourceTS(node.exprName) ?? 'any';
+      const argument = toSourceTSOrAny(node.exprName);
       // Notify Asserter class that we have to register variables with this name
       if (typeof argument === 'string' && !requiredTypeofs[argument]) {
         requiredTypeofs[argument] = 'missing';

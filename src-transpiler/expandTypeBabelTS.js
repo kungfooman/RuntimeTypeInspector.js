@@ -73,23 +73,19 @@ function parseTypeBabelTS(str) {
  * wraps like `dotDotDotToken` does there, producing an array node instead
  * of a parameter node, exactly like the TS parser.
  * @param {*} param - The Babel parameter node.
- * @returns {ExpandedType | undefined} The parameter or rest-array node,
- * or undefined when the annotation is unparseable.
+ * @returns {ExpandedType} The parameter or rest-array node.
  */
 function toBabelParameter(param) {
   if (param && param.type === 'RestElement') {
-    const type = toSourceBabelTS(param.typeAnnotation?.typeAnnotation);
+    const type = toSourceBabelTSOrAny(param.typeAnnotation?.typeAnnotation);
     const name = param.argument?.name ?? 'args';
-    if (type === undefined) {
-      return undefined;
-    }
     /** @type {ExpandParameterNode} */
     const inner = {type, name};
     return ({type: 'array', elementType: inner});
   }
-  const type = toSourceBabelTS(param?.typeAnnotation?.typeAnnotation);
+  const type = toSourceBabelTSOrAny(param?.typeAnnotation?.typeAnnotation);
   const name = param?.name ?? 'arg';
-  return ({type: type ?? 'any', name});
+  return ({type, name});
 }
 /**
  * Converts a Babel index signature parameter (`[n: number]`) to a
@@ -99,9 +95,9 @@ function toBabelParameter(param) {
  * @returns {ExpandParameterNode} The parameter node.
  */
 function toBabelIndexParameter(param) {
-  const type = toSourceBabelTS(param?.typeAnnotation?.typeAnnotation);
+  const type = toSourceBabelTSOrAny(param?.typeAnnotation?.typeAnnotation);
   const name = param?.name ?? 'arg';
-  return {type: type ?? 'any', name};
+  return {type, name};
 }
 /**
  * Expands a Babel index signature parameter, defaulting unrepresentable
@@ -126,11 +122,13 @@ function cookedQuasi(quasi) {
  * `toSourceBabelTS` call, so no `undefined` ever lands in a shape: tsc
  * reads unknown JSDoc parts as `any` too (notably `?`), and the runtime
  * validates `any` without crashing.
+ * Degenerate empty fragments (from `?` operands) become `any` here too.
  * @param {*} node - The Babel AST node to convert.
  * @returns {ExpandedType} The expansion, or `any` when unrepresentable.
  */
 function toSourceBabelTSOrAny(node) {
-  return toSourceBabelTS(node) ?? 'any';
+  const expanded = toSourceBabelTS(node);
+  return expanded === undefined || expanded === '' ? 'any' : expanded;
 }
 /**
  * Expands a Babel function parameter, defaulting unrepresentable results

@@ -96,8 +96,17 @@ Every inner slot of every node shape uses an `OrAny` wrapper (`toSourceTSOrAny`,
 * tsc reads unknown JSDoc parts as `any` (notably `?`), so `any` is the tsc-agreeing miss value; verified per input by `test/parity/cases/unparseable-innards.mjs` (tsc oracle, 9 cases).
 * The runtime validates `any` without crashing; `undefined` in a slot crashes `validateType` (`Array<?>` threw `TypeError` reading properties of `undefined`) or crashes the Asserter downstream (`simplifyTypeToSource(undefined)`).
 * Only structurally broken lists (malformed parameter lists) still bail the whole node via `undefined`, and only where the caller already handles it.
+* Degenerate empty fragments (`''`, from `?` operands) become `any` inside the `OrAny` wrappers; bare `?` (missing or empty operand) is `any` itself, not a null-union (the TS `JSDocNullableType` case returns early on an empty operand, dep-free short-circuits `?`/`''` at the top). Both `Array<?>` and `string | ?` then agree exactly.
 
-Bare `?` and empty fragments are `any` at the top of `expandType`/`expandTypeDepFree` for the same reason. Unnamed optional tuple elements (`[string, number?]`) are the exception that proves the rule: tsc parses them as proper optional members (`[string, (number | undefined)?]`), so all three parsers build `{type: 'tupleMember', name: '', elementType, optional: true}` instead of defaulting. Garbage tsc cannot parse at all (`keyof ?`, `typeof ?` are file-level syntax errors) is documented-but-unasserted: TS and dep-free read them differently, both crash-free.
+Unnamed optional tuple elements (`[string, number?]`) are the exception that proves the rule: tsc parses them as proper optional members (`[string, (number | undefined)?]`), so all three parsers build `{type: 'tupleMember', name: '', elementType, optional: true}` instead of defaulting. Garbage tsc cannot parse at all (`keyof ?`, `typeof ?` are file-level syntax errors) is covered behaviorally where possible and documented where the parsers structurally differ.
+
+## Check order in the dep-free parser follows TS binding, not source order
+
+`expandTypeDepFree` checks in this order: conditionals, unions/intersections, `keyof`, nullable, then everything else (`typeof` stays after nullable). The order encodes TS operator binding, which the shape must mirror:
+
+* Postfix `?` binds tightest (except for `typeof`, where TS binds it loosest — so `keyof` moved before nullable but `typeof` stayed after; moving it regressed `typeof X?` agreement and was reverted).
+* Prefix `?` binds loosest, so the union/intersection split is skipped for leading-`?` inputs (`?A|B` nullables the whole union).
+* Moving the split before nullable fixed `string | ?`, `keyof T?`, and `A & B?` nesting agreement; each move was verified against the 52-probe agreement and the full gate, and the one that regressed (`typeof`) was reverted the same session. When reordering checks, re-run the parity spec first: it fails structurally on the first wrong move.
 
 ## Observed: `.map()` over `ts.NodeArray` neither types its callback nor checks its result (empirical)
 

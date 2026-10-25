@@ -281,12 +281,20 @@ function testMissBecomesAnyParity() {
   // (`?` is `any` there too): no shape ever embeds undefined. Babel cannot
   // parse `?` at all (pre-existing babel/babel#16073), so this pins the two
   // parsers that can; tsc agreement for the same inputs lives in
-  // test/parity/cases/unparseable-innards.mjs.
+  // test/parity/cases/unparseable-innards.mjs. Bare `?` (missing or empty
+  // operand) is `any` itself, not a null-union.
   const exact = {
+    '?': 'any',
     'Array<?>': {type: 'array', elementType: 'any'},
+    'Promise<?>': {type: 'promise', elementType: 'any'},
+    'Set<?>': {type: 'set', elementType: 'any'},
     'Map<?, number>': {type: 'map', key: 'any', val: 'number'},
+    'Record<?, number>': {type: 'record', key: 'any', val: 'number'},
+    'keyof ?': {type: 'keyof', argument: 'any'},
     '{a: ?}': {type: 'object', properties: {a: 'any'}},
+    'string | ?': {type: 'union', members: ['string', 'any']},
     '(a: ?) => string': {type: 'function', parameters: [{type: 'any', name: 'a'}]},
+    'typeof ?': {type: 'union', members: [{type: 'typeof', argument: 'any'}, 'null']},
   };
   for (const [type, want] of Object.entries(exact)) {
     for (const got of [expandType(type), expandTypeDepFree(type)]) {
@@ -296,46 +304,20 @@ function testMissBecomesAnyParity() {
       }
     }
   }
-  for (const type of [
-    'Promise<?>',
-    'Set<?>',
-    'Record<?, number>',
-  ]) {
-    const fromTS = expandType(type);
-    const fromDepFree = expandTypeDepFree(type);
-    if (!deepEqualType(fromTS, fromDepFree)) {
-      console.warn(`Parity mismatch for '${type}'`, {fromTS, fromDepFree});
-      return false;
-    }
-  }
-  // `string | ?` nests differently (TS binds the nullable to the `?`
-  // operand, dep-free lifts it over the whole union) but both shapes
-  // accept everything, so behavior agrees while structure does not.
-  // The harness (case07) pins the behavioral agreement.
-  for (const value of [1, 'a', null, undefined]) {
-    const tsAccepts = validateType(value, expandType('string | ?'), 'test', 'a', true, warn, 0);
-    const freeAccepts = validateType(value, expandTypeDepFree('string | ?'), 'test', 'a', true, warn, 0);
-    if (tsAccepts !== freeAccepts || tsAccepts !== true) {
-      console.warn(`Behavior mismatch for 'string | ?' on`, {value, tsAccepts, freeAccepts});
-      return false;
-    }
-  }
-  // `keyof ?` / `typeof ?` are file-level syntax errors under tsc, so no
-  // oracle constrains them; the parsers read them differently (TS applies
-  // the operator first, dep-free reads a nullable bare keyword) and both
-  // stay crash-free. Documented, not asserted.
   return true;
 }
 function testBareUnknownParity() {
-  // Lone `?` is `any` on the TS and dep-free parsers (Babel cannot parse it
-  // at all, so it stays out of the three-way check); both must agree.
-  const fromTS = expandType('?');
-  const fromDepFree = expandTypeDepFree('?');
-  if (!deepEqualType(fromTS, fromDepFree)) {
-    console.warn(`Parity mismatch for '?'`, {fromTS, fromDepFree});
-    return false;
+  // Covered by testMissBecomesAnyParity's exact shapes now; kept as a
+  // behavioral pin: lone `?` must accept everything like tsc's `any`.
+  for (const got of [expandType('?'), expandTypeDepFree('?')]) {
+    for (const value of [1, 'a', null]) {
+      if (validateType(value, got, 'test', 'a', true, warn, 0) !== true) {
+        console.warn(`Bare-? rejects`, {value});
+        return false;
+      }
+    }
   }
-  return fromTS === 'any' && fromDepFree === 'any';
+  return true;
 }
 export const tests = [
   testArrayLikeParity,

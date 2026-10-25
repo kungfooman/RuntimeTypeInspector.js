@@ -702,11 +702,13 @@ function expandTupleElement(raw) {
  * reads unknown JSDoc parts as `any` too (notably `?`), and the runtime
  * validates `any` without crashing. Only structurally broken lists
  * (malformed parameter lists) still bail the whole node via `undefined`.
+ * Degenerate empty fragments (from `?` operands) become `any` here too.
  * @param {string} type - The input type to expand.
  * @returns {ExpandedType} The expansion, or `any` when unrepresentable.
  */
 function expandTypeDepFreeOrAny(type) {
-  return expandTypeDepFree(type) ?? 'any';
+  const expanded = expandTypeDepFree(type);
+  return expanded === undefined || expanded === '' ? 'any' : expanded;
 }
 /**
  * 'DepFree' refers to the fact that this function has no dependencies,
@@ -724,10 +726,9 @@ function expandTypeDepFreeOrAny(type) {
  */
 function expandTypeDepFree(type) {
   type = type.trim();
-  // Bare `?` is `any` (tsc leniency); the checks below need more syntax.
-  // Empty fragments arise from degenerate `?` operands (e.g. `string | ?`
-  // splits off an empty member); tsc reads those as `any` too, so the miss
-  // becomes `any` here instead of a corrupt `''` shape.
+  // Bare `?` is just unknown: `any`, matching tsc (and the TS parser's
+  // JSDocNullable-empty rule above). Empty fragments from top-level splits
+  // become `any` here instead of a corrupt `''` shape.
   if (type === '?' || type === '') {
     return 'any';
   }
@@ -765,12 +766,51 @@ function expandTypeDepFree(type) {
       falseType,
     };
   }
+  // Unions and intersections split before nullable/keyof/typeof, matching
+  // TS precedence (`&` binds tighter than `|`, both tighter than postfix
+  // `?`): `string | ?` nests the nullable on the `?` operand, and
+  // `keyof T?` applies keyof to the nullable operand. A leading `?` is the
+  // exception: prefix `?` binds loosest in TS (`?A|B` nullables the whole
+  // union), so the splits defer to the nullable check below for it.
+  // (5) Unions and intersections via top-level splits (`&` binds tighter, so `|` first).
+  // Note: conditionals already handled up front (before nullable) so `D?`
+  // false branches keep their nullability; this slot is intentionally union-only.
+  if (!type.startsWith('?')) {
+    const unionParts = splitTopLevel(type, "|");
+    if (unionParts.length >= 2) {
+      return {
+        type: 'union',
+        members: unionParts.map((_) => expandTypeDepFreeOrAny(_.trim())),
+      };
+    }
+    const interParts = splitTopLevel(type, "&");
+    if (interParts.length >= 2) {
+      return {
+        type: 'intersection',
+        members: interParts.map((_) => expandTypeDepFreeOrAny(_.trim())),
+      };
+    }
+  }
+  // (7) `keyof T` before typeof so `keyof typeof X` nests correctly, and
+  // before nullable so `keyof T?` applies the operator to the nullable
+  // operand, matching TS. (`typeof` stays after nullable: TS binds
+  // postfix-`?` loosest for `typeof`, so `typeof X?` nullables the whole
+  // operator there; moving it would regress that agreement.)
+  if (type.startsWith('keyof ') || type.startsWith('keyof(')) {
+    const after = type.startsWith('keyof(') ? type.slice(5).trim() : type.slice(6).trim();
+    if (after) {
+      return {type: 'keyof', argument: expandTypeDepFreeOrAny(after)};
+    }
+  }
   // JSDocNullableType (`T?` / `?T`): union with null, matching expandType().
-  if (type.endsWith('?') && type.length > 1) {
+  // Bare `?` flows here too (no length guard): the inner fragment is empty,
+  // which expands to `any`, so `?` is `union[any, null]` (accept-all,
+  // matching tsc leniency).
+  if (type.endsWith('?')) {
     const inner = expandTypeDepFreeOrAny(type.slice(0, -1).trim());
     return {type: 'union', members: [inner, 'null']};
   }
-  if (type.startsWith('?') && type.length > 1) {
+  if (type.startsWith('?')) {
     const inner = expandTypeDepFreeOrAny(type.slice(1).trim());
     return {type: 'union', members: [inner, 'null']};
   }
@@ -952,30 +992,6 @@ function expandTypeDepFree(type) {
     }
     return out;
   }
-  // (5) Unions and intersections via top-level splits (`&` binds tighter, so `|` first).
-  // Note: conditionals already handled up front (before nullable) so `D?`
-  // false branches keep their nullability; this slot is intentionally union-only.
-  const unionParts = splitTopLevel(type, "|");
-  if (unionParts.length >= 2) {
-    return {
-      type: 'union',
-      members: unionParts.map((_) => expandTypeDepFreeOrAny(_.trim())),
-    };
-  }
-  const interParts = splitTopLevel(type, "&");
-  if (interParts.length >= 2) {
-    return {
-      type: 'intersection',
-      members: interParts.map((_) => expandTypeDepFreeOrAny(_.trim())),
-    };
-  }
-  // (7) `keyof T` before typeof so `keyof typeof X` nests correctly.
-  if (type.startsWith('keyof ') || type.startsWith('keyof(')) {
-    const after = type.startsWith('keyof(') ? type.slice(5).trim() : type.slice(6).trim();
-    if (after) {
-      return {type: 'keyof', argument: expandTypeDepFreeOrAny(after)};
-    }
-  }
   // (8) Indexed access `T[K]` (arrays `T[]` handled below, tuples above start with `[`).
   const indexed = parseIndexedAccessRaw(type);
   if (indexed) {
@@ -1018,15 +1034,26 @@ function expandTypeDepFree(type) {
       };
     }
   }
-  // (11) expand typeof expressions
-  if (type.startsWith('typeof ')) {
-    return {type: 'typeof', argument: expandTypeDepFreeOrAny(type.substring(7).trim())};
-  }
   if (type === 'object' || type === 'Object') {
     return {
       type: 'object',
       properties: {},
     };
+  }
+  // (11) expand typeof expressions. Stays after nullable: TS binds
+  // postfix-`?` loosest for `typeof`, so `typeof X?` nullables the whole
+  // operator there (see the keyof comment above for the contrast).
+  // A bare `typeof` (no operand, only reachable as a nullable-strip
+  // artifact like `typeof ?`) is typeof-unknown, matching the TS parser.
+  if (type === 'typeof') {
+    return {type: 'typeof', argument: 'any'};
+  }
+  if (type.startsWith('typeof ')) {
+    const after = type.substring(7).trim();
+    if (after) {
+      return {type: 'typeof', argument: expandTypeDepFreeOrAny(after)};
+    }
+    return {type: 'typeof', argument: 'any'};
   }
   // Literal normalization for parity with expandType():
   // numeric literals become numbers, true/false become booleans.
