@@ -2,6 +2,10 @@
 
 This file records the JSDoc patterns that actually work in this repo (checked with `npx tsc --noEmit --allowJs --checkJs --strict`, jsconfig has `strict: true`). Each rule states what to do, why it works, and where the proof lives. When a rule is empirical (observed but unexplained), it says so, with a repro.
 
+## Default to `node is T` predicates; casts are the last resort
+
+Whenever a check needs to narrow a typedef union for later use, write a type predicate (`@returns {node is T}`) instead of a cast or a bare boolean helper. Predicates work in checkJs, they carry the proof once instead of scattering casts, and call sites read as plain `if`s with no annotations. The anonymous structural form (`@returns {x is {optional?: boolean}}`) is allowed when no named typedef fits. A predicate earns its place by replacing two or more casts or checks; a single-site, single-use narrowing stays inline (see the fallback at the end of the untagged-union section). Every predicate ships with the same one-function-per-file treatment as any helper: JSDoc `@example`, its own `<name>.spec.js` (including a stub-out bite test), barrel export, and `test_runtime.js` wiring.
+
 ## Import shared typedefs once per file with `@import`
 
 ```js
@@ -23,7 +27,7 @@ If the function declares `@returns {ExpandedType | undefined}`, every `return ({
 
 ## A cast that silences tsc may hide a real hole: delete it and read the error
 
-`return /** @type {ExpandedType} */ ({type: 'union', members: [t, 'null']})` passed tsc while `t` was `ExpandedType | undefined`, embedding `undefined` in a non-optional `members` slot at runtime. Removing the cast surfaced `TS2322`, and the honest fix propagates the miss (`if (t === undefined) { return undefined; }`) instead of asserting it away. Rule: when a cast wraps a value the callee may leave `undefined`, try deleting the cast first. If tsc stays clean, the cast was noise. If tsc errors, the error names the hole; fix the hole (guard and propagate, or fail fast with `'transpiler-error'`) rather than restoring the cast. Three such holes were fixed this way in the nullable, mapping, template-span, condition, indexed-access, rest, parameter, and named-tuple paths. `npm test` plus the hostile-input probe (`Array<?>`, `[string, ?]`, `{$K in ?}: number}` across all three parsers) confirm no new divergence; the remaining DIFFERs are pre-existing parser limitations, verified by stash.
+`return /** @type {ExpandedType} */ ({type: 'union', members: [t, 'null']})` passed tsc while `t` was `ExpandedType | undefined`, embedding `undefined` in a non-optional `members` slot at runtime. Removing the cast surfaced `TS2322`. Rule: when a cast wraps a value the callee may leave `undefined`, try deleting the cast first. If tsc stays clean, the cast was noise. If tsc errors, the error names the hole; fix the hole rather than restoring the cast (at the time: guard and propagate, or fail fast with `'transpiler-error'`; the policy has since moved on to defaulting the miss to `any`, see below). Eight such holes were fixed this way across the nullable, mapping, template-span, condition, indexed-access, rest, parameter, named-tuple, function, record, reference, union, intersection, tuple, and object paths; the full log is in the `any`-policy section.
 
 ## Declaration casts on built-up objects are load-bearing: keep them
 
@@ -58,7 +62,7 @@ function isExpandedObject(type) {
 
 `x is T` predicates work in checkJs, and the structural claim is honest: every object node carries those flags. Call sites read naturally (`if (isExpandedObject(type)) type.optional = true;`) with no cast. The predicate lives in `src-transpiler/isExpandedObject.js` with its own spec, exported from the barrel. Side benefit found by testing: the old `instanceof Object` check in `annotateOptional.js` missed prototype-less nodes (`Object.create(null)`); the predicate handles them. Do not use `instanceof Object` for narrowing JSDoc unions: it errors on atom-including unions (`TS2358`) and narrows backwards where it applies.
 
-## Untagged union members yield to `in`-based predicates, not casts
+## Untagged union members yield to `in`-based predicates, not casts (parseJSDoc's `isUnionNode` keeps one documented cast inside)
 
 Discriminant checks cannot exclude `ExpandParameterNode`/`ExpandAnnotatedAtomNode` (no literal tag), so the index-signature push needed a documented cast. The replacement verifies tag plus structure with `in`, which narrows untagged members where `===` cannot:
 
@@ -80,14 +84,17 @@ function isIndexSignatureNode(type) {
 
 No cast inside or at the call sites (`if (isIndexSignatureNode(indexSignature)) indexSignatures.push(indexSignature);`). `src-transpiler/isIndexSignatureNode.js`, spec alongside, barrel-exported. Same pattern applies wherever an untagged member defeats `===` narrowing: check the tag if present, then the structural keys with `in`.
 
+Where even `in` cannot reach (reading `.members` off a union whose tagless members lack the property, as in parseJSDoc's `isUnionNode`), one cast inside the predicate body is the honest minimum: the tag plus `Array.isArray` check is the proof, the cast only reads through what narrowing cannot see, and every call site stays cast-free. That is the single sanctioned in-predicate cast; anything wider goes back to a guard.
+
 ## What stays cast, and why
 
 After the cleanup the remaining casts each survived a delete-and-watch-tsc-fail round:
 
 * Declaration casts on incrementally built objects (`ExpandMappingNode`, `ExpandObjectNode`, `ExpandedType[]`, `Record<...>` containers, the `'-' | '+' | '?'` modifier locals which widen to `string` without them). They state the construction target; the properties inside must still be honestly typed (guarded, never cast).
-* The `ExpandAnnotatedAtomNode` wrap and the tuple `(ExpandedType | undefined)[]` pair in `expandTypeDepFree.js`: the tuple wart (`undefined` for unnamed `?` elements) is deliberate three-parser parity, not a hole.
-* `simplifyType.js` index-signature map: asserts the shape-preserving invariant by construction; verifying per call would be dead-code paranoia, filtering would silently drop corruption (fail-open).
-* External untyped inputs: the Babel `parse()` result is `any`, so the synthesized-alias read needed no cast at all; where the parser lib IS typed (`Statement`), a kind guard (`first.type !== 'TSTypeAliasDeclaration'` throws) beats the old blind cast and fails closed.
+ * The `ExpandAnnotatedAtomNode` wrap in `expandTypeDepFree.js` (the `{type, expanded}` construction widens without it).
+ * `simplifyType.js` index-signature map: asserts the shape-preserving invariant by construction; verifying per call would be dead-code paranoia, filtering would silently drop corruption (fail-open).
+ * External untyped inputs: the Babel `parse()` result is `any`, so the synthesized-alias read needed no cast at all; where the parser lib IS typed (`Statement`), a kind guard (`first.type !== 'TSTypeAliasDeclaration'` throws) beats the old blind cast and fails closed.
+ * Inside predicate bodies, one documented cast may read through the exact gap the predicate closes (see `isUnionNode` below): the tag plus `Array.isArray` check is the proof, the cast only touches what untagged members hide from narrowing.
 
 ## Unrepresentable innards default to `any`, never `undefined`
 
@@ -123,4 +130,4 @@ In checkJs, `.map()` on `ts.NodeArray` does not provide a contextual parameter t
 
 ## Keep the parser trio symmetric when touching one
 
-`expandType.js`, `expandTypeBabelTS.js`, and `expandTypeDepFree.js` must agree wart for wart (unnamed optional tuple elements stay `undefined` in all three; unparseable parts propagate `undefined` in all three). Every guard added to one parser was mirrored in the other two, and the hostile-input probe checks all three on the same inputs. A fix in one parser that changes a shared shape without mirroring it is a parity regression, caught by `expandTypeParity.spec.js` and the 52-probe agreement check.
+`expandType.js`, `expandTypeBabelTS.js`, and `expandTypeDepFree.js` must agree wart for wart (unnamed optional tuple elements become `{type: 'tupleMember', name: '', elementType, optional: true}` in all three; unrepresentable innards default to `any` in all three). Every guard added to one parser was mirrored in the other two, and the hostile-input probe checks all three on the same inputs. A fix in one parser that changes a shared shape without mirroring it is a parity regression, caught by `expandTypeParity.spec.js` and the 52-probe agreement check.

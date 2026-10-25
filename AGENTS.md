@@ -123,12 +123,15 @@ Import each shared typedef once per file with `@import` at the top and use the b
 
 never `@type {import('./expandedType.js').ExpandAnnotatedAtomNode}` inline.
 
-See `JSDOC.md` for the full set of JSDoc typing tricks: which casts are
-redundant (declared `@returns` checks literals for free), which are
-load-bearing (declaration casts on built-up objects, structural flag
-writes, documented discriminant casts on untagged unions), how to turn a
+See `JSDOC.md` for the full set of JSDoc typing tricks. The default
+pattern is `node is T` predicates: when a check must narrow a typedef
+union for later use, write a predicate instead of a cast or a bare
+boolean helper. Which casts are redundant (declared `@returns` checks
+literals for free), which are load-bearing (declaration casts on
+built-up objects, one documented in-predicate read), how to turn a
 silencing cast into a real fix (delete it, read the `TS2322`, guard the
-hole), and the empirical `ts.NodeArray.map` leniency with its repro.
+hole or default the miss to `any`), and the empirical
+`ts.NodeArray.map` leniency with its repro.
 
 ## Comment style
 
