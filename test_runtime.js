@@ -70,6 +70,7 @@ const tests = [
   ...(await import('./src-runtime/substitutedFor.spec.js'         )).tests,
   ...(await import('./src-runtime/substituteArray.spec.js'        )).tests,
   ...(await import('./src-runtime/substituteAtom.spec.js'          )).tests,
+  ...(await import('./src-runtime/unwrapAtom.spec.js'             )).tests,
   ...(await import('./src-runtime/substituteCondition.spec.js'    )).tests,
   ...(await import('./src-runtime/substituteDescriptors.spec.js'  )).tests,
   ...(await import('./src-runtime/substituteNew.spec.js'           )).tests,

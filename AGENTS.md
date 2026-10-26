@@ -92,6 +92,16 @@ The reported repro is the starting line, never the finish: every fix or feature 
 
 ## Test style
 
+Keep functions short enough to document in one JSDoc block: when a branch
+needs its own explanation plus its own edge cases, it is a helper in its own
+module (one function per file), with its own `@example` and its own spec.
+Inline ternaries and `?.`/`??` chains do not scale past one level: a nested
+ternary or a line that needs 130+ characters to say what it does is a branch
+the reader cannot see, so it becomes two named branches instead. The rule of
+thumb is one decision per line: if a line picks between three shapes or
+merges three flag sources, split it until each line does one thing a comment
+can name. `npm run lint` does not enforce this; review does.
+
 Never assert exact human-readable prose (diagnosis sentences, detail
 messages, log hints, one-line descriptions). Prose is presentation: pinning
 it turns every reword into a failing suite without any behavioral

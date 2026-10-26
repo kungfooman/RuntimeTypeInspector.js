@@ -75,6 +75,7 @@ export * from './substituteDescriptors.js';
 export * from './substituteRecordNode.js';
 export * from './substituteMapNode.js';
 export * from './substituteAtom.js';
+export * from './unwrapAtom.js';
 export * from './substituteObject.js';
 export * from './substituteIndexSignature.js';
 export * from './substituteTuple.js';
