@@ -8,9 +8,10 @@ function testDenseArrayPasses() {
   return validateUnion([0, 0, 1, 1], parsed, 'loc', 'anchor', true, silent, 0) === true;
 }
 // We want: a holey tail to fail the strict union, because `validateArray`
-// reads every index including absent ones. The engine over-allocates these
-// buffers (text-element positions) and reads only the first `numVerts`
-// entries, so the host ignores these checks; the validator stays strict.
+// reads every index including absent ones. Over-allocated buffers (grown
+// `length`, never-written tail slots) are a host-side concern: callers
+// that only consume a prefix can ignore this check via `ignoredChecks`,
+// while the validator itself stays strict.
 function testHoleyTailFailsStrict() {
   const parsed = expandType('Vec4 | number[]');
   const grown = [0, 0, 1, 1];

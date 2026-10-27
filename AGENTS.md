@@ -8,6 +8,46 @@ leave it staged or unstaged in the working tree, and report what changed.
 When a commit is requested, inspect `git status` and `git diff` first, stage
 only the intended files, and write the message in the established repo style.
 
+## PR files
+
+When you believe the issue is 100 percent completed, write `tmp/pr-<id>.md`
+(where `<id>` is the issue number or branch slug). Put `Fixes #<id>`
+on its own line right under the title.
+Format: pedagogical
+pre-text first (pedagogical: bring everyone on the same page by teaching
+the construct, why it exists, and what broke, under a `## Primer` heading), then the normal description
+of everything fixed,
+with file references. The pre-text is for the future reader who lands on
+the PR without the session context; the description is the changelog.
+`tmp/` is git-ignored, so the file never leaks into commits.
+- The description earns its keep with mechanism, not adjectives: every claim
+  names the file, the shape before and after, and the proof (which fixture
+  broke, which mutation fails, which counts agree). A sentence that stays
+  true when the file names are blanked out is a boring changelog entry:
+  delete it and write what actually happened instead. Never restate CI:
+  gate status, lint status and test counts re-verify on every push and rot
+  the moment the next commit lands; the PR file records what CI cannot see
+  (why the shape changed, which hole was tolerated and on what analysis).
+- Record latent holes the work exposed as their own section: gaps the old
+  code silently tolerated (a pass-through ladder, an erasing guard, a
+  tolerated write) that the new structure surfaced. Each hole states the
+  mechanism that hid it, the mechanism that exposed it, and the verdict
+  (fixed here, tolerated deliberately with the parity analysis, or deferred
+  with the reason). A hole section is a decision record: without it, the
+  next reader re-litigates what this session already settled.
+- Record dead code the work killed with the proof of death: the exact
+  condition that can no longer hold (key counts, tag shapes, branch
+  reachability) and the output-by-output check that the surviving path
+  already handles every live shape. "Unreachable" is a claim, not an
+  observation: show the shape that proves it.
+- If it reads as a list, write it as a list: a paragraph that is really
+  N rules joined by periods is N list items. The reader scans headings
+  and bullets, not sentences; a buried third rule is a rule nobody
+  follows. Number the items so a later comment can cite them by number.
+- Omit sections with nothing to say: no "rules added" section when no rule
+  changed, no placeholder, no `(none)`. An empty section is noise that
+  trains the reader to skip sections.
+
 ## Scratch files
 
 Always use the repo-local `./tmp/` directory for scratch, repro and
