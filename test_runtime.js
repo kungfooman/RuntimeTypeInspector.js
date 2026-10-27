@@ -106,6 +106,7 @@ const tests = [
   ...(await import('./src-runtime/matchIndexSignature.spec.js'     )).tests,
   ...(await import('./src-runtime/partialHomomorphic.spec.js'     )).tests,
   ...(await import('./src-runtime/tagSnapshot.spec.js'              )).tests,
+  ...(await import('./src-runtime/snapshotMatches.spec.js'          )).tests,
   ...(await import('./src-runtime/collectCandidates.spec.js'      )).tests,
   ...(await import('./src-runtime/strictNullChecks.spec.js'        )).tests,
   ...(await import('./src-runtime/stringifyValue.spec.js'          )).tests,

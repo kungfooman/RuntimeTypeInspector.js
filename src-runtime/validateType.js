@@ -34,6 +34,7 @@ import {validateTypedef     } from "./validateTypedef.js";
 import {validateUnion       } from "./validateUnion.js";
 import {createTypeFromIndexedAccess} from "./createTypeFromIndexedAccess.js";
 import {atomUnwrap} from "./atomUnwrap.js";
+import {snapshotMatches} from "./snapshotMatches.js";
 import {validators          } from "./validators.js";
 import {installWalkTimers   } from "./plugin-walk-timers/installWalkTimers.js";
 /**
@@ -284,7 +285,13 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
     return true;
   } else if (classes[type]) {
     // Inheritance check, allow Application for AppBase, allow Entity for GraphNode etc.
-    return value instanceof classes[type];
+    if (value instanceof classes[type]) {
+      return true;
+    }
+    // Tagged snapshots cross messaging as plain data: `instanceof` fails
+    // because prototypes do not survive, so accept on the recorded
+    // constructor name (same nominal rule `validateReference` uses).
+    return snapshotMatches(value, type);
   }
   // Unregistered platform constructors: the `window` lookup below only
   // covers browsers, so a `Float32Array` subclass would fail in

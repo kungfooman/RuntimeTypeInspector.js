@@ -10,6 +10,7 @@ import {instantiateReference} from "./instantiateReference.js";
 import {extendsCheck, resolveForExtends, stripLiteral, evaluateCondition} from "./evaluateCondition.js";
 import {deepEqualType} from "./deepEqualType.js";
 import {atomStripOptional} from "./atomStripOptional.js";
+import {snapshotMatches} from "./snapshotMatches.js";
 /**
  * Follows strings through typedefs (and materializes mappings) to object
  * shapes, distributing over unions like homomorphic mapped types do.
@@ -789,7 +790,14 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
     return recurse(value, typedefs[refName], loc, name, critical, warn, depth + 1);
   }
   if (classes[refName]) {
-    return value instanceof classes[refName];
+    if (value instanceof classes[refName]) {
+      return true;
+    }
+    // Tagged snapshots cross messaging as plain data: `instanceof` fails
+    // because prototypes do not survive, so accept on the recorded
+    // constructor name (same nominal rule the differ uses). Hand-forged
+    // `$type` tags gain nothing a hand-built shape would not already give.
+    return snapshotMatches(value, refName);
   }
   if (value && value.constructor && value.constructor.name === refName) {
     return true;

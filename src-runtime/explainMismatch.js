@@ -17,6 +17,7 @@ import {previewValue} from './previewValue.js';
 import {describeValueType, prettyValue} from './describeValue.js';
 import {formatMapKey} from './formatMapKey.js';
 import {snapshotTag} from './snapshotTag.js';
+import {snapshotMatches} from './snapshotMatches.js';
 const MAX_DEPTH = 6;
 const MAX_UNION_MEMBERS = 12;
 const MAX_MAP_ENTRIES = 20;
@@ -180,28 +181,10 @@ function passes(value, expect) {
  * @returns {boolean} True on a nominal match.
  */
 function classMatches(tag, className) {
-  try {
-    if (typeof tag !== 'string' || typeof className !== 'string') {
-      return false;
-    }
-    const target = classes[className];
-    if (typeof target !== 'function') {
-      return false;
-    }
-    if (tag === className) {
-      return true;
-    }
-    let ctor = classes[tag];
-    for (let i = 0; i < 32 && typeof ctor === 'function' && ctor !== Object; i++) {
-      if (ctor === target) {
-        return true;
-      }
-      ctor = Object.getPrototypeOf(ctor);
-    }
-  } catch {
-    // Unreadable registry or exotic prototype: stay strict.
+  if (typeof tag !== 'string') {
+    return false;
   }
-  return false;
+  return snapshotMatches({$type: tag}, className);
 }
 /**
  * Whether an expected prop is function-typed: such props can never

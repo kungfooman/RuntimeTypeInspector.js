@@ -37,6 +37,7 @@ export * from './createTableHead.js';
 export * from './validateDivisionAddWarning.js';
 export * from './validateNumberInObject.js';
 export * from './snapshotTag.js';
+export * from './snapshotMatches.js';
 export * from './DisplayAnything.js';
 export * from './evaluateCondition.js';
 export * from './firstBadIndex.js';
