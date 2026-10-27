@@ -9,6 +9,7 @@ import {getTypeKeys, resolveUtilityShape} from "./getTypeKeys.js";
 import {instantiateReference} from "./instantiateReference.js";
 import {extendsCheck, resolveForExtends, stripLiteral, evaluateCondition} from "./evaluateCondition.js";
 import {deepEqualType} from "./deepEqualType.js";
+import {atomStripOptional} from "./atomStripOptional.js";
 /**
  * Follows strings through typedefs (and materializes mappings) to object
  * shapes, distributing over unions like homomorphic mapped types do.
@@ -80,10 +81,11 @@ function resolveObjectArgs(type, warn) {
     if (current && current.type === 'reference') {
       const {name, args} = current;
       if ((name === 'NonNullable' || name === 'Readonly' || name === 'NoInfer') && args?.length) {
-        const inner = args[0];
-        current = (
-          inner && typeof inner === 'object' && inner.type === 'atom'
-        ) ? {...inner, optional: false} : inner;
+        // Transparent wrappers re-enter the loop with their argument: only
+        // the atom occurrence flag is cleared (see atomStripOptional), the
+        // payload keeps flowing through the typedef, class and constructor
+        // branches below exactly like an unflagged node would.
+        current = atomStripOptional(args[0]);
         continue;
       }
       if ((name === 'Partial' || name === 'Pick' || name === 'Omit' || name === 'Required') && args?.length) {

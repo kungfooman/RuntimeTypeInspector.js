@@ -124,6 +124,18 @@ return (
 );
 ```
 
+Untangle nested calls into named steps: when an assertion (or any line) nests a call inside a call (`f(g(x).prop)`), binds an intermediate and names it, so each line does one thing and failures point at the step that broke:
+
+```js
+const parsed = expandType('{a?: K}');
+const input = parsed.properties.a;
+const unwrapped = atomUnwrap(input);
+return JSON.stringify(unwrapped) ===
+  JSON.stringify({type: 'K', optional: true});
+```
+
+never `atomUnwrap(expandType('{a?: K}').properties.a)` inline. The names double as documentation: `parsed` is the producer output, `input` is the helper argument, and a debugger can stop between them.
+
 Import each shared typedef once per file with `@import` at the top and use the bare name everywhere else, so `@type` casts stay short and diffs stay local:
 
 ```js

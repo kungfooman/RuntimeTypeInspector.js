@@ -33,7 +33,7 @@ import {validateTypeof      } from "./validateTypeof.js";
 import {validateTypedef     } from "./validateTypedef.js";
 import {validateUnion       } from "./validateUnion.js";
 import {createTypeFromIndexedAccess} from "./createTypeFromIndexedAccess.js";
-import {unwrapAtom} from "./unwrapAtom.js";
+import {atomUnwrap} from "./atomUnwrap.js";
 import {validators          } from "./validators.js";
 import {installWalkTimers   } from "./plugin-walk-timers/installWalkTimers.js";
 /**
@@ -128,7 +128,7 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
   // inner type with the occurrence flags merged in: a tree replacement
   // keeps its own shape, so the inner node must flow into validation.
   if (expect.type === 'atom') {
-    return validateType(value, unwrapAtom(expect), loc, name, critical, warn, depth);
+    return validateType(value, atomUnwrap(expect), loc, name, critical, warn, depth);
   }
   const {type, optional} = expect;
   if (optional) {

@@ -4,13 +4,20 @@
  * `{type: inner}` leaf otherwise, with the occurrence flags merged over the
  * inner flags. A tree replacement keeps its own shape (plus the occurrence
  * flags), so the inner node must flow into validation, never the wrapper.
+ *
+ * Why the wrapper exists at all: before every `ExpandedType` member carried
+ * a literal `type` tag, an annotated atom was `{type: T, optional}` with the
+ * payload sitting directly in `type`. Tagging gave atoms the literal
+ * `'atom'` discriminant, which stole the `type` key the loop and the
+ * validators dispatch on, so the payload moved to `atomType` and every
+ * consumer must unwrap before switching on the shape.
  * @param {object} expect - The annotated atom node.
  * @returns {object} Unwrapped shape with merged flags.
  * @example
- * unwrapAtom({type: 'atom', atomType: 'K', optional: true});
+ * atomUnwrap({type: 'atom', atomType: 'K', optional: true});
  * // {type: 'K', optional: true}
  */
-function unwrapAtom(expect) {
+function atomUnwrap(expect) {
   const inner = expect.atomType;
   const innerIsObject = inner !== null && typeof inner === 'object' && !Array.isArray(inner);
   const base = innerIsObject ? inner : {type: inner};
@@ -25,4 +32,4 @@ function unwrapAtom(expect) {
   }
   return out;
 }
-export {unwrapAtom};
+export {atomUnwrap};
