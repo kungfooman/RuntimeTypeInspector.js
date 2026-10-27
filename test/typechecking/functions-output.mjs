@@ -18,11 +18,13 @@ function fetchSomething(url, {
     "type": "object",
     "properties": {
       "maxRetries": {
-        "type": "number",
+        "type": "atom",
+        "atomType": "number",
         "optional": true
       },
       "json": {
-        "type": "boolean",
+        "type": "atom",
+        "atomType": "boolean",
         "optional": true
       },
       "headers": {

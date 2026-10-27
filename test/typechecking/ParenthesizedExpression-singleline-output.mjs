@@ -1,6 +1,7 @@
 function test(bool = false) {
   if (!inspectType(bool, {
-    "type": "boolean",
+    "type": "atom",
+    "atomType": "boolean",
     "optional": true
   }, 'test', 'bool')) {
     youCanAddABreakpointHere();

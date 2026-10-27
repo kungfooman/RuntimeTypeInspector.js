@@ -11,3 +11,4 @@ registerTypedef('BigIntOneOrTwo', {
     }
   ]
 });
+

@@ -21,7 +21,8 @@ class Pool {
           {
             "type": "array",
             "elementType": {
-              "type": {
+              "type": "parameter",
+              "paramType": {
                 "type": "array",
                 "elementType": "any"
               },

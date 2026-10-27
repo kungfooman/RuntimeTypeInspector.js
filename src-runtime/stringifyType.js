@@ -1,3 +1,4 @@
+import {isParameterNode} from './isParameterNode.js';
 /**
  * @param {string} name - The property name.
  * @returns {string} Bare name if valid identifier, else JSON-quoted.
@@ -35,6 +36,14 @@ function stringifyType(type, space = 0, depth = 0) {
   if (typeof type !== 'object') {
     return String(type);
   }
+  if (type !== null && typeof type === 'object') {
+    if (type.type === 'parameter') {
+      return `${stringifyType(type.name, space, depth + 1)}: ${stringifyType(type.paramType, space, depth + 1)}`;
+    }
+    if (type.type === 'atom') {
+      return stringifyType(type.atomType, space, depth + 1);
+    }
+  }
   const {type: kind} = type;
   // {type: 'string', optional: true} etc. where kind is a plain type name
   // and carries no extra structural fields - unwrap below after switch.
@@ -54,12 +63,7 @@ function stringifyType(type, space = 0, depth = 0) {
           const prefix = isReadonly ? 'readonly ' : '';
           if (isOpt) {
             const inner = { ...val, optional: false };
-            let innerStr;
-            if (Object.keys(inner).length === 2 && 'type' in inner && 'optional' in inner && typeof inner.type === 'string') {
-              innerStr = stringifyType(inner.type, space, depth + 1);
-            } else {
-              innerStr = stringifyType(inner, space, depth + 1);
-            }
+            const innerStr = stringifyType(inner, space, depth + 1);
             parts.push(`${prefix}${stringifyKey(key)}?: ${innerStr}`);
           } else {
             parts.push(`${prefix}${stringifyKey(key)}: ${stringifyType(val, space, depth + 1)}`);
@@ -189,8 +193,8 @@ function stringifyType(type, space = 0, depth = 0) {
     }
     case 'indexSignature': {
       const params = (type.indexParameters || []).map((_) => {
-        if (typeof _ === 'object' && _.name !== undefined) {
-          return `${stringifyType(_.name, space, depth + 1)}: ${stringifyType(_.type, space, depth + 1)}`;
+        if (isParameterNode(_)) {
+          return `${stringifyType(_.name, space, depth + 1)}: ${stringifyType(_.paramType, space, depth + 1)}`;
         }
         return stringifyType(_, space, depth + 1);
       }).join(', ');

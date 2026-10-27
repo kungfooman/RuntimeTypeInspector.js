@@ -17,7 +17,8 @@ function keep(a, /** @type {number} */ b = 1) {
     youCanAddABreakpointHere();
   }
   if (!inspectType(b, {
-    "type": "number",
+    "type": "atom",
+    "atomType": "number",
     "optional": true
   }, 'keep', 'b')) {
     youCanAddABreakpointHere();

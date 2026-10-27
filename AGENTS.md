@@ -57,7 +57,11 @@ When the user hands you tests (repro files, `./tmp` snippets, demo cases), make 
   TypeScript-playground counter-checks would diverge from RTI's nominal
   class checks.
 - Spec: `src-transpiler/<name>.spec.js` (or `src-runtime/`) in repo style
-  (sync boolean tests, `export const tests`), wired into `test_runtime.js`.
+  (sync tests returning boolean, `export const tests`), wired into `test_runtime.js`.
+  Both assertion styles are fine: bare `return actual === expected` for short
+  reads, or `console.warn` diagnostics plus `return false` when the mismatch
+  needs both sides inline (the warn carries the meta-info: actual, expected,
+  and the label that locates the case). Pick per test, not per file.
   Cover the transpiler output AND creative variants of your own: edge cases
   the repro didn't show (export wrappers, template shadowing, bare
   templates, widening vs warns at runtime).
@@ -92,6 +96,16 @@ The reported repro is the starting line, never the finish: every fix or feature 
 
 ## Test style
 
+Keep functions short enough to document in one JSDoc block: when a branch
+needs its own explanation plus its own edge cases, it is a helper in its own
+module (one function per file), with its own `@example` and its own spec.
+Inline ternaries and `?.`/`??` chains do not scale past one level: a nested
+ternary or a line that needs 130+ characters to say what it does is a branch
+the reader cannot see, so it becomes two named branches instead. The rule of
+thumb is one decision per line: if a line picks between three shapes or
+merges three flag sources, split it until each line does one thing a comment
+can name. `npm run lint` does not enforce this; review does.
+
 Never assert exact human-readable prose (diagnosis sentences, detail
 messages, log hints, one-line descriptions). Prose is presentation: pinning
 it turns every reword into a failing suite without any behavioral
@@ -114,11 +128,23 @@ return (
 );
 ```
 
+Untangle nested calls into named steps: when an assertion (or any line) nests a call inside a call (`f(g(x).prop)`), binds an intermediate and names it, so each line does one thing and failures point at the step that broke:
+
+```js
+const parsed = expandType('{a?: K}');
+const input = parsed.properties.a;
+const unwrapped = atomUnwrap(input);
+return JSON.stringify(unwrapped) ===
+  JSON.stringify({type: 'K', optional: true});
+```
+
+never `atomUnwrap(expandType('{a?: K}').properties.a)` inline. The names double as documentation: `parsed` is the producer output, `input` is the helper argument, and a debugger can stop between them.
+
 Import each shared typedef once per file with `@import` at the top and use the bare name everywhere else, so `@type` casts stay short and diffs stay local:
 
 ```js
 /** @import {ExpandedType, ExpandAnnotatedAtomNode} from './expandedType.js' */
-/** @type {ExpandAnnotatedAtomNode} */ ({type, optional})
+/** @type {ExpandAnnotatedAtomNode} */ ({type: 'atom', atomType, optional})
 ```
 
 never `@type {import('./expandedType.js').ExpandAnnotatedAtomNode}` inline.
@@ -152,10 +178,16 @@ Safety relevant flags (option switches, validation verdicts, capability checks) 
 ## One function per file
 
 Each helper module in `src-runtime/` and `src-transpiler/` holds exactly one function, named after its file (e.g. `stripKey` lives in `src-runtime/stripKey.js`), plus only the module-local constants that function directly needs (e.g. its memoization cache). Spec files (`*.spec.js`) are exempt: they hold one test function per behavior under test.
-- Every extracted helper carries a JSDoc block with a runnable `@example` showing a representative call and its result, so each module documents itself. When the example needs a complex type, build it through a real helper call (e.g. `expandType("number[]")`), never hand-write the internal object literal: hand-built literals rot when the shape changes and teach a construction path real code never uses. Plain literals stay literal: `deepEqualType({b: 1, a: 2}, {a: 2, b: 1})` needs no helper.
-- Spec inputs follow the same split: build complex types through the parser (`expandType`), hand-write only trivial literals, and keep comparator specs decoupled from the parser (hand-built inputs fail for the right reason when the comparator regresses, not when the parser does).
+- Every extracted helper carries a JSDoc block with a runnable `@example` showing a representative call and its result, so each module documents itself. When the example needs a complex type, build it through a real helper call (e.g. `expandType("number[]")`), never hand-write the internal object literal: hand-built literals rot when the shape changes and teach a construction path real code never uses. Plain literals stay literal: `deepEqualType({b: 1, a: 2}, {a: 2, b: 1})` needs no helper. `@example` blocks need no import for the builder: they document in barrel-global scope where every barrel export is available, so a runtime example calls `expandType(...)` directly with no `src-transpiler/` import (runtime code never imports the transpiler; the layer boundary stays one-way). Keep the hand-written shape as a `// input:` comment above the builder call, so the literal and its construction stay mentally connected:
+```js
+* // input: {type: 'atom', atomType: 'K', optional: true}
+* atomUnwrap(expandType('{a?: K}').properties.a);
+```
+- Spec inputs follow the same split: build complex types through the parser (`expandType`), hand-write only trivial literals, and keep comparator specs decoupled from the parser (hand-built inputs fail for the right reason when the comparator regresses, not when the parser does). Spec lines follow the untangle rule above: `const parsed = ...; const input = parsed...;` with one step per line, never a nested `f(expandType(...).properties.x)` inline.
+- Compare structures with `deepEqualType`, never `JSON.stringify`: string comparison is key-order sensitive, so a spread that appends a key (`{...base, extra: 1}`) fails a hand-ordered literal for no behavioral reason. `deepEqualType` sorts keys via `canonicalize` and treats `false` and absent flags as equal, so the assertion tests shape, not serialization. Bind the expectation first (`const expected = {...}; return deepEqualType(actual, expected);`) to keep the assertion line short.
+- Family names beat directory grouping: when a helper belongs to a named family whose names mirror a dispatch table or a call convention (the 25 `substitute*` helpers registered by shorthand key in `substituteType.js`), it keeps the family name even when a noun-first grouping would read nicer in the listing. Majority wins (25 vs 3): renaming one member out of the family makes the table lie, while the grouping was aesthetic only. Precedent: `substituteAtom` stayed verb-first despite the `atom*` helpers next to it.
 - When extracting: move the function as-is (no behavior changes), point the old module's import at the new file, add an `export * from './<name>.js';` line to the package index (`src-runtime/index.js` or `src-transpiler/index.js`), update any specs importing from the old path, and finish with the full gate (`npm test` + `npm run lint`).
-- Every helper module ships with a `<name>.spec.js` next to it (same style: sync boolean tests, `export const tests`, wired into `test_runtime.js`): a function lands only with a spec that fails when the function is stubbed out. Pre-existing spec-less modules are backlog, not precedent.
+- Every helper module ships with a `<name>.spec.js` next to it (same style: sync tests returning boolean, `export const tests`, wired into `test_runtime.js`): a function lands only with a spec that fails when the function is stubbed out. Pre-existing spec-less modules are backlog, not precedent.
 - Exception: `src-runtime/jsx.js` stays whole (`genJsx`, `appendChildren` and the tag factories live together) because the factories call `appendChildren` and splitting them only trades a working module for a circular import.
 
 ## Plugins

@@ -20,7 +20,7 @@
  *   | ExpandConditionNode | ExpandMappingNode | ExpandReferenceNode | ExpandFunctionNode
  *   | ExpandNewNode | ExpandRestNode | ExpandTupleMemberNode | ExpandBigintNode
  *   | ExpandTemplateLiteralNode | ExpandIndexSignatureNode | ExpandParameterNode
- *   | ExpandAnnotatedAtomNode} ExpandedType
+ *   | ExpandAnnotatedAtomNode | ExpandClassNode} ExpandedType
  */
 /**
  * @typedef {object} ExpandArrayNode
@@ -128,7 +128,11 @@
  * @property {ExpandedType} result - The result type.
  * @property {ExpandedType} [nameType] - The `as` remap type.
  * @property {'-' | '+' | '?' | 'readonly'} [question] - The optionality modifier.
- * @property {'-' | '+' | 'readonly'} [readonly] - The readonly modifier.
+ * @property {'-' | '+' | 'readonly' | boolean} [readonly] - The readonly
+ * modifier or a plain flag write. Never read by validation as a boolean;
+ * present only so flag writes stay total.
+ * @property {boolean} [optional] - Whether the type may be absent. Never
+ * read by validation; present only so flag writes stay total.
  */
 /**
  * @typedef {object} ExpandReferenceNode
@@ -140,28 +144,37 @@
  */
 /**
  * @typedef {object} ExpandAnnotatedAtomNode
- * @property {ExpandedType} type - The wrapped atom (usually a bare string).
+ * @property {'atom'} type - The tag. `atomType` holds the wrapped atom
+ * (usually a bare string) because `type` is taken by the tag.
+ * @property {ExpandedType} atomType - The wrapped atom.
  * @property {boolean} [optional] - Whether the type may be absent.
  * @property {boolean} [readonly] - Whether the type is readonly.
  */
 /**
  * @typedef {object} ExpandParameterNode
- * @property {ExpandedType} type - The parameter type.
+ * @property {'parameter'} type - The tag. `paramType` holds the parameter
+ * type because `type` is taken by the tag.
+ * @property {ExpandedType} paramType - The parameter type.
  * @property {ExpandedType} name - The parameter name.
+ * @property {boolean} [optional] - Never read by validation; present only
+ * so flag writes stay total.
+ * @property {boolean} [readonly] - Never read by validation; present only
+ * so flag writes stay total.
  */
 /**
  * @typedef {object} ExpandFunctionNode
  * @property {'function'} type - The type.
- * @property {ExpandedType[]} parameters - The parameters, usually `{type, name}`
- * parameter nodes; a rest parameter is an array node wrapping one.
+ * @property {ExpandedType[]} parameters - The parameters, usually
+ * `{type: 'parameter', paramType, name}` parameter nodes; a rest parameter
+ * is an array node wrapping one.
  * @property {boolean} [optional] - Whether the type may be absent.
  * @property {boolean} [readonly] - Whether the type is readonly.
  */
 /**
  * @typedef {object} ExpandNewNode
  * @property {'new'} type - The type.
- * @property {ExpandedType[]} parameters - The parameters, usually `{type, name}`
- * parameter nodes; a rest parameter is an array node wrapping one.
+ * @property {ExpandedType[]} parameters - The parameters, usually
+ * `{type: 'parameter', paramType, name}` parameter nodes; a rest parameter
  * @property {ExpandedType} [ret] - The return type.
  * @property {boolean} [optional] - Whether the type may be absent.
  * @property {boolean} [readonly] - Whether the type is readonly.
@@ -179,6 +192,8 @@
  * @property {string} name - The label.
  * @property {ExpandedType} elementType - The element type.
  * @property {boolean} [optional] - Whether the member may be absent.
+ * @property {boolean} [readonly] - Whether the type may be absent. Never
+ * read by validation; present only so flag writes stay total.
  * @property {boolean} [dotDot] - Whether this is a named rest (`...b: T[]`).
  */
 /**
@@ -201,6 +216,13 @@
  * @property {'indexSignature'} type - The type.
  * @property {ExpandedType} indexType - The value type.
  * @property {ExpandedType[]} indexParameters - The index parameters.
+ * @property {boolean} [optional] - Whether the type may be absent.
+ * @property {boolean} [readonly] - Whether the type is readonly.
+ */
+/**
+ * @typedef {object} ExpandClassNode
+ * @property {'class'} type - The type.
+ * @property {ExpandedType} elementType - The element type.
  * @property {boolean} [optional] - Whether the type may be absent.
  * @property {boolean} [readonly] - Whether the type is readonly.
  */

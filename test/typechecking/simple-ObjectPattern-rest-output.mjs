@@ -64,43 +64,50 @@ class Tokenizer {
       youCanAddABreakpointHere();
     }
     if (!inspectType(chat_template, {
-      "type": "string",
+      "type": "atom",
+      "atomType": "string",
       "optional": true
     }, 'Tokenizer#apply_chat_template', 'options')) {
       youCanAddABreakpointHere();
     }
     if (!inspectType(add_generation_prompt, {
-      "type": "boolean",
+      "type": "atom",
+      "atomType": "boolean",
       "optional": true
     }, 'Tokenizer#apply_chat_template', 'options')) {
       youCanAddABreakpointHere();
     }
     if (!inspectType(tokenize, {
-      "type": "boolean",
+      "type": "atom",
+      "atomType": "boolean",
       "optional": true
     }, 'Tokenizer#apply_chat_template', 'options')) {
       youCanAddABreakpointHere();
     }
     if (!inspectType(padding, {
-      "type": "boolean",
+      "type": "atom",
+      "atomType": "boolean",
       "optional": true
     }, 'Tokenizer#apply_chat_template', 'options')) {
       youCanAddABreakpointHere();
     }
     if (!inspectType(truncation, {
-      "type": "boolean",
+      "type": "atom",
+      "atomType": "boolean",
       "optional": true
     }, 'Tokenizer#apply_chat_template', 'options')) {
       youCanAddABreakpointHere();
     }
     if (!inspectType(max_length, {
-      "type": "number",
+      "type": "atom",
+      "atomType": "number",
       "optional": true
     }, 'Tokenizer#apply_chat_template', 'options')) {
       youCanAddABreakpointHere();
     }
     if (!inspectType(return_tensor, {
-      "type": "boolean",
+      "type": "atom",
+      "atomType": "boolean",
       "optional": true
     }, 'Tokenizer#apply_chat_template', 'options')) {
       youCanAddABreakpointHere();

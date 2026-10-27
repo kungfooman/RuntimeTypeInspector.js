@@ -13,3 +13,4 @@ registerTypedef('HeightWidth', {
     }
   ]
 });
+

@@ -6,7 +6,8 @@ registerTypedef('Scores', {
       "indexType": "number",
       "indexParameters": [
         {
-          "type": "string",
+          "type": "parameter",
+          "paramType": "string",
           "name": "k"
         }
       ]
@@ -117,7 +118,8 @@ function takePartialNums(x) {
             "indexType": "string",
             "indexParameters": [
               {
-                "type": "number",
+                "type": "parameter",
+                "paramType": "number",
                 "name": "n"
               }
             ]

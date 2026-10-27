@@ -68,10 +68,11 @@ function parseTypeBabelTS(str) {
   return first.typeAnnotation;
 }
 /**
- * Converts a Babel function parameter to a `{type, name}` parameter node,
- * matching the TS parser's `Parameter` case. `RestElement` (`...args: T[]`)
- * wraps like `dotDotDotToken` does there, producing an array node instead
- * of a parameter node, exactly like the TS parser.
+ * Converts a Babel function parameter to a tagged `{type: 'parameter',
+ * paramType, name}` parameter node, matching the TS parser's `Parameter`
+ * case. `RestElement` (`...args: T[]`) wraps like `dotDotDotToken` does
+ * there, producing an array node instead of a parameter node, exactly
+ * like the TS parser.
  * @param {*} param - The Babel parameter node.
  * @returns {ExpandedType} The parameter or rest-array node.
  */
@@ -80,24 +81,24 @@ function toBabelParameter(param) {
     const type = toSourceBabelTSOrAny(param.typeAnnotation?.typeAnnotation);
     const name = param.argument?.name ?? 'args';
     /** @type {ExpandParameterNode} */
-    const inner = {type, name};
+    const inner = {type: 'parameter', paramType: type, name};
     return ({type: 'array', elementType: inner});
   }
   const type = toSourceBabelTSOrAny(param?.typeAnnotation?.typeAnnotation);
   const name = param?.name ?? 'arg';
-  return ({type, name});
+  return ({type: 'parameter', paramType: type, name});
 }
 /**
  * Converts a Babel index signature parameter (`[n: number]`) to a
- * `{type, name}` parameter node, matching the TS parser's `Parameter`
- * case without the rest wrapping.
+ * tagged parameter node, matching the TS parser's `Parameter` case
+ * without the rest wrapping.
  * @param {*} param - The Babel parameter node.
  * @returns {ExpandParameterNode} The parameter node.
  */
 function toBabelIndexParameter(param) {
   const type = toSourceBabelTSOrAny(param?.typeAnnotation?.typeAnnotation);
   const name = param?.name ?? 'arg';
-  return {type, name};
+  return {type: 'parameter', paramType: type, name};
 }
 /**
  * Expands a Babel index signature parameter, defaulting unrepresentable
@@ -178,6 +179,9 @@ function toSourceBabelTS(node) {
         }
         // Bare reference: Identifier gives name, TSQualifiedName gives dotted path.
         return name;
+      }
+      if (typeof name !== 'string') {
+        return undefined;
       }
       console.assert(node.typeParameters.type === 'TSTypeParameterInstantiation');
       const typeArguments = node.typeParameters.params;
@@ -440,11 +444,11 @@ function toSourceBabelTS(node) {
           let type = toSourceBabelTSOrAny(member.typeAnnotation);
           if (member.optional) {
             if (isExpandedObject(type)) type.optional = true;
-            else type = {type, optional: true};
+            else type = {type: 'atom', atomType: type, optional: true};
           }
           if (member.readonly) {
             if (isExpandedObject(type)) type.readonly = true;
-            else type = {type, readonly: true};
+            else type = {type: 'atom', atomType: type, readonly: true};
           }
           if (typeof name === 'string') {
             properties[name] = type;

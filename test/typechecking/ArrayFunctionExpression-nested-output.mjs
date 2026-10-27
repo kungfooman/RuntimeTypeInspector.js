@@ -1,4 +1,5 @@
 class XrManager {
+  
   /**
    * @param {XRSession} session - XR session.
    * @param {string} spaceType - Space type to request for the session.

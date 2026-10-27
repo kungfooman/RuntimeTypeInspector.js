@@ -85,11 +85,8 @@ function substituteType(type, search, replace, warn) {
   if (type === null || typeof type !== 'object') {
     return type;
   }
-  if (typeof type.type === 'string' || typeof type.type === 'number' || typeof type.type === 'boolean') {
-    const keys = Object.keys(type);
-    if (keys.every((key) => key === 'type' || key === 'optional' || key === 'readonly')) {
-      return substitutes.substituteAtom(type, search, replace, warn);
-    }
+  if (type.type === 'atom') {
+    return substitutes.substituteAtom(type, search, replace, warn);
   }
   switch (type.type) {
     case 'object':

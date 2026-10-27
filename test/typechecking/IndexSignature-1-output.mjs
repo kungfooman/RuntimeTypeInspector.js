@@ -1,3 +1,4 @@
+
 /**
  * @param {{[n: number]: string, length: number}} words
  */
@@ -13,7 +14,8 @@ function countWords(words) {
         "indexType": "string",
         "indexParameters": [
           {
-            "type": "number",
+            "type": "parameter",
+            "paramType": "number",
             "name": "n"
           }
         ]

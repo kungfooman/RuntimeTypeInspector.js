@@ -1,3 +1,4 @@
+
 /**
  * @param {PretrainedOptions} [something] Optional parameters.
  */
@@ -5,7 +6,8 @@ function test({
   revision = 'main',
 } = {}) {
   if (!inspectType(arguments[0], {
-    "type": "PretrainedOptions",
+    "type": "atom",
+    "atomType": "PretrainedOptions",
     "optional": true
   }, 'test', 'something')) {
     youCanAddABreakpointHere();

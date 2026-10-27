@@ -21,7 +21,8 @@ class AbstractPool {
           {
             "type": "array",
             "elementType": {
-              "type": {
+              "type": "parameter",
+              "paramType": {
                 "type": "array",
                 "elementType": "any"
               },

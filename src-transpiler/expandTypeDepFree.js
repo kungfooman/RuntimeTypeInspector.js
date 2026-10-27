@@ -9,7 +9,7 @@
  * console.log(expandTypeDepFree(tooComplex));
  */
 import {isExpandedObject} from './isExpandedObject.js';
-/** @import {ExpandedType, ExpandMappingNode, ExpandMappedRaw, ExpandTupleMemberNode, ExpandIndexSignatureNode, ExpandAnnotatedAtomNode, ExpandObjectNode} from './expandedType.js' */
+/** @import {ExpandedType, ExpandMappingNode, ExpandMappedRaw, ExpandTupleMemberNode, ExpandIndexSignatureNode, ExpandAnnotatedAtomNode, ExpandObjectNode, ExpandParameterNode} from './expandedType.js' */
 /**
  * Splits a string by a delimiter, ignoring delimiters nested inside <>, {}, [], ().
  * Quote-aware: delimiters inside '...', "..." or `...` never split.
@@ -405,7 +405,7 @@ function parseIndexedAccessRaw(type) {
   return {objectRaw, indexRaw};
 }
 /**
- * Splits a raw function parameter list into `{type, name}` parameter nodes,
+ * Splits a raw function parameter list into tagged parameter nodes,
  * mirroring the TS parser's `Parameter` case. `...args: T[]` wraps like
  * `dotDotDotToken` does there.
  * @param {string} paramsRaw - The raw text between the parameter parens.
@@ -417,7 +417,10 @@ function parseFunctionParams(paramsRaw) {
     return [];
   }
   const parts = splitTopLevel(paramsRaw, ',');
+  /** @type {ExpandedType[]} */
   const parameters = [];
+  /** @type {ExpandParameterNode} */
+  let plainParam;
   for (const part of parts) {
     const trimmed = part.trim();
     if (!trimmed) {
@@ -434,8 +437,8 @@ function parseFunctionParams(paramsRaw) {
       if (!name || !typeRaw) {
         return;
       }
-      const innerParam = {type: expandTypeDepFreeOrAny(typeRaw), name};
-      parameters.push({type: 'array', elementType: innerParam});
+      plainParam = {type: 'parameter', paramType: expandTypeDepFreeOrAny(typeRaw), name};
+      parameters.push({type: 'array', elementType: plainParam});
       continue;
     }
     const colonIdx = findTopLevelChar(trimmed, ':');
@@ -450,7 +453,8 @@ function parseFunctionParams(paramsRaw) {
       return;
     }
     const paramType = expandTypeDepFreeOrAny(typeRaw);
-    parameters.push({type: paramType, name: cleanName});
+    plainParam = {type: 'parameter', paramType, name: cleanName};
+    parameters.push(plainParam);
   }
   return parameters;
 }
@@ -569,10 +573,12 @@ function parseIndexSignatureEntry(entry) {
   }
   const indexType = expandTypeDepFreeOrAny(valueRaw);
   const indexParamType = expandTypeDepFreeOrAny(paramTypeRaw);
+  /** @type {ExpandParameterNode} */
+  const indexParam = {type: 'parameter', paramType: indexParamType, name: paramName};
   return {
     type: 'indexSignature',
     indexType,
-    indexParameters: [{type: indexParamType, name: paramName}],
+    indexParameters: [indexParam],
   };
 }
 /**
@@ -966,10 +972,14 @@ function expandTypeDepFree(type) {
       if (propOptional || propReadonly) {
         if (isExpandedObject(expanded)) {
           if (propOptional) expanded.optional = true;
-          if (propReadonly) expanded.readonly = true;
+          if (propReadonly) {
+            // The mapping modifier union absorbs `true`; tuple members and
+            // other flag shapes take the plain boolean. Both stay total.
+            expanded.readonly = true;
+          }
         } else {
           /** @type {ExpandAnnotatedAtomNode} */
-          const wrapped = {type: expanded};
+          const wrapped = {type: 'atom', atomType: expanded};
           if (propOptional) wrapped.optional = true;
           if (propReadonly) wrapped.readonly = true;
           expanded = wrapped;

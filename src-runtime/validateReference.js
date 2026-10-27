@@ -9,6 +9,7 @@ import {getTypeKeys, resolveUtilityShape} from "./getTypeKeys.js";
 import {instantiateReference} from "./instantiateReference.js";
 import {extendsCheck, resolveForExtends, stripLiteral, evaluateCondition} from "./evaluateCondition.js";
 import {deepEqualType} from "./deepEqualType.js";
+import {atomStripOptional} from "./atomStripOptional.js";
 /**
  * Follows strings through typedefs (and materializes mappings) to object
  * shapes, distributing over unions like homomorphic mapped types do.
@@ -80,7 +81,14 @@ function resolveObjectArgs(type, warn) {
     if (current && current.type === 'reference') {
       const {name, args} = current;
       if ((name === 'NonNullable' || name === 'Readonly' || name === 'NoInfer') && args?.length) {
-        current = args[0];
+        // Transparent wrappers re-enter the loop with their argument, keeping
+        // the atom wrapper and clearing only the occurrence flag: an unwrapped
+        // payload (a bare string or leaf) is not an object shape, so the loop
+        // below would fall through and report the reference as unresolvable.
+        // The next iteration still sees a tagged node and chases the payload
+        // through the typedef, class and constructor branches exactly like an
+        // unflagged atom would.
+        current = atomStripOptional(args[0]);
         continue;
       }
       if ((name === 'Partial' || name === 'Pick' || name === 'Omit' || name === 'Required') && args?.length) {
@@ -290,9 +298,9 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         }
       }
       if (firstArg && firstArg.type === 'reference' && typedefs[firstArg.name]) {
-        const instance = instantiateReference(firstArg, warn);
-        if (typeof instance === 'string' && !typedefs[instance] && !classes[instance]) {
-          return recurse(value, {type: 'reference', name: 'Partial', args: [instance]}, loc, name, critical, warn, depth + 1);
+        const instancePartial = instantiateReference(firstArg, warn);
+        if (typeof instancePartial === 'string' && !typedefs[instancePartial] && !classes[instancePartial]) {
+          return recurse(value, {type: 'reference', name: 'Partial', args: [instancePartial]}, loc, name, critical, warn, depth + 1);
         }
       }
       // `any` maps over its string/number/symbol keys: an object bag with
@@ -300,8 +308,8 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
       // rejecting primitives and nullish values, exactly like TypeScript.
       if (firstArg === 'any') {
         return recurse(value, {type: 'object', properties: {}, indexSignatures: [
-          {type: 'indexSignature', indexType: 'any', indexParameters: [{type: 'string', name: 'k'}]},
-          {type: 'indexSignature', indexType: 'any', indexParameters: [{type: 'number', name: 'n'}]}
+          {type: 'indexSignature', indexType: 'any', indexParameters: [{type: 'parameter', paramType: 'string', name: 'k'}]},
+          {type: 'indexSignature', indexType: 'any', indexParameters: [{type: 'parameter', paramType: 'number', name: 'n'}]}
         ]}, loc, name, critical, warn, depth + 1);
       }
       // `unknown` maps over `never` keys: the bare object, admitting every
@@ -567,17 +575,17 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         }
       }
       if (firstArg && firstArg.type === 'reference' && typedefs[firstArg.name]) {
-        const instance = instantiateReference(firstArg, warn);
-        if (typeof instance === 'string' && !typedefs[instance] && !classes[instance]) {
-          return recurse(value, {type: 'reference', name: 'Required', args: [instance]}, loc, name, critical, warn, depth + 1);
+        const instanceRequired = instantiateReference(firstArg, warn);
+        if (typeof instanceRequired === 'string' && !typedefs[instanceRequired] && !classes[instanceRequired]) {
+          return recurse(value, {type: 'reference', name: 'Required', args: [instanceRequired]}, loc, name, critical, warn, depth + 1);
         }
       }
       // `any`/`unknown`/template literals/`keyof` behave exactly like under
       // Partial (see above): signatures bag, bare object, identity.
       if (firstArg === 'any') {
         return recurse(value, {type: 'object', properties: {}, indexSignatures: [
-          {type: 'indexSignature', indexType: 'any', indexParameters: [{type: 'string', name: 'k'}]},
-          {type: 'indexSignature', indexType: 'any', indexParameters: [{type: 'number', name: 'n'}]}
+          {type: 'indexSignature', indexType: 'any', indexParameters: [{type: 'parameter', paramType: 'string', name: 'k'}]},
+          {type: 'indexSignature', indexType: 'any', indexParameters: [{type: 'parameter', paramType: 'number', name: 'n'}]}
         ]}, loc, name, critical, warn, depth + 1);
       }
       if (firstArg === 'unknown') {

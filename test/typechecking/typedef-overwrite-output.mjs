@@ -26,3 +26,4 @@ registerTypedef('AnyTypedArray', {
     "BigTypedArray"
   ]
 });
+

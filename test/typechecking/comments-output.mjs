@@ -1,3 +1,4 @@
+
 // start
 export const uniformTypeToName = [
   'bool',
@@ -17,10 +18,14 @@ export const uniformTypeToName = [
   // not directly handled: UNIFORMTYPE_VEC4ARRAY
   ''
 ];
+
 /**
  * A WebGL 1 device type.
  *
  * @type {string}
  */
+
 export const DEVICETYPE_WEBGL1 = 'webgl1'; // 123
+
 // end
+

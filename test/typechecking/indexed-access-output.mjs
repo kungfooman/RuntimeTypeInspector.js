@@ -1,3 +1,4 @@
+
 /**
  * @param {number[]} arr - A number array.
  * @param {Record<string, number>} obj - An object with number values.

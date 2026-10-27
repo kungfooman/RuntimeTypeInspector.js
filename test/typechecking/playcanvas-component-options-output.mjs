@@ -200,7 +200,8 @@ registerTypedef('ComponentOptionsOverrides', {
       "type": "object",
       "properties": {
         "fov": {
-          "type": "number",
+          "type": "atom",
+          "atomType": "number",
           "optional": true
         }
       }

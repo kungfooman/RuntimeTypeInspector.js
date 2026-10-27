@@ -14,7 +14,7 @@
  * isExpandedObject(expandType('string')); // false
  * isExpandedObject(undefined); // false
  * @param {ExpandedType | undefined} type - The expanded type to check.
- * @returns {type is {optional?: boolean, readonly?: boolean}} Whether the type is a flag-carrying object node.
+ * @returns {type is Exclude<ExpandedType, string | number | boolean | undefined>} Whether the type is a flag-carrying object node.
  */
 function isExpandedObject(type) {
   return typeof type === 'object' && type !== null;

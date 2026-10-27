@@ -1,12 +1,12 @@
 import {matchIndexSignature} from './matchIndexSignature.js';
 function testStringMatchesAll() {
   // String parameters cover every key, like TypeScript's string index.
-  const expect = {type: 'object', indexSignatures: [{type: 'indexSignature', indexType: 'number', indexParameters: [{type: 'string', name: 'k'}]}]};
+  const expect = {type: 'object', indexSignatures: [{type: 'indexSignature', indexType: 'number', indexParameters: [{type: 'parameter', paramType: 'string', name: 'k'}]}]};
   return matchIndexSignature(expect, 'a') !== undefined && matchIndexSignature(expect, '0') !== undefined;
 }
 function testNumberMatchesNumericOnly() {
   // Number parameters cover canonical numeric keys and skip the rest.
-  const expect = {type: 'object', indexSignatures: [{type: 'indexSignature', indexType: 'string', indexParameters: [{type: 'number', name: 'n'}]}]};
+  const expect = {type: 'object', indexSignatures: [{type: 'indexSignature', indexType: 'string', indexParameters: [{type: 'parameter', paramType: 'number', name: 'n'}]}]};
   if (!matchIndexSignature(expect, '0')) {
     return false;
   }
@@ -30,8 +30,8 @@ function testNumberMatchesNumericOnly() {
 function testNumericPrefersNumber() {
   // Numeric keys pick the numeric signature when both kinds exist.
   const expect = {type: 'object', indexSignatures: [
-    {type: 'indexSignature', indexType: 'number', indexParameters: [{type: 'string', name: 'k'}]},
-    {type: 'indexSignature', indexType: 'string', indexParameters: [{type: 'number', name: 'n'}]}
+    {type: 'indexSignature', indexType: 'number', indexParameters: [{type: 'parameter', paramType: 'string', name: 'k'}]},
+    {type: 'indexSignature', indexType: 'string', indexParameters: [{type: 'parameter', paramType: 'number', name: 'n'}]}
   ]};
   const numeric = matchIndexSignature(expect, '0');
   if (!numeric || numeric.indexType !== 'string') {

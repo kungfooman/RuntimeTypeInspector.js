@@ -26,6 +26,7 @@ registerTypedef('AnyTypedArray', {
     "BigTypedArray"
   ]
 });
+
 /**
  * @typedef {Int8Array | Uint8Array | Uint8ClampedArray | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array} TypedArray
  * @typedef {BigInt64Array | BigUint64Array} BigTypedArray
@@ -62,7 +63,9 @@ export function permute_data(array, dims, axes) {
   }, 'permute_data', 'axes', rtiTemplates)) {
     youCanAddABreakpointHere();
   }
+
   // Calculate the new shape of the permuted array
+
   // and the stride of the original array
   const shape = new Array(axes.length);
   const stride = new Array(axes.length);
@@ -72,15 +75,21 @@ export function permute_data(array, dims, axes) {
     s *= inspectIndexedAccess(shape, i, "permute_data");
   }
   // Precompute inverse mapping of stride
+
   const invStride = axes.map((_, i) => {
     return inspectIndexedAccess(stride, axes.indexOf(i), "permute_data");
   });
   // Create the permuted array with the new shape
+
   // @ts-ignore
+
+
   // Create the permuted array with the new shape
+
   // @ts-ignore
   const permutedData = new array.constructor(array.length);
   // Permute the original array to the new array
+
   for (let i = 0; i < array.length; ++i) {
     let newIndex = 0;
     for (let j = dims.length - 1, k = i; j >= 0; --j) {
@@ -93,6 +102,7 @@ export function permute_data(array, dims, axes) {
 }
 const arr = new Float32Array([1, 2, 3, 4]);
 //const arr = [1, 2, 3, 4]; // Should fail, since it's no typed array.
+
 const dims = [2, 2];
 const axes = [1, 0];
 const [permutedData, shape] = permute_data(arr, dims, axes);

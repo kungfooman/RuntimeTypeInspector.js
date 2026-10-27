@@ -277,7 +277,8 @@ registerTypedef('OptionalNullMapSource', {
       ]
     },
     "optionalCamera": {
-      "type": "CameraComponent",
+      "type": "atom",
+      "atomType": "CameraComponent",
       "optional": true
     }
   }
@@ -322,7 +323,8 @@ registerTypedef('OptionalCamera', {
   "type": "object",
   "properties": {
     "camera": {
-      "type": "CameraComponent",
+      "type": "atom",
+      "atomType": "CameraComponent",
       "optional": true
     }
   }
@@ -350,7 +352,8 @@ registerTypedef('RequiredAndOptional', {
       ]
     },
     "optional": {
-      "type": "CameraComponent",
+      "type": "atom",
+      "atomType": "CameraComponent",
       "optional": true
     }
   }

@@ -1,3 +1,4 @@
+
 /**
  * Converts an amplitude spectrogram to the decibel scale. This computes `20 * log10(spectrogram / reference)`,
  * using basic logarithm properties for numerical stability. NOTE: Operates in-place.
@@ -31,19 +32,22 @@ function amplitude_to_db(spectrogram, reference = 1.0, min_value = 1e-5, db_rang
     youCanAddABreakpointHere();
   }
   if (!inspectTypeWithTemplates(reference, {
-    "type": "number",
+    "type": "atom",
+    "atomType": "number",
     "optional": true
   }, 'amplitude_to_db', 'reference', rtiTemplates)) {
     youCanAddABreakpointHere();
   }
   if (!inspectTypeWithTemplates(min_value, {
-    "type": "number",
+    "type": "atom",
+    "atomType": "number",
     "optional": true
   }, 'amplitude_to_db', 'min_value', rtiTemplates)) {
     youCanAddABreakpointHere();
   }
   if (!inspectTypeWithTemplates(db_range, {
-    "type": "number",
+    "type": "atom",
+    "atomType": "number",
     "optional": true
   }, 'amplitude_to_db', 'db_range', rtiTemplates)) {
     youCanAddABreakpointHere();

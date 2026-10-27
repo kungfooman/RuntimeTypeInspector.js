@@ -1,19 +1,22 @@
 class Vec3 {
   constructor(x = 0, y = 0, z = 0) {
     if (!inspectType(x, {
-      "type": "number",
+      "type": "atom",
+      "atomType": "number",
       "optional": true
     }, 'Vec3#constructor', 'x')) {
       youCanAddABreakpointHere();
     }
     if (!inspectType(y, {
-      "type": "number",
+      "type": "atom",
+      "atomType": "number",
       "optional": true
     }, 'Vec3#constructor', 'y')) {
       youCanAddABreakpointHere();
     }
     if (!inspectType(z, {
-      "type": "number",
+      "type": "atom",
+      "atomType": "number",
       "optional": true
     }, 'Vec3#constructor', 'z')) {
       youCanAddABreakpointHere();
@@ -34,7 +37,8 @@ function greet(name, size = 10) {
     youCanAddABreakpointHere();
   }
   if (!inspectType(size, {
-    "type": "number",
+    "type": "atom",
+    "atomType": "number",
     "optional": true
   }, 'greet', 'size')) {
     youCanAddABreakpointHere();
@@ -44,7 +48,8 @@ function greet(name, size = 10) {
 const make = (svc = new Service()) => {
 
 if (!inspectType(svc, {
-  "type": "Service",
+  "type": "atom",
+  "atomType": "Service",
   "optional": true
 }, 'make', 'svc')) {
   youCanAddABreakpointHere();

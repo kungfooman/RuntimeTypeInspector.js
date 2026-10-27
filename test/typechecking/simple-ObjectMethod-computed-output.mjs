@@ -1,12 +1,14 @@
 function VecAxis(axis = 'x', value = 0) {
   if (!inspectType(axis, {
-    "type": "string",
+    "type": "atom",
+    "atomType": "string",
     "optional": true
   }, 'VecAxis', 'axis')) {
     youCanAddABreakpointHere();
   }
   if (!inspectType(value, {
-    "type": "number",
+    "type": "atom",
+    "atomType": "number",
     "optional": true
   }, 'VecAxis', 'value')) {
     youCanAddABreakpointHere();

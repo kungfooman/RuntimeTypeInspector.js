@@ -158,7 +158,7 @@ function testMappedNestedParity() {
   return true;
 }
 function testFunctionNewParity() {
-  // Function and constructor types: Babel builds `{type, name}` params
+  // Function and constructor types: Babel builds tagged parameter nodes
   // and rest-array wrapping exactly like the TS parser.
   for (const type of [
     '(a: number) => string',
@@ -186,8 +186,8 @@ function testObjectFlagsParity() {
   return true;
 }
 function testIndexSignatureParity() {
-  // Index parameters are `{type, name}` nodes, so the runtime can read
-  // `params[0].type` for string/number matching.
+  // Index parameters are tagged `parameter` nodes, so the runtime can read
+  // `params[0].paramType` for string/number matching.
   for (const type of [
     '{[n: number]: string}',
     '{[k: string]: number}',
@@ -293,7 +293,7 @@ function testMissBecomesAnyParity() {
     'keyof ?': {type: 'keyof', argument: 'any'},
     '{a: ?}': {type: 'object', properties: {a: 'any'}},
     'string | ?': {type: 'union', members: ['string', 'any']},
-    '(a: ?) => string': {type: 'function', parameters: [{type: 'any', name: 'a'}]},
+    '(a: ?) => string': {type: 'function', parameters: [{type: 'parameter', paramType: 'any', name: 'a'}]},
     'typeof ?': {type: 'union', members: [{type: 'typeof', argument: 'any'}, 'null']},
   };
   for (const [type, want] of Object.entries(exact)) {
