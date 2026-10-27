@@ -77,6 +77,7 @@ export * from './substituteMapNode.js';
 export * from './substituteAtom.js';
 export * from './atomStripOptional.js';
 export * from './atomUnwrap.js';
+export * from './isParameterNode.js';
 export * from './substituteObject.js';
 export * from './substituteIndexSignature.js';
 export * from './substituteTuple.js';

@@ -81,10 +81,13 @@ function resolveObjectArgs(type, warn) {
     if (current && current.type === 'reference') {
       const {name, args} = current;
       if ((name === 'NonNullable' || name === 'Readonly' || name === 'NoInfer') && args?.length) {
-        // Transparent wrappers re-enter the loop with their argument: only
-        // the atom occurrence flag is cleared (see atomStripOptional), the
-        // payload keeps flowing through the typedef, class and constructor
-        // branches below exactly like an unflagged node would.
+        // Transparent wrappers re-enter the loop with their argument, keeping
+        // the atom wrapper and clearing only the occurrence flag: an unwrapped
+        // payload (a bare string or leaf) is not an object shape, so the loop
+        // below would fall through and report the reference as unresolvable.
+        // The next iteration still sees a tagged node and chases the payload
+        // through the typedef, class and constructor branches exactly like an
+        // unflagged atom would.
         current = atomStripOptional(args[0]);
         continue;
       }

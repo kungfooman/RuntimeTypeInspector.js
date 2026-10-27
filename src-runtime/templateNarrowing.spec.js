@@ -1,5 +1,6 @@
 import {inspectTypeWithTemplates} from './inspectTypeWithTemplates.js';
 import {substituteType} from './substituteType.js';
+import {expandType} from '../src-transpiler/expandType.js';
 /**
  * Runs `fn` with `console.warn` stubbed, returning collected warnings.
  * `inspectTypeWithTemplates` wires `console.warn` into `substituteType`
@@ -40,21 +41,29 @@ function captureMessage(fn) {
 // value must pass silently (used to warn `unchecked` + `@todo unhandled`).
 function testOptionalBareInstantiates() {
   const templates = {T: 'any'};
-  const {ret, warnings} = captureWarns(() => inspectTypeWithTemplates('x', {type: 'atom', atomType: 'T', optional: true}, 'f', 'a', templates));
+  const parsed = expandType('{a?: T}');
+  const input = parsed.properties.a;
+  const {ret, warnings} = captureWarns(() => inspectTypeWithTemplates('x', input, 'f', 'a', templates));
   return ret === true && warnings.length === 0 && templates.T === '"x"';
 }
 // Omitted optional bare params pass without poisoning the template.
 function testOptionalBareOmitted() {
   const templates = {T: 'any'};
-  const {ret, warnings} = captureWarns(() => inspectTypeWithTemplates(undefined, {type: 'atom', atomType: 'T', optional: true}, 'f', 'a', templates));
+  const parsed = expandType('{a?: T}');
+  const input = parsed.properties.a;
+  const {ret, warnings} = captureWarns(() => inspectTypeWithTemplates(undefined, input, 'f', 'a', templates));
   return ret === true && warnings.length === 0 && templates.T === 'any';
 }
 // Optional non-template params stay silent when an unrelated template exists.
 function testOptionalUnrelatedSilent() {
   let warns = 0;
   const noisy = () => warns++;
-  const out = substituteType({type: 'atom', atomType: 'string', optional: true}, 'T', 'any', noisy);
-  const out2 = substituteType({type: 'atom', atomType: 'MyBox', optional: true}, 'T', 'any', noisy);
+  const parsedString = expandType('{a?: string}');
+  const inputString = parsedString.properties.a;
+  const parsedBox = expandType('{a?: MyBox}');
+  const inputBox = parsedBox.properties.a;
+  const out = substituteType(inputString, 'T', 'any', noisy);
+  const out2 = substituteType(inputBox, 'T', 'any', noisy);
   return warns === 0 && out.atomType === 'string' && out2.atomType === 'MyBox';
 }
 // `typeof X` is a value position: never rewritten, never warns.

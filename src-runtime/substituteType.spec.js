@@ -1,4 +1,5 @@
 import {substituteType} from './substituteType.js';
+import {expandType} from '../src-transpiler/expandType.js';
 /**
  * Compares structurally (key order from construction is stable).
  * @param {*} actual - The substituted tree.
@@ -21,7 +22,9 @@ function testPrimitivesAndAtoms() {
     }
   }
   // Flag-only wrappers substitute inside `.type`.
-  const atom = substituteType({type: 'atom', atomType: 'K', optional: true}, 'K', '"a"', () => {});
+  const parsed = expandType('{a?: K}');
+  const input = parsed.properties.a;
+  const atom = substituteType(input, 'K', '"a"', () => {});
   return same(atom, {type: 'atom', atomType: '"a"', optional: true});
 }
 function testObjects() {

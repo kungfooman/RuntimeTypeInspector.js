@@ -1,4 +1,5 @@
 import {collectCandidates} from './collectCandidates.js';
+import {expandType} from '../src-transpiler/expandType.js';
 /**
  * Collects keys in arrival order for compact assertions. The walker emits
  * every bare site (membership in `templates` is the caller's filter, applied
@@ -31,7 +32,9 @@ function testLiteralsAreNotSites() {
 }
 // Annotated atoms (`@param {T} [a]`) collect through the wrapper.
 function testAtomWrapperCollects() {
-  return keysOf('x', {type: 'atom', atomType: 'T', optional: true}) === 'T="\\"x\\""';
+  const parsed = expandType('{a?: T}');
+  const input = parsed.properties.a;
+  return keysOf('x', input) === 'T="\\"x\\""';
 }
 // Nested positions contribute: arrays, tuples, objects, index signatures.
 function testNestedCollects() {

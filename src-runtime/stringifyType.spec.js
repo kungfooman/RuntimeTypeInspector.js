@@ -1,4 +1,5 @@
 import {stringifyType} from './stringifyType.js';
+import {expandType} from '../src-transpiler/expandType.js';
 // Objects with tuple props stringify in TS notation (issue 154).
 function testIssue154() {
   const t2 = {
@@ -120,6 +121,70 @@ function testReadonlyProps() {
   }
   return true;
 }
+// Optional atoms print with `?:`, whether the payload is a name, a keyword,
+// a tree, a union or a literal: the deleted fast path only handled 2-key
+// shapes, so the generic path must carry every payload kind.
+function testOptionalAtomPayloads() {
+  const cases = [
+    ['{camera?: Camera}', '{camera?: Camera}'],
+    ['{camera?: string}', '{camera?: string}'],
+    ['{opts?: {fov: number}}', '{opts?: {fov: number}}'],
+    ['{v?: string | number}', '{v?: string | number}'],
+    ['{v?: "a"}', '{v?: "a"}'],
+    ['{n?: 42}', '{n?: 42}'],
+  ];
+  for (const [input, expected] of cases) {
+    const str = stringifyType(expandType(input));
+    if (str !== expected) {
+      console.warn('stringifyType optional atom mismatch', {input, str, expected});
+      return false;
+    }
+  }
+  return true;
+}
+// Required props print with `:`, never `?`: the flag path must not leak.
+function testRequiredPrintsBare() {
+  const str = stringifyType(expandType('{camera: Camera}'));
+  if (str !== '{camera: Camera}') {
+    console.warn('stringifyType required mismatch', {str});
+    return false;
+  }
+  return true;
+}
+// Readonly and optional compose: the prefix prints, then the `?:` marker.
+function testReadonlyOptionalComposes() {
+  const str = stringifyType(expandType('{readonly camera?: Camera}'));
+  if (str !== '{readonly camera?: Camera}') {
+    console.warn('stringifyType readonly-optional mismatch', {str});
+    return false;
+  }
+  return true;
+}
+// Index-signature parameters print as `name: type` from the tagged node.
+function testIndexSignatureParams() {
+  const str = stringifyType(expandType('{[k: string]: number}'));
+  if (str !== '{[k: string]: number}') {
+    console.warn('stringifyType index signature mismatch', {str});
+    return false;
+  }
+  const mixed = stringifyType(expandType('{[k: string]: number, len: number}'));
+  if (mixed !== '{len: number, [k: string]: number}') {
+    console.warn('stringifyType mixed index mismatch', {mixed});
+    return false;
+  }
+  return true;
+}
+// A non-parameter index entry falls through to the generic path instead of
+// printing as `name: type`: the discriminant rejects what the old
+// `_.name !== undefined` probe misprinted.
+function testIndexSignatureFallback() {
+  const str = stringifyType({type: 'indexSignature', indexType: 'number', indexParameters: ['string']});
+  if (str !== '[string]: number') {
+    console.warn('stringifyType index fallback mismatch', {str});
+    return false;
+  }
+  return true;
+}
 export const tests = [
   testIssue154,
   testIssue154PrettyNonNormalized,
@@ -127,4 +192,9 @@ export const tests = [
   testMapping,
   testMappingModifiers,
   testReadonlyProps,
+  testOptionalAtomPayloads,
+  testRequiredPrintsBare,
+  testReadonlyOptionalComposes,
+  testIndexSignatureParams,
+  testIndexSignatureFallback,
 ];

@@ -57,7 +57,11 @@ When the user hands you tests (repro files, `./tmp` snippets, demo cases), make 
   TypeScript-playground counter-checks would diverge from RTI's nominal
   class checks.
 - Spec: `src-transpiler/<name>.spec.js` (or `src-runtime/`) in repo style
-  (sync boolean tests, `export const tests`), wired into `test_runtime.js`.
+  (sync tests returning boolean, `export const tests`), wired into `test_runtime.js`.
+  Both assertion styles are fine: bare `return actual === expected` for short
+  reads, or `console.warn` diagnostics plus `return false` when the mismatch
+  needs both sides inline (the warn carries the meta-info: actual, expected,
+  and the label that locates the case). Pick per test, not per file.
   Cover the transpiler output AND creative variants of your own: edge cases
   the repro didn't show (export wrappers, template shadowing, bare
   templates, widening vs warns at runtime).
@@ -183,7 +187,7 @@ Each helper module in `src-runtime/` and `src-transpiler/` holds exactly one fun
 - Compare structures with `deepEqualType`, never `JSON.stringify`: string comparison is key-order sensitive, so a spread that appends a key (`{...base, extra: 1}`) fails a hand-ordered literal for no behavioral reason. `deepEqualType` sorts keys via `canonicalize` and treats `false` and absent flags as equal, so the assertion tests shape, not serialization. Bind the expectation first (`const expected = {...}; return deepEqualType(actual, expected);`) to keep the assertion line short.
 - Family names beat directory grouping: when a helper belongs to a named family whose names mirror a dispatch table or a call convention (the 25 `substitute*` helpers registered by shorthand key in `substituteType.js`), it keeps the family name even when a noun-first grouping would read nicer in the listing. Majority wins (25 vs 3): renaming one member out of the family makes the table lie, while the grouping was aesthetic only. Precedent: `substituteAtom` stayed verb-first despite the `atom*` helpers next to it.
 - When extracting: move the function as-is (no behavior changes), point the old module's import at the new file, add an `export * from './<name>.js';` line to the package index (`src-runtime/index.js` or `src-transpiler/index.js`), update any specs importing from the old path, and finish with the full gate (`npm test` + `npm run lint`).
-- Every helper module ships with a `<name>.spec.js` next to it (same style: sync boolean tests, `export const tests`, wired into `test_runtime.js`): a function lands only with a spec that fails when the function is stubbed out. Pre-existing spec-less modules are backlog, not precedent.
+- Every helper module ships with a `<name>.spec.js` next to it (same style: sync tests returning boolean, `export const tests`, wired into `test_runtime.js`): a function lands only with a spec that fails when the function is stubbed out. Pre-existing spec-less modules are backlog, not precedent.
 - Exception: `src-runtime/jsx.js` stays whole (`genJsx`, `appendChildren` and the tag factories live together) because the factories call `appendChildren` and splitting them only trades a working module for a circular import.
 
 ## Plugins
