@@ -20,7 +20,8 @@
  * @param {*} type - The type to strip, usually the unwrapped utility argument.
  * @returns {*} The same atom with `optional: false`, or the input unchanged.
  * @example
- * atomStripOptional({type: 'atom', atomType: 'Camera', optional: true});
+ * // input: {type: 'atom', atomType: 'Camera', optional: true}
+ * atomStripOptional(expandType('{camera?: Camera}').properties.camera);
  * // {type: 'atom', atomType: 'Camera', optional: false}
  */
 function atomStripOptional(type) {

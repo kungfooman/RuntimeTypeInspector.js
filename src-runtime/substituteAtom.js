@@ -11,7 +11,8 @@ import {recurseSubstitute} from "./substitutes.js";
  * @param {console["warn"]} warn - Function to warn with.
  * @returns {*} Substituted atom or the original.
  * @example
- * substituteAtom({type: 'atom', atomType: 'K', optional: true}, 'K', '"a"', console.warn);
+ * // input: {type: 'atom', atomType: 'K', optional: true}
+ * substituteAtom(expandType('{a?: K}').properties.a, 'K', '"a"', console.warn);
  * // {type: 'atom', atomType: '"a"', optional: true}
  */
 function substituteAtom(type, search, replace, warn) {

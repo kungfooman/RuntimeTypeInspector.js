@@ -14,7 +14,8 @@
  * @param {object} expect - The annotated atom node.
  * @returns {object} Unwrapped shape with merged flags.
  * @example
- * atomUnwrap({type: 'atom', atomType: 'K', optional: true});
+ * // input: {type: 'atom', atomType: 'K', optional: true}
+ * atomUnwrap(expandType('{a?: K}').properties.a);
  * // {type: 'K', optional: true}
  */
 function atomUnwrap(expect) {
