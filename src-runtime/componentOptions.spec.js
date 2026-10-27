@@ -411,6 +411,33 @@ function testMergedTowerEndToEnd() {
   }
   return true;
 }
+// Intersection excess is judged whole, not per member: the Omit side drops
+// `clearColor` exactly because the override side provides it (the engine's
+// `Omit<Base, Keys> & Overrides` idiom). Tested against the raw merged
+// intersection (not the `CamOptions` mapping, which flattens members
+// during materialization and never reaches per-member validation).
+// Override keys pass through the Omit member; keys no member declares
+// still fail; wrong types fail both.
+function testMergedIntersectionWholeExcess() {
+  prepareCameraTower();
+  const expect = expandType('CamMerged<"camera">');
+  const passing = [
+    {clearColor: [0.5, 0.6, 0.9, 1]},
+    {clearColor: new Color(), calculateProjection: () => {}},
+  ];
+  for (const value of passing) {
+    if (!validateType(value, expect, 'loc', 'data', true, warn, 0)) {
+      return false;
+    }
+  }
+  const failing = [{nope: 1}, {clearColor: 'x'}];
+  for (const value of failing) {
+    if (validateType(value, expect, 'loc', 'data', true, warn, 0)) {
+      return false;
+    }
+  }
+  return true;
+}
 export const tests = [
   testNonNullable,
   testKeyofIntersection,
@@ -429,4 +456,5 @@ export const tests = [
   testComponentMapDropsComplexMembers,
   testNestedPartialPickValidates,
   testMergedTowerEndToEnd,
+  testMergedIntersectionWholeExcess,
 ];

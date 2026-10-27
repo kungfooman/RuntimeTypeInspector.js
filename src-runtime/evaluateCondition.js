@@ -422,10 +422,32 @@ function extendsCheck(check, target) {
         return true;
       }
       try {
-        return classes[check].prototype instanceof classes[target];
+        if (classes[check].prototype instanceof classes[target]) {
+          return true;
+        }
       } catch {
         return undefined;
       }
+      // Dual-package tolerance: transpiled and original modules can hold
+      // distinct objects for one class name (the `.rti.mjs` twin imports
+      // the untranspiled parent while the registry holds the transpiled
+      // copy), so `instanceof` fails across the copy boundary. Walk the
+      // real prototype chain by constructor name instead: names are
+      // already RTI's nominal currency (`registeredNameOf`,
+      // `snapshotTag`/`classMatches` below). Only upgrades false to
+      // true, never the reverse, so verdicts stay fail-closed.
+      try {
+        let ctor = classes[check];
+        for (let i = 0; i < 32 && typeof ctor === 'function' && ctor !== Object; i++) {
+          if (ctor.name === target) {
+            return true;
+          }
+          ctor = Object.getPrototypeOf(ctor);
+        }
+      } catch {
+        // Unreadable chain: keep the instanceof verdict below.
+      }
+      return false;
     }
     if (check !== null && (typeof check === 'object' || baseOf(check) !== undefined)) {
       return baseOf(check) !== undefined ? false : undefined;

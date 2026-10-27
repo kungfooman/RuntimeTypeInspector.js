@@ -3,6 +3,8 @@ export * from './encodeBase64.js';
 export * from './decodeBase64.js';
 export * from './createType.js';
 export * from './createTypeFromIndexedAccess.js';
+export * from './materializeUtility.js';
+export * from './resolveObjectSide.js';
 export * from './createTypeFromKeyof.js';
 export * from './createTypeFromMapping.js';
 export * from './applyQuestionModifier.js';

@@ -1,6 +1,6 @@
 import {validateType} from './validateType.js';
 import {registerTypedef, typedefs} from './registerTypedef.js';
-import {registerClass} from './registerClass.js';
+import {registerClass, classes} from './registerClass.js';
 import {expandType} from '../src-transpiler/expandType.js';
 import {getTypeKeys, resolveObject} from './getTypeKeys.js';
 import {createType} from './createType.js';
@@ -378,6 +378,33 @@ function testNominalChainIntact() {
   }
   return true;
 }
+// Nominal identity survives dual packaging: a transpiled twin that imports
+// the untranspiled parent holds a distinct object under the same class
+// name, so `instanceof` fails across the copy boundary. The name-chain
+// fallback still decides the relation; strangers still fail.
+function testNominalChainDualPackage() {
+  prepareStress();
+  class BaseCopy {}
+  Object.defineProperty(BaseCopy, 'name', {value: 'TwComponent'});
+  class TwinCam extends BaseCopy {}
+  Object.defineProperty(TwinCam, 'name', {value: 'TwCam'});
+  const SavedCam = classes.TwCam;
+  classes.TwCam = TwinCam;
+  try {
+    if (TwinCam.prototype instanceof TwComponent) {
+      return false;
+    }
+    if (extendsCheck('TwCam', 'TwComponent') !== true) {
+      return false;
+    }
+    if (extendsCheck('TwOther', 'TwComponent') !== false) {
+      return false;
+    }
+    return true;
+  } finally {
+    classes.TwCam = SavedCam;
+  }
+}
 // A noisy entity (tuple, promise, map, readonly array, function, record,
 // nested shapes, methods, primitives) maps to its slots with zero warnings.
 function testBigMapSilent() {
@@ -445,6 +472,7 @@ export const tests = [
   testDeferredStaysUndecidable,
   testUnionMixShortCircuits,
   testNominalChainIntact,
+  testNominalChainDualPackage,
   testBigMapSilent,
   testStaticRuntimeAgreement,
 ];

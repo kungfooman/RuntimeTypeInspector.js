@@ -363,6 +363,24 @@ function resolveObject(type, warn, depth) {
     }
     return resolveObject(instance, warn, depth + 1);
   }
+  if (type.type === 'condition') {
+    // Decided conditions resolve to a branch, mirroring validation:
+    // `ComponentOptionsOverridesOf<"element">` must yield its true
+    // branch for the intersection merge to see the override keys.
+    // A static import would cycle back here, so go through the table.
+    const evaluate = validators.evaluateCondition;
+    if (!evaluate) {
+      return;
+    }
+    const decision = evaluate(type.checkType, type.extendsType, warn);
+    if (decision === true) {
+      return resolveObject(type.trueType, warn, depth + 1);
+    }
+    if (decision === false) {
+      return resolveObject(type.falseType, warn, depth + 1);
+    }
+    return;
+  }
   if (typeof type.type === 'string' && (classes[type.type] || typedefs[type.type])) {
     // Named-type wrappers `{type: Name, optional?, readonly?}` (from
     // `Partial`, harvest, etc.): resolve the name for shape reading; the
