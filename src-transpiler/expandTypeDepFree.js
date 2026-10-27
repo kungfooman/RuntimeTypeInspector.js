@@ -9,7 +9,7 @@
  * console.log(expandTypeDepFree(tooComplex));
  */
 import {isExpandedObject} from './isExpandedObject.js';
-/** @import {ExpandedType, ExpandMappingNode, ExpandMappedRaw, ExpandTupleMemberNode, ExpandIndexSignatureNode, ExpandAnnotatedAtomNode, ExpandObjectNode} from './expandedType.js' */
+/** @import {ExpandedType, ExpandMappingNode, ExpandMappedRaw, ExpandTupleMemberNode, ExpandIndexSignatureNode, ExpandAnnotatedAtomNode, ExpandObjectNode, ExpandParameterNode} from './expandedType.js' */
 /**
  * Splits a string by a delimiter, ignoring delimiters nested inside <>, {}, [], ().
  * Quote-aware: delimiters inside '...', "..." or `...` never split.
@@ -419,6 +419,8 @@ function parseFunctionParams(paramsRaw) {
   const parts = splitTopLevel(paramsRaw, ',');
   /** @type {ExpandedType[]} */
   const parameters = [];
+  /** @type {ExpandParameterNode} */
+  let plainParam;
   for (const part of parts) {
     const trimmed = part.trim();
     if (!trimmed) {
@@ -435,8 +437,8 @@ function parseFunctionParams(paramsRaw) {
       if (!name || !typeRaw) {
         return;
       }
-      const innerParam = {type: /** @type {const} */ ('parameter'), paramType: expandTypeDepFreeOrAny(typeRaw), name};
-      parameters.push({type: 'array', elementType: innerParam});
+      plainParam = {type: 'parameter', paramType: expandTypeDepFreeOrAny(typeRaw), name};
+      parameters.push({type: 'array', elementType: plainParam});
       continue;
     }
     const colonIdx = findTopLevelChar(trimmed, ':');
@@ -451,7 +453,8 @@ function parseFunctionParams(paramsRaw) {
       return;
     }
     const paramType = expandTypeDepFreeOrAny(typeRaw);
-    parameters.push({type: /** @type {const} */ ('parameter'), paramType, name: cleanName});
+    plainParam = {type: 'parameter', paramType, name: cleanName};
+    parameters.push(plainParam);
   }
   return parameters;
 }
@@ -570,10 +573,12 @@ function parseIndexSignatureEntry(entry) {
   }
   const indexType = expandTypeDepFreeOrAny(valueRaw);
   const indexParamType = expandTypeDepFreeOrAny(paramTypeRaw);
+  /** @type {ExpandParameterNode} */
+  const indexParam = {type: 'parameter', paramType: indexParamType, name: paramName};
   return {
     type: 'indexSignature',
     indexType,
-    indexParameters: [{type: /** @type {const} */ ('parameter'), paramType: indexParamType, name: paramName}],
+    indexParameters: [indexParam],
   };
 }
 /**
