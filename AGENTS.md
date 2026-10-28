@@ -180,6 +180,21 @@ return JSON.stringify(unwrapped) ===
 
 never `atomUnwrap(expandType('{a?: K}').properties.a)` inline. The names double as documentation: `parsed` is the producer output, `input` is the helper argument, and a debugger can stop between them.
 
+Write JavaScript sources in specs as readable code in template literals, never as `\n`-joined fragments or `+`-concatenated lines. A snippet is production code the reader must review, so format it like production code: real newlines, indentation following the surrounding spec, and JSDoc continuation stars aligned under the opening `/**`. The indentation becomes part of the source, which every feeder (`runChecks`, `shapeFor`, plain `parse`) accepts without complaint. Bind the snippet to its own `const src` before passing it on, so the construction and the call are separate steps a debugger can stop between. Only escape when the snippet itself needs a backtick or `${`. Short one-liners (`'class A { x; }'`) stay single-quoted; anything spanning lines gets the template treatment:
+
+```js
+// Inline Object.assign literals contribute their keys.
+function testObjectAssignInline() {
+  const src = `class A {
+    constructor() {
+      Object.assign(this, {w: 1});
+    }
+  }`;
+  const {out} = shapeFor(src);
+  return out.includes('"w": "number"');
+}
+```
+
 Import each shared typedef once per file with `@import` at the top and use the bare name everywhere else, so `@type` casts stay short and diffs stay local:
 
 ```js
