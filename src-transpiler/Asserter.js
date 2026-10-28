@@ -757,6 +757,21 @@ class Asserter extends Stringifier {
                         `AssignmentPattern for parameter ${name}`);
               continue;
             }
+          } else {
+            // A plain parameter sits at this index but under a different
+            // name — unless it is the rest binding itself: `...rest`
+            // declares `rest`, so a matching JSDoc name is declared and
+            // the check below emits against it. Anything else names
+            // nothing declared, so emitting it would reference an
+            // undeclared variable at runtime (ReferenceError). Skip it
+            // like the missing-param case below; tsc already reports
+            // these as TS8024.
+            const isRestBinding = param.type === 'RestElement' && param.argument && param.argument.type === 'Identifier' && param.argument.name === name;
+            if (!isRestBinding) {
+              const loc = this.getName(node);
+              this.warn(`generateTypeChecks> ${loc}> Missing param: ${nameFancy}`);
+              continue;
+            }
           }
         } else {
           const loc = this.getName(node);

@@ -1,12 +1,15 @@
 import {classes} from "./registerClass.js";
 import {registeredNameOf} from "./registeredNameOf.js";
 /**
- * Whether a node needs a `$type` tag: a registered class instance
- * (nominal identity messaging strips) or a typed array / `DataView`
- * (self-identifying for array-branch findings). Plain objects, arrays
- * and natively handled containers (`Map`/`Set`/...) never need one.
- * Constructor-style names only, mirroring what `snapshotTag` filters
- * downstream.
+ * Whether a node needs a `$type` tag: a registered class instance, whose
+ * nominal identity messaging would otherwise strip. Typed arrays and
+ * `DataView`s deliberately stay untagged like the other natively handled
+ * containers (`Map`/`Set`/...) below: an expando tag on a view does not
+ * survive `structuredClone` (typed-array serialization is buffer-only),
+ * so tagging them prints a phantom `$type` row on the checking side and
+ * loses the tag at the realm boundary. Plain objects and arrays never
+ * need one. Constructor-style names only, mirroring what `snapshotTag`
+ * filters downstream.
  * @param {*} val - Candidate value.
  * @returns {string|undefined} Tag name or undefined.
  */
@@ -36,8 +39,7 @@ function tagName(val) {
       return undefined;
     }
     if (typeof ArrayBuffer !== 'undefined' && ArrayBuffer.isView(val)) {
-      const viewName = typeof ctor === 'function' ? ctor.name : val.constructor?.name;
-      return typeof viewName === 'string' && /^[A-Z]/.test(viewName) ? viewName : undefined;
+      return undefined;
     }
   } catch {
     return undefined;

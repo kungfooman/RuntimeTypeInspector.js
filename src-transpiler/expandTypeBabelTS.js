@@ -163,7 +163,8 @@ function toSourceBabelTS(node) {
     // expandTypeBabelTS("(a: number, b: number) => number")
     case 'TSFunctionType': {
       const parameters = node.parameters.map(toBabelParameterOrAny);
-      return ({type: 'function', parameters});
+      const ret = toSourceBabelTSOrAny(node.typeAnnotation?.typeAnnotation);
+      return ({type: 'function', parameters, ret});
     }
     case 'TSConstructorType': {
       const parameters = node.parameters.map(toBabelParameterOrAny);

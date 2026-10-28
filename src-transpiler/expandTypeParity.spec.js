@@ -293,7 +293,7 @@ function testMissBecomesAnyParity() {
     'keyof ?': {type: 'keyof', argument: 'any'},
     '{a: ?}': {type: 'object', properties: {a: 'any'}},
     'string | ?': {type: 'union', members: ['string', 'any']},
-    '(a: ?) => string': {type: 'function', parameters: [{type: 'parameter', paramType: 'any', name: 'a'}]},
+    '(a: ?) => string': {type: 'function', parameters: [{type: 'parameter', paramType: 'any', name: 'a'}], ret: 'string'},
     'typeof ?': {type: 'union', members: [{type: 'typeof', argument: 'any'}, 'null']},
   };
   for (const [type, want] of Object.entries(exact)) {

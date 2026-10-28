@@ -185,14 +185,16 @@ function toSourceTS(node) {
         throw Error("Impossible");
       }
       const parameters = node.parameters.map(toSourceTSOrAny);
-      return ({type: 'function', parameters});
+      const ret = toSourceTS(node.type) ?? 'any';
+      return ({type: 'function', parameters, ret});
     }
     case JSDocFunctionType: {
       if (!ts.isJSDocFunctionType(node)) {
         throw Error("Impossible");
       }
       const parameters = node.parameters.map(toSourceTSOrAny);
-      return ({type: 'function', parameters});
+      const ret = node.type ? toSourceTS(node.type) ?? 'any' : 'any';
+      return ({type: 'function', parameters, ret});
     }
     case IndexedAccessType:
       if (!ts.isIndexedAccessTypeNode(node)) {

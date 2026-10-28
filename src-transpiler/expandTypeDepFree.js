@@ -829,7 +829,7 @@ function expandTypeDepFree(type) {
       if (func.isNew) {
         return {type: 'new', parameters, ret};
       }
-      return {type: 'function', parameters};
+      return {type: 'function', parameters, ret};
     }
   }
   // (1) Rest parameters like ...string

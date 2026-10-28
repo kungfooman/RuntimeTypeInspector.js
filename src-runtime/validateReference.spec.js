@@ -235,6 +235,126 @@ function testGenericBranchRegistryUpdateSeen() {
     bumpTypedefVersion();
   }
 }
+function testAwaitedUnwrapsPromise() {
+  // `Awaited<Promise<T>>` validates the fulfillment, not the wrapper: a
+  // Promise is never assignable to its own awaited type (matching tsc),
+  // only the resolved value is. Nested promises unwrap fully.
+  if (!validateType(1, expandType('Awaited<Promise<number>>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  if (!validateType('x', expandType('Awaited<Promise<string>>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  if (!validateType(1, expandType('Awaited<Promise<Promise<number>>>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  if (validateType(Promise.resolve(1), expandType('Awaited<Promise<number>>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  if (validateType(null, expandType('Awaited<Promise<number>>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  return true;
+}
+function testAwaitedPassesThroughNonPromise() {
+  // Non-promise arguments are their own awaited type, exactly like tsc.
+  if (!validateType(1, expandType('Awaited<number>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  if (validateType('x', expandType('Awaited<number>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  return true;
+}
+function testAwaitedNeedsArgument() {
+  // A missing argument fails loudly instead of passing everything.
+  const warnings = [];
+  const ret = validateType(1, {type: 'reference', name: 'Awaited', args: []}, 'loc', 'name', true, (...args) => warnings.push(args[0]), 0);
+  return ret === false && warnings.some((_) => typeof _ === 'string' && _.includes('Awaited requires one type argument'));
+}
+function testReturnTypeResolves() {
+  // `ReturnType<() => T>` validates the declared return: tsc agrees both
+  // ways, and the check needs no call (returns are unreadable at runtime).
+  if (!validateType('x', expandType('ReturnType<() => string>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  if (validateType(1, expandType('ReturnType<() => string>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  if (!validateType(1, expandType('ReturnType<(a: number) => number>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  return true;
+}
+function testReturnTypeNeedsFunction() {
+  // Non-function arguments and missing returns fail loudly: without a
+  // declared return there is nothing to validate against.
+  const warnings = [];
+  const bad = validateType(1, {type: 'reference', name: 'ReturnType', args: ['number']}, 'loc', 'name', true, (...args) => warnings.push(args[0]), 0);
+  if (bad !== false || !warnings.some((_) => typeof _ === 'string' && _.includes('ReturnType requires a function type'))) {
+    return false;
+  }
+  const missing = [];
+  const noArg = validateType(1, {type: 'reference', name: 'ReturnType', args: []}, 'loc', 'name', true, (...args) => missing.push(args[0]), 0);
+  return noArg === false && missing.some((_) => typeof _ === 'string' && _.includes('ReturnType requires one type argument'));
+}
+function testIntrinsicsEnforceCase() {
+  // The four case intrinsics check values, not just stringness: tsc
+  // agrees on every row below.
+  const cases = [
+    ['Uppercase<string>', 'ABC', true],
+    ['Uppercase<string>', 'abc', false],
+    ['Lowercase<string>', 'abc', true],
+    ['Lowercase<string>', 'ABC', false],
+    ['Capitalize<string>', 'Abc', true],
+    ['Capitalize<string>', 'abc', false],
+    ['Uncapitalize<string>', 'aBC', true],
+    ['Uncapitalize<string>', 'Abc', false],
+  ];
+  for (const [type, value, want] of cases) {
+    if (validateType(value, expandType(type), 'loc', 'name', true, warn, 0) !== want) {
+      return false;
+    }
+  }
+  return true;
+}
+function testIntrinsicsNeedStrings() {
+  // Non-strings and missing arguments fail loudly instead of passing.
+  if (validateType(1, expandType('Uppercase<string>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  const warnings = [];
+  const ret = validateType('x', {type: 'reference', name: 'Uppercase', args: []}, 'loc', 'name', true, (...args) => warnings.push(args[0]), 0);
+  return ret === false && warnings.some((_) => typeof _ === 'string' && _.includes('Uppercase requires one type argument'));
+}
+function testReadonlyMapSet() {
+  // Readonly-ness erases at runtime: element checks still apply exactly
+  // like the mutable shapes, and non-collections fail.
+  if (!validateType(new Map([['a', 1]]), expandType('ReadonlyMap<string, number>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  if (validateType(new Map([['a', 'x']]), expandType('ReadonlyMap<string, number>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  if (!validateType(new Set([1]), expandType('ReadonlySet<number>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  if (validateType(new Set(['x']), expandType('ReadonlySet<number>'), 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  return validateType({}, expandType('ReadonlyMap<string, number>'), 'loc', 'name', true, warn, 0) === false;
+}
+function testReadonlyCollectionsNeedArgs() {
+  // Missing type arguments fail loudly instead of passing everything.
+  const mapWarnings = [];
+  const mapRet = validateType(new Map(), {type: 'reference', name: 'ReadonlyMap', args: ['string']}, 'loc', 'name', true, (...args) => mapWarnings.push(args[0]), 0);
+  if (mapRet !== false || !mapWarnings.some((_) => typeof _ === 'string' && _.includes('ReadonlyMap requires two type arguments'))) {
+    return false;
+  }
+  const setWarnings = [];
+  const setRet = validateType(new Set(), {type: 'reference', name: 'ReadonlySet', args: []}, 'loc', 'name', true, (...args) => setWarnings.push(args[0]), 0);
+  return setRet === false && setWarnings.some((_) => typeof _ === 'string' && _.includes('ReadonlySet requires one type argument'));
+}
 export const tests = [
   testIssue241ArrayLikeValid,
   testIssue241ArrayLikeInvalid,
@@ -252,4 +372,13 @@ export const tests = [
   testArrayLikeDirectContract,
   testGenericBranchFreshNodesValidate,
   testGenericBranchRegistryUpdateSeen,
+  testAwaitedUnwrapsPromise,
+  testAwaitedPassesThroughNonPromise,
+  testAwaitedNeedsArgument,
+  testReturnTypeResolves,
+  testReturnTypeNeedsFunction,
+  testIntrinsicsEnforceCase,
+  testIntrinsicsNeedStrings,
+  testReadonlyMapSet,
+  testReadonlyCollectionsNeedArgs,
 ];

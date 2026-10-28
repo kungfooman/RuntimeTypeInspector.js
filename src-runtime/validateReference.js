@@ -220,6 +220,20 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         return false;
       }
       return validators.validateArray(value, {type: 'array', elementType: firstArg}, loc, name, critical, warn, depth + 1);
+    case 'ReadonlyMap':
+      // Readonly-ness is erased at runtime, same shape as Map.
+      if (args?.length !== 2) {
+        warn('ReadonlyMap requires two type arguments.', {expect});
+        return false;
+      }
+      return validators.validateMap(value, {type: 'map', key: args[0], val: args[1]}, loc, name, critical, warn, depth + 1);
+    case 'ReadonlySet':
+      // Readonly-ness is erased at runtime, same shape as Set.
+      if (!firstArg) {
+        warn('ReadonlySet requires one type argument.', {expect});
+        return false;
+      }
+      return validators.validateSet(value, {type: 'set', elementType: firstArg}, loc, name, critical, warn, depth + 1);
     case 'ConcatArray':
       // ConcatArray<T> is array-like (length + indexed access) plus join/slice.
       // Accept anything array-like here; arrays trivially satisfy it.
@@ -694,12 +708,24 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
       for (let i = 0; i < 10 && inner && inner.type === 'promise'; i++) {
         inner = inner.elementType;
       }
-      if (inner !== firstArg) {
-        // Was (possibly nested) Promise: resolved values are unobservable
-        // synchronously, so only the instanceof check applies.
-        return recurse(value, {type: 'promise', elementType: inner}, loc, name, critical, warn, depth + 1);
+      // Unwrap to the fulfillment type: a Promise is never assignable to
+      // its own Awaited type (matching tsc), only the resolved value is.
+      // A bare `Promise` without an element type unwraps to `unknown`:
+      // the fulfillment could be nullish, so only non-nullish passes.
+      return recurse(value, inner ?? 'unknown', loc, name, critical, warn, depth + 1);
+    }
+    case 'ReturnType': {
+      if (!firstArg) {
+        warn('ReturnType requires one type argument.', {expect});
+        return false;
       }
-      return recurse(value, inner, loc, name, critical, warn, depth + 1);
+      const resolved = typeof firstArg === 'string' && typedefs[firstArg] ? typedefs[firstArg] : firstArg;
+      const ret = resolved && typeof resolved === 'object' && (resolved.type === 'function' || resolved.type === 'new') ? resolved.ret : undefined;
+      if (ret === undefined) {
+        warn('ReturnType requires a function type with a known return type.', {expect});
+        return false;
+      }
+      return recurse(value, ret, loc, name, critical, warn, depth + 1);
     }
     case 'NoInfer': {
       // Blocks inference in TypeScript; the runtime shape is unchanged.

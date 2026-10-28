@@ -452,6 +452,58 @@ function testStaticRuntimeAgreement() {
   }
   return true;
 }
+// Explicit null passes optional slots without `| null` (engine compat:
+// the engine never adopted strictNullChecks, so optionality stays
+// lenient); only a missing `?` rejects null.
+function testOptionalTakesExplicitNull() {
+  prepareStress();
+  const optional = {type: 'number', optional: true};
+  if (!validateType(null, optional, 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  if (!validateType(undefined, optional, 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  return validateType(null, 'number', 'loc', 'name', true, warn, 0) === false;
+}
+// Nullable unions take every member including null; the bare member
+// rejects it. Both directions pin the `batchGroupId?: number | null`
+// production shape.
+function testNullableUnionMembers() {
+  prepareStress();
+  const nullable = {type: 'union', members: ['number', 'null']};
+  if (!validateType(null, nullable, 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  if (!validateType(3, nullable, 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  return validateType(null, 'number', 'loc', 'name', true, warn, 0) === false;
+}
+// A union whose every member fails still reports (never silently
+// passes): the hostile check is the verdict the Diagnosis explains.
+function testUnionAllFailStillFails() {
+  prepareStress();
+  const union = {type: 'union', members: ['TwColor', {type: 'array', elementType: 'number'}]};
+  if (validateType([0, 0], union, 'loc', 'name', true, warn, 0) === false) {
+    return false;
+  }
+  return validateType([0, 'x'], union, 'loc', 'name', true, warn, 0) === false;
+}
+// Subclass instances satisfy base-typed slots; snapshots of subclasses
+// satisfy them nominally; wrong tags fail.
+function testSubclassSatisfiesBase() {
+  prepareStress();
+  class TwSubCam extends TwCam {}
+  registerClass(TwSubCam);
+  if (!validateType(new TwSubCam(), 'TwCam', 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  if (!validateType({fov: 1, $type: 'TwSubCam'}, 'TwCam', 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  return validateType({fov: 1, $type: 'TwOther'}, 'TwCam', 'loc', 'name', true, warn, 0) === false;
+}
 export const tests = [
   testStripKeepsAliasSpelling,
   testStripQuestionStillStrips,
@@ -475,4 +527,8 @@ export const tests = [
   testNominalChainDualPackage,
   testBigMapSilent,
   testStaticRuntimeAgreement,
+  testOptionalTakesExplicitNull,
+  testNullableUnionMembers,
+  testUnionAllFailStillFails,
+  testSubclassSatisfiesBase,
 ];

@@ -19,6 +19,7 @@ function takeFn(f) {
         "name": "a"
       }
     ],
+    "ret": "string",
     "optional": false
   }, 'takeFn', 'f')) {
     youCanAddABreakpointHere();

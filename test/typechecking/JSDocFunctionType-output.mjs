@@ -17,6 +17,7 @@ function op(cb, a, b) {
         "name": "undefined"
       }
     ],
+    "ret": "number",
     "optional": false
   }, 'op', 'cb')) {
     youCanAddABreakpointHere();

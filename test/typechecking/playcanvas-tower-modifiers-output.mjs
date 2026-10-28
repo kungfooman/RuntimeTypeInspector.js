@@ -3,11 +3,25 @@ registerTypedef('IfEquals', {
   "type": "condition",
   "checkType": {
     "type": "function",
-    "parameters": []
+    "parameters": [],
+    "ret": {
+      "type": "condition",
+      "checkType": "T",
+      "extendsType": "X",
+      "trueType": 1,
+      "falseType": 2
+    }
   },
   "extendsType": {
     "type": "function",
-    "parameters": []
+    "parameters": [],
+    "ret": {
+      "type": "condition",
+      "checkType": "T",
+      "extendsType": "Y",
+      "trueType": 1,
+      "falseType": 2
+    }
   },
   "trueType": "A",
   "falseType": "B"

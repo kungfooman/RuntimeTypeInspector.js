@@ -163,7 +163,8 @@ function stringifyType(type, space = 0, depth = 0) {
     }
     case 'function': {
       const params = (type.parameters || []).map((_) => stringifyType(_, space, depth + 1)).join(', ');
-      out = `(${params})=>any`;
+      const ret = type.ret ? stringifyType(type.ret, space, depth + 1) : 'any';
+      out = `(${params})=>${ret}`;
       break;
     }
     case 'new': {
