@@ -8,56 +8,56 @@
  * @param {{fov?: number}} options - Optional prop.
  * @returns {void}
  */
-function case01(options) {
+function checkOptionalFov(options) {
 }
 /**
  * @param {{readonly label?: string}} options - Readonly optional.
  * @returns {void}
  */
-function case02(options) {
+function checkReadonlyLabel(options) {
 }
 /**
  * @param {{count?: number | string}} options - Optional union.
  * @returns {void}
  */
-function case03(options) {
+function checkOptionalCount(options) {
 }
 /**
  * @param {{mode?: "a" | "b"}} options - Optional literal union.
  * @returns {void}
  */
-function case04(options) {
+function checkOptionalMode(options) {
 }
 /**
  * @param {{[k: string]: number}} lookup - Index signature.
  * @returns {void}
  */
-function case05(lookup) {
+function checkNumberLookup(lookup) {
 }
 /**
  * @param {{nested?: {enabled: boolean}}} options - Optional object.
  * @returns {void}
  */
-function case06(options) {
+function checkOptionalNested(options) {
 }
-case01({});
-case01({fov: 60});
-case01({fov: "60"});
-case01({});
-case02({});
-case02({label: "x"});
-case02({label: 1});
-case03({});
-case03({count: 1});
-case03({count: "s"});
-case03({count: true});
-case04({});
-case04({mode: "a"});
-case04({mode: "c"});
-case05({a: 1});
-case05({a: "x"});
-case05({});
-case06({});
-case06({nested: {enabled: true}});
-case06({nested: {enabled: 1}});
-case06({nested: {}});
+checkOptionalFov({});
+checkOptionalFov({fov: 60});
+checkOptionalFov({fov: "60"});
+checkOptionalFov({});
+checkReadonlyLabel({});
+checkReadonlyLabel({label: "x"});
+checkReadonlyLabel({label: 1});
+checkOptionalCount({});
+checkOptionalCount({count: 1});
+checkOptionalCount({count: "s"});
+checkOptionalCount({count: true});
+checkOptionalMode({});
+checkOptionalMode({mode: "a"});
+checkOptionalMode({mode: "c"});
+checkNumberLookup({a: 1});
+checkNumberLookup({a: "x"});
+checkNumberLookup({});
+checkOptionalNested({});
+checkOptionalNested({nested: {enabled: true}});
+checkOptionalNested({nested: {enabled: 1}});
+checkOptionalNested({nested: {}});

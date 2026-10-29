@@ -3,6 +3,9 @@ import {explainMismatch} from './explainMismatch.js';
 /**
  * Renders a warning as plain text for the comparator Copy button: message,
  * diagnosis findings, the missing-keys stub, then the Expected/Actual panes.
+ * The diagnosis is diffed lazily here, on demand, so it reflects the
+ * rendering realm's current registry and options (twins loading late can
+ * show more than the checker knew at report time).
  * @param {object} warnObj - The warning row (`msg`, `expect`, `value`, `name`, `hits`).
  * @returns {string} The copyable comparison text.
  * @example compareText({msg: 'bad', expect: 'number', value: 's', name: 'x', hits: 1})

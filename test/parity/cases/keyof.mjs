@@ -9,23 +9,23 @@
  * @param {ComponentName} name - A component name.
  * @returns {void}
  */
-function case01(name) {
+function checkComponentName(name) {
 }
 /**
  * @param {ComponentMap["camera"]} options - Camera options.
  * @returns {void}
  */
-function case02(options) {
+function checkCameraOptions(options) {
 }
 /**
  * @param {ComponentMap["camera"] & {fov: number}} options - Intersection.
  * @returns {void}
  */
-function case03(options) {
+function checkCameraIntersection(options) {
 }
-case01("camera");
-case01("nope");
-case02({fov: 60});
-case02({fov: "60"});
-case03({fov: 60});
-case03({});
+checkComponentName("camera");
+checkComponentName("nope");
+checkCameraOptions({fov: 60});
+checkCameraOptions({fov: "60"});
+checkCameraIntersection({fov: 60});
+checkCameraIntersection({});

@@ -1,7 +1,16 @@
 {
   "throws": [
-    {"loc": "takeById", "name": "byId"},
-    {"loc": "takeUsage", "name": "usage"},
-    {"loc": "takeScores", "name": "scores"}
+    {
+      "loc": "takeById",
+      "name": "byId"
+    },
+    {
+      "loc": "takeUsage",
+      "name": "usage"
+    },
+    {
+      "loc": "takeScores",
+      "name": "scores"
+    }
   ]
 }

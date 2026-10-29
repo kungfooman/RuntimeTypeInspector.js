@@ -103,6 +103,28 @@ function testUtilityNameBailsOut() {
     firstBadEntry(new Map([[1, new ScanBox(1)]]), 'number', {type: 'reference', name: 'Iterable'}) === -2
   );
 }
+function testUtilityNameCollisionBailsOut() {
+  // Hostile registration: classes named exactly like utilities the
+  // validator resolves first (ReadonlyMap, ArrayLike, Awaited). The scan
+  // must still bail out instead of trusting `instanceof`, which would
+  // report a verdict the validator does not agree with.
+  class ReadonlyMap {}
+  class ArrayLike {}
+  class Awaited {}
+  registerClass(ReadonlyMap);
+  registerClass(ArrayLike);
+  registerClass(Awaited);
+  try {
+    const ref = (name, args) => ({type: 'reference', name, args});
+    return firstBadEntry(new Map([['a', new ReadonlyMap()]]), 'string', ref('ReadonlyMap', ['string', 'number'])) === -2 &&
+      firstBadEntry(new Map([[1, new ArrayLike()]]), 'number', ref('ArrayLike', ['number'])) === -2 &&
+      firstBadEntry(new Map([[1, new Awaited()]]), 'number', ref('Awaited', [{type: 'promise', elementType: 'number'}])) === -2;
+  } finally {
+    delete classes.ReadonlyMap;
+    delete classes.ArrayLike;
+    delete classes.Awaited;
+  }
+}
 function testComplexValBailsOut() {
   // Object nodes, unions and unknown names are full-loop territory.
   return firstBadEntry(new Map([[1, {x: 1}]]), 'number', {type: 'object'}) === -2 &&
@@ -161,6 +183,7 @@ const tests = [
   testInfinityOptOut,
   testReferenceNodeVal,
   testUtilityNameBailsOut,
+  testUtilityNameCollisionBailsOut,
   testComplexValBailsOut,
   testComplexKeyBailsOut,
   testUserlandOverrideComposition,

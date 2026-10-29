@@ -13,26 +13,42 @@ import {isFailingNumberAllowingInf} from "./isFailingNumberAllowingInf.js";
  * Names sharing space between utility types and registered classes: the
  * reference validator resolves them through its utility `case` branches
  * before the registered-class branch can ever run, so `instanceof` alone
- * would report a verdict the validator does not agree with.
+ * would report a verdict the validator does not agree with. Keep this set
+ * in sync with the utility `case` branches of `validateReference`
+ * (`ArrayLike` family, `Readonly*`, `ConcatArray`, `Partial` family,
+ * `Awaited`, `ReturnType`, `NoInfer`, intrinsics, iterables): a missing
+ * name lets the scan trust `instanceof` for a class that shadows it, and
+ * the windowed map path returns clean without ever running the loop.
  * @type {Set<string>}
  */
 const utilityNames = new Set([
+  'ArrayLike',
+  'AsyncIterable',
+  'AsyncIterableIterator',
   'Awaited',
+  'ConcatArray',
   'ConstructorParameters',
   'Exclude',
   'Extract',
+  'HTMLCollection',
+  'HTMLCollectionOf',
   'IfEquals',
   'InstanceType',
   'Iterable',
   'IterableIterator',
   'Lowercase',
   'NoInfer',
+  'NodeList',
+  'NodeListOf',
   'NonNullable',
   'Omit',
   'Parameters',
   'Partial',
   'Pick',
   'Readonly',
+  'ReadonlyArray',
+  'ReadonlyMap',
+  'ReadonlySet',
   'Required',
   'ReturnType',
   'Uncapitalize',

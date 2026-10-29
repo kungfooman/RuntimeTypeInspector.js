@@ -1,7 +1,25 @@
 {
   "throws": [
-    {"loc": "Entity#addComponent", "name": "data", "value": {"clearColor": "x"}},
-    {"loc": "Entity#addComponent", "name": "data", "value": {"fov": "x"}},
-    {"loc": "Entity#addComponent", "name": "data", "value": {"nope": 1}}
+    {
+      "loc": "Entity#addComponent",
+      "name": "data",
+      "value": {
+        "clearColor": "x"
+      }
+    },
+    {
+      "loc": "Entity#addComponent",
+      "name": "data",
+      "value": {
+        "fov": "x"
+      }
+    },
+    {
+      "loc": "Entity#addComponent",
+      "name": "data",
+      "value": {
+        "nope": 1
+      }
+    }
   ]
 }

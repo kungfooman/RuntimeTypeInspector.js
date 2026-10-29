@@ -54,6 +54,7 @@ export function taggedShapes(bare, inArray, inObject, inFn, inNew, inIndex, inTu
         "name": "x"
       }
     ],
+    "ret": "K",
     "optional": false
   }, 'taggedShapes', 'inFn', rtiTemplates)) {
     youCanAddABreakpointHere();

@@ -42,10 +42,14 @@ function testUnregisteredUntagged() {
   const out = tagSnapshot(new Ghost());
   return out !== null && typeof out === 'object' && out.$type === undefined;
 }
-function testTypedArrayTagged() {
-  // Typed arrays keep layout but gain a self-identifying tag.
-  const out = tagSnapshot(new Float32Array([1, 2]));
-  return out instanceof Float32Array && out.$type === 'Float32Array';
+function testTypedArrayUntagged() {
+  // Views post untouched like the other natively handled containers: an
+  // expando tag would not survive structuredClone (buffer-only
+  // serialization), so tagging prints a phantom row checking-side and
+  // loses the tag in transit.
+  const view = new Float32Array([1, 2]);
+  const out = tagSnapshot(view);
+  return out === view && view.$type === undefined;
 }
 function testMapUntagged() {
   // Natively handled containers post untouched.
@@ -87,7 +91,7 @@ const tests = [
   testInstanceTagged,
   testNestedInstancesTagged,
   testUnregisteredUntagged,
-  testTypedArrayTagged,
+  testTypedArrayUntagged,
   testMapUntagged,
   testCyclesSafe,
   testNeverThrows,

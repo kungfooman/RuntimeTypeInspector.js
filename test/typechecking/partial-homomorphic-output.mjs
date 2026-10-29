@@ -756,7 +756,8 @@ function takeFn(x) {
     "args": [
       {
         "type": "function",
-        "parameters": []
+        "parameters": [],
+        "ret": "void"
       }
     ],
     "optional": false

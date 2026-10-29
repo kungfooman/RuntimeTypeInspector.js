@@ -1,0 +1,8 @@
+{
+  "throws": [
+    {
+      "loc": "Entity#addComponent",
+      "name": "data"
+    }
+  ]
+}

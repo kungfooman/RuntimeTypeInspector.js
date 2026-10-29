@@ -52,8 +52,16 @@
     "output": "./test/typechecking/ParenthesizedExpression-singleline-output.mjs"
   },
   {
+    "input": "./test/typechecking/anchors-diagnosis-input.mjs",
+    "output": "./test/typechecking/anchors-diagnosis-output.mjs"
+  },
+  {
     "input": "./test/typechecking/arguments-input.mjs",
     "output": "./test/typechecking/arguments-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/builtin-utilities-input.mjs",
+    "output": "./test/typechecking/builtin-utilities-output.mjs"
   },
   {
     "input": "./test/typechecking/callbacks-input.mjs",
@@ -268,6 +276,10 @@
     "output": "./test/typechecking/playcanvas-tower-conditions-output.mjs"
   },
   {
+    "input": "./test/typechecking/playcanvas-tower-hostile-input.mjs",
+    "output": "./test/typechecking/playcanvas-tower-hostile-output.mjs"
+  },
+  {
     "input": "./test/typechecking/playcanvas-tower-memo-input.mjs",
     "output": "./test/typechecking/playcanvas-tower-memo-output.mjs"
   },
@@ -282,6 +294,10 @@
   {
     "input": "./test/typechecking/playcanvas-tower-nullable-input.mjs",
     "output": "./test/typechecking/playcanvas-tower-nullable-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/playcanvas-tower-read-input.mjs",
+    "output": "./test/typechecking/playcanvas-tower-read-output.mjs"
   },
   {
     "input": "./test/typechecking/playcanvas-tower-strictnull-input.mjs",

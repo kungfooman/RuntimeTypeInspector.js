@@ -3,25 +3,25 @@
  * @param {Array<number>} xs - Numbers.
  * @returns {void}
  */
-function case01(xs) {
+function checkNumberArray(xs) {
 }
 /**
  * @param {[number, string]} pair - A pair.
  * @returns {void}
  */
-function case02(pair) {
+function checkPair(pair) {
 }
 /**
  * @param {number} n - A finite-or-not number.
  * @returns {void}
  */
-function case03(n) {
+function checkNumber(n) {
 }
-case01([1, 2]);
-case01([1, "x"]);
-case02([1, "a"]);
-case02([1]);
-case02([1, "a", true]);
-case03(NaN); // parity-diverges: rti-stricter (NaN always rejected)
-case03(Infinity);
-case03(1);
+checkNumberArray([1, 2]);
+checkNumberArray([1, "x"]);
+checkPair([1, "a"]);
+checkPair([1]);
+checkPair([1, "a", true]);
+checkNumber(NaN); // parity-diverges: rti-stricter (NaN always rejected)
+checkNumber(Infinity);
+checkNumber(1);

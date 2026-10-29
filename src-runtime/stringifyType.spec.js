@@ -185,6 +185,22 @@ function testIndexSignatureFallback() {
   }
   return true;
 }
+// Function types print their declared return like constructor types do:
+// the expansion carries `ret` since the return-type fix, so the display
+// must not keep claiming `any`.
+function testFunctionPrintsReturn() {
+  const str = stringifyType(expandType('(a: number) => string'));
+  if (str !== '(a: number)=>string') {
+    console.warn('stringifyType function return mismatch', {str});
+    return false;
+  }
+  const bare = stringifyType({type: 'function', parameters: []});
+  if (bare !== '()=>any') {
+    console.warn('stringifyType bare function mismatch', {bare});
+    return false;
+  }
+  return true;
+}
 export const tests = [
   testIssue154,
   testIssue154PrettyNonNormalized,
@@ -197,4 +213,5 @@ export const tests = [
   testReadonlyOptionalComposes,
   testIndexSignatureParams,
   testIndexSignatureFallback,
+  testFunctionPrintsReturn,
 ];

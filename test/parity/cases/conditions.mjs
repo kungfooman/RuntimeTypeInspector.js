@@ -3,49 +3,49 @@
  * @param {"a" extends string ? number : boolean} x - True branch.
  * @returns {void}
  */
-function case01(x) {
+function checkExtendsStringTrue(x) {
 }
 /**
  * @param {"a" extends number ? number : boolean} x - False branch.
  * @returns {void}
  */
-function case02(x) {
+function checkExtendsStringFalse(x) {
 }
 /**
  * Boolean literal checks (regression: `false extends true` failed closed).
  * @param {false extends true ? number : string} x - False branch.
  * @returns {void}
  */
-function case03(x) {
+function checkFalseExtendsTrue(x) {
 }
 /**
  * @param {true extends true ? number : string} x - True branch.
  * @returns {void}
  */
-function case04(x) {
+function checkTrueExtendsTrue(x) {
 }
 /**
  * Number literal checks.
  * @param {1 extends 2 ? number : string} x - False branch.
  * @returns {void}
  */
-function case05(x) {
+function checkOneExtendsTwo(x) {
 }
 /**
  * @param {1 extends number ? number : string} x - True branch.
  * @returns {void}
  */
-function case06(x) {
+function checkOneExtendsNumber(x) {
 }
-case01(1);
-case01("a");
-case02(true);
-case02(1);
-case03("a");
-case03(1);
-case04(1);
-case04("a");
-case05("a");
-case05(1);
-case06(1);
-case06("a");
+checkExtendsStringTrue(1);
+checkExtendsStringTrue("a");
+checkExtendsStringFalse(true);
+checkExtendsStringFalse(1);
+checkFalseExtendsTrue("a");
+checkFalseExtendsTrue(1);
+checkTrueExtendsTrue(1);
+checkTrueExtendsTrue("a");
+checkOneExtendsTwo("a");
+checkOneExtendsTwo(1);
+checkOneExtendsNumber(1);
+checkOneExtendsNumber("a");

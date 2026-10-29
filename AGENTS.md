@@ -8,6 +8,46 @@ leave it staged or unstaged in the working tree, and report what changed.
 When a commit is requested, inspect `git status` and `git diff` first, stage
 only the intended files, and write the message in the established repo style.
 
+## PR files
+
+When you believe the issue is 100 percent completed, write `tmp/pr-<id>.md`
+(where `<id>` is the issue number or branch slug). Put `Fixes #<id>`
+on its own line right under the title.
+Format: pedagogical
+pre-text first (pedagogical: bring everyone on the same page by teaching
+the construct, why it exists, and what broke, under a `## Primer` heading), then the normal description
+of everything fixed,
+with file references. The pre-text is for the future reader who lands on
+the PR without the session context; the description is the changelog.
+`tmp/` is git-ignored, so the file never leaks into commits.
+- The description earns its keep with mechanism, not adjectives: every claim
+  names the file, the shape before and after, and the proof (which fixture
+  broke, which mutation fails, which counts agree). A sentence that stays
+  true when the file names are blanked out is a boring changelog entry:
+  delete it and write what actually happened instead. Never restate CI:
+  gate status, lint status and test counts re-verify on every push and rot
+  the moment the next commit lands; the PR file records what CI cannot see
+  (why the shape changed, which hole was tolerated and on what analysis).
+- Record latent holes the work exposed as their own section: gaps the old
+  code silently tolerated (a pass-through ladder, an erasing guard, a
+  tolerated write) that the new structure surfaced. Each hole states the
+  mechanism that hid it, the mechanism that exposed it, and the verdict
+  (fixed here, tolerated deliberately with the parity analysis, or deferred
+  with the reason). A hole section is a decision record: without it, the
+  next reader re-litigates what this session already settled.
+- Record dead code the work killed with the proof of death: the exact
+  condition that can no longer hold (key counts, tag shapes, branch
+  reachability) and the output-by-output check that the surviving path
+  already handles every live shape. "Unreachable" is a claim, not an
+  observation: show the shape that proves it.
+- If it reads as a list, write it as a list: a paragraph that is really
+  N rules joined by periods is N list items. The reader scans headings
+  and bullets, not sentences; a buried third rule is a rule nobody
+  follows. Number the items so a later comment can cite them by number.
+- Omit sections with nothing to say: no "rules added" section when no rule
+  changed, no placeholder, no `(none)`. An empty section is noise that
+  trains the reader to skip sections.
+
 ## Scratch files
 
 Always use the repo-local `./tmp/` directory for scratch, repro and
@@ -106,6 +146,12 @@ thumb is one decision per line: if a line picks between three shapes or
 merges three flag sources, split it until each line does one thing a comment
 can name. `npm run lint` does not enforce this; review does.
 
+Work with local scripts, never by shuttling file contents through the model: when a job is mechanical (rename every occurrence, reformat JSON, count matches, list files), compute the change with `node`/`python3` in `bash` and read back only the summary (counts, leftover matches, diff stat) — never the full files. Reading a file just to echo it back with a trivial transformation (parse JSON and rewrite indented, rename a token, sort keys) is token burning: the transformation belongs in a script, the model only writes the script and verifies its output. Reach for `read` only when a decision needs human eyes (an exact `oldString` for `edit`, an error message, a shape to name).
+
+Written JSON is always `JSON.stringify(value, null, 2)` plus a trailing newline: two-space indent, no compact one-liners, no missing final newline. New expectation files come out of the generator this way; when one slips through compact, reformat it with a one-line `node` rewrite (`JSON.parse` then `JSON.stringify(..., null, 2)`), not by retyping it. Lock files and vendored JSON are npm-owned: never reformat them.
+
+Test helpers carry meaningful names, never numbered placeholders: a parity fixture case is named after what it checks (`checkUppercase`, `addFrozenAnchor`), a unit test after the behavior it pins (`testUtilityNameCollisionBailsOut`). Numbers in names are ordering without meaning: they force the next reader to open every definition to learn what runs, they collide silently on reorder, and they make failure lines useless (`FAIL case07` tells nobody what broke). The parity harness keys counts by function name, so a rename there must move the definition, every call line, and the runner's name pattern together — verify with the runner itself (`65/65`), not by eyeballing.
+
 Never assert exact human-readable prose (diagnosis sentences, detail
 messages, log hints, one-line descriptions). Prose is presentation: pinning
 it turns every reword into a failing suite without any behavioral
@@ -139,6 +185,21 @@ return JSON.stringify(unwrapped) ===
 ```
 
 never `atomUnwrap(expandType('{a?: K}').properties.a)` inline. The names double as documentation: `parsed` is the producer output, `input` is the helper argument, and a debugger can stop between them.
+
+Write JavaScript sources in specs as readable code in template literals, never as `\n`-joined fragments or `+`-concatenated lines. A snippet is production code the reader must review, so format it like production code: real newlines, indentation following the surrounding spec, and JSDoc continuation stars aligned under the opening `/**`. The indentation becomes part of the source, which every feeder (`runChecks`, `shapeFor`, plain `parse`) accepts without complaint. Bind the snippet to its own `const src` before passing it on, so the construction and the call are separate steps a debugger can stop between. Only escape when the snippet itself needs a backtick or `${`. Short one-liners (`'class A { x; }'`) stay single-quoted; anything spanning lines gets the template treatment:
+
+```js
+// Inline Object.assign literals contribute their keys.
+function testObjectAssignInline() {
+  const src = `class A {
+    constructor() {
+      Object.assign(this, {w: 1});
+    }
+  }`;
+  const {out} = shapeFor(src);
+  return out.includes('"w": "number"');
+}
+```
 
 Import each shared typedef once per file with `@import` at the top and use the bare name everywhere else, so `@type` casts stay short and diffs stay local:
 

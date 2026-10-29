@@ -3,43 +3,43 @@
  * @param {string | number} x - Union.
  * @returns {void}
  */
-function case01(x) {
+function checkStringOrNumber(x) {
 }
 /**
  * @param {?string} x - Nullable shorthand.
  * @returns {void}
  */
-function case02(x) {
+function checkNullableString(x) {
 }
 /**
  * @param {string} x - Non-nullable.
  * @returns {void}
  */
-function case03(x) {
+function checkPlainString(x) {
 }
 /**
  * @param {string | undefined} x - Explicit undefined member.
  * @returns {void}
  */
-function case04(x) {
+function checkStringOrUndefined(x) {
 }
 /**
  * @param {string} [x] - Optional parameter.
  * @returns {void}
  */
-function case05(x) {
+function checkOptionalString(x) {
 }
-case01(true);
-case01(1);
-case01("a");
-case02(null);
-case02("a");
-case02(undefined);
-case03(null);
-case03(undefined);
-case03("a");
-case04(undefined);
-case04(null);
-case05();
-case05(1);
-case05("a");
+checkStringOrNumber(true);
+checkStringOrNumber(1);
+checkStringOrNumber("a");
+checkNullableString(null);
+checkNullableString("a");
+checkNullableString(undefined);
+checkPlainString(null);
+checkPlainString(undefined);
+checkPlainString("a");
+checkStringOrUndefined(undefined);
+checkStringOrUndefined(null);
+checkOptionalString();
+checkOptionalString(1);
+checkOptionalString("a");

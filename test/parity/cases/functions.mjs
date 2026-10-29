@@ -3,15 +3,8 @@
  * @param {(text: string) => void} f - A callback.
  * @returns {void}
  */
-function case01(f) {
+function checkCallback(f) {
 }
-/**
- * @param {string} a - First.
- * @param {string} b - Second.
- * @returns {void}
- */
-function twoArgs(a, b) {
-}
-case01((text) => {});
-case01(1);
-case01(twoArgs); // parity-diverges: rti-quieter (arity unchecked)
+checkCallback((text) => {});
+checkCallback(1);
+checkCallback(function twoArgs(/** @type {string} */ a, /** @type {string} */ b) {}); // parity-diverges: rti-quieter (arity unchecked)

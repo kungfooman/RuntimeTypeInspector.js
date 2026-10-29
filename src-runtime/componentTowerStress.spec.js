@@ -1,6 +1,6 @@
 import {validateType} from './validateType.js';
 import {registerTypedef, typedefs} from './registerTypedef.js';
-import {registerClass} from './registerClass.js';
+import {registerClass, classes} from './registerClass.js';
 import {expandType} from '../src-transpiler/expandType.js';
 import {getTypeKeys, resolveObject} from './getTypeKeys.js';
 import {createType} from './createType.js';
@@ -378,6 +378,33 @@ function testNominalChainIntact() {
   }
   return true;
 }
+// Nominal identity survives dual packaging: a transpiled twin that imports
+// the untranspiled parent holds a distinct object under the same class
+// name, so `instanceof` fails across the copy boundary. The name-chain
+// fallback still decides the relation; strangers still fail.
+function testNominalChainDualPackage() {
+  prepareStress();
+  class BaseCopy {}
+  Object.defineProperty(BaseCopy, 'name', {value: 'TwComponent'});
+  class TwinCam extends BaseCopy {}
+  Object.defineProperty(TwinCam, 'name', {value: 'TwCam'});
+  const SavedCam = classes.TwCam;
+  classes.TwCam = TwinCam;
+  try {
+    if (TwinCam.prototype instanceof TwComponent) {
+      return false;
+    }
+    if (extendsCheck('TwCam', 'TwComponent') !== true) {
+      return false;
+    }
+    if (extendsCheck('TwOther', 'TwComponent') !== false) {
+      return false;
+    }
+    return true;
+  } finally {
+    classes.TwCam = SavedCam;
+  }
+}
 // A noisy entity (tuple, promise, map, readonly array, function, record,
 // nested shapes, methods, primitives) maps to its slots with zero warnings.
 function testBigMapSilent() {
@@ -425,6 +452,58 @@ function testStaticRuntimeAgreement() {
   }
   return true;
 }
+// Explicit null passes optional slots without `| null` (engine compat:
+// the engine never adopted strictNullChecks, so optionality stays
+// lenient); only a missing `?` rejects null.
+function testOptionalTakesExplicitNull() {
+  prepareStress();
+  const optional = {type: 'number', optional: true};
+  if (!validateType(null, optional, 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  if (!validateType(undefined, optional, 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  return validateType(null, 'number', 'loc', 'name', true, warn, 0) === false;
+}
+// Nullable unions take every member including null; the bare member
+// rejects it. Both directions pin the `batchGroupId?: number | null`
+// production shape.
+function testNullableUnionMembers() {
+  prepareStress();
+  const nullable = {type: 'union', members: ['number', 'null']};
+  if (!validateType(null, nullable, 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  if (!validateType(3, nullable, 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  return validateType(null, 'number', 'loc', 'name', true, warn, 0) === false;
+}
+// A union whose every member fails still reports (never silently
+// passes): the hostile check is the verdict the Diagnosis explains.
+function testUnionAllFailStillFails() {
+  prepareStress();
+  const union = {type: 'union', members: ['TwColor', {type: 'array', elementType: 'number'}]};
+  if (validateType([0, 0], union, 'loc', 'name', true, warn, 0) === false) {
+    return false;
+  }
+  return validateType([0, 'x'], union, 'loc', 'name', true, warn, 0) === false;
+}
+// Subclass instances satisfy base-typed slots; snapshots of subclasses
+// satisfy them nominally; wrong tags fail.
+function testSubclassSatisfiesBase() {
+  prepareStress();
+  class TwSubCam extends TwCam {}
+  registerClass(TwSubCam);
+  if (!validateType(new TwSubCam(), 'TwCam', 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  if (!validateType({fov: 1, $type: 'TwSubCam'}, 'TwCam', 'loc', 'name', true, warn, 0)) {
+    return false;
+  }
+  return validateType({fov: 1, $type: 'TwOther'}, 'TwCam', 'loc', 'name', true, warn, 0) === false;
+}
 export const tests = [
   testStripKeepsAliasSpelling,
   testStripQuestionStillStrips,
@@ -445,6 +524,11 @@ export const tests = [
   testDeferredStaysUndecidable,
   testUnionMixShortCircuits,
   testNominalChainIntact,
+  testNominalChainDualPackage,
   testBigMapSilent,
   testStaticRuntimeAgreement,
+  testOptionalTakesExplicitNull,
+  testNullableUnionMembers,
+  testUnionAllFailStillFails,
+  testSubclassSatisfiesBase,
 ];

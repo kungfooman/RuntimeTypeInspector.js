@@ -2064,6 +2064,9 @@ class TypePanel {
     const btnCopy = Button({textContent: 'Copy', title: 'Copy comparison to clipboard', onclick: () => this.copyCompare(warnObj, btnCopy)});
     const {expectPretty, actualPretty} = formatCompare(warnObj.expect, warnObj.value);
     const Grid = genJsx('div');
+    // Lazy on-click diagnosis: diffed here, in the rendering realm, only
+    // when the comparator opens. Twins loading late can resolve more than
+    // the checker knew at report time, and nothing is spent per error.
     let diagnosis;
     try {
       diagnosis = explainMismatch(warnObj.value, warnObj.expect, warnObj.name);

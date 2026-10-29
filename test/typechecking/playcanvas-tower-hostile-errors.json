@@ -1,0 +1,87 @@
+{
+  "throws": [
+    {
+      "loc": "Entity#addComponent",
+      "name": "data",
+      "value": {
+        "alignment": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "loc": "Entity#addComponent",
+      "name": "data",
+      "value": {
+        "anchor": [
+          0,
+          "x",
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "loc": "Entity#addComponent",
+      "name": "data",
+      "value": {
+        "color": "red"
+      }
+    },
+    {
+      "loc": "Entity#addComponent",
+      "name": "data",
+      "value": {
+        "fov": "x"
+      }
+    },
+    {
+      "loc": "Entity#addComponent",
+      "name": "data",
+      "value": {
+        "intensity": "x"
+      }
+    },
+    {
+      "loc": "Entity#addComponent",
+      "name": "data",
+      "value": {
+        "batchGroupId": "x"
+      }
+    },
+    {
+      "loc": "Entity#addComponent",
+      "name": "data",
+      "value": {
+        "fovv": 60
+      }
+    },
+    {
+      "loc": "Entity#addComponent",
+      "name": "data",
+      "value": 42
+    },
+    {
+      "loc": "Entity#addComponent",
+      "name": "type",
+      "value": 42
+    },
+    {
+      "loc": "Entity#addComponent",
+      "name": "data"
+    },
+    {
+      "loc": "Entity#addComponent",
+      "name": "data",
+      "value": {
+        "anchor": {
+          "0": 0,
+          "1": 0,
+          "2": 1,
+          "3": 1
+        }
+      }
+    }
+  ]
+}

@@ -1,5 +1,9 @@
 {
   "throws": [
-    {"loc": "takeIntersection", "name": "value", "value": 1}
+    {
+      "loc": "takeIntersection",
+      "name": "value",
+      "value": 1
+    }
   ]
 }

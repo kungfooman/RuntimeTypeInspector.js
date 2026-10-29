@@ -1,8 +1,24 @@
 {
   "throws": [
-    {"loc": "BitPacking.set", "name": "storage", "value": "nope"},
-    {"loc": "BitPacking.get", "name": "storage", "value": "nope"},
-    {"loc": "BitPacker.set", "name": "storage", "value": "nope"},
-    {"loc": "BitPacker#get", "name": "storage", "value": "nope"}
+    {
+      "loc": "BitPacking.set",
+      "name": "storage",
+      "value": "nope"
+    },
+    {
+      "loc": "BitPacking.get",
+      "name": "storage",
+      "value": "nope"
+    },
+    {
+      "loc": "BitPacker.set",
+      "name": "storage",
+      "value": "nope"
+    },
+    {
+      "loc": "BitPacker#get",
+      "name": "storage",
+      "value": "nope"
+    }
   ]
 }
