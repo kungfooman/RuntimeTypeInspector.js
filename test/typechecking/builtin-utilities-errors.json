@@ -1,1 +1,71 @@
-{"throws": [{"loc": "takeAwaited", "name": "n", "value": "[Promise]"}, {"loc": "takeAwaited", "name": "n", "value": null}, {"loc": "takeAwaitedPlain", "name": "n", "value": "x"}, {"loc": "takeReturned", "name": "s", "value": 1}, {"loc": "takeArity", "name": "n", "value": "x"}, {"loc": "takeUpper", "name": "s", "value": "abc"}, {"loc": "takeUpper", "name": "s", "value": 1}, {"loc": "takeLower", "name": "s", "value": "ABC"}, {"loc": "takeCapital", "name": "s", "value": "abc"}, {"loc": "takeUncapital", "name": "s", "value": "Abc"}, {"loc": "takeUpperUnion", "name": "s", "value": "ab"}, {"loc": "takeReadonlyMap", "name": "m"}, {"loc": "takeReadonlyMap", "name": "m"}, {"loc": "takeReadonlySet", "name": "s"}]}
+{
+  "throws": [
+    {
+      "loc": "takeAwaited",
+      "name": "n",
+      "value": "[Promise]"
+    },
+    {
+      "loc": "takeAwaited",
+      "name": "n",
+      "value": null
+    },
+    {
+      "loc": "takeAwaitedPlain",
+      "name": "n",
+      "value": "x"
+    },
+    {
+      "loc": "takeReturned",
+      "name": "s",
+      "value": 1
+    },
+    {
+      "loc": "takeArity",
+      "name": "n",
+      "value": "x"
+    },
+    {
+      "loc": "takeUpper",
+      "name": "s",
+      "value": "abc"
+    },
+    {
+      "loc": "takeUpper",
+      "name": "s",
+      "value": 1
+    },
+    {
+      "loc": "takeLower",
+      "name": "s",
+      "value": "ABC"
+    },
+    {
+      "loc": "takeCapital",
+      "name": "s",
+      "value": "abc"
+    },
+    {
+      "loc": "takeUncapital",
+      "name": "s",
+      "value": "Abc"
+    },
+    {
+      "loc": "takeUpperUnion",
+      "name": "s",
+      "value": "ab"
+    },
+    {
+      "loc": "takeReadonlyMap",
+      "name": "m"
+    },
+    {
+      "loc": "takeReadonlyMap",
+      "name": "m"
+    },
+    {
+      "loc": "takeReadonlySet",
+      "name": "s"
+    }
+  ]
+}

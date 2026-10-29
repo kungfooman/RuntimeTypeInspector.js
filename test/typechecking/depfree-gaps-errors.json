@@ -1,1 +1,46 @@
-{"throws": [{"loc": "takeFn", "name": "f", "value": 1}, {"loc": "takeNew", "name": "C", "value": 1}, {"loc": "takeFlags", "name": "o", "value": {"a": "x"}}, {"loc": "takeIndex", "name": "m", "value": {"a": "x"}}, {"loc": "takeBigint", "name": "b", "value": 123}, {"loc": "takeTemplate", "name": "t", "value": "xx"}, {"loc": "takeNamedTuple", "name": "t", "value": ["a", "b"]}]}
+{
+  "throws": [
+    {
+      "loc": "takeFn",
+      "name": "f",
+      "value": 1
+    },
+    {
+      "loc": "takeNew",
+      "name": "C",
+      "value": 1
+    },
+    {
+      "loc": "takeFlags",
+      "name": "o",
+      "value": {
+        "a": "x"
+      }
+    },
+    {
+      "loc": "takeIndex",
+      "name": "m",
+      "value": {
+        "a": "x"
+      }
+    },
+    {
+      "loc": "takeBigint",
+      "name": "b",
+      "value": 123
+    },
+    {
+      "loc": "takeTemplate",
+      "name": "t",
+      "value": "xx"
+    },
+    {
+      "loc": "takeNamedTuple",
+      "name": "t",
+      "value": [
+        "a",
+        "b"
+      ]
+    }
+  ]
+}

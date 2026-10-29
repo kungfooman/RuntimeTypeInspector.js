@@ -1,1 +1,47 @@
-{"throws": [{"loc": "taggedShapes", "name": "bare", "value": 123}, {"loc": "taggedShapes", "name": "inArray", "value": [123]}, {"loc": "taggedShapes", "name": "inObject", "value": {"v": 123}}, {"loc": "taggedShapes", "name": "inIndex", "value": {"a": 123}}, {"loc": "taggedShapes", "name": "inMap", "value": {}}, {"loc": "taggedShapes", "name": "inSet", "value": {}}, {"loc": "taggedShapes", "name": "inRecord", "value": {"k": 123}}]}
+{
+  "throws": [
+    {
+      "loc": "taggedShapes",
+      "name": "bare",
+      "value": 123
+    },
+    {
+      "loc": "taggedShapes",
+      "name": "inArray",
+      "value": [
+        123
+      ]
+    },
+    {
+      "loc": "taggedShapes",
+      "name": "inObject",
+      "value": {
+        "v": 123
+      }
+    },
+    {
+      "loc": "taggedShapes",
+      "name": "inIndex",
+      "value": {
+        "a": 123
+      }
+    },
+    {
+      "loc": "taggedShapes",
+      "name": "inMap",
+      "value": {}
+    },
+    {
+      "loc": "taggedShapes",
+      "name": "inSet",
+      "value": {}
+    },
+    {
+      "loc": "taggedShapes",
+      "name": "inRecord",
+      "value": {
+        "k": 123
+      }
+    }
+  ]
+}

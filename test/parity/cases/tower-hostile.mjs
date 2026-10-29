@@ -142,7 +142,7 @@ class Entity {
  * @param {K extends ComponentName ? ComponentOptions<K> : object} [data] - Options.
  * @returns {void}
  */
-function case01(type, data) {
+function addElement(type, data) {
 }
 /**
  * @template {ComponentName | (string & {})} K
@@ -150,7 +150,7 @@ function case01(type, data) {
  * @param {K extends ComponentName ? ComponentOptions<K> : object} [data] - Options.
  * @returns {void}
  */
-function case02(type, data) {
+function addElementInvalid(type, data) {
 }
 /**
  * @template {ComponentName | (string & {})} K
@@ -158,7 +158,7 @@ function case02(type, data) {
  * @param {K extends ComponentName ? ComponentOptions<K> : object} [data] - Options.
  * @returns {void}
  */
-function case03(type, data) {
+function addUnknown(type, data) {
 }
 /**
  * @template {ComponentName | (string & {})} K
@@ -166,7 +166,7 @@ function case03(type, data) {
  * @param {K extends ComponentName ? ComponentOptions<K> : object} [data] - Options.
  * @returns {void}
  */
-function case04(type, data) {
+function addNonStringType(type, data) {
 }
 /**
  * @template {ComponentName | (string & {})} K
@@ -174,7 +174,7 @@ function case04(type, data) {
  * @param {K extends ComponentName ? ComponentOptions<K> : object} [data] - Options.
  * @returns {void}
  */
-function case05(type, data) {
+function addFrozenAnchor(type, data) {
 }
 /**
  * @template {ComponentName | (string & {})} K
@@ -182,7 +182,7 @@ function case05(type, data) {
  * @param {K extends ComponentName ? ComponentOptions<K> : object} [data] - Options.
  * @returns {void}
  */
-function case06(type, data) {
+function addSparseAnchor(type, data) {
 }
 /**
  * @template {ComponentName | (string & {})} K
@@ -190,7 +190,7 @@ function case06(type, data) {
  * @param {K extends ComponentName ? ComponentOptions<K> : object} [data] - Options.
  * @returns {void}
  */
-function case07(type, data) {
+function addTypedArrayAnchor(type, data) {
 }
 /**
  * @template {ComponentName | (string & {})} K
@@ -198,21 +198,21 @@ function case07(type, data) {
  * @param {K extends ComponentName ? ComponentOptions<K> : object} [data] - Options.
  * @returns {void}
  */
-function case08(type, data) {
+function addNullAlignment(type, data) {
 }
 /** @type {number[]} */
 const sparseAnchor = [0, 0, 1, 1];
 sparseAnchor.length = 6;
-case01('element', {anchor: [0, 0, 1, 1], color: new Color()});
-case01('element', {anchor: new Vec4(), color: [0.5, 0.6, 0.9]});
-case02('element', {alignment: [0, 0]});
-case02('element', {anchor: [0, 'x', 1, 1]});
-case02('element', {color: 'red'});
-case03('nope', {anything: 1});
-case03('nope', 42);
-case03('light');
-case04(42, {});
-case05('element', {anchor: Object.freeze([0, 0, 1, 1])}); // parity-diverges: rti-quieter (frozen arrays pass RTI, tsc rejects readonly)
-case06('element', {anchor: sparseAnchor}); // parity-diverges: rti-stricter (holes fail RTI, tsc accepts sparse arrays)
-case07('element', {anchor: new Float32Array([0, 0, 1, 1])});
-case08('element', {alignment: null}); // parity-diverges: rti-quieter (explicit null passes optional slots, tsc-strict rejects it)
+addElement('element', {anchor: [0, 0, 1, 1], color: new Color()});
+addElement('element', {anchor: new Vec4(), color: [0.5, 0.6, 0.9]});
+addElementInvalid('element', {alignment: [0, 0]});
+addElementInvalid('element', {anchor: [0, 'x', 1, 1]});
+addElementInvalid('element', {color: 'red'});
+addUnknown('nope', {anything: 1});
+addUnknown('nope', 42);
+addUnknown('light');
+addNonStringType(42, {});
+addFrozenAnchor('element', {anchor: Object.freeze([0, 0, 1, 1])}); // parity-diverges: rti-quieter (frozen arrays pass RTI, tsc rejects readonly)
+addSparseAnchor('element', {anchor: sparseAnchor}); // parity-diverges: rti-stricter (holes fail RTI, tsc accepts sparse arrays)
+addTypedArrayAnchor('element', {anchor: new Float32Array([0, 0, 1, 1])});
+addNullAlignment('element', {alignment: null}); // parity-diverges: rti-quieter (explicit null passes optional slots, tsc-strict rejects it)

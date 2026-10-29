@@ -1,1 +1,8 @@
-{"throws": [{"loc": "Entity#addComponent", "name": "data"}]}
+{
+  "throws": [
+    {
+      "loc": "Entity#addComponent",
+      "name": "data"
+    }
+  ]
+}

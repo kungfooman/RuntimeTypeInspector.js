@@ -11,7 +11,7 @@
  * @param {Omit<Account, 'id' | 'createdAt'>} payload - Account details.
  * @returns {void}
  */
-function case01(payload) {
+function checkAccountPayload(payload) {
 }
 /**
  * @typedef {Readonly<Omit<Account, 'id'>>} PublicAccountView
@@ -19,16 +19,16 @@ function case01(payload) {
  * @param {PublicAccountView} account - Read-only view.
  * @returns {void}
  */
-function case02(account) {
+function checkPublicAccount(account) {
 }
 /**
  * @param {Omit<Account, 'id' | 'createdAt'>} payload - Account details.
  * @returns {void}
  */
-function case03(payload) {
+function checkPayloadExcessId(payload) {
 }
-case01({email: "dev@company.com", role: "admin"});
-case01({email: "dev@company.com", role: 1});
-case02({email: "dev@company.com", role: "admin", createdAt: "now"});
-case02({email: 1, role: "admin", createdAt: "now"});
-case03({email: "dev@company.com", role: "admin", id: 1});
+checkAccountPayload({email: "dev@company.com", role: "admin"});
+checkAccountPayload({email: "dev@company.com", role: 1});
+checkPublicAccount({email: "dev@company.com", role: "admin", createdAt: "now"});
+checkPublicAccount({email: 1, role: "admin", createdAt: "now"});
+checkPayloadExcessId({email: "dev@company.com", role: "admin", id: 1});

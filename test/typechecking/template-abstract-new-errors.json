@@ -1,5 +1,9 @@
 {
   "throws": [
-    {"loc": "AbstractPool#constructor", "name": "constructorFunc", "value": 42}
+    {
+      "loc": "AbstractPool#constructor",
+      "name": "constructorFunc",
+      "value": 42
+    }
   ]
 }

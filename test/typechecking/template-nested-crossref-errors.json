@@ -1,5 +1,12 @@
 {
   "throws": [
-    {"loc": "KeyedBox#constructor", "name": "keys", "value": [1, 2]}
+    {
+      "loc": "KeyedBox#constructor",
+      "name": "keys",
+      "value": [
+        1,
+        2
+      ]
+    }
   ]
 }

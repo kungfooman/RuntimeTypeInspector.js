@@ -1,9 +1,31 @@
 {
   "throws": [
-    {"loc": "addByName", "name": "name", "value": "c"},
-    {"loc": "addByName", "name": "name", "value": "tags"},
-    {"loc": "addByName", "name": "name", "value": "name"},
-    {"loc": "addByName", "name": "name", "value": "nope"},
-    {"loc": "Entity#addComponent", "name": "data", "value": {"clearColor": "x"}}
+    {
+      "loc": "addByName",
+      "name": "name",
+      "value": "c"
+    },
+    {
+      "loc": "addByName",
+      "name": "name",
+      "value": "tags"
+    },
+    {
+      "loc": "addByName",
+      "name": "name",
+      "value": "name"
+    },
+    {
+      "loc": "addByName",
+      "name": "name",
+      "value": "nope"
+    },
+    {
+      "loc": "Entity#addComponent",
+      "name": "data",
+      "value": {
+        "clearColor": "x"
+      }
+    }
   ]
 }

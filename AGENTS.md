@@ -146,6 +146,12 @@ thumb is one decision per line: if a line picks between three shapes or
 merges three flag sources, split it until each line does one thing a comment
 can name. `npm run lint` does not enforce this; review does.
 
+Work with local scripts, never by shuttling file contents through the model: when a job is mechanical (rename every occurrence, reformat JSON, count matches, list files), compute the change with `node`/`python3` in `bash` and read back only the summary (counts, leftover matches, diff stat) — never the full files. Reading a file just to echo it back with a trivial transformation (parse JSON and rewrite indented, rename a token, sort keys) is token burning: the transformation belongs in a script, the model only writes the script and verifies its output. Reach for `read` only when a decision needs human eyes (an exact `oldString` for `edit`, an error message, a shape to name).
+
+Written JSON is always `JSON.stringify(value, null, 2)` plus a trailing newline: two-space indent, no compact one-liners, no missing final newline. New expectation files come out of the generator this way; when one slips through compact, reformat it with a one-line `node` rewrite (`JSON.parse` then `JSON.stringify(..., null, 2)`), not by retyping it. Lock files and vendored JSON are npm-owned: never reformat them.
+
+Test helpers carry meaningful names, never numbered placeholders: a parity fixture case is named after what it checks (`checkUppercase`, `addFrozenAnchor`), a unit test after the behavior it pins (`testUtilityNameCollisionBailsOut`). Numbers in names are ordering without meaning: they force the next reader to open every definition to learn what runs, they collide silently on reorder, and they make failure lines useless (`FAIL case07` tells nobody what broke). The parity harness keys counts by function name, so a rename there must move the definition, every call line, and the runner's name pattern together — verify with the runner itself (`65/65`), not by eyeballing.
+
 Never assert exact human-readable prose (diagnosis sentences, detail
 messages, log hints, one-line descriptions). Prose is presentation: pinning
 it turns every reword into a failing suite without any behavioral

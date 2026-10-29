@@ -4,26 +4,26 @@
  * @param {{fov: number}} options - Options.
  * @returns {void}
  */
-function case01(options) {
+function checkFovOptions(options) {
 }
 /**
  * @param {{fov: number, clearColor: Array<number>}} options - Options.
  * @returns {void}
  */
-function case02(options) {
+function checkFovColorOptions(options) {
 }
 /**
  * @param {{nested: {enabled: boolean}}} options - Nested options.
  * @returns {void}
  */
-function case03(options) {
+function checkNestedOptions(options) {
 }
-case01({});
-case01({fov: 60});
-case01({fov: "60"});
-case02({fov: 60, clearColor: [0, 0, 0]});
-case02({fov: 60});
-case02({fov: 60, clearColor: "red"});
-case01({fov: 60, extra: true});
-case03({nested: {enabled: 1}});
-case03({nested: {enabled: true}});
+checkFovOptions({});
+checkFovOptions({fov: 60});
+checkFovOptions({fov: "60"});
+checkFovColorOptions({fov: 60, clearColor: [0, 0, 0]});
+checkFovColorOptions({fov: 60});
+checkFovColorOptions({fov: 60, clearColor: "red"});
+checkFovOptions({fov: 60, extra: true});
+checkNestedOptions({nested: {enabled: 1}});
+checkNestedOptions({nested: {enabled: true}});

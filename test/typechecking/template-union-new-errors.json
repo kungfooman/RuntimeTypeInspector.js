@@ -1,5 +1,9 @@
 {
   "throws": [
-    {"loc": "UnionFactory#constructor", "name": "make", "value": 42}
+    {
+      "loc": "UnionFactory#constructor",
+      "name": "make",
+      "value": 42
+    }
   ]
 }

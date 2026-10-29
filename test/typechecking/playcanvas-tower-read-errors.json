@@ -1,1 +1,30 @@
-{"throws": [{"loc": "takeCameras", "name": "cams", "value": {"$type": "CameraComponent", "_fov": 45, "enabled": true}}, {"loc": "takeCamera", "name": "cam", "value": {"$type": "LightComponent", "_intensity": 1, "enabled": true}}, {"loc": "takeCamera", "name": "cam", "value": {"$type": "Component", "enabled": true}}]}
+{
+  "throws": [
+    {
+      "loc": "takeCameras",
+      "name": "cams",
+      "value": {
+        "$type": "CameraComponent",
+        "_fov": 45,
+        "enabled": true
+      }
+    },
+    {
+      "loc": "takeCamera",
+      "name": "cam",
+      "value": {
+        "$type": "LightComponent",
+        "_intensity": 1,
+        "enabled": true
+      }
+    },
+    {
+      "loc": "takeCamera",
+      "name": "cam",
+      "value": {
+        "$type": "Component",
+        "enabled": true
+      }
+    }
+  ]
+}

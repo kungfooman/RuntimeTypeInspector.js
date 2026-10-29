@@ -5,92 +5,92 @@
  * @param {Awaited<Promise<number>>} x - Unwrapped fulfillment.
  * @returns {void}
  */
-function case01(x) {
+function checkAwaitedPromise(x) {
 }
 /**
  * @param {Awaited<number>} x - Non-promises are their own awaited type.
  * @returns {void}
  */
-function case02(x) {
+function checkAwaitedPlain(x) {
 }
 /**
  * @param {ReturnType<() => string>} x - Declared return.
  * @returns {void}
  */
-function case03(x) {
+function checkDeclaredReturn(x) {
 }
 /**
  * @param {Uppercase<string>} x - Uppercase only.
  * @returns {void}
  */
-function case04(x) {
+function checkUppercase(x) {
 }
 /**
  * @param {Lowercase<string>} x - Lowercase only.
  * @returns {void}
  */
-function case05(x) {
+function checkLowercase(x) {
 }
 /**
  * @param {Capitalize<string>} x - Capitalized only.
  * @returns {void}
  */
-function case06(x) {
+function checkCapitalized(x) {
 }
 /**
  * @param {Uncapitalize<string>} x - Uncapitalized only.
  * @returns {void}
  */
-function case07(x) {
+function checkUncapitalized(x) {
 }
 /**
  * @param {Uppercase<'ab' | 'cd'>} s - Intrinsics distribute over unions.
  * @returns {void}
  */
-function case08(s) {
+function checkUnionUppercase(s) {
 }
 /**
  * @param {ReadonlyMap<string, number>} m - Same shape as Map.
  * @returns {void}
  */
-function case09(m) {
+function checkReadonlyMap(m) {
 }
 /**
  * @param {ReadonlySet<number>} s - Same shape as Set.
  * @returns {void}
  */
-function case10(s) {
+function checkReadonlySet(s) {
 }
 /**
  * @param {Iterable<number>} it - Shape-only: RTI cannot observe yields.
  * @returns {void}
  */
-function case11(it) {
+function checkIterable(it) {
 }
-case01(1);
-case01(Promise.resolve(1));
-case01(null);
-case02(1);
-case02('x');
-case03('x');
-case03(1);
-case04('ABC');
-case04('abc');
-case04(1);
-case05('abc');
-case05('ABC');
-case06('Abc');
-case06('abc');
-case07('aBC');
-case07('Abc');
-case08('AB');
-case08('CD');
-case08('ab');
-case09(new Map([['a', 1]]));
-case09(new Map([['a', 'x']]));
-case09({});
-case10(new Set([1]));
-case10(new Set(['x']));
-case11([1, 2]);
-case11(new Set([1]));
-case11(new Map([['a', 1]])); // parity-diverges: rti-quieter (yielded entries unobservable, shape-only check)
+checkAwaitedPromise(1);
+checkAwaitedPromise(Promise.resolve(1));
+checkAwaitedPromise(null);
+checkAwaitedPlain(1);
+checkAwaitedPlain('x');
+checkDeclaredReturn('x');
+checkDeclaredReturn(1);
+checkUppercase('ABC');
+checkUppercase('abc');
+checkUppercase(1);
+checkLowercase('abc');
+checkLowercase('ABC');
+checkCapitalized('Abc');
+checkCapitalized('abc');
+checkUncapitalized('aBC');
+checkUncapitalized('Abc');
+checkUnionUppercase('AB');
+checkUnionUppercase('CD');
+checkUnionUppercase('ab');
+checkReadonlyMap(new Map([['a', 1]]));
+checkReadonlyMap(new Map([['a', 'x']]));
+checkReadonlyMap({});
+checkReadonlySet(new Set([1]));
+checkReadonlySet(new Set(['x']));
+checkIterable([1, 2]);
+checkIterable(new Set([1]));
+checkIterable(new Map([['a', 1]])); // parity-diverges: rti-quieter (yielded entries unobservable, shape-only check)

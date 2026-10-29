@@ -5,71 +5,71 @@
  * @param {Array<?>} x - Unknown element.
  * @returns {void}
  */
-function case01(x) {
+function checkUnknownArray(x) {
 }
 /**
  * @param {Promise<?>} x - Unknown fulfillment.
  * @returns {void}
  */
-function case02(x) {
+function checkUnknownPromise(x) {
 }
 /**
  * @param {Set<?>} x - Unknown member.
  * @returns {void}
  */
-function case03(x) {
+function checkUnknownSet(x) {
 }
 /**
  * @param {Map<?, number>} x - Unknown key.
  * @returns {void}
  */
-function case04(x) {
+function checkUnknownKeyMap(x) {
 }
 /**
  * @param {Record<?, number>} x - Unknown record key.
  * @returns {void}
  */
-function case05(x) {
+function checkUnknownRecord(x) {
 }
 /**
  * @param {Array<string | ?>} x - Unknown union member.
  * @returns {void}
  */
-function case06(x) {
+function checkStringOrUnknownArray(x) {
 }
 /**
  * @param {string | ?} x - Top-level unknown member.
  * @returns {void}
  */
-function case07(x) {
+function checkStringOrUnknown(x) {
 }
 /**
  * @param {?} x - Bare unknown.
  * @returns {void}
  */
-function case08(x) {
+function checkUnknown(x) {
 }
 /**
  * @param {[string, number?]} x - Unnamed optional tuple element.
  * @returns {void}
  */
-function case09(x) {
+function checkLoosePair(x) {
 }
-case01([1]);
-case01("a");
-case02(1);
-case03(new Set([1]));
-case03(1);
-case04(new Map([["a", 1]]));
-case04("x");
-case05({a: 1});
-case05("x");
-case06(["a"]);
-case06([1]);
-case07("a");
-case07(null);
-case08(1);
-case08("a");
-case09(["a", 1]);
-case09(["a"]);
-case09("a");
+checkUnknownArray([1]);
+checkUnknownArray("a");
+checkUnknownPromise(1);
+checkUnknownSet(new Set([1]));
+checkUnknownSet(1);
+checkUnknownKeyMap(new Map([["a", 1]]));
+checkUnknownKeyMap("x");
+checkUnknownRecord({a: 1});
+checkUnknownRecord("x");
+checkStringOrUnknownArray(["a"]);
+checkStringOrUnknownArray([1]);
+checkStringOrUnknown("a");
+checkStringOrUnknown(null);
+checkUnknown(1);
+checkUnknown("a");
+checkLoosePair(["a", 1]);
+checkLoosePair(["a"]);
+checkLoosePair("a");

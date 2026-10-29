@@ -4,13 +4,14 @@
  *   node test/parity/run.mjs
  *
  * Fixture convention (`test/parity/cases/*.mjs`): every case is one plain
- * function named `caseNN` with JSDoc types, an empty body, and its calls on
- * their own lines. tsc errors group by the called name on the error line;
+ * function with a meaningful lowercase name, JSDoc types, an empty body,
+ * and its calls on their own lines (definitions and calls share the name:
+ * `checkString(1);`). tsc errors group by the called name on the error line;
  * RTI errors group by `msg.loc` (the validated function name). Per case the
  * error COUNTS must agree — unless the call line carries a divergence
  * marker, e.g.:
  *
- *   case07(NaN); // parity-diverges: rti-stricter (NaN always rejected)
+ *   checkNumber(NaN); // parity-diverges: rti-stricter (NaN always rejected)
  *
  * Markers assert their direction, so a fixed gap fails loudly as a stale
  * baseline instead of silently passing. tsc errors that match no call line
@@ -24,8 +25,8 @@ import {fileURLToPath} from 'url';
 import {checkWithRti, resetRuntimeState, repoRoot} from './rtiCheck.mjs';
 
 const casesDir = join(dirname(fileURLToPath(import.meta.url)), 'cases');
-const CASE_DEF = /^function (case\d+)\s*\(/gmu;
-const CASE_CALL = /(case\d+)\s*\(/u;
+const CASE_DEF = /^function ([a-z][a-zA-Z0-9]*)\s*\(/gmu;
+const CASE_CALL = /^([a-z][a-zA-Z0-9]*)\s*\(/u;
 const DIVERGE = /parity-diverges:\s*(rti-stricter|rti-quieter)\s*(.*)$/u;
 /**
  * @param {string} file - Fixture basename.
@@ -33,6 +34,10 @@ const DIVERGE = /parity-diverges:\s*(rti-stricter|rti-quieter)\s*(.*)$/u;
  */
 function readFixture(file) {
   const lines = readFileSync(join(casesDir, file), 'utf8').split('\n');
+  // A call matches the same plain `name(` shape as a definition: tell them
+  // apart by the leading `function` keyword. Helper lines (class bodies,
+  // typedefs, const initializers like `new Map(...)`) never feed CASE_CALL
+  // because the call sites live on their own lines with the case name first.
   const defined = [...readFileSync(join(casesDir, file), 'utf8').matchAll(CASE_DEF)].map((_) => _[1]);
   return {lines, defined};
 }
@@ -100,8 +105,8 @@ async function checkFileWithRti(file, lines) {
   const divergences = new Map();
   const called = new Set();
   lines.forEach((text) => {
-    // Definition lines (`function case01(`) match the call regex too.
-    if (/^\s*function\s+case\d+/u.test(text)) {
+    // Definition lines (`function checkString(`) match the call shape too.
+    if (/^\s*function\s+/u.test(text)) {
       return;
     }
     const call = CASE_CALL.exec(text);
@@ -136,7 +141,7 @@ function compareCases(file, defined, called, tsc, rti, divergences) {
   const known = new Set(defined);
   for (const key of rti.keys()) {
     if (!known.has(key.split(':')[1])) {
-      rows.push(`FAIL ${key}: RTI error outside any case (name helpers caseNN or fix loc)`);
+      rows.push(`FAIL ${key}: RTI error outside any case (name helpers or fix loc)`);
     }
   }
   for (const id of defined) {
