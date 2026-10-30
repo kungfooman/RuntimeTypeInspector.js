@@ -1,5 +1,6 @@
 import {unwrapMember} from "./unwrapMember.js";
 import {literalOf} from "./literalOf.js";
+import {isArrayValue} from "./isArrayValue.js";
 /**
  * Collects template inference candidates by walking a runtime value alongside
  * its UNSUBSTITUTED expected type. Only positions TypeScript itself infers
@@ -50,7 +51,9 @@ function collectCandidates(value, expect, out = []) {
   }
   switch (expect.type) {
     case 'object': {
-      if (value === null || typeof value !== 'object' || value instanceof Array) {
+      // `isArrayValue` (not `instanceof`): candidates infer from arrays
+      // shared live across realms too.
+      if (value === null || typeof value !== 'object' || isArrayValue(value)) {
         return out;
       }
       const {properties} = expect;
@@ -71,7 +74,7 @@ function collectCandidates(value, expect, out = []) {
       return out;
     }
     case 'tuple': {
-      if (!(value instanceof Array) || !Array.isArray(expect.elements)) {
+      if (!isArrayValue(value) || !Array.isArray(expect.elements)) {
         return out;
       }
       for (let i = 0; i < expect.elements.length; i++) {
@@ -80,7 +83,7 @@ function collectCandidates(value, expect, out = []) {
       return out;
     }
     case 'array':
-      if (value instanceof Array && expect.elementType !== undefined) {
+      if (isArrayValue(value) && expect.elementType !== undefined) {
         for (const element of value) {
           collectCandidates(element, expect.elementType, out);
         }

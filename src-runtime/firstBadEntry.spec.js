@@ -3,6 +3,7 @@ import {registerClass, classes} from './registerClass.js';
 import {validators} from './validators.js';
 import './validateType.js';
 import {options} from './options.js';
+import {customTypes} from './customTypes.js';
 import {customValidations} from './customValidations.js';
 class ScanBox {
   constructor(x) {
@@ -162,6 +163,19 @@ function testCustomValidationsFallBack() {
     customValidations.pop();
   }
 }
+// A `customTypes` hook for a registered class vetoes the class scan: the
+// full loop consults the hook before `instanceof`, so the scan must not
+// trust `instanceof` past it, for values and keys alike.
+function testCustomTypeHookBailsOut() {
+  customTypes.ScanBox = () => false;
+  try {
+    return withScanClasses(() => firstBadEntry(new Map([[1, new ScanBox(1)]]), 'number', 'ScanBox') === -2 &&
+      firstBadEntry(new Map([[new ScanBox(1), 'a']]), 'ScanBox', 'string') === -2
+    );
+  } finally {
+    delete customTypes.ScanBox;
+  }
+}
 function testEmptyMapScansClean() {
   // An empty map is clean under any fast path its key/val types allow.
   return firstBadEntry(new Map(), 'number', 'string') === -1;
@@ -188,6 +202,7 @@ const tests = [
   testComplexKeyBailsOut,
   testUserlandOverrideComposition,
   testCustomValidationsFallBack,
+  testCustomTypeHookBailsOut,
   testEmptyMapScansClean,
   testMixedKeyValFailure,
 ];

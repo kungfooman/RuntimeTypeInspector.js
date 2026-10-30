@@ -109,6 +109,8 @@ const tests = [
   ...(await import('./src-runtime/snapshotTag.spec.js'              )).tests,
   ...(await import('./src-runtime/realmBrand.spec.js'               )).tests,
   ...(await import('./src-runtime/crossRealmDiagnosis.spec.js'      )).tests,
+  ...(await import('./src-runtime/liveSharing.spec.js'               )).tests,
+  ...(await import('./src-runtime/validateGlobalConstructor.spec.js'  )).tests,
   ...(await import('./src-runtime/snapshotMatches.spec.js'          )).tests,
   ...(await import('./src-runtime/collectCandidates.spec.js'      )).tests,
   ...(await import('./src-runtime/strictNullChecks.spec.js'        )).tests,

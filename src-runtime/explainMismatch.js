@@ -725,6 +725,18 @@ function diffValue(value, expect, path, depth, memberOf) {
     if (!best) {
       return [];
     }
+    // Last resort before inventing a row: when every member failed
+    // structurally, ask the validator itself. A passing member means the
+    // verdict was acceptance (nominal trust, custom hooks, option
+    // leniency) and any row would contradict it. This gate only ever
+    // converts would-be rows to clean, never the reverse, so structurally
+    // clean members (with their informational children) keep flowing
+    // through the loop above untouched.
+    for (const member of members) {
+      if (passes(value, member)) {
+        return [];
+      }
+    }
     const actual = snip(value);
     const closest = expectSnip(best.member);
     const count = best.findings.length;

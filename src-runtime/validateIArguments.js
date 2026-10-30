@@ -10,11 +10,13 @@
  */
 function validateIArguments(value, expect, loc, name, critical, warn, depth) {
   // The `arguments` object (or anything with an iterator): nullish values
-  // fail instead of throwing on the property read.
+  // fail instead of throwing on the property read. `typeof` (not
+  // `instanceof Function`) so iterables from other realms pass: every
+  // realm has its own `Function` constructor.
   if (value === null || value === undefined) {
     warn('Expected IArguments, got nullish value.', {value});
     return false;
   }
-  return value[Symbol.iterator] instanceof Function;
+  return typeof value[Symbol.iterator] === 'function';
 }
 export {validateIArguments};

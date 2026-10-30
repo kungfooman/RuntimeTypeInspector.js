@@ -111,7 +111,12 @@ function firstBadEntry(value, key, val) {
       keyBad = (k) => typeof k !== want;
     } else if (classes[key]) {
       // Same `instanceof` branch as the reference validator; conservative
-      // flags only steer the caller's full loop, never a verdict.
+      // flags only steer the caller's full loop, never a verdict. Bails
+      // when a userland hook shadows the class name: the full loop would
+      // consult it, and the scan must not skip that consultation.
+      if (customTypes[key]) {
+        return -2;
+      }
       const ctor = classes[key];
       keyBad = (k) => !(k instanceof ctor);
     } else {
@@ -127,10 +132,22 @@ function firstBadEntry(value, key, val) {
       const want = val;
       valBad = (v) => typeof v !== want;
     } else if (classes[val]) {
+      // A userland hook for the class name takes precedence in the full
+      // loop, so the scan stays out of the way instead of trusting
+      // `instanceof` past it.
+      if (customTypes[val]) {
+        return -2;
+      }
       const ctor = classes[val];
       valBad = (v) => !(v instanceof ctor);
     } else if (typeof val === 'object' && val.type === 'reference' &&
       !utilityNames.has(val.name) && classes[val.name]) {
+      // Same hook rule for utility-shaped references that resolve to a
+      // registered class (`{type: 'object', ...}` nodes never reach here:
+      // only bare names and single-arg references take this branch).
+      if (customTypes[val.name]) {
+        return -2;
+      }
       const ctor = classes[val.name];
       valBad = (v) => !(v instanceof ctor);
     } else {

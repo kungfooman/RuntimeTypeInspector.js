@@ -50,7 +50,14 @@ function realmDataExpect() {
     // getter's `Readonly<Color>` wins over the setter's `Color`, while the
     // snapshot tag stays bare. The differ must unwrap the transparent
     // wrapper before the nominal match, mirroring validateReference.
-    color: {type: 'union', members: [{type: 'reference', name: 'Readonly', args: ['RealmColor']}, {type: 'array', elementType: 'number'}], optional: true},
+    color: {
+      type: 'union',
+      members: [
+        {type: 'reference', name: 'Readonly', args: ['RealmColor']},
+        {type: 'array', elementType: 'number'},
+      ],
+      optional: true,
+    },
     margin: {type: 'union', members: ['RealmVec4', {type: 'array', elementType: 'number'}], optional: true},
     alignment: {type: 'RealmVec2', optional: true},
   }};
@@ -165,12 +172,18 @@ function testDirectShapeExemptsMethodsByTag() {
 // non-wrappers) is not unwrapped.
 function testUnwrapTransparent() {
   const readonlyColor = unwrapTransparent({type: 'reference', name: 'Readonly', args: ['RealmColor']});
-  const nested = unwrapTransparent({type: 'reference', name: 'NonNullable', args: [{type: 'reference', name: 'NoInfer', args: ['RealmColor']}]});
+  const nested = unwrapTransparent({
+    type: 'reference',
+    name: 'NonNullable',
+    args: [{type: 'reference', name: 'NoInfer', args: ['RealmColor']}],
+  });
+  const bare = unwrapTransparent('RealmColor');
+  const partial = unwrapTransparent({type: 'reference', name: 'Partial', args: ['RealmColor']});
+  const plain = unwrapTransparent({type: 'object', properties: {}});
+  const empty = unwrapTransparent({type: 'reference', name: 'Readonly', args: []});
   return readonlyColor === 'RealmColor' && nested === 'RealmColor' &&
-    unwrapTransparent('RealmColor') === 'RealmColor' &&
-    unwrapTransparent({type: 'reference', name: 'Partial', args: ['RealmColor']}) === undefined &&
-    unwrapTransparent({type: 'object', properties: {}}) === undefined &&
-    unwrapTransparent({type: 'reference', name: 'Readonly', args: []}) === undefined;
+    bare === 'RealmColor' &&
+    partial === undefined && plain === undefined && empty === undefined;
 }
 export const tests = [
   testUnwrapTransparent,
