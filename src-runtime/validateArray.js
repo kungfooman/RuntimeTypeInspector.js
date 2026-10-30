@@ -1,5 +1,6 @@
 import {recurse} from "./validators.js";
 import {firstBadIndex} from "./firstBadIndex.js";
+import {isArrayValue} from "./isArrayValue.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -11,7 +12,7 @@ import {firstBadIndex} from "./firstBadIndex.js";
  * @returns {boolean} Boolean indicating if a type is correct.
  */
 function validateArray(value, expect, loc, name, critical, warn, depth) {
-  if (!(value instanceof Array)) {
+  if (!isArrayValue(value)) {
     warn('Given `value` isn\'t an array.');
     return false;
   }

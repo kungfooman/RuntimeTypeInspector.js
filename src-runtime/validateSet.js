@@ -1,4 +1,5 @@
 import {recurse} from "./validators.js";
+import {isSetValue} from "./isSetValue.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -10,7 +11,7 @@ import {recurse} from "./validators.js";
  * @returns {boolean} Boolean indicating if a type is correct.
  */
 function validateSet(value, expect, loc, name, critical, warn, depth) {
-  if (!(value instanceof Set)) {
+  if (!isSetValue(value)) {
     warn('Given value is not a set.');
     return false;
   }

@@ -18,6 +18,9 @@ import {describeValueType, prettyValue} from './describeValue.js';
 import {formatMapKey} from './formatMapKey.js';
 import {snapshotTag} from './snapshotTag.js';
 import {snapshotMatches} from './snapshotMatches.js';
+import {isArrayValue} from './isArrayValue.js';
+import {isMapValue} from './isMapValue.js';
+import {isSetValue} from './isSetValue.js';
 const MAX_DEPTH = 6;
 const MAX_UNION_MEMBERS = 12;
 const MAX_MAP_ENTRIES = 20;
@@ -324,7 +327,7 @@ function describeExcess(subPath, key, actual, allowed, info) {
 function diffMapValue(value, mat, path, depth) {
   let isMap = false;
   try {
-    isMap = value instanceof Map;
+    isMap = isMapValue(value);
   } catch {
     isMap = false;
   }
@@ -400,7 +403,7 @@ function diffMapValue(value, mat, path, depth) {
 function diffSetValue(value, mat, path, depth) {
   let isSet = false;
   try {
-    isSet = value instanceof Set;
+    isSet = isSetValue(value);
   } catch {
     isSet = false;
   }
@@ -469,7 +472,7 @@ function diffSetValue(value, mat, path, depth) {
  * @returns {object[]} Findings (empty when the value satisfies the type).
  */
 function diffArrayValue(value, mat, path, depth) {
-  if (!(value instanceof Array)) {
+  if (!isArrayValue(value)) {
     return [{
       path,
       kind: 'wrong',
@@ -533,7 +536,7 @@ function diffArrayValue(value, mat, path, depth) {
  * @returns {object[]} Findings (empty when the value satisfies the type).
  */
 function diffTupleValue(value, mat, path, depth) {
-  if (!(value instanceof Array)) {
+  if (!isArrayValue(value)) {
     return [{
       path,
       kind: 'wrong',
@@ -688,6 +691,21 @@ function diffValue(value, expect, path, depth, memberOf) {
   }
   if (mat && typeof mat === 'object' && mat.type === 'union' && Array.isArray(mat.members)) {
     const members = mat.members.slice(0, MAX_UNION_MEMBERS);
+    // Nominal shortcut mirroring the validator: a tagged snapshot names its
+    // class, and materialization may have erased that name everywhere else
+    // (the object branch below would count transport-stripped methods as
+    // defects). A tag match on any string member accepts outright. Plain
+    // tag equality covers a panel registry without the engine classes (the
+    // tag is the checker's nominal witness); `snapshotMatches` additionally
+    // covers registered subclasses where the registry is present.
+    const tag = snapshotTag(value);
+    if (typeof tag === 'string') {
+      for (const member of members) {
+        if (typeof member === 'string' && (tag === member || snapshotMatches(value, member))) {
+          return [];
+        }
+      }
+    }
     let best = null;
     const score = (/** @type {object[]} */ list) => list.length + (list.length === 1 && list[0].kind === 'wrong' && !list[0].children ? 0.5 : 0);
     for (const member of members) {
@@ -757,10 +775,14 @@ function diffValue(value, expect, path, depth, memberOf) {
     // Nominal match for the method check below: a tagged snapshot that
     // names the expected class lost its methods in transit, so their
     // absence is transport, not defect. Untagged values stay strict.
+    // Plain tag equality (not just the registry-backed `classMatches`)
+    // covers a panel registry without the engine classes: the bare-string
+    // top-of-function shortcut trusts the tag alone, and the same trust
+    // applies once the name materialized into a shape.
     const snapshot = snapshotTag(value);
     const className = typeof expect === 'string' ? expect :
       (expect && typeof expect === 'object' && typeof expect.type === 'string' ? expect.type : undefined);
-    const matched = snapshot !== undefined && classMatches(snapshot, className);
+    const matched = snapshot !== undefined && (snapshot === className || classMatches(snapshot, className));
     for (const key of Object.keys(mat.properties)) {
       if (key === '$type' && snapshot !== undefined) {
         continue;
