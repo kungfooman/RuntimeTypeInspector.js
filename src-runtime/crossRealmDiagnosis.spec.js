@@ -4,6 +4,7 @@ import {registerTypedef, typedefs, bumpTypedefVersion} from './registerTypedef.j
 import {tagSnapshot} from './tagSnapshot.js';
 import {explainMismatch} from './explainMismatch.js';
 import {unwrapTransparent} from './unwrapTransparent.js';
+import {expandType} from '../src-transpiler/expandType.js';
 class RealmColor {
   constructor() {
     Object.assign(this, {r: 0.95, g: 0.96, b: 0.98, a: 1});
@@ -32,35 +33,26 @@ function prepareRealmTower() {
   for (const cls of [RealmColor, RealmVec4, RealmVec2]) {
     registerClass(cls);
   }
-  // Harvested shapes: data props plus required method props, like the
-  // engine harvest the panel resolves against.
-  registerTypedef('RealmColor', {type: 'object', properties: {
-    r: 'number', g: 'number', b: 'number', a: 'number',
-    clone: 'Function', lerp: 'Function',
-  }});
-  registerTypedef('RealmVec4', {type: 'object', properties: {
-    x: 'number', y: 'number', z: 'number', w: 'number', dot: 'Function',
-  }});
-  registerTypedef('RealmVec2', {type: 'object', properties: {x: 'number', y: 'number'}});
+  // Shapes come through the parser like every other spec input, so a
+  // parser regression breaks these tests instead of silently passing
+  // against a stale hand-written shape. Harvest-equivalent shapes: data
+  // props plus required method props, like the engine harvest the panel
+  // resolves against.
+  registerTypedef('RealmColor', expandType('{r: number, g: number, b: number, a: number, clone: Function, lerp: Function}'));
+  registerTypedef('RealmVec4', expandType('{x: number, y: number, z: number, w: number, dot: Function}'));
+  registerTypedef('RealmVec2', expandType('{x: number, y: number}'));
 }
 function realmDataExpect() {
-  return {type: 'object', properties: {
-    anchor: {type: 'union', members: ['RealmVec4', {type: 'array', elementType: 'number'}], optional: true},
-    // Wrapped like the real harvest spells getter/setter pairs: the
-    // getter's `Readonly<Color>` wins over the setter's `Color`, while the
-    // snapshot tag stays bare. The differ must unwrap the transparent
-    // wrapper before the nominal match, mirroring validateReference.
-    color: {
-      type: 'union',
-      members: [
-        {type: 'reference', name: 'Readonly', args: ['RealmColor']},
-        {type: 'array', elementType: 'number'},
-      ],
-      optional: true,
-    },
-    margin: {type: 'union', members: ['RealmVec4', {type: 'array', elementType: 'number'}], optional: true},
-    alignment: {type: 'RealmVec2', optional: true},
-  }};
+  return expandType(`{
+    anchor?: RealmVec4 | number[],
+    color?: Readonly<RealmColor> | number[],
+    margin?: RealmVec4 | number[],
+    alignment?: RealmVec2,
+  }`);
+  // Wrapped like the real harvest spells getter/setter pairs: the
+  // getter's `Readonly<Color>` wins over the setter's `Color`, while the
+  // snapshot tag stays bare. The differ must unwrap the transparent
+  // wrapper before the nominal match, mirroring validateReference.
 }
 function realmLiveValue() {
   return {
@@ -171,15 +163,11 @@ function testDirectShapeExemptsMethodsByTag() {
 // that changes the runtime shape (Partial, bare strings pass through,
 // non-wrappers) is not unwrapped.
 function testUnwrapTransparent() {
-  const readonlyColor = unwrapTransparent({type: 'reference', name: 'Readonly', args: ['RealmColor']});
-  const nested = unwrapTransparent({
-    type: 'reference',
-    name: 'NonNullable',
-    args: [{type: 'reference', name: 'NoInfer', args: ['RealmColor']}],
-  });
+  const readonlyColor = unwrapTransparent(expandType('Readonly<RealmColor>'));
+  const nested = unwrapTransparent(expandType('NonNullable<NoInfer<RealmColor>>'));
   const bare = unwrapTransparent('RealmColor');
-  const partial = unwrapTransparent({type: 'reference', name: 'Partial', args: ['RealmColor']});
-  const plain = unwrapTransparent({type: 'object', properties: {}});
+  const partial = unwrapTransparent(expandType('Partial<RealmColor>'));
+  const plain = unwrapTransparent(expandType('{a: number}'));
   const empty = unwrapTransparent({type: 'reference', name: 'Readonly', args: []});
   return readonlyColor === 'RealmColor' && nested === 'RealmColor' &&
     bare === 'RealmColor' &&
