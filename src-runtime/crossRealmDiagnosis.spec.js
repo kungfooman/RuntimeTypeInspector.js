@@ -3,6 +3,7 @@ import {registerClass, classes} from './registerClass.js';
 import {registerTypedef, typedefs, bumpTypedefVersion} from './registerTypedef.js';
 import {tagSnapshot} from './tagSnapshot.js';
 import {explainMismatch} from './explainMismatch.js';
+import {unwrapTransparent} from './unwrapTransparent.js';
 class RealmColor {
   constructor() {
     Object.assign(this, {r: 0.95, g: 0.96, b: 0.98, a: 1});
@@ -45,7 +46,11 @@ function prepareRealmTower() {
 function realmDataExpect() {
   return {type: 'object', properties: {
     anchor: {type: 'union', members: ['RealmVec4', {type: 'array', elementType: 'number'}], optional: true},
-    color: {type: 'union', members: ['RealmColor', {type: 'array', elementType: 'number'}], optional: true},
+    // Wrapped like the real harvest spells getter/setter pairs: the
+    // getter's `Readonly<Color>` wins over the setter's `Color`, while the
+    // snapshot tag stays bare. The differ must unwrap the transparent
+    // wrapper before the nominal match, mirroring validateReference.
+    color: {type: 'union', members: [{type: 'reference', name: 'Readonly', args: ['RealmColor']}, {type: 'array', elementType: 'number'}], optional: true},
     margin: {type: 'union', members: ['RealmVec4', {type: 'array', elementType: 'number'}], optional: true},
     alignment: {type: 'RealmVec2', optional: true},
   }};
@@ -155,7 +160,20 @@ function testDirectShapeExemptsMethodsByTag() {
   }
   return Array.isArray(findings) && findings.length === 0;
 }
+// Transparent wrappers unwrap to the nominal name they carry; anything
+// that changes the runtime shape (Partial, bare strings pass through,
+// non-wrappers) is not unwrapped.
+function testUnwrapTransparent() {
+  const readonlyColor = unwrapTransparent({type: 'reference', name: 'Readonly', args: ['RealmColor']});
+  const nested = unwrapTransparent({type: 'reference', name: 'NonNullable', args: [{type: 'reference', name: 'NoInfer', args: ['RealmColor']}]});
+  return readonlyColor === 'RealmColor' && nested === 'RealmColor' &&
+    unwrapTransparent('RealmColor') === 'RealmColor' &&
+    unwrapTransparent({type: 'reference', name: 'Partial', args: ['RealmColor']}) === undefined &&
+    unwrapTransparent({type: 'object', properties: {}}) === undefined &&
+    unwrapTransparent({type: 'reference', name: 'Readonly', args: []}) === undefined;
+}
 export const tests = [
+  testUnwrapTransparent,
   testForeignArraysKeepSingleRow,
   testClonedTransportKeepsSingleRow,
   testMissingClassesKeepSingleRow,

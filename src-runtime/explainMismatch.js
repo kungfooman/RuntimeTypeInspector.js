@@ -18,6 +18,7 @@ import {describeValueType, prettyValue} from './describeValue.js';
 import {formatMapKey} from './formatMapKey.js';
 import {snapshotTag} from './snapshotTag.js';
 import {snapshotMatches} from './snapshotMatches.js';
+import {unwrapTransparent} from './unwrapTransparent.js';
 import {isArrayValue} from './isArrayValue.js';
 import {isMapValue} from './isMapValue.js';
 import {isSetValue} from './isSetValue.js';
@@ -694,14 +695,18 @@ function diffValue(value, expect, path, depth, memberOf) {
     // Nominal shortcut mirroring the validator: a tagged snapshot names its
     // class, and materialization may have erased that name everywhere else
     // (the object branch below would count transport-stripped methods as
-    // defects). A tag match on any string member accepts outright. Plain
-    // tag equality covers a panel registry without the engine classes (the
-    // tag is the checker's nominal witness); `snapshotMatches` additionally
-    // covers registered subclasses where the registry is present.
+    // defects). A tag match on any string member accepts outright. Members
+    // arrive wrapped in runtime-transparent utilities (`Readonly<Color>`
+    // wins the harvest over the setter's `Color`), so the match unwraps
+    // them first. Plain tag equality covers a panel registry without the
+    // engine classes (the tag is the checker's nominal witness);
+    // `snapshotMatches` additionally covers registered subclasses where
+    // the registry is present.
     const tag = snapshotTag(value);
     if (typeof tag === 'string') {
       for (const member of members) {
-        if (typeof member === 'string' && (tag === member || snapshotMatches(value, member))) {
+        const name = unwrapTransparent(member);
+        if (typeof name === 'string' && (tag === name || snapshotMatches(value, name))) {
           return [];
         }
       }
@@ -778,10 +783,14 @@ function diffValue(value, expect, path, depth, memberOf) {
     // Plain tag equality (not just the registry-backed `classMatches`)
     // covers a panel registry without the engine classes: the bare-string
     // top-of-function shortcut trusts the tag alone, and the same trust
-    // applies once the name materialized into a shape.
+    // applies once the name materialized into a shape. The expected name
+    // unwraps runtime-transparent utilities first (`Readonly<Color>` is
+    // what the harvest spells for getter/setter pairs; the tag stays
+    // bare `Color`).
     const snapshot = snapshotTag(value);
-    const className = typeof expect === 'string' ? expect :
+    const rawName = typeof expect === 'string' ? expect :
       (expect && typeof expect === 'object' && typeof expect.type === 'string' ? expect.type : undefined);
+    const className = unwrapTransparent(rawName);
     const matched = snapshot !== undefined && (snapshot === className || classMatches(snapshot, className));
     for (const key of Object.keys(mat.properties)) {
       if (key === '$type' && snapshot !== undefined) {

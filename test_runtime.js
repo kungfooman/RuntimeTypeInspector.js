@@ -106,6 +106,7 @@ const tests = [
   ...(await import('./src-runtime/matchIndexSignature.spec.js'     )).tests,
   ...(await import('./src-runtime/partialHomomorphic.spec.js'     )).tests,
   ...(await import('./src-runtime/tagSnapshot.spec.js'              )).tests,
+  ...(await import('./src-runtime/snapshotTag.spec.js'              )).tests,
   ...(await import('./src-runtime/realmBrand.spec.js'               )).tests,
   ...(await import('./src-runtime/crossRealmDiagnosis.spec.js'      )).tests,
   ...(await import('./src-runtime/snapshotMatches.spec.js'          )).tests,
