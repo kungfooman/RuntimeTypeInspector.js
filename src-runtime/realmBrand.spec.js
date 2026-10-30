@@ -2,6 +2,7 @@ import vm from 'node:vm';
 import {isArrayValue} from './isArrayValue.js';
 import {isMapValue} from './isMapValue.js';
 import {isSetValue} from './isSetValue.js';
+import {isPromiseValue} from './isPromiseValue.js';
 // Foreign-realm containers must pass: the panel diffs values shared live
 // across iframe boundaries, where `instanceof` fails because each realm
 // has its own constructors. Only the same-realm identity is pinned here;
@@ -28,9 +29,19 @@ function testMapSetImpostorRejected() {
   return isMapValue(fakeMap) === false && isSetValue(fakeSet) === false &&
     isMapValue(new Map()) === true && isSetValue(new Set()) === true;
 }
+// Promises validate by brand across realms; thenables are not promises.
+function testPromiseBrandCrossRealm() {
+  const foreign = vm.runInNewContext('Promise.resolve(1)');
+  class PlainSub extends Promise {}
+  return isPromiseValue(foreign) === true &&
+    isPromiseValue(Promise.resolve(1)) === true &&
+    isPromiseValue(new PlainSub((resolve) => resolve(1))) === true &&
+    isPromiseValue({then() {}}) === false;
+}
 export const tests = [
   testForeignArrayPasses,
   testArrayImpostorRejected,
   testForeignMapSetPass,
   testMapSetImpostorRejected,
+  testPromiseBrandCrossRealm,
 ];
