@@ -17,8 +17,9 @@ import {previewValue} from './previewValue.js';
 import {describeValueType, prettyValue} from './describeValue.js';
 import {formatMapKey} from './formatMapKey.js';
 import {snapshotTag} from './snapshotTag.js';
-import {snapshotMatches} from './snapshotMatches.js';
-import {unwrapTransparent} from './unwrapTransparent.js';
+import {snapshotNominalMatch} from './snapshotNominalMatch.js';
+import {unionNominalTag} from './unionNominalTag.js';
+import {unionValidatorPass} from './unionValidatorPass.js';
 import {isArrayValue} from './isArrayValue.js';
 import {isMapValue} from './isMapValue.js';
 import {isSetValue} from './isSetValue.js';
@@ -173,22 +174,6 @@ function passes(value, expect) {
   } catch {
     return false;
   }
-}
-/**
- * Whether a snapshot tag names the expected class: exact match or a
- * registered subclass, walked by identity so aliases stay correct. The
- * tag proves instance-hood across messaging (prototypes don't survive),
- * which is what lets the differ below tell transport-stripped methods
- * from genuinely missing ones. Never throws.
- * @param {string|undefined} tag - Snapshot tag of the value.
- * @param {string|undefined} className - Expected class name.
- * @returns {boolean} True on a nominal match.
- */
-function classMatches(tag, className) {
-  if (typeof tag !== 'string') {
-    return false;
-  }
-  return snapshotMatches({$type: tag}, className);
 }
 /**
  * Whether an expected prop is function-typed: such props can never
@@ -692,24 +677,8 @@ function diffValue(value, expect, path, depth, memberOf) {
   }
   if (mat && typeof mat === 'object' && mat.type === 'union' && Array.isArray(mat.members)) {
     const members = mat.members.slice(0, MAX_UNION_MEMBERS);
-    // Nominal shortcut mirroring the validator: a tagged snapshot names its
-    // class, and materialization may have erased that name everywhere else
-    // (the object branch below would count transport-stripped methods as
-    // defects). A tag match on any string member accepts outright. Members
-    // arrive wrapped in runtime-transparent utilities (`Readonly<Color>`
-    // wins the harvest over the setter's `Color`), so the match unwraps
-    // them first. Plain tag equality covers a panel registry without the
-    // engine classes (the tag is the checker's nominal witness);
-    // `snapshotMatches` additionally covers registered subclasses where
-    // the registry is present.
-    const tag = snapshotTag(value);
-    if (typeof tag === 'string') {
-      for (const member of members) {
-        const name = unwrapTransparent(member);
-        if (typeof name === 'string' && (tag === name || snapshotMatches(value, name))) {
-          return [];
-        }
-      }
+    if (unionNominalTag(value, members)) {
+      return [];
     }
     let best = null;
     const score = (/** @type {object[]} */ list) => list.length + (list.length === 1 && list[0].kind === 'wrong' && !list[0].children ? 0.5 : 0);
@@ -725,17 +694,8 @@ function diffValue(value, expect, path, depth, memberOf) {
     if (!best) {
       return [];
     }
-    // Last resort before inventing a row: when every member failed
-    // structurally, ask the validator itself. A passing member means the
-    // verdict was acceptance (nominal trust, custom hooks, option
-    // leniency) and any row would contradict it. This gate only ever
-    // converts would-be rows to clean, never the reverse, so structurally
-    // clean members (with their informational children) keep flowing
-    // through the loop above untouched.
-    for (const member of members) {
-      if (passes(value, member)) {
-        return [];
-      }
+    if (unionValidatorPass(value, members, passes)) {
+      return [];
     }
     const actual = snip(value);
     const closest = expectSnip(best.member);
@@ -788,22 +748,8 @@ function diffValue(value, expect, path, depth, memberOf) {
       }];
     }
     const findings = [];
-    // Snapshot envelope: transport metadata, never data (mirrors displays).
-    // Nominal match for the method check below: a tagged snapshot that
-    // names the expected class lost its methods in transit, so their
-    // absence is transport, not defect. Untagged values stay strict.
-    // Plain tag equality (not just the registry-backed `classMatches`)
-    // covers a panel registry without the engine classes: the bare-string
-    // top-of-function shortcut trusts the tag alone, and the same trust
-    // applies once the name materialized into a shape. The expected name
-    // unwraps runtime-transparent utilities first (`Readonly<Color>` is
-    // what the harvest spells for getter/setter pairs; the tag stays
-    // bare `Color`).
+    const matched = snapshotNominalMatch(value, expect);
     const snapshot = snapshotTag(value);
-    const rawName = typeof expect === 'string' ? expect :
-      (expect && typeof expect === 'object' && typeof expect.type === 'string' ? expect.type : undefined);
-    const className = unwrapTransparent(rawName);
-    const matched = snapshot !== undefined && (snapshot === className || classMatches(snapshot, className));
     for (const key of Object.keys(mat.properties)) {
       if (key === '$type' && snapshot !== undefined) {
         continue;
