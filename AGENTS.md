@@ -232,6 +232,10 @@ ASCII punctuation only: no unicode decorations (em dashes, curly quotes,
 arrows), and do not sprinkle hyphens and dashes everywhere; use normal
 sentences with regular word spacing instead.
 
+## Threat model
+
+Runtime Type Inspector operates against trusted application code and is intended to catch accidental runtime type violations, not defend against deliberate attempts to deceive the inspector. Accidental cross-realm incompatibility (rejecting legitimate foreign values) and accidental misclassification (accepting values that do not satisfy the intended type contract) are both in scope. Deliberate spoofing through mechanisms such as Symbol.toStringTag or fabricated constructor names is explicitly out of scope. Cross-realm brand and constructor checks are pragmatic compatibility heuristics, not security boundaries.
+
 ## Fail closed
 
 Safety relevant flags (option switches, validation verdicts, capability checks) must fail closed: a missing, undefined or garbage value disables the behavior, never enables it. Read a flag with plain truthiness (`if (options.checkStats)`) when it flows straight into a branch, or compare `=== true` with a short comment when the verdict is stored in a local first. Never write `options.<flag> !== false`: that reads every non-`false` value, including `undefined` from a typo or a deleted key, as on, so a broken flag silently widens validation instead of narrowing it.
