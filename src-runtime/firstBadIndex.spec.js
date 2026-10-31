@@ -4,6 +4,8 @@ import {validateArrayLike} from './validateArrayLike.js';
 import {validateArrayLikeSparse} from './validateArrayLikeSparse.js';
 import {validators} from './validators.js';
 import {options} from './options.js';
+import {customTypes} from './customTypes.js';
+import {customValidations} from './customValidations.js';
 const arrayOf = (elementType) => ({type: 'array', elementType});
 const likeOf = (elementType) => ({type: 'reference', name: 'ArrayLike', args: [elementType]});
 function testExamplesVerbatim() {
@@ -95,6 +97,29 @@ function testSparseHolesPass() {
   return validateArrayLikeSparse(holey, arrayOf('number'), 'loc', 'name', true, warn, 0) === true &&
     validateArrayLikeSparse([1, 'x'], likeOf('number'), 'loc', 'name', true, warn, 0) === false;
 }
+// A `customTypes` hook for the scanned primitive vetoes the scan: the
+// stock `typeof` proof cannot see what the hook would reject, so the full
+// loop runs and the hook decides every element.
+function testCustomTypeHookDisablesFastPath() {
+  customTypes.number = () => false;
+  try {
+    return firstBadIndex([1, 2], 2, 'number') === 0 &&
+      validateArray([1, 2], arrayOf('number'), 'loc', 'name', true, () => undefined, 0) === false;
+  } finally {
+    delete customTypes.number;
+  }
+}
+// `customValidations` run per element in the full loop, so any registered
+// validation vetoes every scan, whatever the element type.
+function testCustomValidationsDisableFastPath() {
+  customValidations.push(() => true);
+  try {
+    return firstBadIndex([1, 2], 2, 'number') === 0 &&
+      firstBadIndex(['a'], 1, 'string') === 0;
+  } finally {
+    customValidations.pop();
+  }
+}
 const tests = [
   testExamplesVerbatim,
   testStringBoolean,
@@ -106,5 +131,7 @@ const tests = [
   testOverrideDisablesFastPath,
   testNonPrimitiveDeepCheck,
   testSparseHolesPass,
+  testCustomTypeHookDisablesFastPath,
+  testCustomValidationsDisableFastPath,
 ];
 export {tests};

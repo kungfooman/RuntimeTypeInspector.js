@@ -106,6 +106,15 @@ const tests = [
   ...(await import('./src-runtime/matchIndexSignature.spec.js'     )).tests,
   ...(await import('./src-runtime/partialHomomorphic.spec.js'     )).tests,
   ...(await import('./src-runtime/tagSnapshot.spec.js'              )).tests,
+  ...(await import('./src-runtime/classMatches.spec.js'             )).tests,
+  ...(await import('./src-runtime/snapshotNominalMatch.spec.js'     )).tests,
+  ...(await import('./src-runtime/unionNominalTag.spec.js'          )).tests,
+  ...(await import('./src-runtime/unionValidatorPass.spec.js'       )).tests,
+  ...(await import('./src-runtime/snapshotTag.spec.js'              )).tests,
+  ...(await import('./src-runtime/realmBrand.spec.js'               )).tests,
+  ...(await import('./src-runtime/crossRealmDiagnosis.spec.js'      )).tests,
+  ...(await import('./src-runtime/liveSharing.spec.js'               )).tests,
+  ...(await import('./src-runtime/validateGlobalConstructor.spec.js'  )).tests,
   ...(await import('./src-runtime/snapshotMatches.spec.js'          )).tests,
   ...(await import('./src-runtime/collectCandidates.spec.js'      )).tests,
   ...(await import('./src-runtime/strictNullChecks.spec.js'        )).tests,
@@ -205,7 +214,7 @@ for (const test of tests) {
   clearObject(typedefs); // Each test starts with a clean slate of typedefs
   clearObject(typedefTemplates);
   bumpTypedefVersion(); // Wiping without a bump would serve stale cache entries
-  const ret = await test();
+  const ret = await test(); // eslint-disable-line no-await-in-loop -- sequential specs share registries
   if (!ret) {
     console.error("Test failed: " + test);
     errors++;

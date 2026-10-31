@@ -17,7 +17,12 @@ import {previewValue} from './previewValue.js';
 import {describeValueType, prettyValue} from './describeValue.js';
 import {formatMapKey} from './formatMapKey.js';
 import {snapshotTag} from './snapshotTag.js';
-import {snapshotMatches} from './snapshotMatches.js';
+import {snapshotNominalMatch} from './snapshotNominalMatch.js';
+import {unionNominalTag} from './unionNominalTag.js';
+import {unionValidatorPass} from './unionValidatorPass.js';
+import {isArrayValue} from './isArrayValue.js';
+import {isMapValue} from './isMapValue.js';
+import {isSetValue} from './isSetValue.js';
 const MAX_DEPTH = 6;
 const MAX_UNION_MEMBERS = 12;
 const MAX_MAP_ENTRIES = 20;
@@ -171,22 +176,6 @@ function passes(value, expect) {
   }
 }
 /**
- * Whether a snapshot tag names the expected class: exact match or a
- * registered subclass, walked by identity so aliases stay correct. The
- * tag proves instance-hood across messaging (prototypes don't survive),
- * which is what lets the differ below tell transport-stripped methods
- * from genuinely missing ones. Never throws.
- * @param {string|undefined} tag - Snapshot tag of the value.
- * @param {string|undefined} className - Expected class name.
- * @returns {boolean} True on a nominal match.
- */
-function classMatches(tag, className) {
-  if (typeof tag !== 'string') {
-    return false;
-  }
-  return snapshotMatches({$type: tag}, className);
-}
-/**
  * Whether an expected prop is function-typed: such props can never
  * survive messaging, so their absence on a nominally matched snapshot
  * is transport, not defect.
@@ -324,7 +313,7 @@ function describeExcess(subPath, key, actual, allowed, info) {
 function diffMapValue(value, mat, path, depth) {
   let isMap = false;
   try {
-    isMap = value instanceof Map;
+    isMap = isMapValue(value);
   } catch {
     isMap = false;
   }
@@ -400,7 +389,7 @@ function diffMapValue(value, mat, path, depth) {
 function diffSetValue(value, mat, path, depth) {
   let isSet = false;
   try {
-    isSet = value instanceof Set;
+    isSet = isSetValue(value);
   } catch {
     isSet = false;
   }
@@ -469,7 +458,7 @@ function diffSetValue(value, mat, path, depth) {
  * @returns {object[]} Findings (empty when the value satisfies the type).
  */
 function diffArrayValue(value, mat, path, depth) {
-  if (!(value instanceof Array)) {
+  if (!isArrayValue(value)) {
     return [{
       path,
       kind: 'wrong',
@@ -533,7 +522,7 @@ function diffArrayValue(value, mat, path, depth) {
  * @returns {object[]} Findings (empty when the value satisfies the type).
  */
 function diffTupleValue(value, mat, path, depth) {
-  if (!(value instanceof Array)) {
+  if (!isArrayValue(value)) {
     return [{
       path,
       kind: 'wrong',
@@ -688,6 +677,9 @@ function diffValue(value, expect, path, depth, memberOf) {
   }
   if (mat && typeof mat === 'object' && mat.type === 'union' && Array.isArray(mat.members)) {
     const members = mat.members.slice(0, MAX_UNION_MEMBERS);
+    if (unionNominalTag(value, members)) {
+      return [];
+    }
     let best = null;
     const score = (/** @type {object[]} */ list) => list.length + (list.length === 1 && list[0].kind === 'wrong' && !list[0].children ? 0.5 : 0);
     for (const member of members) {
@@ -700,6 +692,9 @@ function diffValue(value, expect, path, depth, memberOf) {
       }
     }
     if (!best) {
+      return [];
+    }
+    if (unionValidatorPass(value, members, passes)) {
       return [];
     }
     const actual = snip(value);
@@ -753,14 +748,8 @@ function diffValue(value, expect, path, depth, memberOf) {
       }];
     }
     const findings = [];
-    // Snapshot envelope: transport metadata, never data (mirrors displays).
-    // Nominal match for the method check below: a tagged snapshot that
-    // names the expected class lost its methods in transit, so their
-    // absence is transport, not defect. Untagged values stay strict.
+    const matched = snapshotNominalMatch(value, expect);
     const snapshot = snapshotTag(value);
-    const className = typeof expect === 'string' ? expect :
-      (expect && typeof expect === 'object' && typeof expect.type === 'string' ? expect.type : undefined);
-    const matched = snapshot !== undefined && classMatches(snapshot, className);
     for (const key of Object.keys(mat.properties)) {
       if (key === '$type' && snapshot !== undefined) {
         continue;

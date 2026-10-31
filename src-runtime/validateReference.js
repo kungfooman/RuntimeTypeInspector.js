@@ -11,6 +11,7 @@ import {extendsCheck, resolveForExtends, stripLiteral, evaluateCondition} from "
 import {deepEqualType} from "./deepEqualType.js";
 import {atomStripOptional} from "./atomStripOptional.js";
 import {snapshotMatches} from "./snapshotMatches.js";
+import {isArrayValue} from "./isArrayValue.js";
 /**
  * Follows strings through typedefs (and materializes mappings) to object
  * shapes, distributing over unions like homomorphic mapped types do.
@@ -786,7 +787,7 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         warn(`Expected ${refName} with [Symbol.iterator].`, {value});
         return false;
       }
-      if (firstArg && value instanceof Array) {
+      if (firstArg && isArrayValue(value)) {
         return validators.validateArrayLike(value, expect, loc, name, critical, warn, depth + 1);
       }
       return true;

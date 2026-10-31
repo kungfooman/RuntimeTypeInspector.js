@@ -6,10 +6,11 @@
  * @param {boolean} critical - Only `false` for unions.
  * @param {console["warn"]} warn - Function to warn with.
  * @param {number} depth - The depth to detect recursion.
- * @returns {boolean} Boolean indicating if a type is correct.
+ * @returns {boolean} True if value is a proper Promise.
  */
+import {isPromiseValue} from "./isPromiseValue.js";
 function validatePromise(value, expect, loc, name, critical, warn, depth) {
-  if (!(value instanceof Promise)) {
+  if (!isPromiseValue(value)) {
     warn('Given value is not a Promise.', {value});
     return false;
   }

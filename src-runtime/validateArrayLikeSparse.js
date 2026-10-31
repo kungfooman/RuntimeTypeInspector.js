@@ -1,6 +1,7 @@
 import {recurse} from "./validators.js";
 import {validators} from "./validators.js";
 import {firstBadIndex} from "./firstBadIndex.js";
+import {isArrayValue} from "./isArrayValue.js";
 /**
  * Holes-tolerant container validation for proven over-allocation: like
  * `validateArray` for `{type: 'array', ...}` and like the `ArrayLike`
@@ -35,7 +36,7 @@ function validateArrayLikeSparse(value, expect, loc, name, critical, warn, depth
     warn('unchecked', {value, type: 'sparse', loc, name, expect});
     return false;
   }
-  if (isArray && !(value instanceof Array)) {
+  if (isArray && !isArrayValue(value)) {
     warn('Given `value` isn\'t an array.');
     return false;
   }

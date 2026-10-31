@@ -1,5 +1,6 @@
 import {recurse} from "./validators.js";
 import {formatMapKey} from "./formatMapKey.js";
+import {isMapValue} from "./isMapValue.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -12,7 +13,7 @@ import {formatMapKey} from "./formatMapKey.js";
  */
 function validateMap(value, expect, loc, name, critical, warn, depth) {
   const {key, val} = expect;
-  if (!(value instanceof Map)) {
+  if (!isMapValue(value)) {
     warn(`validateMap> value isn't an instance of Map.`);
     return false;
   }

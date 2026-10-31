@@ -1,4 +1,5 @@
 import {recurse} from "./validators.js";
+import {isArrayValue} from "./isArrayValue.js";
 import {tupleEffective} from "./tupleEffective.js";
 import {tupleOptional} from "./tupleOptional.js";
 import {expandTupleElements} from "./expandTupleElements.js";
@@ -13,7 +14,7 @@ import {expandTupleElements} from "./expandTupleElements.js";
  * @returns {boolean} Boolean indicating if a type is correct.
  */
 function validateTuple(value, expect, loc, name, critical, warn, depth) {
-  if (!(value instanceof Array)) {
+  if (!isArrayValue(value)) {
     warn('Given value for tuple must be an array.');
     return false;
   }

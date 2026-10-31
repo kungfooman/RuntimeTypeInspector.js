@@ -3,6 +3,8 @@ import {validators} from "./validators.js";
 import {validateNumber} from "./validateNumber.js";
 import {validateString} from "./validateString.js";
 import {validateBoolean} from "./validateBoolean.js";
+import {customTypes} from "./customTypes.js";
+import {customValidations} from "./customValidations.js";
 import {isFailingNumberDisallowingInf} from "./isFailingNumberDisallowingInf.js";
 import {isFailingNumberAllowingInf} from "./isFailingNumberAllowingInf.js";
 /**
@@ -13,7 +15,10 @@ import {isFailingNumberAllowingInf} from "./isFailingNumberAllowingInf.js";
  * checks like their validators. The fast path only applies while the
  * `validators` table still holds the originals — a userland override
  * falls back to 0, so overrides keep composing through the full loop.
- * Anything else returns 0 too: scan nothing and let the caller's full
+ * Element-level userland hooks (`customValidations`, or a `customTypes`
+ * entry for the scanned primitive) also fall back: the scan only mirrors
+ * the stock validators, so skipping the loop would silently bypass a hook
+ * that rejects a proven-clean element. Anything else returns 0 too: scan nothing and let the caller's full
  * loop run from the start, which is today's behavior with zero divergence
  * risk. Callers run their standard loop from the returned index, so
  * warnings and results are identical and only the proven-clean prefix
@@ -33,7 +38,17 @@ function firstBadIndex(value, length, elementType) {
   if (validators.validateType === undefined) {
     return 0;
   }
+  // Userland hooks run per element in the full loop: a scan that skips
+  // the loop would bypass them, so any registered hook falls back to a
+  // full scan. Scoped to the scanned primitive, like the table-identity
+  // checks below; `customValidations` apply to every type.
+  if (customValidations.length > 0) {
+    return 0;
+  }
   if (elementType === 'number' && validators.validateNumber === validateNumber) {
+    if (customTypes.number) {
+      return 0;
+    }
     // The Infinity verdict is picked once per scan, so the hot loop runs
     // a plain predicate per element instead of evaluating a boolean flag
     // and the options object every element.
@@ -47,6 +62,9 @@ function firstBadIndex(value, length, elementType) {
   }
   if ((elementType === 'string' && validators.validateString === validateString) ||
     (elementType === 'boolean' && validators.validateBoolean === validateBoolean)) {
+    if (customTypes[elementType]) {
+      return 0;
+    }
     for (let i = 0; i < length; i++) {
       if (typeof value[i] !== elementType) {
         return i;

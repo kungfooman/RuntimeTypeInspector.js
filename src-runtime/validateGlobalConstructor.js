@@ -23,8 +23,21 @@ function validateGlobalConstructor(value, expect, loc, name, critical, warn, dep
   if (typeof ctor !== 'function') {
     return false;
   }
+  // Realm-safe in two steps: same-realm instances match by prototype chain
+  // (subclasses included), while live-shared cross-realm instances fail
+  // `instanceof` (each realm owns the constructor) but still carry the
+  // universal constructor name. Nominal classes never reach this probe
+  // with a same-named foreign twin, so the name fallback cannot confuse
+  // two different user classes.
   try {
-    return value instanceof ctor;
+    if (value instanceof ctor) {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+  try {
+    return value?.constructor?.name === type;
   } catch {
     return false;
   }

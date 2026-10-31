@@ -1,5 +1,7 @@
 import {classes} from "./registerClass.js";
 import {registeredNameOf} from "./registeredNameOf.js";
+import {isMapValue} from "./isMapValue.js";
+import {isSetValue} from "./isSetValue.js";
 /**
  * Whether a node needs a `$type` tag: a registered class instance, whose
  * nominal identity messaging would otherwise strip. Typed arrays and
@@ -33,7 +35,10 @@ function tagName(val) {
     return undefined;
   }
   try {
-    if (val instanceof Map || val instanceof Set || val instanceof WeakMap || val instanceof WeakSet ||
+    // Brand checks (not `instanceof`): natively handled containers from
+    // other realms still traverse by entries below instead of by (absent)
+    // own keys, so nested instances keep their tags.
+    if (isMapValue(val) || isSetValue(val) || val instanceof WeakMap || val instanceof WeakSet ||
       val instanceof Date || val instanceof RegExp || val instanceof ArrayBuffer ||
       val instanceof Promise || val instanceof Error) {
       return undefined;
@@ -58,14 +63,14 @@ function tagName(val) {
  */
 function childrenOf(node) {
   try {
-    if (node instanceof Map) {
+    if (isMapValue(node)) {
       const out = [];
       for (const [key, val] of node) {
         out.push(key, val);
       }
       return out;
     }
-    if (node instanceof Set) {
+    if (isSetValue(node)) {
       return [...node];
     }
     if (Array.isArray(node)) {

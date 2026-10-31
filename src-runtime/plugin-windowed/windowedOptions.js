@@ -33,9 +33,12 @@ const windowedOptions = {
    * full scan adds its wall time to the map's running total, and only
    * once the total reaches this budget do checks start skipping. Cheap
    * maps never get there, so they keep validating every check, while a
-   * map that already cost real time amortizes from then on. Content
-   * changes restart the total (the spend validated the old content),
-   * and lowering the budget to `0` restores ride-always behavior.
+   * map that already cost real time amortizes from then on. The total
+   * restarts on size changes only: same-size value replacements keep
+   * riding until the next scheduled full scan (at most one window away,
+   * bounded by `mapCheckWindowCap`), because observing content without
+   * scanning is exactly what riding skips. Lowering the budget to `0`
+   * restores ride-always behavior.
    * Editable live, like `mapCheckWindowCap`.
    * @type {number}
    */

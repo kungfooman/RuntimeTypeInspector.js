@@ -17,6 +17,8 @@
  * @param {number} options.maxNodes - Max total visited nodes, defaults to 1000.
  * @returns {*} JSON-safe structured data.
  */
+import {isMapValue} from "./isMapValue.js";
+import {isSetValue} from "./isSetValue.js";
 function stringifyValue(value, options = {}) {
   const maxDepth = options.maxDepth ?? 5;
   const maxBreadth = options.maxBreadth ?? 20;
@@ -107,7 +109,10 @@ function stringifyValue(value, options = {}) {
         }
         return {$type: tag, length, values};
       }
-      if (val instanceof Map) {
+      // Brand checks (not `instanceof`): maps and sets shared live
+      // across realms keep their entries in logs instead of collapsing
+      // to keyless `{}`.
+      if (isMapValue(val)) {
         const entries = [...val.entries()];
         const count = Math.min(entries.length, maxBreadth);
         const out = [];
@@ -119,7 +124,7 @@ function stringifyValue(value, options = {}) {
         }
         return {$type: 'Map', size: val.size, entries: out};
       }
-      if (val instanceof Set) {
+      if (isSetValue(val)) {
         const items = [...val.values()];
         const count = Math.min(items.length, maxBreadth);
         const values = [];
