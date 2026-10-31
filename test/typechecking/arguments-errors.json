@@ -9,6 +9,15 @@
       "loc": "takeArgs",
       "name": "args",
       "value": {}
+    },
+    {
+      "loc": "takeArgs",
+      "name": "args",
+      "value": [
+        1,
+        2,
+        3
+      ]
     }
   ]
 }

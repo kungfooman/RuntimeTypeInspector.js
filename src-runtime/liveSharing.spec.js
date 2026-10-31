@@ -322,13 +322,15 @@ function testForeignTupleCandidates() {
   return out.length === 2 && out[0].key === 'T' && out[0].literal === 1 &&
     out[1].key === 'U' && out[1].literal === '"a"';
 }
-// IArguments accepts foreign iterables: the check is the protocol
-// (`typeof` the iterator function), not the constructor brand.
+// IArguments accepts foreign arguments-likes: iterator protocol plus
+// integer length plus callee, like tsc's contract. The `typeof` iterator
+// check (not `instanceof Function`) keeps it realm-safe.
 function testForeignIArguments() {
   const src = `({
-    [Symbol.iterator]: function* () {
-      yield 1;
-    },
+    0: "a",
+    length: 1,
+    callee: function () {},
+    [Symbol.iterator]: Array.prototype.values,
   })`;
   const foreign = vm.runInNewContext(src);
   const goodForeign = validateType(foreign, 'IArguments', 'loc', 'name', true, silent, 0);

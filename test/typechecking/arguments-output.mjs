@@ -1,8 +1,10 @@
 
 /**
- * `IArguments` accepts the `arguments` object (or anything iterable) and
- * rejects the rest without throwing: nullish values used to crash the
- * validator on the `Symbol.iterator` read. Every throwing call carries
+ * `IArguments` accepts the `arguments` object (or a foreign equivalent
+ * with `length`, `callee`, and an iterator) and rejects the rest without
+ * throwing: nullish values used to crash the validator on the
+ * `Symbol.iterator` read. Arrays and bare iterables fail: neither carries
+ * a `callee`, matching tsc-strict. Every throwing call carries
  * `@ts-expect-error`, so a tsc-strict run is green if and only if each
  * directive is consumed and nothing else errors; `*-errors.json` pins the
  * same sequence for RTI.
@@ -40,3 +42,6 @@ takeArgs(null);
 // @ts-expect-error: plain objects do not iterate
 
 takeArgs({});
+// @ts-expect-error: arrays have no `callee`
+
+takeArgs([1, 2, 3]);

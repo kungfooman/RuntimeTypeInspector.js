@@ -12,8 +12,17 @@ function testArgumentsObjectPasses() {
   return validateType(captureArgs(1, 2, 3), 'IArguments', 'loc', 'name', true, warn, 0) === true;
 }
 function testArrayPasses() {
-  // Arrays iterate too, so they satisfy the check like before.
-  return validateType([1, 2, 3], 'IArguments', 'loc', 'name', true, warn, 0) === true;
+  // Arrays have an iterator and a length but no `callee`, so they fail
+  // like tsc-strict says they must.
+  return validateType([1, 2, 3], 'IArguments', 'loc', 'name', true, warn, 0) === false;
+}
+function testGeneratorFails() {
+  // Bare iterables fail too: a generator has an iterator but neither
+  // indexed elements nor a callee.
+  function *gen() {
+    yield 1;
+  }
+  return validateType(gen(), 'IArguments', 'loc', 'name', true, warn, 0) === false;
 }
 function testNullFailsWithoutThrowing() {
   // Nullish values fail closed instead of throwing on the property read.
@@ -28,6 +37,7 @@ function testNonIterableFails() {
 const tests = [
   testArgumentsObjectPasses,
   testArrayPasses,
+  testGeneratorFails,
   testNullFailsWithoutThrowing,
   testNonIterableFails,
 ];
