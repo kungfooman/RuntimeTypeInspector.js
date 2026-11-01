@@ -951,3 +951,48 @@ format('hello'); // ok
 
 // @ts-expect-error The implementation accepts numbers, but its overload does not.
 format(42); // warns
+
+const computedName = 'execute';
+let computedKeyReads = 0;
+const computedHolder = {
+
+  /**
+   * @overload
+   * @param {number} value
+   * @returns {number}
+   */
+  /** @param {number|string} value */
+  ...(rtiOverloadKey => ({[rtiOverloadKey]: setOverloadArrowLength(({[rtiOverloadKey]: (...rtiOverloadArguments) => ((value) => {
+
+  if (!inspectOverloads(rtiOverloadArguments, [
+    {
+      "tuple": {
+        "type": "tuple",
+        "elements": [
+          {
+            "type": "tupleMember",
+            "name": "value",
+            "elementType": "number"
+          }
+        ]
+      },
+      "templates": {}
+    }
+  ], 'computedHolder[((computedKeyReads++, computedName))]', 'arguments')) {
+    youCanAddABreakpointHere();
+  }
+    return typeof value === 'number' ? value : 0;
+  })(...rtiOverloadArguments)})[rtiOverloadKey], 1)}))(overloadPropertyKey((((computedKeyReads++, computedName)))))
+};
+computedHolder.execute(1); // ok
+
+// @ts-expect-error The overload accepts numbers only.
+
+ // ok
+
+// @ts-expect-error The overload accepts numbers only.
+computedHolder.execute('bad'); // warns
+
+if (computedKeyReads !== 1 || computedHolder.execute.length !== 1 || computedHolder.execute.name !== 'execute') {
+  throw new Error('Incorrect computed overload metadata');
+}

@@ -151,6 +151,210 @@ function testOverloadedAsyncArrowMetadata() {
   ));
 }
 
+// Computed keys are coerced once in order, including symbols and nearby properties.
+function testOverloadedComputedPropertyMetadata() {
+  const src = `const events = [];
+  const symbol = Symbol('action');
+  const key = {
+    [Symbol.toPrimitive](hint) {
+      events.push(hint);
+      return symbol;
+    }
+  };
+  const holder = {
+    before: events.push('before'),
+    /** @overload @param {number} value @returns {number} */
+    /** @param {number|string} value */
+    [key]: (value) => value,
+    after: events.push('after')
+  };
+  holder[symbol]('bad');`;
+  return runChecks(src, 'events, holder, symbol', (scope, {hits}) => {
+    const fn = scope.holder[scope.symbol];
+    const descriptor = Object.getOwnPropertyDescriptor(scope.holder, scope.symbol);
+    return (
+      scope.events.join(',') === 'before,string,after' &&
+      fn.length === 1 &&
+      fn.name === '[action]' &&
+      descriptor.enumerable === true &&
+      descriptor.writable === true &&
+      descriptor.configurable === true &&
+      hits.length === 1
+    );
+  });
+}
+
+// A yielded key remains in the generator, rather than a generated arrow scope.
+function testOverloadedYieldedPropertyKey() {
+  const src = `function* makeHolder() {
+    return {
+      /** @overload @param {number} value @returns {number} */
+      /** @param {number|string} value */
+      [yield 'key']: (value) => value
+    };
+  }`;
+  return runChecks(src, 'makeHolder', (scope) => {
+    const iterator = scope.makeHolder();
+    const first = iterator.next();
+    const second = iterator.next('action');
+    return (
+      first.value === 'key' &&
+      first.done === false &&
+      second.done === true &&
+      second.value.action.length === 1 &&
+      second.value.action.name === 'action'
+    );
+  });
+}
+
+// Reentrant key coercion and a same-named outer binding keep independent keys.
+function testOverloadedReentrantComputedKeys() {
+  const src = `const rtiOverloadKey = 7;
+  let inner;
+  const key = {
+    toString() {
+      const innerKey = 'nested';
+      inner = {
+        /** @overload @param {number} value @returns {number} */
+        /** @param {number} value */
+        [innerKey]: (value) => value + rtiOverloadKey
+      };
+      return 'outer';
+    }
+  };
+  const outer = {
+    /** @overload @param {number} value @returns {number} */
+    /** @param {number} value */
+    [key]: (value) => value + rtiOverloadKey
+  };`;
+  return runChecks(src, 'inner, outer', (scope, {hits}) => {
+    const nested = scope.inner.nested;
+    const outer = scope.outer.outer;
+    return (
+      nested(1) === 8 &&
+      outer(2) === 9 &&
+      nested.name === 'nested' &&
+      outer.name === 'outer' &&
+      nested.length === 1 &&
+      outer.length === 1 &&
+      hits.length === 0
+    );
+  });
+}
+
+// A computed proto key remains an own data property, not a prototype setter.
+function testOverloadedComputedProtoKey() {
+  const src = `const key = '__proto__';
+  const holder = {
+    /** @overload @param {number} value @returns {number} */
+    /** @param {number} value */
+    [key]: (value) => value
+  };`;
+  return runChecks(src, 'holder', (scope) => {
+    const descriptor = Object.getOwnPropertyDescriptor(scope.holder, '__proto__');
+    return (
+      Object.getPrototypeOf(scope.holder) === Object.prototype &&
+      descriptor.value.name === '__proto__' &&
+      descriptor.value.length === 1
+    );
+  });
+}
+
+// The inserted key scope keeps the enclosing method's super, this, and arguments.
+function testOverloadedComputedLexicalBindings() {
+  const src = `class Base {
+    read() { return this.offset; }
+  }
+  class Derived extends Base {
+    constructor() { super(); this.offset = 4; }
+    make(key) {
+      return {
+        /** @overload @param {number} value @returns {number} */
+        /** @param {number} value */
+        [key]: (value) => super.read() + value + arguments[0].length
+      };
+    }
+  }
+  const holder = new Derived().make('run');`;
+  return runChecks(src, 'holder', (scope, {hits}) => {
+    const action = scope.holder.run;
+    return (
+      action(2) === 9 &&
+      action.length === 1 &&
+      action.name === 'run' &&
+      hits.length === 0
+    );
+  });
+}
+
+// Named and private class field arrows keep their metadata and report their owning class.
+function testOverloadedNamedClassFields() {
+  const src = `class Holder {
+    /** @overload @param {number} value @returns {number} */
+    /** @param {number|string} value */
+    action = (value) => value;
+    /** @overload @param {number} value @returns {number} */
+    /** @param {number|string} value */
+    static action = (value) => value;
+    /** @overload @param {number} value @returns {number} */
+    /** @param {number|string} value */
+    #privateAction = (value) => value;
+    getPrivateAction() { return this.#privateAction; }
+  }
+  const holder = new Holder();
+  holder.action('bad');
+  Holder.action('bad');
+  holder.getPrivateAction()('bad');`;
+  return runChecks(src, 'Holder, holder', (scope, {hits, posted}) => {
+    const instance = scope.holder.action;
+    const staticAction = scope.Holder.action;
+    const privateAction = scope.holder.getPrivateAction();
+    return (
+      instance.length === 1 && instance.name === 'action' &&
+      staticAction.length === 1 && staticAction.name === 'action' &&
+      privateAction.length === 1 && privateAction.name === '#privateAction' &&
+      hits.length === 3 && posted.length === 3 &&
+      posted[0].loc === 'Holder#action' &&
+      posted[1].loc === 'Holder.action' &&
+      posted[2].loc === 'Holder##privateAction'
+    );
+  });
+}
+
+// Computed class keys are evaluated once per class, even when class creation reenters.
+function testOverloadedComputedClassFieldChecks() {
+  const src = `const symbol = Symbol('inner');
+  let inner;
+  let reads = 0;
+  function make(key) {
+    return class {
+      /** @overload @param {number} value @returns {number} */
+      /** @param {number|string} value */
+      [key] = (value) => typeof value === 'number' ? value : 0;
+    };
+  }
+  const key = {
+    toString() {
+      reads++;
+      inner = make(symbol);
+      return 'outer';
+    }
+  };
+  const Outer = make(key);
+  const outer = new Outer();
+  const nested = new inner();
+  outer.outer('bad');
+  nested[symbol]('bad');`;
+  return runChecks(src, 'outer, nested, reads, symbol', (scope, {hits}) => (
+    scope.reads === 1 &&
+    scope.outer.outer.name === 'outer' &&
+    scope.nested[scope.symbol].name === '[inner]' &&
+    scope.outer.outer(3) === 3 &&
+    scope.nested[scope.symbol](4) === 4 &&
+    hits.length === 2
+  ));
+}
+
 export const tests = [
   testMismatchedParamSkips,
   testOverloadDocblockMismatchSkips,
@@ -162,4 +366,11 @@ export const tests = [
   testOverloadedArrowMetadata,
   testOverloadedPropertyArrowMetadata,
   testOverloadedAsyncArrowMetadata,
+  testOverloadedComputedPropertyMetadata,
+  testOverloadedYieldedPropertyKey,
+  testOverloadedReentrantComputedKeys,
+  testOverloadedComputedProtoKey,
+  testOverloadedComputedLexicalBindings,
+  testOverloadedNamedClassFields,
+  testOverloadedComputedClassFieldChecks,
 ];

@@ -30,13 +30,13 @@ function runChecks(src, expose, body) {
   try {
     // eslint-disable-next-line no-new-func -- must execute converted code to test real checking
     const fn = new Function(
-      'inspectType', 'inspectTypeWithTemplates', 'inspectOverloads', 'setOverloadArrowLength', 'youCanAddABreakpointHere',
+      'inspectType', 'inspectTypeWithTemplates', 'inspectOverloads', 'setOverloadArrowLength', 'overloadPropertyKey', 'youCanAddABreakpointHere',
       'registerClass', 'registerTypedef', 'registerVariable', 'registerImportNamespaceSpecifier',
       'inspectIndexedAccess', 'validateDivision',
       `${out}\n;return {${expose}};`
     );
     const scope = fn(
-      runtime.inspectType, runtime.inspectTypeWithTemplates, runtime.inspectOverloads, runtime.setOverloadArrowLength, (...args) => {
+      runtime.inspectType, runtime.inspectTypeWithTemplates, runtime.inspectOverloads, runtime.setOverloadArrowLength, runtime.overloadPropertyKey, (...args) => {
         hits.push(args);
       },
       runtime.registerClass, runtime.registerTypedef, runtime.registerVariable,

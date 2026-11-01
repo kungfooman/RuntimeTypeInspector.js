@@ -54,6 +54,7 @@ export * from './inspectType.js';
 export * from './inspectTypeWithTemplates.js';
 export * from './inspectOverloads.js';
 export * from './setOverloadArrowLength.js';
+export * from './overloadPropertyKey.js';
 export * from './mergeCandidate.js';
 export * from './substitutedFor.js';
 export * from './unionMembers.js';

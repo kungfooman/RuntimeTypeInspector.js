@@ -103,11 +103,16 @@ class Asserter extends Stringifier {
       arity = arrowArity(node);
       arrowName = arrowInferredName(node, this.parent);
     }
-    const restoreLength = arity > 0 && arrowName !== null;
+    const dynamicKey = node.rtiOverloadKeyName;
+    const restoreLength = arity > 0 && (arrowName !== null || dynamicKey);
     let out = '';
     if (restoreLength) {
       out += 'setOverloadArrowLength(';
-      if (arrowName) out += `({[${JSON.stringify(arrowName)}]: `;
+      if (dynamicKey) {
+        out += `({[${dynamicKey}]: `;
+      } else if (arrowName) {
+        out += `({[${JSON.stringify(arrowName)}]: `;
+      }
     }
     if (async) {
       out += 'async ';
@@ -135,10 +140,39 @@ class Asserter extends Stringifier {
     }
     if (argumentName) out += `)(...${argumentName})`;
     if (restoreLength) {
-      if (arrowName) out += `})[${JSON.stringify(arrowName)}]`;
+      if (dynamicKey) {
+        out += `})[${dynamicKey}]`;
+      } else if (arrowName) {
+        out += `})[${JSON.stringify(arrowName)}]`;
+      }
       out += `, ${arity})`;
     }
     return out;
+  }
+  /**
+   * Captures a dynamic object key outside the arrow that uses it. A spread
+   * preserves evaluation order and makes the captured key local to this one
+   * property, including when object creation is reentrant.
+   * @override
+   * @param {import('@babel/types').ObjectProperty} node - Object property.
+   * @returns {string} Stringification of the property.
+   */
+  ObjectProperty(node) {
+    const {value} = node;
+    if (!node.computed || value.type !== 'ArrowFunctionExpression') return super.ObjectProperty(node);
+    if (arrowInferredName(value, node) !== null || arrowArity(value) === 0) return super.ObjectProperty(node);
+    const parents = [...this.parents, value];
+    const blocks = collectOverloadBlocks(value, parents);
+    const sections = splitOverloadSections(blocks);
+    if (!sections.overloads.length) return super.ObjectProperty(node);
+    let keyName = 'rtiOverloadKey';
+    const source = JSON.stringify(node);
+    while (source.includes(`"name":"${keyName}"`)) keyName += '_';
+    const key = this.toSource(node.key);
+    value.rtiOverloadKeyName = keyName;
+    const arrow = this.toSource(value);
+    delete value.rtiOverloadKeyName;
+    return `${this.spaces}...(${keyName} => ({[${keyName}]: ${arrow}}))(overloadPropertyKey((${key})))`;
   }
   /**
    * @override
@@ -201,7 +235,7 @@ class Asserter extends Stringifier {
     let header = super.getHeader();
     const names = ['inspectIndexedAccess', 'inspectType', 'inspectTypeWithTemplates', 'youCanAddABreakpointHere', 'registerVariable'];
     if (this.hasOverloadChecks || ast?.comments?.some((comment) => /@overload\b/.test(comment.value))) {
-      names.push('inspectOverloads', 'setOverloadArrowLength');
+      names.push('inspectOverloads', 'setOverloadArrowLength', 'overloadPropertyKey');
     }
     if (this.validateDivision) {
       names.push('validateDivision');
@@ -1231,7 +1265,7 @@ class Asserter extends Stringifier {
     return null;
   }
   /**
-   * @param {Node} node - The ClassMethod or ClassPrivateMethod node.
+   * @param {Node} node - The class method or field node.
    * @returns {string} Class-qualified name: `C#m` for instance members,
    * `C.m` for static ones, bare `m` when the class stays anonymous.
    */
@@ -1281,6 +1315,11 @@ class Asserter extends Stringifier {
    * object or declarator, legacy fallback otherwise.
    */
   getNameForArrowFunction(node) {
+    const index = this.parents.findLastIndex((parent) => parent === node);
+    const field = this.parents[index - 1];
+    if (field && (field.type === 'ClassProperty' || field.type === 'ClassPrivateProperty') && field.value === node) {
+      return this.getNameForClassMethod(field);
+    }
     // Arrow as object value (`arrow: (y) => y`): the property key plus the
     // owner chain name it, mirroring function expressions. Bare arrows
     // have no key of their own, so the walk result is already complete.

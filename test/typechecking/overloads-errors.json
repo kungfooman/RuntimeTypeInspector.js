@@ -137,6 +137,13 @@
       "value": [
         42
       ]
+    },
+    {
+      "loc": "computedHolder[((computedKeyReads++, computedName))]",
+      "name": "arguments",
+      "value": [
+        "bad"
+      ]
     }
   ]
 }

@@ -1,0 +1,32 @@
+{
+  "throws": [
+    {
+      "loc": "OverloadFields#action",
+      "name": "arguments",
+      "value": [
+        "bad"
+      ]
+    },
+    {
+      "loc": "OverloadFields.action",
+      "name": "arguments",
+      "value": [
+        "bad"
+      ]
+    },
+    {
+      "loc": "OverloadFields##privateAction",
+      "name": "arguments",
+      "value": [
+        "bad"
+      ]
+    },
+    {
+      "loc": "OverloadFields#dynamicField",
+      "name": "arguments",
+      "value": [
+        "bad"
+      ]
+    }
+  ]
+}

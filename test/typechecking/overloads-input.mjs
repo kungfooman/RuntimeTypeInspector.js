@@ -242,3 +242,21 @@ function format(value) {
 format('hello'); // ok
 // @ts-expect-error The implementation accepts numbers, but its overload does not.
 format(42); // warns
+
+const computedName = 'execute';
+let computedKeyReads = 0;
+const computedHolder = {
+  /**
+   * @overload
+   * @param {number} value
+   * @returns {number}
+   */
+  /** @param {number|string} value */
+  [((computedKeyReads++, computedName))]: (value) => typeof value === 'number' ? value : 0
+};
+computedHolder.execute(1); // ok
+// @ts-expect-error The overload accepts numbers only.
+computedHolder.execute('bad'); // warns
+if (computedKeyReads !== 1 || computedHolder.execute.length !== 1 || computedHolder.execute.name !== 'execute') {
+  throw new Error('Incorrect computed overload metadata');
+}

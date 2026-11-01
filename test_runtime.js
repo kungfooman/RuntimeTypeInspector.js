@@ -192,6 +192,7 @@ const tests = [
   ...(await import('./src-transpiler/arrowInferredName.spec.js'          )).tests,
   ...(await import('./src-runtime/inspectOverloads.spec.js'              )).tests,
   ...(await import('./src-runtime/setOverloadArrowLength.spec.js'        )).tests,
+  ...(await import('./src-runtime/overloadPropertyKey.spec.js'           )).tests,
   ...(await import('./src-transpiler/noneUnchecked.spec.js'             )).tests,
   ...(await import('./src-transpiler/expandTypeParity.spec.js'   )).tests,
   ...(await import('./src-transpiler/isExpandedObject.spec.js'   )).tests,

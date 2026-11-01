@@ -224,6 +224,10 @@
     "output": "./test/typechecking/only-description-output.mjs"
   },
   {
+    "input": "./test/typechecking/overload-fields-input.mjs",
+    "output": "./test/typechecking/overload-fields-output.mjs"
+  },
+  {
     "input": "./test/typechecking/overloads-crossfile-input.mjs",
     "output": "./test/typechecking/overloads-crossfile-output.mjs"
   },
