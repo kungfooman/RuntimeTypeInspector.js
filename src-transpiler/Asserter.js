@@ -1,4 +1,9 @@
 import {annotateOptional   } from './annotateOptional.js';
+import {arrowArity} from './arrowArity.js';
+import {arrowInferredName} from './arrowInferredName.js';
+import {collectOverloadBlocks} from './collectOverloadBlocks.js';
+import {splitOverloadSections} from './splitOverloadSections.js';
+import {overloadToTuple} from './overloadToTuple.js';
 import {requiredTypeofs    } from './expandType.js';
 import {expandTypeDepFree  } from './expandTypeDepFree.js';
 import {harvestClassShape  } from './harvestClassShape.js';
@@ -84,9 +89,32 @@ class Asserter extends Stringifier {
    */
   ArrowFunctionExpression(node) {
     const {async, body, generator, params/*, extra*/} = node;
+    const sections = splitOverloadSections(collectOverloadBlocks(node, this.parents));
+    let argumentName;
+    if (sections.overloads.length) {
+      argumentName = 'rtiOverloadArguments';
+      const source = JSON.stringify(node);
+      while (source.includes(`"name":"${argumentName}"`)) argumentName += '_';
+      node.rtiOverloadArguments = argumentName;
+    }
+    let arrowName = null;
+    let arity = 0;
+    if (argumentName) {
+      arity = arrowArity(node);
+      arrowName = arrowInferredName(node, this.parent);
+    }
+    const restoreLength = arity > 0 && arrowName !== null;
     let out = '';
+    if (restoreLength) {
+      out += 'setOverloadArrowLength(';
+      if (arrowName) out += `({[${JSON.stringify(arrowName)}]: `;
+    }
     if (async) {
       out += 'async ';
+    }
+    if (argumentName) {
+      out += `(...${argumentName}) => (`;
+      if (async) out += 'async ';
     }
     if (generator) {
       out += ' * ';
@@ -104,6 +132,11 @@ class Asserter extends Stringifier {
       this.numSpaces--;
       out += spaces;
       out += '}';
+    }
+    if (argumentName) out += `)(...${argumentName})`;
+    if (restoreLength) {
+      if (arrowName) out += `})[${JSON.stringify(arrowName)}]`;
+      out += `, ${arity})`;
     }
     return out;
   }
@@ -167,6 +200,9 @@ class Asserter extends Stringifier {
     }
     let header = super.getHeader();
     const names = ['inspectIndexedAccess', 'inspectType', 'inspectTypeWithTemplates', 'youCanAddABreakpointHere', 'registerVariable'];
+    if (this.hasOverloadChecks || ast?.comments?.some((comment) => /@overload\b/.test(comment.value))) {
+      names.push('inspectOverloads', 'setOverloadArrowLength');
+    }
     if (this.validateDivision) {
       names.push('validateDivision');
     }
@@ -337,7 +373,10 @@ class Asserter extends Stringifier {
    * @returns {Record<string, any>|undefined} asd
    */
   getJSDoc(node) {
-    const comment = this.getLeadingComment(node);
+    let comment = this.getLeadingComment(node);
+    const sections = splitOverloadSections(collectOverloadBlocks(node, this.parents));
+    if (sections.overloads.length) comment = sections.impl || '';
+    if (sections.overloads.length && !comment) return {templates: undefined, params: {}};
     if (!comment) {
       return;
     }
@@ -597,6 +636,43 @@ class Asserter extends Stringifier {
     const ignored = leading ? ignoredParamsIn(leading) : null;
     if (ignored === 'all') {
       return '';
+    }
+    const sections = splitOverloadSections(collectOverloadBlocks(node, this.parents));
+    if (sections.overloads.length) {
+      const fnNode = node.type === 'BlockStatement' ? parent : node;
+      const loc = this.getName(node);
+      if (this.ignoreLocations.includes(loc)) return '// IGNORE RTI TYPE VALIDATIONS, KNOWN ISSUES\n';
+      const scopeTemplates = this.getScopeTemplates(node);
+      const signatures = sections.overloads.map((section) => {
+        const tuple = overloadToTuple(section, this.expandType, ignored instanceof Set ? ignored : undefined);
+        if (ignored instanceof Set) {
+          for (const [index, param] of fnNode.params.entries()) {
+            let target = param;
+            if (target.type === 'AssignmentPattern') target = target.left;
+            if (target.type === 'RestElement') target = target.argument;
+            const member = tuple.elements[index];
+            if (target.type !== 'Identifier' || !ignored.has(target.name) || !member) continue;
+            member.elementType = member.dotDot ? {type: 'array', elementType: 'any'} : 'any';
+          }
+        }
+        const own = parseJSDocTemplates(section, this.expandType);
+        const templates = {...scopeTemplates, ...own};
+        return {tuple, templates};
+      });
+      this.hasOverloadChecks = true;
+      this.getStatsForNode(node).checked++;
+      const args = fnNode.type === 'ArrowFunctionExpression' ? fnNode.rtiOverloadArguments : '[...arguments]';
+      const source = JSON.stringify(signatures, null, 2).replaceAll('\n', '\n' + this.spaces);
+      const atLoc = escapeName(loc);
+      let guard = '';
+      if (loc === 'ContactPoint#constructor' || loc === 'ContactResult#constructor' || loc === 'SingleContactResult#constructor') {
+        guard = 'arguments.length !== 0 && ';
+      }
+      let out = `\n${this.spaces}if (${guard}!inspectOverloads(${args}, ${source}, '${atLoc}', 'arguments')) {\n${this.spaces}  youCanAddABreakpointHere();\n${this.spaces}}\n`;
+      const implParams = sections.impl ? parseJSDoc(sections.impl, this.expandType) : undefined;
+      const documented = new Set([...Object.keys(implParams || {}), ...(ignored instanceof Set ? ignored : [])]);
+      out += this.emitDefaultChecks(node, this.collectDefaultChecks(node, documented), false);
+      return out;
     }
     const jsdoc = this.getJSDoc(node);
     // return '// ' + JSON.stringify(jsdoc) + '\n';

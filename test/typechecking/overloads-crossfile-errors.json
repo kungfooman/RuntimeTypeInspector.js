@@ -1,0 +1,18 @@
+{
+  "throws": [
+    {
+      "loc": "importedOverload",
+      "name": "arguments",
+      "value": [
+        false
+      ]
+    },
+    {
+      "loc": "importedJsOverload",
+      "name": "arguments",
+      "value": [
+        false
+      ]
+    }
+  ]
+}

@@ -6,11 +6,16 @@
  */
 export * from './addTypeChecks.js';
 export * from './Asserter.js';
+export * from './arrowArity.js';
+export * from './arrowInferredName.js';
 export * from './ast2json.js';
 export * from './ast2jsonForComparison.js';
 export * from './capitalize.js';
 export * from './code2ast2code.js';
 export * from './compareAST.js';
+export * from './collectOverloadBlocks.js';
+export * from './splitOverloadSections.js';
+export * from './overloadToTuple.js';
 export * from './expandType.js';
 export * from './expandTypeBabelTS.js';
 export * from './expandTypeDepFree.js';

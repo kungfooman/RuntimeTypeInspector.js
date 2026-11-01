@@ -1,4 +1,6 @@
 import {expandTypeDepFree} from './expandTypeDepFree.js';
+import {collectOverloadBlocks} from './collectOverloadBlocks.js';
+import {splitOverloadSections} from './splitOverloadSections.js';
 import {nodeChildren} from './nodeChildren.js';
 import {nodeIsFunctionLike} from './nodeIsFunctionLike.js';
 import {parseJSDoc} from './parseJSDoc.js';
@@ -264,7 +266,9 @@ class JSDocAnnotator {
    * @returns {{templates: any, params: any}|undefined} The parsed JSDoc.
    */
   getJSDoc(node) {
-    const comment = this.getLeadingComment(node);
+    let comment = this.getLeadingComment(node);
+    const sections = splitOverloadSections(collectOverloadBlocks(node, this.parents));
+    if (sections.overloads.length) comment = sections.impl || '';
     if (!comment) {
       return;
     }

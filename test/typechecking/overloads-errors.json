@@ -1,0 +1,142 @@
+{
+  "throws": [
+    {
+      "loc": "Vec4#constructor",
+      "name": "arguments",
+      "value": [
+        null
+      ]
+    },
+    {
+      "loc": "Vec4#constructor",
+      "name": "arguments",
+      "value": [
+        [
+          1,
+          2,
+          3,
+          4
+        ],
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "loc": "Vec4#constructor",
+      "name": "arguments",
+      "value": [
+        "nope"
+      ]
+    },
+    {
+      "loc": "choose",
+      "name": "arguments",
+      "value": [
+        1
+      ]
+    },
+    {
+      "loc": "choose",
+      "name": "arguments",
+      "value": [
+        1,
+        "bad"
+      ]
+    },
+    {
+      "loc": "identity",
+      "name": "arguments",
+      "value": [
+        true
+      ]
+    },
+    {
+      "loc": "sum",
+      "name": "arguments",
+      "value": [
+        "x",
+        1,
+        "bad"
+      ]
+    },
+    {
+      "loc": "sum",
+      "name": "arguments",
+      "value": [
+        1,
+        2
+      ]
+    },
+    {
+      "loc": "pair",
+      "name": "arguments",
+      "value": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "loc": "pair",
+      "name": "arguments",
+      "value": [
+        "a",
+        1
+      ]
+    },
+    {
+      "loc": "expression",
+      "name": "arguments",
+      "value": [
+        {}
+      ]
+    },
+    {
+      "loc": "Box#constructor",
+      "name": "arguments",
+      "value": [
+        false
+      ]
+    },
+    {
+      "loc": "Box.read",
+      "name": "arguments",
+      "value": [
+        false
+      ]
+    },
+    {
+      "loc": "operations.read",
+      "name": "arguments",
+      "value": [
+        false
+      ]
+    },
+    {
+      "loc": "chainSize",
+      "name": "arguments",
+      "value": [
+        {
+          "value": 1,
+          "next": {
+            "value": "bad"
+          }
+        }
+      ]
+    },
+    {
+      "loc": "onlyText",
+      "name": "arguments",
+      "value": [
+        1
+      ]
+    },
+    {
+      "loc": "format",
+      "name": "arguments",
+      "value": [
+        42
+      ]
+    }
+  ]
+}

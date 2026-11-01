@@ -1,0 +1,18 @@
+import {overloadToTuple} from './overloadToTuple.js';
+import {deepEqualType} from '../src-runtime/deepEqualType.js';
+
+// Optional names retain their position and permit omission.
+function testOptionalMember() {
+  const actual = overloadToTuple('@param {number} [x]');
+  const expected = {type: 'tuple', elements: [{type: 'tupleMember', name: 'x', elementType: {type: 'atom', atomType: 'number'}, optional: true}]};
+  return deepEqualType(actual, expected);
+}
+
+// An array after the rest marker supplies the variadic element type.
+function testRestMember() {
+  const actual = overloadToTuple('@param {...number[]} values');
+  const expected = {type: 'tuple', elements: [{type: 'tupleMember', name: 'values', elementType: {type: 'array', elementType: 'number'}, dotDot: true}]};
+  return deepEqualType(actual, expected);
+}
+
+export const tests = [testOptionalMember, testRestMember];

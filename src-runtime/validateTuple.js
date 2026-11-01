@@ -70,6 +70,7 @@ function validateTuple(value, expect, loc, name, critical, warn, depth) {
   }
   const ret = expanded.every((element, i) => {
     if (i >= value.length) return tupleOptional(element); // missing optional is ok
+    if (value[i] === undefined && tupleOptional(element)) return true;
     return recurse(
       value[i],
       tupleEffective(element),
