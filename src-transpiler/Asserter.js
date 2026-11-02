@@ -1,9 +1,16 @@
 import {annotateOptional   } from './annotateOptional.js';
-import {arrowArity} from './arrowArity.js';
 import {arrowInferredName} from './arrowInferredName.js';
 import {collectOverloadBlocks} from './collectOverloadBlocks.js';
+import {dummyArityHead} from './dummyArityHead.js';
+import {freshKeyName} from './freshKeyName.js';
+import {overloadArity} from './overloadArity.js';
+import {overloadIgnoreSet} from './overloadIgnoreSet.js';
+import {overloadImplParams} from './overloadImplParams.js';
+import {overloadInspectionArgs} from './overloadInspectionArgs.js';
+import {overloadInvocation} from './overloadInvocation.js';
+import {overloadNameKey} from './overloadNameKey.js';
+import {overloadSignatures} from './overloadSignatures.js';
 import {splitOverloadSections} from './splitOverloadSections.js';
-import {overloadToTuple} from './overloadToTuple.js';
 import {requiredTypeofs    } from './expandType.js';
 import {expandTypeDepFree  } from './expandTypeDepFree.js';
 import {harvestClassShape  } from './harvestClassShape.js';
@@ -90,39 +97,33 @@ class Asserter extends Stringifier {
   ArrowFunctionExpression(node) {
     const {async, body, generator, params/*, extra*/} = node;
     const sections = splitOverloadSections(collectOverloadBlocks(node, this.parents));
-    let argumentName;
+    let wrapper = null;
     if (sections.overloads.length) {
-      argumentName = 'rtiOverloadArguments';
-      const source = JSON.stringify(node);
-      while (source.includes(`"name":"${argumentName}"`)) argumentName += '_';
-      node.rtiOverloadArguments = argumentName;
+      const arity = this.overloadArityOf(node);
+      wrapper = dummyArityHead(node, arity, async, generator);
+      node.rtiOverloadArguments = wrapper.callName;
+      node.rtiOverloadWrapper = wrapper;
     }
     let arrowName = null;
-    let arity = 0;
-    if (argumentName) {
-      arity = arrowArity(node);
+    if (wrapper) {
       arrowName = arrowInferredName(node, this.parent);
     }
     const dynamicKey = node.rtiOverloadKeyName;
-    const restoreLength = arity > 0 && (arrowName !== null || dynamicKey);
+    const keepName = wrapper && (arrowName !== null || dynamicKey);
+    const nameKey = keepName ? overloadNameKey(dynamicKey, arrowName) : '';
     let out = '';
-    if (restoreLength) {
-      out += 'setOverloadArrowLength(';
-      if (dynamicKey) {
-        out += `({[${dynamicKey}]: `;
-      } else if (arrowName) {
-        out += `({[${JSON.stringify(arrowName)}]: `;
+    if (keepName) {
+      out += '({' + nameKey + ': ';
+    }
+    if (wrapper) {
+      out += wrapper.prefix;
+    } else {
+      if (async) {
+        out += 'async ';
       }
-    }
-    if (async) {
-      out += 'async ';
-    }
-    if (argumentName) {
-      out += `(...${argumentName}) => (`;
-      if (async) out += 'async ';
-    }
-    if (generator) {
-      out += ' * ';
+      if (generator) {
+        out += ' * ';
+      }
     }
     out += this.FunctionDeclarationParams(params);
     out += ' =>';
@@ -138,16 +139,43 @@ class Asserter extends Stringifier {
       out += spaces;
       out += '}';
     }
-    if (argumentName) out += `)(...${argumentName})`;
-    if (restoreLength) {
-      if (dynamicKey) {
-        out += `})[${dynamicKey}]`;
-      } else if (arrowName) {
-        out += `})[${JSON.stringify(arrowName)}]`;
-      }
-      out += `, ${arity})`;
+    if (wrapper) {
+      const invocation = overloadInvocation(wrapper);
+      out += invocation;
+    }
+    if (keepName) {
+      out += '})' + nameKey;
     }
     return out;
+  }
+  /**
+   * Counts the dummy parameters an overload arrow wrapper needs.
+   * @param {import('@babel/types').ArrowFunctionExpression} node - Arrow node.
+   * @returns {number} Required parameter count, else zero.
+   */
+  overloadArityOf(node) {
+    return overloadArity(node, this.parents);
+  }
+  /**
+   * Decides whether a property keeps plain emission.
+   * @param {import('@babel/types').ObjectProperty} node - Object property.
+   * @param {import('@babel/types').Node|null} value - Property value.
+   * @returns {boolean} True when the property stays untouched.
+   */
+  keepPlainProperty(node, value) {
+    if (!node.computed) {
+      return true;
+    }
+    if (!value) {
+      return true;
+    }
+    if (value.type !== 'ArrowFunctionExpression') {
+      return true;
+    }
+    if (arrowInferredName(value, node) !== null) {
+      return true;
+    }
+    return this.overloadArityOf(value) === 0;
   }
   /**
    * Captures a dynamic object key outside the arrow that uses it. A spread
@@ -159,20 +187,17 @@ class Asserter extends Stringifier {
    */
   ObjectProperty(node) {
     const {value} = node;
-    if (!node.computed || value.type !== 'ArrowFunctionExpression') return super.ObjectProperty(node);
-    if (arrowInferredName(value, node) !== null || arrowArity(value) === 0) return super.ObjectProperty(node);
-    const parents = [...this.parents, value];
-    const blocks = collectOverloadBlocks(value, parents);
-    const sections = splitOverloadSections(blocks);
-    if (!sections.overloads.length) return super.ObjectProperty(node);
-    let keyName = 'rtiOverloadKey';
-    const source = JSON.stringify(node);
-    while (source.includes(`"name":"${keyName}"`)) keyName += '_';
+    if (this.keepPlainProperty(node, value)) {
+      return super.ObjectProperty(node);
+    }
+    const keyName = freshKeyName(node);
     const key = this.toSource(node.key);
     value.rtiOverloadKeyName = keyName;
     const arrow = this.toSource(value);
     delete value.rtiOverloadKeyName;
-    return `${this.spaces}...(${keyName} => ({[${keyName}]: ${arrow}}))(overloadPropertyKey((${key})))`;
+    const spreadKey = `...(${keyName} => ({[${keyName}]: ${arrow}}))`;
+    const capturedKey = `overloadPropertyKey((${key}))`;
+    return `${this.spaces}${spreadKey}(${capturedKey})`;
   }
   /**
    * @override
@@ -667,7 +692,7 @@ class Asserter extends Stringifier {
     // the rest validate normally. Bare `@ignoreRTI` silences everything,
     // including default-inferred checks.
     const leading = this.getLeadingComment(node);
-    const ignored = leading ? ignoredParamsIn(leading) : null;
+    const ignored = overloadIgnoreSet(leading);
     if (ignored === 'all') {
       return '';
     }
@@ -677,25 +702,14 @@ class Asserter extends Stringifier {
       const loc = this.getName(node);
       if (this.ignoreLocations.includes(loc)) return '// IGNORE RTI TYPE VALIDATIONS, KNOWN ISSUES\n';
       const scopeTemplates = this.getScopeTemplates(node);
-      const signatures = sections.overloads.map((section) => {
-        const tuple = overloadToTuple(section, this.expandType, ignored instanceof Set ? ignored : undefined);
-        if (ignored instanceof Set) {
-          for (const [index, param] of fnNode.params.entries()) {
-            let target = param;
-            if (target.type === 'AssignmentPattern') target = target.left;
-            if (target.type === 'RestElement') target = target.argument;
-            const member = tuple.elements[index];
-            if (target.type !== 'Identifier' || !ignored.has(target.name) || !member) continue;
-            member.elementType = member.dotDot ? {type: 'array', elementType: 'any'} : 'any';
-          }
-        }
-        const own = parseJSDocTemplates(section, this.expandType);
-        const templates = {...scopeTemplates, ...own};
-        return {tuple, templates};
+      const signatures = overloadSignatures(sections.overloads, fnNode, {
+        expandType: this.expandType,
+        scopeTemplates,
+        ignored,
       });
       this.hasOverloadChecks = true;
       this.getStatsForNode(node).checked++;
-      const args = fnNode.type === 'ArrowFunctionExpression' ? fnNode.rtiOverloadArguments : '[...arguments]';
+      const args = overloadInspectionArgs(fnNode, fnNode, fnNode.rtiOverloadWrapper || null);
       const source = JSON.stringify(signatures, null, 2).replaceAll('\n', '\n' + this.spaces);
       const atLoc = escapeName(loc);
       let guard = '';
@@ -703,7 +717,7 @@ class Asserter extends Stringifier {
         guard = 'arguments.length !== 0 && ';
       }
       let out = `\n${this.spaces}if (${guard}!inspectOverloads(${args}, ${source}, '${atLoc}', 'arguments')) {\n${this.spaces}  youCanAddABreakpointHere();\n${this.spaces}}\n`;
-      const implParams = sections.impl ? parseJSDoc(sections.impl, this.expandType) : undefined;
+      const implParams = overloadImplParams(sections.impl, {expandType: this.expandType});
       const documented = new Set([...Object.keys(implParams || {}), ...(ignored instanceof Set ? ignored : [])]);
       out += this.emitDefaultChecks(node, this.collectDefaultChecks(node, documented), false);
       return out;

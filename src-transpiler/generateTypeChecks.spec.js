@@ -102,7 +102,7 @@ function testOverloadParameterNamedArray() {
   return runChecks(src, 'takeArrayNamedParam', (scope, {hits}) => hits.length === 1);
 }
 
-// A named arrow keeps its length, inferred name, and actual argument list.
+// A named arrow keeps its length, inferred name, and one report per bad call.
 function testOverloadedArrowMetadata() {
   const src = `/**
      * @overload
@@ -112,14 +112,14 @@ function testOverloadedArrowMetadata() {
      */
     /** @param {number} first @param {number} [second] */
     const measured = (first, second = 1) => first + second;
-    measured(2);
-    measured(2, undefined);
-    measured(2, 3, 4);`;
+    measured('bad', 'worse');`;
   return runChecks(src, 'measured', (scope, {hits, posted}) => (
     scope.measured.length === 1 &&
     scope.measured.name === 'measured' &&
     hits.length === 1 &&
-    posted[0].value.length === 3
+    posted.length === 1 &&
+    posted[0].loc === 'measured' &&
+    posted[0].name === 'arguments'
   ));
 }
 
@@ -209,7 +209,7 @@ function testOverloadedYieldedPropertyKey() {
 
 // Reentrant key coercion and a same-named outer binding keep independent keys.
 function testOverloadedReentrantComputedKeys() {
-  const src = `const rtiOverloadKey = 7;
+  const src = `const outerBinding = 7;
   let inner;
   const key = {
     toString() {
@@ -217,7 +217,7 @@ function testOverloadedReentrantComputedKeys() {
       inner = {
         /** @overload @param {number} value @returns {number} */
         /** @param {number} value */
-        [innerKey]: (value) => value + rtiOverloadKey
+        [innerKey]: (value) => value + outerBinding
       };
       return 'outer';
     }
@@ -225,7 +225,7 @@ function testOverloadedReentrantComputedKeys() {
   const outer = {
     /** @overload @param {number} value @returns {number} */
     /** @param {number} value */
-    [key]: (value) => value + rtiOverloadKey
+    [key]: (value) => value + outerBinding
   };`;
   return runChecks(src, 'inner, outer', (scope, {hits}) => {
     const nested = scope.inner.nested;
@@ -258,6 +258,70 @@ function testOverloadedComputedProtoKey() {
       descriptor.value.length === 1
     );
   });
+}
+
+// Dummy arity parameters forward values positionally without shadowing outer bindings.
+function testOverloadedDummyArityForwards() {
+  const src = `const outerBinding = 7;
+  /**
+   * @overload
+   * @param {number} first
+   * @param {number} second
+   * @returns {number}
+   */
+  /** @param {number} first @param {number} second */
+  const measured = (first, second) => first + second + outerBinding;
+  const result = measured(2, 3);`;
+  return runChecks(src, 'measured, result', (scope, {hits, posted}) => (
+    scope.result === 12 &&
+    scope.measured.length === 2 &&
+    scope.measured.name === 'measured' &&
+    typeof scope.measured(1, 2) === 'number' &&
+    hits.length === 0 &&
+    posted.length === 0
+  ));
+}
+
+// Destructured and required parameters keep their behavior under the wrapper.
+function testOverloadedDummyArityShapes() {
+  const src = `/**
+   * @overload
+   * @param {number} first
+   * @param {number} second
+   * @returns {number}
+   */
+  /** @param {number} first @param {number} second */
+  const shaped = ([first], {second}) => first + second;
+  const result = shaped([1], {second: 2});`;
+  return runChecks(src, 'shaped, result', (scope, {hits, posted}) => (
+    scope.result === 3 &&
+    scope.shaped.length === 2 &&
+    scope.shaped.name === 'shaped' &&
+    hits.length === 1 &&
+    posted.length === 1 &&
+    posted[0].loc === 'shaped' &&
+    posted[0].name === 'arguments'
+  ));
+}
+
+// A defaulted tail converts to required in emission, so the tail keeps its slot.
+function testOverloadedDummyArityOptionalTail() {
+  const src = `/**
+   * @overload
+   * @param {number} first
+   * @param {string} second
+   * @returns {number}
+   */
+  /** @param {number} first @param {string} [second] */
+  const tailed = (first, second = 'd') => first + second.length;
+  const result = tailed(2, 'ok');`;
+  return runChecks(src, 'tailed, result', (scope, {hits, posted}) => (
+    scope.result === 4 &&
+    scope.tailed.length === 1 &&
+    scope.tailed.name === 'tailed' &&
+    hits.length === 0 &&
+    posted.length === 0
+  ));
 }
 
 // The inserted key scope keeps the enclosing method's super, this, and arguments.
@@ -348,7 +412,9 @@ function testOverloadedComputedClassFieldChecks() {
   return runChecks(src, 'outer, nested, reads, symbol', (scope, {hits}) => (
     scope.reads === 1 &&
     scope.outer.outer.name === 'outer' &&
+    scope.outer.outer.length === 1 &&
     scope.nested[scope.symbol].name === '[inner]' &&
+    scope.nested[scope.symbol].length === 1 &&
     scope.outer.outer(3) === 3 &&
     scope.nested[scope.symbol](4) === 4 &&
     hits.length === 2
@@ -371,6 +437,9 @@ export const tests = [
   testOverloadedReentrantComputedKeys,
   testOverloadedComputedProtoKey,
   testOverloadedComputedLexicalBindings,
+  testOverloadedDummyArityForwards,
+  testOverloadedDummyArityShapes,
+  testOverloadedDummyArityOptionalTail,
   testOverloadedNamedClassFields,
   testOverloadedComputedClassFieldChecks,
 ];

@@ -1,14 +1,12 @@
 
-// Dynamic computed field arrows retain their inferred names, but RTI currently
-
-// reports length zero instead of the original JavaScript arity.
+// Computed field arrows keep their inferred names and declared arity.
 const dynamicField = 'computed';
 class OverloadFields {
   /** @overload @param {number} value @returns {number} */
   /** @param {number|string} value */
-  action = setOverloadArrowLength(({["action"]: (...rtiOverloadArguments) => ((value) => {
+  action = ({["action"]: (rtiParam0, ...rtiOverloadRest) => { const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest]; return ((value) => {
 
-  if (!inspectOverloads(rtiOverloadArguments, [
+  if (!inspectOverloads(rtiOverloadStore, [
     {
       "tuple": {
         "type": "tuple",
@@ -26,16 +24,16 @@ class OverloadFields {
     youCanAddABreakpointHere();
   }
     return typeof value === 'number' ? value : 0;
-  })(...rtiOverloadArguments)})["action"], 1);
+  })(rtiParam0, ...rtiOverloadRest)}})["action"];
   /** @overload @param {number} value @returns {number} */
 
   /** @param {number|string} value */
 
   /** @overload @param {number} value @returns {number} */
   /** @param {number|string} value */
-  static action = setOverloadArrowLength(({["action"]: (...rtiOverloadArguments) => ((value) => {
+  static action = ({["action"]: (rtiParam0, ...rtiOverloadRest) => { const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest]; return ((value) => {
 
-  if (!inspectOverloads(rtiOverloadArguments, [
+  if (!inspectOverloads(rtiOverloadStore, [
     {
       "tuple": {
         "type": "tuple",
@@ -53,16 +51,16 @@ class OverloadFields {
     youCanAddABreakpointHere();
   }
     return typeof value === 'number' ? value : 0;
-  })(...rtiOverloadArguments)})["action"], 1);
+  })(rtiParam0, ...rtiOverloadRest)}})["action"];
   /** @overload @param {number} value @returns {number} */
 
   /** @param {number|string} value */
 
   /** @overload @param {number} value @returns {number} */
   /** @param {number|string} value */
-  #privateAction = setOverloadArrowLength(({["#privateAction"]: (...rtiOverloadArguments) => ((value) => {
+  #privateAction = ({["#privateAction"]: (rtiParam0, ...rtiOverloadRest) => { const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest]; return ((value) => {
 
-  if (!inspectOverloads(rtiOverloadArguments, [
+  if (!inspectOverloads(rtiOverloadStore, [
     {
       "tuple": {
         "type": "tuple",
@@ -80,16 +78,16 @@ class OverloadFields {
     youCanAddABreakpointHere();
   }
     return typeof value === 'number' ? value : 0;
-  })(...rtiOverloadArguments)})["#privateAction"], 1);
+  })(rtiParam0, ...rtiOverloadRest)}})["#privateAction"];
   /** @overload @param {number} value @returns {number} */
 
   /** @param {number|string} value */
 
   /** @overload @param {number} value @returns {number} */
   /** @param {number|string} value */
-  [dynamicField] = (...rtiOverloadArguments) => ((value) => {
+  [dynamicField] = (rtiParam0, ...rtiOverloadRest) => { const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest]; return ((value) => {
 
-  if (!inspectOverloads(rtiOverloadArguments, [
+  if (!inspectOverloads(rtiOverloadStore, [
     {
       "tuple": {
         "type": "tuple",
@@ -107,7 +105,7 @@ class OverloadFields {
     youCanAddABreakpointHere();
   }
     return typeof value === 'number' ? value : 0;
-  })(...rtiOverloadArguments);
+  })(rtiParam0, ...rtiOverloadRest)};
   getPrivateAction() {
     return this.#privateAction;
   }
@@ -168,4 +166,7 @@ if (fields.getPrivateAction().length !== 1 || fields.getPrivateAction().name !==
 }
 if (fields.computed.name !== 'computed') {
 throw new Error('Computed name');
+}
+if (fields.computed.length !== 1) {
+throw new Error('Computed arity');
 }

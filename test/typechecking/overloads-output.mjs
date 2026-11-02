@@ -11,7 +11,7 @@ registerTypedef('Chain', {
 });
 /** Constructor overloads validate whole calls, not independent argument unions. */
 class Vec4 {
-
+  
   /**
    * @overload
    * @param {number} [x]
@@ -19,12 +19,12 @@ class Vec4 {
    * @param {number} [z]
    * @param {number} [w]
    */
-
+  
   /**
    * @overload
    * @param {number[]} values
    */
-
+  
   /**
    * @param {number|number[]} [x]
    * @param {number} [y]
@@ -248,9 +248,9 @@ choose(1, 'bad'); // warns
  * @returns {string|number}
  */
 
-const identity = setOverloadArrowLength(({["identity"]: (...rtiOverloadArguments) => ((value) => {
+const identity = ({["identity"]: (rtiParam0, ...rtiOverloadRest) => { const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest]; return ((value) => {
 
-if (!inspectOverloads(rtiOverloadArguments, [
+if (!inspectOverloads(rtiOverloadStore, [
   {
     "tuple": {
       "type": "tuple",
@@ -281,7 +281,7 @@ if (!inspectOverloads(rtiOverloadArguments, [
   youCanAddABreakpointHere();
 }
   return value;
-})(...rtiOverloadArguments)})["identity"], 1);
+})(rtiParam0, ...rtiOverloadRest)}})["identity"];
 identity('x'); // ok
 
 identity(1); // ok
@@ -644,14 +644,14 @@ class Box {
     }
     this.value = value;
   }
-
+  
   /**
    * @overload
    * @param {number} value
    * @returns {number}
    */
 
-
+  
   /**
    * @overload
    * @param {string} value
@@ -660,13 +660,13 @@ class Box {
 
   /** @param {number|string} value */
 
-
+  
   /**
    * @overload
    * @param {number} value
    * @returns {number}
    */
-
+  
   /**
    * @overload
    * @param {string} value
@@ -729,13 +729,13 @@ Box.read(1); // ok
 Box.read(false); // warns
 
 const operations = {
-
+  
   /**
    * @overload
    * @param {number} value
    * @returns {number}
    */
-
+  
   /**
    * @overload
    * @param {string} value
@@ -955,16 +955,16 @@ format(42); // warns
 const computedName = 'execute';
 let computedKeyReads = 0;
 const computedHolder = {
-
+  
   /**
    * @overload
    * @param {number} value
    * @returns {number}
    */
   /** @param {number|string} value */
-  ...(rtiOverloadKey => ({[rtiOverloadKey]: setOverloadArrowLength(({[rtiOverloadKey]: (...rtiOverloadArguments) => ((value) => {
+  [((computedKeyReads++, computedName))]: (rtiParam0, ...rtiOverloadRest) => { const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest]; return ((value) => {
 
-  if (!inspectOverloads(rtiOverloadArguments, [
+  if (!inspectOverloads(rtiOverloadStore, [
     {
       "tuple": {
         "type": "tuple",
@@ -982,7 +982,7 @@ const computedHolder = {
     youCanAddABreakpointHere();
   }
     return typeof value === 'number' ? value : 0;
-  })(...rtiOverloadArguments)})[rtiOverloadKey], 1)}))(overloadPropertyKey((((computedKeyReads++, computedName)))))
+  })(rtiParam0, ...rtiOverloadRest)}
 };
 computedHolder.execute(1); // ok
 

@@ -1,5 +1,4 @@
-// Dynamic computed field arrows retain their inferred names, but RTI currently
-// reports length zero instead of the original JavaScript arity.
+// Computed field arrows keep their inferred names and declared arity.
 const dynamicField = 'computed';
 
 class OverloadFields {
@@ -42,3 +41,4 @@ if (fields.getPrivateAction().length !== 1 || fields.getPrivateAction().name !==
   throw new Error('Private metadata');
 }
 if (fields.computed.name !== 'computed') throw new Error('Computed name');
+if (fields.computed.length !== 1) throw new Error('Computed arity');
