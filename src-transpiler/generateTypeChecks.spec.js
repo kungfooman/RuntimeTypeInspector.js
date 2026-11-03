@@ -385,7 +385,7 @@ function testOverloadedNamedClassFields() {
   });
 }
 
-// Computed class keys are evaluated once per class, even when class creation reenters.
+// Computed class keys are coerced once per class, even when class creation reenters.
 function testOverloadedComputedClassFieldChecks() {
   const src = `const symbol = Symbol('inner');
   let inner;
@@ -410,7 +410,8 @@ function testOverloadedComputedClassFieldChecks() {
   outer.outer('bad');
   nested[symbol]('bad');`;
   return runChecks(src, 'outer, nested, reads, symbol', (scope, {hits}) => (
-    scope.reads === 1 &&
+    scope.reads === 3 &&
+    Object.getOwnPropertyNames(scope.outer).join(',') === 'outer' &&
     scope.outer.outer.name === 'outer' &&
     scope.outer.outer.length === 1 &&
     scope.nested[scope.symbol].name === '[inner]' &&
@@ -418,6 +419,35 @@ function testOverloadedComputedClassFieldChecks() {
     scope.outer.outer(3) === 3 &&
     scope.nested[scope.symbol](4) === 4 &&
     hits.length === 2
+  ));
+}
+
+// A second instance coerces the same class key again without changing the outcome.
+function testOverloadedComputedClassFieldSecondInstance() {
+  const src = `let reads = 0;
+  function make(key) {
+    return class {
+      /** @overload @param {number} value @returns {number} */
+      /** @param {number|string} value */
+      [key] = (value) => typeof value === 'number' ? value : 0;
+    };
+  }
+  const key = {
+    toString() {
+      reads++;
+      return 'shared';
+    }
+  };
+  const Made = make(key);
+  const first = new Made();
+  const second = new Made();
+  first.shared('bad');`;
+  return runChecks(src, 'first, second, reads', (scope, {hits}) => (
+    scope.reads === 5 &&
+    scope.first.shared.name === 'shared' &&
+    scope.second.shared.name === 'shared' &&
+    scope.first.shared.length === 1 &&
+    hits.length === 1
   ));
 }
 
@@ -442,4 +472,5 @@ export const tests = [
   testOverloadedDummyArityOptionalTail,
   testOverloadedNamedClassFields,
   testOverloadedComputedClassFieldChecks,
+  testOverloadedComputedClassFieldSecondInstance,
 ];

@@ -85,7 +85,7 @@ class OverloadFields {
 
   /** @overload @param {number} value @returns {number} */
   /** @param {number|string} value */
-  [dynamicField] = (rtiParam0, ...rtiOverloadRest) => { const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest]; return ((value) => {
+  [overloadPropertyKey((dynamicField))] = ((rtiOverloadKey) => ({[rtiOverloadKey]: ({[rtiOverloadKey]: (rtiParam0, ...rtiOverloadRest) => { const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest]; return ((value) => {
 
   if (!inspectOverloads(rtiOverloadStore, [
     {
@@ -105,7 +105,7 @@ class OverloadFields {
     youCanAddABreakpointHere();
   }
     return typeof value === 'number' ? value : 0;
-  })(rtiParam0, ...rtiOverloadRest)};
+  })(rtiParam0, ...rtiOverloadRest)}})[rtiOverloadKey]}))(overloadPropertyKey((dynamicField)))[overloadPropertyKey((dynamicField))];
   getPrivateAction() {
     return this.#privateAction;
   }

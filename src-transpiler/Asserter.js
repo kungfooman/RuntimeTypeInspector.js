@@ -1,4 +1,5 @@
 import {annotateOptional   } from './annotateOptional.js';
+import {arrowArity} from './arrowArity.js';
 import {arrowInferredName} from './arrowInferredName.js';
 import {collectOverloadBlocks} from './collectOverloadBlocks.js';
 import {dummyArityHead} from './dummyArityHead.js';
@@ -178,11 +179,95 @@ class Asserter extends Stringifier {
     return this.overloadArityOf(value) === 0;
   }
   /**
+   * Decides whether a class field arrow keeps plain emission.
+   * @param {import('@babel/types').Node} node - Class field node.
+   * @param {import('@babel/types').Node|null} value - Field value.
+   * @returns {boolean} True when the field stays untouched.
+   */
+  keepPlainClassField(node, value) {
+    if (!node.computed) {
+      return true;
+    }
+    if (!value) {
+      return true;
+    }
+    if (value.type !== 'ArrowFunctionExpression') {
+      return true;
+    }
+    if (arrowInferredName(value, node) !== null) {
+      return true;
+    }
+    return !this.hasFieldOverloads(node, value);
+  }
+  /**
+   * Reports whether a class field carries overload documentation. A
+   * rest-only or zero-parameter arrow still needs the captured key: its
+   * wrapper has arity zero but its name still comes from the capture.
+   * Docs live on the field while params live on the arrow, so the field
+   * supplies the section lookup with the arrow appended for the walk-up.
+   * @param {import('@babel/types').Node} node - Class field node.
+   * @param {import('@babel/types').Node} value - Field arrow value.
+   * @returns {boolean} True when overload sections exist.
+   */
+  hasFieldOverloads(node, value) {
+    const parents = [...this.parents, value];
+    const sections = splitOverloadSections(collectOverloadBlocks(node, parents));
+    return sections.overloads.length > 0;
+  }
+  /**
+   * Counts the dummy parameters a class-field overload wrapper needs.
+   * Docs live on the field while params live on the arrow, so the field
+   * supplies the section lookup and the arrow supplies the parameter list.
+   * @param {import('@babel/types').Node} node - Class field node.
+   * @param {import('@babel/types').Node} value - Field arrow value.
+   * @returns {number} Required parameter count, else zero.
+   */
+  fieldOverloadArity(node, value) {
+    if (!this.hasFieldOverloads(node, value)) return 0;
+    return arrowArity(value);
+  }
+  /**
+   * Emits a class field whose computed arrow needs a captured key. The
+   * captured key carries the coerced field key into the value, so each
+   * instance evaluates the outer expression once and the inner object
+   * restores the inferred name on every engine.
+   * @param {import('@babel/types').Node} node - Class field node.
+   * @param {string} key - Source of the computed field key.
+   * @param {string} arrow - Source of the overloaded arrow.
+   * @param {string} keyName - Carrier holding the coerced key.
+   * @returns {string} Stringification of the field.
+   */
+  capturedClassField(node, key, arrow, keyName) {
+    const prefix = node.static ? 'static ' : '';
+    const capture = `((${keyName}) => ({[${keyName}]: ${arrow}}))(overloadPropertyKey((${key})))`;
+    const fieldKey = `overloadPropertyKey((${key}))`;
+    return `${this.spaces}${prefix}[${fieldKey}] = ${capture}[${fieldKey}];`;
+  }
+  /**
+   * Emits a class field, capturing the computed key when an overloaded
+   * arrow needs it for its inferred name.
+   * @override
+   * @param {import("@babel/types").Node} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  ClassProperty(node) {
+    const {value} = node;
+    if (this.keepPlainClassField(node, value)) {
+      return super.ClassProperty(node);
+    }
+    const keyName = freshKeyName(node);
+    const key = this.toSource(node.key);
+    value.rtiOverloadKeyName = keyName;
+    const arrow = this.toSource(value);
+    delete value.rtiOverloadKeyName;
+    return this.capturedClassField(node, key, arrow, keyName);
+  }
+  /**
    * Captures a dynamic object key outside the arrow that uses it. A spread
    * preserves evaluation order and makes the captured key local to this one
    * property, including when object creation is reentrant.
    * @override
-   * @param {import('@babel/types').ObjectProperty} node - Object property.
+   * @param {import('@babel/types').Node} node - Object property.
    * @returns {string} Stringification of the property.
    */
   ObjectProperty(node) {
