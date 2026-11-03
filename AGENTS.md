@@ -47,6 +47,8 @@ the PR without the session context; the description is the changelog.
 - Omit sections with nothing to say: no "rules added" section when no rule
   changed, no placeholder, no `(none)`. An empty section is noise that
   trains the reader to skip sections.
+- Cover the net change only, never the intra-branch churn: helpers created and deleted mid-branch, reverted experiments, and renamed-then-merged files are session scaffolding, not changelog. The reader needs the final point of view (what the branch holds versus its base), with each entry naming the surviving files and the proof. A file that never appears in a commit boundary does not appear in the doc.
+- Round the primer off with a worked demonstration: docs in, emission out, runtime behavior stated call by call (what passes, what warns, which metadata survives and why). Copy the emission verbatim from the working tree (`run-jsdoc.js --emit` on a minimal input), not from memory. The demo is the pedagogical pre-text made concrete: a future reader who never runs the branch should still see exactly what the transpiler does.
 
 ## Scratch files
 
