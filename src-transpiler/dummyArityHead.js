@@ -1,5 +1,3 @@
-import {dummyArityNames} from './dummyArityNames.js';
-
 /**
  * Renders the invocation head that keeps overload arrow arity observable.
  * The stored call list feeds the inspection call, while the prefix keeps
@@ -21,7 +19,10 @@ function dummyArityHead(node, arity, isAsync, isGenerator) {
   while (source.includes('"name":"' + base + '0"')) {
     base += '_';
   }
-  const names = dummyArityNames(arity, base);
+  const names = [];
+  for (let index = 0; index < arity; index++) {
+    names.push(base + index);
+  }
   const used = new Set(names);
   let restName = 'rtiOverloadRest';
   while (used.has(restName) || source.includes('"name":"' + restName + '"')) {

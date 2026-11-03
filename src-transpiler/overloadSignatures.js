@@ -2,7 +2,6 @@ import {overloadToTuple} from './overloadToTuple.js';
 import {parseJSDocTemplates} from './parseJSDocTemplates.js';
 import {expandTypeDepFree} from './expandTypeDepFree.js';
 import {eraseIgnoredOverloadParams} from './eraseIgnoredOverloadParams.js';
-import {overloadSignature} from './overloadSignature.js';
 
 /**
  * Builds runtime overload signatures for one documented function.
@@ -23,7 +22,7 @@ function overloadSignatures(overloads, fnNode, options = {}) {
     if (ignored instanceof Set) eraseIgnoredOverloadParams(tuple, fnNode, ignored);
     const own = parseJSDocTemplates(section, parser);
     const templates = {...scopeTemplates, ...own};
-    return overloadSignature(tuple, templates);
+    return {tuple, templates};
   });
 }
 export {overloadSignatures};

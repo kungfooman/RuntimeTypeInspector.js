@@ -6,9 +6,7 @@ import {dummyArityHead} from './dummyArityHead.js';
 import {freshKeyName} from './freshKeyName.js';
 import {overloadArity} from './overloadArity.js';
 import {overloadIgnoreSet} from './overloadIgnoreSet.js';
-import {overloadImplParams} from './overloadImplParams.js';
 import {overloadInspectionArgs} from './overloadInspectionArgs.js';
-import {overloadInvocation} from './overloadInvocation.js';
 import {overloadNameKey} from './overloadNameKey.js';
 import {overloadSignatures} from './overloadSignatures.js';
 import {splitOverloadSections} from './splitOverloadSections.js';
@@ -97,21 +95,7 @@ class Asserter extends Stringifier {
    */
   ArrowFunctionExpression(node) {
     const {async, body, generator, params/*, extra*/} = node;
-    const sections = splitOverloadSections(collectOverloadBlocks(node, this.parents));
-    let wrapper = null;
-    if (sections.overloads.length) {
-      const arity = this.overloadArityOf(node);
-      wrapper = dummyArityHead(node, arity, async, generator);
-      node.rtiOverloadArguments = wrapper.callName;
-      node.rtiOverloadWrapper = wrapper;
-    }
-    let arrowName = null;
-    if (wrapper) {
-      arrowName = arrowInferredName(node, this.parent);
-    }
-    const dynamicKey = node.rtiOverloadKeyName;
-    const keepName = wrapper && (arrowName !== null || dynamicKey);
-    const nameKey = keepName ? overloadNameKey(dynamicKey, arrowName) : '';
+    const {wrapper, keepName, nameKey} = this.overloadArrowHead(node, async, generator);
     let out = '';
     if (keepName) {
       out += '({' + nameKey + ': ';
@@ -141,13 +125,38 @@ class Asserter extends Stringifier {
       out += '}';
     }
     if (wrapper) {
-      const invocation = overloadInvocation(wrapper);
-      out += invocation;
+      out += ')(' + wrapper.invocation + ')}';
     }
     if (keepName) {
       out += '})' + nameKey;
     }
     return out;
+  }
+  /**
+   * Builds the dummy wrapper and name key for an overloaded arrow. A static
+   * name or a captured computed key both keep the name-restoring wrapper;
+   * a bare arrow needs neither.
+   * @param {import("@babel/types").ArrowFunctionExpression} node - The Babel AST node.
+   * @param {boolean} isAsync - Whether the arrow is async.
+   * @param {boolean} isGenerator - Whether the arrow is a generator.
+   * @returns {{wrapper: object|null, keepName: boolean|null, nameKey: string}} Wrapper head.
+   */
+  overloadArrowHead(node, isAsync, isGenerator) {
+    const sections = splitOverloadSections(collectOverloadBlocks(node, this.parents));
+    let wrapper = null;
+    if (sections.overloads.length) {
+      wrapper = dummyArityHead(node, this.overloadArityOf(node), isAsync, isGenerator);
+      node.rtiOverloadArguments = wrapper.callName;
+      node.rtiOverloadWrapper = wrapper;
+    }
+    let arrowName = null;
+    if (wrapper) {
+      arrowName = arrowInferredName(node, this.parent);
+    }
+    const dynamicKey = node.rtiOverloadKeyName;
+    const keepName = wrapper && (arrowName !== null || dynamicKey);
+    const nameKey = keepName ? overloadNameKey(dynamicKey, arrowName) : '';
+    return {wrapper, keepName, nameKey};
   }
   /**
    * Counts the dummy parameters an overload arrow wrapper needs.
@@ -756,6 +765,41 @@ class Asserter extends Stringifier {
     });
   }
   /**
+   * Emits the runtime check block for one overload group. Defaults still
+   * need checking: the impl section documents unlisted params, so it joins
+   * the suppression set for the default pass.
+   * @param {Node} node - The Babel AST node for which to generate type checks.
+   * @param {*} sections - Split overload and implementation doc sections.
+   * @param {Set<string>|string|null} ignored - Suppressed parameter names.
+   * @returns {string} Overload check block plus default checks.
+   */
+  emitOverloadChecks(node, sections, ignored) {
+    const {parent} = this;
+    const fnNode = node.type === 'BlockStatement' ? parent : node;
+    const loc = this.getName(node);
+    if (this.ignoreLocations.includes(loc)) return '// IGNORE RTI TYPE VALIDATIONS, KNOWN ISSUES\n';
+    const scopeTemplates = this.getScopeTemplates(node);
+    const signatures = overloadSignatures(sections.overloads, fnNode, {
+      expandType: this.expandType,
+      scopeTemplates,
+      ignored,
+    });
+    this.hasOverloadChecks = true;
+    this.getStatsForNode(node).checked++;
+    const args = overloadInspectionArgs(fnNode, fnNode, fnNode.rtiOverloadWrapper || null);
+    const source = JSON.stringify(signatures, null, 2).replaceAll('\n', '\n' + this.spaces);
+    const atLoc = escapeName(loc);
+    let guard = '';
+    if (loc === 'ContactPoint#constructor' || loc === 'ContactResult#constructor' || loc === 'SingleContactResult#constructor') {
+      guard = 'arguments.length !== 0 && ';
+    }
+    let out = `\n${this.spaces}if (${guard}!inspectOverloads(${args}, ${source}, '${atLoc}', 'arguments')) {\n${this.spaces}  youCanAddABreakpointHere();\n${this.spaces}}\n`;
+    const implParams = sections.impl ? parseJSDoc(sections.impl, this.expandType) : undefined;
+    const documented = new Set([...Object.keys(implParams || {}), ...(ignored instanceof Set ? ignored : [])]);
+    out += this.emitDefaultChecks(node, this.collectDefaultChecks(node, documented), false);
+    return out;
+  }
+  /**
    * Generates a string containing type checks for a given Babel AST node based on associated JSDoc information.
    *
    * This function analyzes the node and its JSDoc annotations to construct runtime type
@@ -783,29 +827,7 @@ class Asserter extends Stringifier {
     }
     const sections = splitOverloadSections(collectOverloadBlocks(node, this.parents));
     if (sections.overloads.length) {
-      const fnNode = node.type === 'BlockStatement' ? parent : node;
-      const loc = this.getName(node);
-      if (this.ignoreLocations.includes(loc)) return '// IGNORE RTI TYPE VALIDATIONS, KNOWN ISSUES\n';
-      const scopeTemplates = this.getScopeTemplates(node);
-      const signatures = overloadSignatures(sections.overloads, fnNode, {
-        expandType: this.expandType,
-        scopeTemplates,
-        ignored,
-      });
-      this.hasOverloadChecks = true;
-      this.getStatsForNode(node).checked++;
-      const args = overloadInspectionArgs(fnNode, fnNode, fnNode.rtiOverloadWrapper || null);
-      const source = JSON.stringify(signatures, null, 2).replaceAll('\n', '\n' + this.spaces);
-      const atLoc = escapeName(loc);
-      let guard = '';
-      if (loc === 'ContactPoint#constructor' || loc === 'ContactResult#constructor' || loc === 'SingleContactResult#constructor') {
-        guard = 'arguments.length !== 0 && ';
-      }
-      let out = `\n${this.spaces}if (${guard}!inspectOverloads(${args}, ${source}, '${atLoc}', 'arguments')) {\n${this.spaces}  youCanAddABreakpointHere();\n${this.spaces}}\n`;
-      const implParams = overloadImplParams(sections.impl, {expandType: this.expandType});
-      const documented = new Set([...Object.keys(implParams || {}), ...(ignored instanceof Set ? ignored : [])]);
-      out += this.emitDefaultChecks(node, this.collectDefaultChecks(node, documented), false);
-      return out;
+      return this.emitOverloadChecks(node, sections, ignored);
     }
     const jsdoc = this.getJSDoc(node);
     // return '// ' + JSON.stringify(jsdoc) + '\n';

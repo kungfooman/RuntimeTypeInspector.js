@@ -2,7 +2,6 @@ import {overloadToTuple} from './overloadToTuple.js';
 import {parseJSDocTemplates} from './parseJSDocTemplates.js';
 import {expandTypeDepFree} from './expandTypeDepFree.js';
 import {ignoredParamsIn} from './ignoredParamsIn.js';
-import {overloadSignature} from './overloadSignature.js';
 
 /**
  * Erases suppressed parameters from one overload tuple in place.
