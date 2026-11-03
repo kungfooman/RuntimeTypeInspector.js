@@ -11,7 +11,10 @@ function testVariableName() {
 
 // A dynamic property key is unknown, while a literal key names the arrow.
 function testDynamicPropertyName() {
-  const src = 'const obj = {[key]: (x) => x, ["fixed"]: (x) => x}';
+  const src = `const obj = {
+    [key]: (x) => x,
+    ["fixed"]: (x) => x
+  };`;
   const ast = parse(src);
   const object = ast.program.body[0].declarations[0].init;
   const dynamic = object.properties[0];
@@ -26,7 +29,9 @@ function testDynamicPropertyName() {
 
 // Private class fields prefix the inferred arrow name with a hash.
 function testPrivateFieldName() {
-  const src = 'class Holder { #action = (x) => x; }';
+  const src = `class Holder {
+    #action = (x) => x;
+  };`;
   const ast = parse(src);
   const field = ast.program.body[0].body.body[0];
   return arrowInferredName(field.value, field) === '#action';
