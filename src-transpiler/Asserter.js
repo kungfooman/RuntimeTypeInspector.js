@@ -354,7 +354,7 @@ class Asserter extends Stringifier {
     let header = super.getHeader();
     const names = ['inspectIndexedAccess', 'inspectType', 'inspectTypeWithTemplates', 'youCanAddABreakpointHere', 'registerVariable'];
     if (this.hasOverloadChecks || ast?.comments?.some((comment) => /@overload\b/.test(comment.value))) {
-      names.push('inspectOverloads', 'setOverloadArrowLength', 'overloadPropertyKey');
+      names.push('inspectOverloads', 'overloadPropertyKey');
     }
     if (this.validateDivision) {
       names.push('validateDivision');
