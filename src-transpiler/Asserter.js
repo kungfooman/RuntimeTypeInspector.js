@@ -96,20 +96,38 @@ class Asserter extends Stringifier {
   ArrowFunctionExpression(node) {
     const {async, body, generator, params/*, extra*/} = node;
     const {wrapper, keepName, nameKey} = this.overloadArrowHead(node, async, generator);
+    if (!wrapper) {
+      let plain = '';
+      if (async) {
+        plain += 'async ';
+      }
+      if (generator) {
+        plain += ' * ';
+      }
+      plain += this.FunctionDeclarationParams(params);
+      plain += ' =>';
+      if (body.type === 'BlockStatement') {
+        plain += this.toSource(body);
+      } else {
+        plain += ' {\n';
+        plain += this.generateTypeChecks(node);
+        const {spaces} = this;
+        this.numSpaces++;
+        plain += this.spaces + 'return ' + this.toSource(body) + ';\n';
+        this.numSpaces--;
+        plain += spaces;
+        plain += '}';
+      }
+      return plain;
+    }
     let out = '';
     if (keepName) {
       out += '({' + nameKey + ': ';
     }
-    if (wrapper) {
-      out += wrapper.prefix;
-    } else {
-      if (async) {
-        out += 'async ';
-      }
-      if (generator) {
-        out += ' * ';
-      }
-    }
+    out += wrapper.open + '\n';
+    this.numSpaces++;
+    out += this.spaces + wrapper.store + '\n';
+    out += this.spaces + wrapper.entry;
     out += this.FunctionDeclarationParams(params);
     out += ' =>';
     if (body.type === 'BlockStatement') {
@@ -124,9 +142,9 @@ class Asserter extends Stringifier {
       out += spaces;
       out += '}';
     }
-    if (wrapper) {
-      out += ')(' + wrapper.invocation + ')}';
-    }
+    out += '\n' + this.spaces + ')(' + wrapper.invocation + ');\n';
+    this.numSpaces--;
+    out += this.spaces + '}';
     if (keepName) {
       out += '})' + nameKey;
     }

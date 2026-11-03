@@ -20,3 +20,4 @@ importedJsOverload(1); // ok
 
 // @ts-expect-error The JavaScript module's overloads reject a boolean too.
 importedJsOverload(false); // warns
+

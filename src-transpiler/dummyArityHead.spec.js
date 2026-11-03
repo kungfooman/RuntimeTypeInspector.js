@@ -34,16 +34,17 @@ function testStoreKeepsDummyOrder() {
   return actual === expected;
 }
 
-// The async prefix joins the stored statement without shadowing its caller.
-function testPrefixKeepsAsync() {
+// The async open joins the entry without shadowing its caller.
+function testOpenEntryKeepsAsync() {
   const src = '(value) => value';
   const ast = parse(src);
   const arrow = ast.program.body[0].expression;
   const head = dummyArityHead(arrow, 1, true, false);
-  const store = 'const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest];';
   const wrapperHead = 'async (rtiParam0, ...rtiOverloadRest)';
-  const expected = wrapperHead + ' => { ' + store + ' return (async ';
-  return head.prefix === expected;
+  return (
+    head.open === wrapperHead + ' => {' &&
+    head.entry === 'return (async '
+  );
 }
 
 // The invocation list forwards leading dummies before the stored rest.
@@ -55,4 +56,4 @@ function testInvocationKeepsDummyOrder() {
   return head.invocation === 'rtiParam0, ...rtiOverloadRest';
 }
 
-export const tests = [testHeadKeepsDummyOrder, testHeadAvoidsCollisions, testStoreKeepsDummyOrder, testPrefixKeepsAsync, testInvocationKeepsDummyOrder];
+export const tests = [testHeadKeepsDummyOrder, testHeadAvoidsCollisions, testStoreKeepsDummyOrder, testOpenEntryKeepsAsync, testInvocationKeepsDummyOrder];

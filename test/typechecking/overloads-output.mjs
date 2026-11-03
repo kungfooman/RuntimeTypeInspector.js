@@ -248,40 +248,44 @@ choose(1, 'bad'); // warns
  * @returns {string|number}
  */
 
-const identity = ({["identity"]: (rtiParam0, ...rtiOverloadRest) => { const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest]; return ((value) => {
+const identity = ({["identity"]: (rtiParam0, ...rtiOverloadRest) => {
+  const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest];
+  return ((value) => {
 
-if (!inspectOverloads(rtiOverloadStore, [
-  {
-    "tuple": {
-      "type": "tuple",
-      "elements": [
-        {
-          "type": "tupleMember",
-          "name": "text",
-          "elementType": "string"
-        }
-      ]
+  if (!inspectOverloads(rtiOverloadStore, [
+    {
+      "tuple": {
+        "type": "tuple",
+        "elements": [
+          {
+            "type": "tupleMember",
+            "name": "text",
+            "elementType": "string"
+          }
+        ]
+      },
+      "templates": {}
     },
-    "templates": {}
-  },
-  {
-    "tuple": {
-      "type": "tuple",
-      "elements": [
-        {
-          "type": "tupleMember",
-          "name": "value",
-          "elementType": "number"
-        }
-      ]
-    },
-    "templates": {}
+    {
+      "tuple": {
+        "type": "tuple",
+        "elements": [
+          {
+            "type": "tupleMember",
+            "name": "value",
+            "elementType": "number"
+          }
+        ]
+      },
+      "templates": {}
+    }
+  ], 'identity', 'arguments')) {
+    youCanAddABreakpointHere();
   }
-], 'identity', 'arguments')) {
-  youCanAddABreakpointHere();
-}
-  return value;
-})(rtiParam0, ...rtiOverloadRest)}})["identity"];
+    return value;
+  }
+  )(rtiParam0, ...rtiOverloadRest);
+}})["identity"];
 identity('x'); // ok
 
 identity(1); // ok
@@ -962,27 +966,31 @@ const computedHolder = {
    * @returns {number}
    */
   /** @param {number|string} value */
-  [((computedKeyReads++, computedName))]: (rtiParam0, ...rtiOverloadRest) => { const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest]; return ((value) => {
+  [((computedKeyReads++, computedName))]: (rtiParam0, ...rtiOverloadRest) => {
+    const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest];
+    return ((value) => {
 
-  if (!inspectOverloads(rtiOverloadStore, [
-    {
-      "tuple": {
-        "type": "tuple",
-        "elements": [
-          {
-            "type": "tupleMember",
-            "name": "value",
-            "elementType": "number"
-          }
-        ]
-      },
-      "templates": {}
+    if (!inspectOverloads(rtiOverloadStore, [
+      {
+        "tuple": {
+          "type": "tuple",
+          "elements": [
+            {
+              "type": "tupleMember",
+              "name": "value",
+              "elementType": "number"
+            }
+          ]
+        },
+        "templates": {}
+      }
+    ], 'computedHolder[((computedKeyReads++, computedName))]', 'arguments')) {
+      youCanAddABreakpointHere();
     }
-  ], 'computedHolder[((computedKeyReads++, computedName))]', 'arguments')) {
-    youCanAddABreakpointHere();
+      return typeof value === 'number' ? value : 0;
+    }
+    )(rtiParam0, ...rtiOverloadRest);
   }
-    return typeof value === 'number' ? value : 0;
-  })(rtiParam0, ...rtiOverloadRest)}
 };
 computedHolder.execute(1); // ok
 

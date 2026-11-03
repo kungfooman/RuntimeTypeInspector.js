@@ -148,6 +148,7 @@ if (value[i] === undefined && tupleOptional(element)) {
 }
 ```
 never `if (value[i] === undefined && tupleOptional(element)) return true;` on one line.
+Emitted code always rides the existing indentation flow: every injected statement starts on its own line at `this.spaces` after `numSpaces++`, closes dedent back through `numSpaces--`, and multi-line fragments join with `'\n' + this.spaces`, never with inline `' {'` or `'}'` glue. A single-line emission hides the nesting from the eye and from diffs, so a second statement lands on the wrong depth: split the wrapper into open, store, entry, and close parts and let the emitter place each on its own indented line.
 Inline ternaries and `?.`/`??` chains do not scale past one level: a nested
 ternary or a line that needs 130+ characters to say what it does is a branch
 the reader cannot see, so it becomes two named branches instead. The rule of

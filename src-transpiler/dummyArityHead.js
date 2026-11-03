@@ -1,12 +1,13 @@
 /**
  * Renders the invocation head that keeps overload arrow arity observable.
- * The stored call list feeds the inspection call, while the prefix keeps
- * wrapping transparent to length, name, async, and generator behavior.
+ * The stored call list feeds the inspection call, while the open head and
+ * entry keep wrapping transparent to length, name, async, and generator
+ * behavior. The emitter joins the parts with its own indentation flow.
  * @param {object} node - Arrow node to scan for collisions.
  * @param {number} arity - Original required parameter count.
  * @param {boolean} isAsync - Whether the arrow is async.
  * @param {boolean} isGenerator - Whether the arrow is a generator.
- * @returns {{head: string, prefix: string, store: string, callName: string, invocation: string}} Wrapper head.
+ * @returns {{head: string, open: string, entry: string, store: string, callName: string, invocation: string}} Wrapper head.
  * @example
  * import {parse} from '@babel/parser';
  * const ast = parse('(first, second = 1) => first');
@@ -42,7 +43,8 @@ function dummyArityHead(node, arity, isAsync, isGenerator) {
   const generatorMark = isGenerator ? ' * ' : '';
   const invocation = `${leading}${separator}...${restName}`;
   const wrapperHead = isAsync ? `async ${head}` : head;
-  const prefix = wrapperHead + ' => { ' + store + ' return (' + asyncMark + generatorMark;
-  return {head, prefix, store, callName, invocation};
+  const open = wrapperHead + ' => {';
+  const entry = 'return (' + asyncMark + generatorMark;
+  return {head, open, entry, store, callName, invocation};
 }
 export {dummyArityHead};

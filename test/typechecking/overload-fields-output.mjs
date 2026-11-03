@@ -4,108 +4,124 @@ const dynamicField = 'computed';
 class OverloadFields {
   /** @overload @param {number} value @returns {number} */
   /** @param {number|string} value */
-  action = ({["action"]: (rtiParam0, ...rtiOverloadRest) => { const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest]; return ((value) => {
+  action = ({["action"]: (rtiParam0, ...rtiOverloadRest) => {
+    const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest];
+    return ((value) => {
 
-  if (!inspectOverloads(rtiOverloadStore, [
-    {
-      "tuple": {
-        "type": "tuple",
-        "elements": [
-          {
-            "type": "tupleMember",
-            "name": "value",
-            "elementType": "number"
-          }
-        ]
-      },
-      "templates": {}
+    if (!inspectOverloads(rtiOverloadStore, [
+      {
+        "tuple": {
+          "type": "tuple",
+          "elements": [
+            {
+              "type": "tupleMember",
+              "name": "value",
+              "elementType": "number"
+            }
+          ]
+        },
+        "templates": {}
+      }
+    ], 'OverloadFields#action', 'arguments')) {
+      youCanAddABreakpointHere();
     }
-  ], 'OverloadFields#action', 'arguments')) {
-    youCanAddABreakpointHere();
-  }
-    return typeof value === 'number' ? value : 0;
-  })(rtiParam0, ...rtiOverloadRest)}})["action"];
-  /** @overload @param {number} value @returns {number} */
-
-  /** @param {number|string} value */
-
-  /** @overload @param {number} value @returns {number} */
-  /** @param {number|string} value */
-  static action = ({["action"]: (rtiParam0, ...rtiOverloadRest) => { const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest]; return ((value) => {
-
-  if (!inspectOverloads(rtiOverloadStore, [
-    {
-      "tuple": {
-        "type": "tuple",
-        "elements": [
-          {
-            "type": "tupleMember",
-            "name": "value",
-            "elementType": "number"
-          }
-        ]
-      },
-      "templates": {}
+      return typeof value === 'number' ? value : 0;
     }
-  ], 'OverloadFields.action', 'arguments')) {
-    youCanAddABreakpointHere();
-  }
-    return typeof value === 'number' ? value : 0;
-  })(rtiParam0, ...rtiOverloadRest)}})["action"];
+    )(rtiParam0, ...rtiOverloadRest);
+  }})["action"];
   /** @overload @param {number} value @returns {number} */
 
   /** @param {number|string} value */
 
   /** @overload @param {number} value @returns {number} */
   /** @param {number|string} value */
-  #privateAction = ({["#privateAction"]: (rtiParam0, ...rtiOverloadRest) => { const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest]; return ((value) => {
+  static action = ({["action"]: (rtiParam0, ...rtiOverloadRest) => {
+    const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest];
+    return ((value) => {
 
-  if (!inspectOverloads(rtiOverloadStore, [
-    {
-      "tuple": {
-        "type": "tuple",
-        "elements": [
-          {
-            "type": "tupleMember",
-            "name": "value",
-            "elementType": "number"
-          }
-        ]
-      },
-      "templates": {}
+    if (!inspectOverloads(rtiOverloadStore, [
+      {
+        "tuple": {
+          "type": "tuple",
+          "elements": [
+            {
+              "type": "tupleMember",
+              "name": "value",
+              "elementType": "number"
+            }
+          ]
+        },
+        "templates": {}
+      }
+    ], 'OverloadFields.action', 'arguments')) {
+      youCanAddABreakpointHere();
     }
-  ], 'OverloadFields##privateAction', 'arguments')) {
-    youCanAddABreakpointHere();
-  }
-    return typeof value === 'number' ? value : 0;
-  })(rtiParam0, ...rtiOverloadRest)}})["#privateAction"];
-  /** @overload @param {number} value @returns {number} */
-
-  /** @param {number|string} value */
-
-  /** @overload @param {number} value @returns {number} */
-  /** @param {number|string} value */
-  [overloadPropertyKey((dynamicField))] = ((rtiOverloadKey) => ({[rtiOverloadKey]: ({[rtiOverloadKey]: (rtiParam0, ...rtiOverloadRest) => { const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest]; return ((value) => {
-
-  if (!inspectOverloads(rtiOverloadStore, [
-    {
-      "tuple": {
-        "type": "tuple",
-        "elements": [
-          {
-            "type": "tupleMember",
-            "name": "value",
-            "elementType": "number"
-          }
-        ]
-      },
-      "templates": {}
+      return typeof value === 'number' ? value : 0;
     }
-  ], 'OverloadFields#dynamicField', 'arguments')) {
-    youCanAddABreakpointHere();
-  }
-    return typeof value === 'number' ? value : 0;
-  })(rtiParam0, ...rtiOverloadRest)}})[rtiOverloadKey]}))(overloadPropertyKey((dynamicField)))[overloadPropertyKey((dynamicField))];
+    )(rtiParam0, ...rtiOverloadRest);
+  }})["action"];
+  /** @overload @param {number} value @returns {number} */
+
+  /** @param {number|string} value */
+
+  /** @overload @param {number} value @returns {number} */
+  /** @param {number|string} value */
+  #privateAction = ({["#privateAction"]: (rtiParam0, ...rtiOverloadRest) => {
+    const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest];
+    return ((value) => {
+
+    if (!inspectOverloads(rtiOverloadStore, [
+      {
+        "tuple": {
+          "type": "tuple",
+          "elements": [
+            {
+              "type": "tupleMember",
+              "name": "value",
+              "elementType": "number"
+            }
+          ]
+        },
+        "templates": {}
+      }
+    ], 'OverloadFields##privateAction', 'arguments')) {
+      youCanAddABreakpointHere();
+    }
+      return typeof value === 'number' ? value : 0;
+    }
+    )(rtiParam0, ...rtiOverloadRest);
+  }})["#privateAction"];
+  /** @overload @param {number} value @returns {number} */
+
+  /** @param {number|string} value */
+
+  /** @overload @param {number} value @returns {number} */
+  /** @param {number|string} value */
+  [overloadPropertyKey((dynamicField))] = ((rtiOverloadKey) => ({[rtiOverloadKey]: ({[rtiOverloadKey]: (rtiParam0, ...rtiOverloadRest) => {
+    const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest];
+    return ((value) => {
+
+    if (!inspectOverloads(rtiOverloadStore, [
+      {
+        "tuple": {
+          "type": "tuple",
+          "elements": [
+            {
+              "type": "tupleMember",
+              "name": "value",
+              "elementType": "number"
+            }
+          ]
+        },
+        "templates": {}
+      }
+    ], 'OverloadFields#dynamicField', 'arguments')) {
+      youCanAddABreakpointHere();
+    }
+      return typeof value === 'number' ? value : 0;
+    }
+    )(rtiParam0, ...rtiOverloadRest);
+  }})[rtiOverloadKey]}))(overloadPropertyKey((dynamicField)))[overloadPropertyKey((dynamicField))];
   getPrivateAction() {
     return this.#privateAction;
   }
