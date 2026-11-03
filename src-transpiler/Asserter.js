@@ -777,7 +777,9 @@ class Asserter extends Stringifier {
     const {parent} = this;
     const fnNode = node.type === 'BlockStatement' ? parent : node;
     const loc = this.getName(node);
-    if (this.ignoreLocations.includes(loc)) return '// IGNORE RTI TYPE VALIDATIONS, KNOWN ISSUES\n';
+    if (this.ignoreLocations.includes(loc)) {
+      return '// IGNORE RTI TYPE VALIDATIONS, KNOWN ISSUES\n';
+    }
     const scopeTemplates = this.getScopeTemplates(node);
     const signatures = overloadSignatures(sections.overloads, fnNode, {
       expandType: this.expandType,

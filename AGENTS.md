@@ -139,6 +139,13 @@ The reported repro is the starting line, never the finish: every fix or feature 
 Keep functions short enough to document in one JSDoc block: when a branch
 needs its own explanation plus its own edge cases, it is a helper in its own
 module (one function per file), with its own `@example` and its own spec.
+Always brace control bodies, even single-line ones: a bare `if (cond) return x;` hides the branch from the eye and from diffs, so a second statement lands on the wrong line. The `curly` eslint rule stays off (too noisy to enable globally), so review enforces this; the only exempt positions are `else` and `else if` heads, never bare bodies:
+```js
+if (value[i] === undefined && tupleOptional(element)) {
+  return true;
+}
+```
+never `if (value[i] === undefined && tupleOptional(element)) return true;` on one line.
 Inline ternaries and `?.`/`??` chains do not scale past one level: a nested
 ternary or a line that needs 130+ characters to say what it does is a branch
 the reader cannot see, so it becomes two named branches instead. The rule of
