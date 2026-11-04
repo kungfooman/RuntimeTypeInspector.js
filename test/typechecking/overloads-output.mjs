@@ -248,44 +248,46 @@ choose(1, 'bad'); // warns
  * @returns {string|number}
  */
 
-const identity = ({["identity"]: (rtiParam0, ...rtiOverloadRest) => {
-  const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest];
-  return ((value) => {
+const identity = ({
+  ["identity"]: (rtiParam0, ...rtiOverloadRest) => {
+    const rtiOverloadStore = [rtiParam0, ...rtiOverloadRest];
+    return ((value) => {
 
-  if (!inspectOverloads(rtiOverloadStore, [
-    {
-      "tuple": {
-        "type": "tuple",
-        "elements": [
-          {
-            "type": "tupleMember",
-            "name": "text",
-            "elementType": "string"
-          }
-        ]
+    if (!inspectOverloads(rtiOverloadStore, [
+      {
+        "tuple": {
+          "type": "tuple",
+          "elements": [
+            {
+              "type": "tupleMember",
+              "name": "text",
+              "elementType": "string"
+            }
+          ]
+        },
+        "templates": {}
       },
-      "templates": {}
-    },
-    {
-      "tuple": {
-        "type": "tuple",
-        "elements": [
-          {
-            "type": "tupleMember",
-            "name": "value",
-            "elementType": "number"
-          }
-        ]
-      },
-      "templates": {}
+      {
+        "tuple": {
+          "type": "tuple",
+          "elements": [
+            {
+              "type": "tupleMember",
+              "name": "value",
+              "elementType": "number"
+            }
+          ]
+        },
+        "templates": {}
+      }
+    ], 'identity', 'arguments')) {
+      youCanAddABreakpointHere();
     }
-  ], 'identity', 'arguments')) {
-    youCanAddABreakpointHere();
+      return value;
+    }
+    )(rtiParam0, ...rtiOverloadRest);
   }
-    return value;
-  }
-  )(rtiParam0, ...rtiOverloadRest);
-}})["identity"];
+})["identity"];
 identity('x'); // ok
 
 identity(1); // ok

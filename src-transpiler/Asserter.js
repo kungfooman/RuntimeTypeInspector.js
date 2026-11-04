@@ -122,7 +122,9 @@ class Asserter extends Stringifier {
     }
     let out = '';
     if (keepName) {
-      out += '({' + nameKey + ': ';
+      out += '({\n';
+      this.numSpaces++;
+      out += this.spaces + nameKey + ': ';
     }
     out += wrapper.open + '\n';
     this.numSpaces++;
@@ -146,14 +148,16 @@ class Asserter extends Stringifier {
     this.numSpaces--;
     out += this.spaces + '}';
     if (keepName) {
-      out += '})' + nameKey;
+      this.numSpaces--;
+      out += '\n' + this.spaces + '})' + nameKey;
     }
     return out;
   }
   /**
-   * Builds the dummy wrapper and name key for an overloaded arrow. A static
-   * name or a captured computed key both keep the name-restoring wrapper;
-   * a bare arrow needs neither.
+   * Builds the dummy wrapper and static name key for an overloaded arrow.
+   * Static literal keys keep the object shell that restores quoting on
+   * Node 18 class fields; computed keys are captured outside the arrow by
+   * the property emitters, so they need no shell here.
    * @param {import("@babel/types").ArrowFunctionExpression} node - The Babel AST node.
    * @param {boolean} isAsync - Whether the arrow is async.
    * @param {boolean} isGenerator - Whether the arrow is a generator.
@@ -171,9 +175,8 @@ class Asserter extends Stringifier {
     if (wrapper) {
       arrowName = arrowInferredName(node, this.parent);
     }
-    const dynamicKey = node.rtiOverloadKeyName;
-    const keepName = wrapper && (arrowName !== null || dynamicKey);
-    const nameKey = keepName ? overloadNameKey(dynamicKey, arrowName) : '';
+    const keepName = Boolean(wrapper && arrowName !== null && !node.rtiOverloadKeyName);
+    const nameKey = keepName ? overloadNameKey(null, arrowName) : '';
     return {wrapper, keepName, nameKey};
   }
   /**
@@ -266,9 +269,18 @@ class Asserter extends Stringifier {
    */
   capturedClassField(node, key, arrow, keyName) {
     const prefix = node.static ? 'static ' : '';
-    const capture = `((${keyName}) => ({[${keyName}]: ${arrow}}))(overloadPropertyKey((${key})))`;
     const fieldKey = `overloadPropertyKey((${key}))`;
-    return `${this.spaces}${prefix}[${fieldKey}] = ${capture}[${fieldKey}];`;
+    const entry = `((${keyName}) => ({`;
+    const carrier = `[${keyName}]: ${arrow}`;
+    const close = '}))';
+    let out = `${this.spaces}${prefix}[${fieldKey}] = ${entry}\n`;
+    this.numSpaces++;
+    this.numSpaces++;
+    out += `${this.spaces}${carrier}\n`;
+    this.numSpaces--;
+    this.numSpaces--;
+    out += `${this.spaces}${close}(` + fieldKey + `)[` + fieldKey + `];`;
+    return out;
   }
   /**
    * Emits a class field, capturing the computed key when an overloaded
@@ -284,9 +296,7 @@ class Asserter extends Stringifier {
     }
     const keyName = freshKeyName(node);
     const key = this.toSource(node.key);
-    value.rtiOverloadKeyName = keyName;
     const arrow = this.toSource(value);
-    delete value.rtiOverloadKeyName;
     return this.capturedClassField(node, key, arrow, keyName);
   }
   /**
@@ -304,12 +314,19 @@ class Asserter extends Stringifier {
     }
     const keyName = freshKeyName(node);
     const key = this.toSource(node.key);
-    value.rtiOverloadKeyName = keyName;
     const arrow = this.toSource(value);
-    delete value.rtiOverloadKeyName;
-    const spreadKey = `...(${keyName} => ({[${keyName}]: ${arrow}}))`;
     const capturedKey = `overloadPropertyKey((${key}))`;
-    return `${this.spaces}${spreadKey}(${capturedKey})`;
+    const spreadOpen = `...(${keyName} => ({`;
+    const carrier = `[${keyName}]: ${arrow}`;
+    const spreadClose = '}))';
+    let out = `${this.spaces}${spreadOpen}\n`;
+    this.numSpaces++;
+    this.numSpaces++;
+    out += `${this.spaces}${carrier}\n`;
+    this.numSpaces--;
+    this.numSpaces--;
+    out += `${this.spaces}${spreadClose}(${capturedKey})`;
+    return out;
   }
   /**
    * @override
