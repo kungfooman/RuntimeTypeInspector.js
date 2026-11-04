@@ -39,6 +39,8 @@ export * from './JSDocAnnotator.js';
 export * from './nodeChildren.js';
 export * from './nodeIsFunctionLike.js';
 export * from './parseJSDoc.js';
+export * from './parseJSDocTags.js';
+export * from './tagRestElementType.js';
 export * from './parseJSDocSetter.js';
 export * from './parseJSDocTemplates.js';
 export * from './parseJSDocTypedef.js';
