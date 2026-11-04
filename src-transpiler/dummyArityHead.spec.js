@@ -47,6 +47,19 @@ function testOpenEntryKeepsAsync() {
   );
 }
 
+// Async plus generator marks join the same entry without doubling the head.
+function testOpenEntryKeepsAsyncGenerator() {
+  const src = '(value) => value';
+  const ast = parse(src);
+  const arrow = ast.program.body[0].expression;
+  const head = dummyArityHead(arrow, 1, true, true);
+  const wrapperHead = 'async (rtiParam0, ...rtiOverloadRest)';
+  return (
+    head.open === wrapperHead + ' => {' &&
+    head.entry === 'return (async  * '
+  );
+}
+
 // The invocation list forwards leading dummies before the stored rest.
 function testInvocationKeepsDummyOrder() {
   const src = '(value) => value';
@@ -56,4 +69,11 @@ function testInvocationKeepsDummyOrder() {
   return head.invocation === 'rtiParam0, ...rtiOverloadRest';
 }
 
-export const tests = [testHeadKeepsDummyOrder, testHeadAvoidsCollisions, testStoreKeepsDummyOrder, testOpenEntryKeepsAsync, testInvocationKeepsDummyOrder];
+export const tests = [
+  testHeadKeepsDummyOrder,
+  testHeadAvoidsCollisions,
+  testStoreKeepsDummyOrder,
+  testOpenEntryKeepsAsync,
+  testOpenEntryKeepsAsyncGenerator,
+  testInvocationKeepsDummyOrder,
+];

@@ -151,6 +151,135 @@ function testOverloadedAsyncArrowMetadata() {
   ));
 }
 
+// An async arrow awaits through the wrapper while the check runs first.
+function testOverloadedAsyncArrowAwaitThroughWrapper() {
+  const src = `/** @overload @param {number} value @returns {Promise<number>} */
+  /** @param {number|string} value */
+  const fetchNumber = async (value) => {
+    const resolved = await Promise.resolve(value);
+    return typeof resolved === 'number' ? resolved : -1;
+  };
+  const good = fetchNumber(1);
+  const bad = fetchNumber('bad');`;
+  return runChecks(src, 'good, bad, fetchNumber', (scope, {hits, posted}) => {
+    const goodValue = scope.good instanceof Promise;
+    const badValue = scope.bad instanceof Promise;
+    const ctorName = scope.fetchNumber.constructor.name;
+    return Promise.all([scope.good, scope.bad]).then(([goodResolved, badResolved]) => (
+      goodValue === true &&
+      badValue === true &&
+      goodResolved === 1 &&
+      badResolved === -1 &&
+      ctorName === 'AsyncFunction' &&
+      scope.fetchNumber.length === 1 &&
+      scope.fetchNumber.name === 'fetchNumber' &&
+      hits.length === 1 &&
+      posted.length === 1 &&
+      posted[0].loc === 'fetchNumber' &&
+      posted[0].name === 'arguments'
+    ));
+  });
+}
+
+// An async arrow forwards extra arguments through the stored rest carrier.
+function testOverloadedAsyncArrowRestForwards() {
+  const src = `/**
+   * @overload
+   * @param {number} first
+   * @param {number} second
+   * @param {...number} rest
+   * @returns {Promise<number>}
+   */
+  /** @param {number} first @param {number} second @param {...number} rest */
+  const sumAsync = async (first, second, ...rest) => first + second + rest.length;
+  const result = sumAsync(2, 3, 4);`;
+  return runChecks(src, 'result, sumAsync', (scope, {hits}) => (
+    scope.sumAsync.length === 2 &&
+    scope.sumAsync.name === 'sumAsync' &&
+    scope.sumAsync.constructor.name === 'AsyncFunction' &&
+    scope.result instanceof Promise &&
+    scope.result.then((value) => value === 6 && hits.length === 0)
+  ));
+}
+
+// An async arrow with a block body keeps lexical this through the wrapper.
+function testOverloadedAsyncArrowLexicalThis() {
+  const src = `const holder = {
+    factor: 10,
+    /** @overload @param {number} value @returns {Promise<number>} */
+    /** @param {number} value */
+    scaled: async function (value) { return this.factor + value; }
+  };
+  const result = holder.scaled.call({factor: 5}, 1);`;
+  return runChecks(src, 'result, holder', (scope, {hits}) => (
+    scope.result instanceof Promise &&
+    scope.result.then((value) => (
+      value === 6 &&
+      scope.holder.scaled.length === 1 &&
+      hits.length === 0
+    ))
+  ));
+}
+
+// An async generator arrow preserves its protocol through the wrapper.
+function testOverloadedAsyncGeneratorArrow() {
+  const src = `/** @overload @param {number} value @returns {AsyncGenerator<number>} */
+  /** @param {number} value */
+  const genNumbers = async function* (value) { yield value; yield value + 1; };
+  const iterator = genNumbers(1);`;
+  return runChecks(src, 'iterator, genNumbers', (scope, {hits}) => {
+    const ctorOk = scope.genNumbers.constructor.name === 'AsyncGeneratorFunction';
+    const lengthOk = scope.genNumbers.length === 1;
+    const nextOk = typeof scope.iterator.next === 'function';
+    const throwOk = typeof scope.iterator.throw === 'function';
+    return Promise.resolve(scope.iterator.next()).then((first) => (
+      ctorOk === true &&
+      lengthOk === true &&
+      nextOk === true &&
+      throwOk === true &&
+      first.value === 1 &&
+      first.done === false &&
+      hits.length === 0
+    ));
+  });
+}
+
+// A sync generator function keeps its protocol while the inline check runs first.
+function testOverloadedSyncGeneratorFunction() {
+  const src = `/** @overload @param {number} value @returns {Generator<number>} */
+  /** @param {number} value */
+  function* genValues(value) { yield value; yield value * 2; }
+  const iterator = genValues(3);
+  const first = iterator.next();
+  const second = iterator.next();
+  const done = iterator.next();`;
+  return runChecks(src, 'iterator, genValues, first, second, done', (scope, {hits}) => (
+    scope.genValues.constructor.name === 'GeneratorFunction' &&
+    scope.genValues.length === 1 &&
+    scope.first.value === 3 &&
+    scope.first.done === false &&
+    scope.second.value === 6 &&
+    scope.done.done === true &&
+    hits.length === 0
+  ));
+}
+
+// A sync generator warns before the first yield without consuming the iterable.
+function testOverloadedSyncGeneratorWarnsFirst() {
+  const src = `/** @overload @param {number} value @returns {Generator<number>} */
+  /** @param {number} value */
+  function* genChecked(value) { yield value; }
+  const iterator = genChecked('bad');
+  const first = iterator.next();`;
+  return runChecks(src, 'iterator, first', (scope, {hits, posted}) => (
+    hits.length === 1 &&
+    posted.length === 1 &&
+    posted[0].name === 'arguments' &&
+    scope.first.value === 'bad' &&
+    scope.first.done === false
+  ));
+}
+
 // Computed keys are coerced once in order, including symbols and nearby properties.
 function testOverloadedComputedPropertyMetadata() {
   const src = `const events = [];
@@ -462,6 +591,12 @@ export const tests = [
   testOverloadedArrowMetadata,
   testOverloadedPropertyArrowMetadata,
   testOverloadedAsyncArrowMetadata,
+  testOverloadedAsyncArrowAwaitThroughWrapper,
+  testOverloadedAsyncArrowRestForwards,
+  testOverloadedAsyncArrowLexicalThis,
+  testOverloadedAsyncGeneratorArrow,
+  testOverloadedSyncGeneratorFunction,
+  testOverloadedSyncGeneratorWarnsFirst,
   testOverloadedComputedPropertyMetadata,
   testOverloadedYieldedPropertyKey,
   testOverloadedReentrantComputedKeys,
