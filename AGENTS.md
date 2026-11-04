@@ -47,6 +47,8 @@ the PR without the session context; the description is the changelog.
 - Omit sections with nothing to say: no "rules added" section when no rule
   changed, no placeholder, no `(none)`. An empty section is noise that
   trains the reader to skip sections.
+- Cover the net change only, never the intra-branch churn: helpers created and deleted mid-branch, reverted experiments, and renamed-then-merged files are session scaffolding, not changelog. The reader needs the final point of view (what the branch holds versus its base), with each entry naming the surviving files and the proof. A file that never appears in a commit boundary does not appear in the doc.
+- Round the primer off with a worked demonstration: docs in, emission out, runtime behavior stated call by call (what passes, what warns, which metadata survives and why). Copy the emission verbatim from the working tree (`run-jsdoc.js --emit` on a minimal input), not from memory. The demo is the pedagogical pre-text made concrete: a future reader who never runs the branch should still see exactly what the transpiler does.
 
 ## Scratch files
 
@@ -139,6 +141,14 @@ The reported repro is the starting line, never the finish: every fix or feature 
 Keep functions short enough to document in one JSDoc block: when a branch
 needs its own explanation plus its own edge cases, it is a helper in its own
 module (one function per file), with its own `@example` and its own spec.
+Always brace control bodies, even single-line ones: a bare `if (cond) return x;` hides the branch from the eye and from diffs, so a second statement lands on the wrong line. The `curly` eslint rule stays off (too noisy to enable globally), so review enforces this; the only exempt positions are `else` and `else if` heads, never bare bodies:
+```js
+if (value[i] === undefined && tupleOptional(element)) {
+  return true;
+}
+```
+never `if (value[i] === undefined && tupleOptional(element)) return true;` on one line.
+Emitted code always rides the existing indentation flow: every injected statement starts on its own line at `this.spaces` after `numSpaces++`, closes dedent back through `numSpaces--`, and multi-line fragments join with `'\n' + this.spaces`, never with inline `' {'` or `'}'` glue. A single-line emission hides the nesting from the eye and from diffs, so a second statement lands on the wrong depth: split the wrapper into open, store, entry, and close parts and let the emitter place each on its own indented line.
 Inline ternaries and `?.`/`??` chains do not scale past one level: a nested
 ternary or a line that needs 130+ characters to say what it does is a branch
 the reader cannot see, so it becomes two named branches instead. The rule of
@@ -243,6 +253,7 @@ Safety relevant flags (option switches, validation verdicts, capability checks) 
 ## One function per file
 
 Each helper module in `src-runtime/` and `src-transpiler/` holds exactly one function, named after its file (e.g. `stripKey` lives in `src-runtime/stripKey.js`), plus only the module-local constants that function directly needs (e.g. its memoization cache). Spec files (`*.spec.js`) are exempt: they hold one test function per behavior under test.
+- A helper file must capture a meaning that can fail on its own: a branch, an edge case, a second caller. Never extract a single-expression forwarder with a single caller (an object literal builder, a string concatenation, a null guard around a forward): inline it at the call site and delete the file, its spec, and its barrel line. Precedent for deletion: `overloadSignature.js` held only `return {tuple, templates}` with one caller, and its spec merely asserted the record holds its parts, so stubbing it broke nothing the suite could name and the literal went inline at the call site. Precedent for keeping: `dummyArityHead.js` owns collision renaming across the dummy, rest, and store carriers with five specs that fail when the renaming breaks, and `overloadNameKey.js` owns the quoted-versus-captured key branch with one spec per side. The spec bite test below adjudicates every new extraction the same way: if the spec can only pin construction, the extraction captured no meaning and goes.
 - Every extracted helper carries a JSDoc block with a runnable `@example` showing a representative call and its result, so each module documents itself. When the example needs a complex type, build it through a real helper call (e.g. `expandType("number[]")`), never hand-write the internal object literal: hand-built literals rot when the shape changes and teach a construction path real code never uses. Plain literals stay literal: `deepEqualType({b: 1, a: 2}, {a: 2, b: 1})` needs no helper. `@example` blocks need no import for the builder: they document in barrel-global scope where every barrel export is available, so a runtime example calls `expandType(...)` directly with no `src-transpiler/` import (runtime code never imports the transpiler; the layer boundary stays one-way). Keep the hand-written shape as a `// input:` comment above the builder call, so the literal and its construction stay mentally connected:
 ```js
 * // input: {type: 'atom', atomType: 'K', optional: true}
@@ -252,7 +263,7 @@ Each helper module in `src-runtime/` and `src-transpiler/` holds exactly one fun
 - Compare structures with `deepEqualType`, never `JSON.stringify`: string comparison is key-order sensitive, so a spread that appends a key (`{...base, extra: 1}`) fails a hand-ordered literal for no behavioral reason. `deepEqualType` sorts keys via `canonicalize` and treats `false` and absent flags as equal, so the assertion tests shape, not serialization. Bind the expectation first (`const expected = {...}; return deepEqualType(actual, expected);`) to keep the assertion line short.
 - Family names beat directory grouping: when a helper belongs to a named family whose names mirror a dispatch table or a call convention (the 25 `substitute*` helpers registered by shorthand key in `substituteType.js`), it keeps the family name even when a noun-first grouping would read nicer in the listing. Majority wins (25 vs 3): renaming one member out of the family makes the table lie, while the grouping was aesthetic only. Precedent: `substituteAtom` stayed verb-first despite the `atom*` helpers next to it.
 - When extracting: move the function as-is (no behavior changes), point the old module's import at the new file, add an `export * from './<name>.js';` line to the package index (`src-runtime/index.js` or `src-transpiler/index.js`), update any specs importing from the old path, and finish with the full gate (`npm test` + `npm run lint`).
-- Every helper module ships with a `<name>.spec.js` next to it (same style: sync tests returning boolean, `export const tests`, wired into `test_runtime.js`): a function lands only with a spec that fails when the function is stubbed out. Pre-existing spec-less modules are backlog, not precedent.
+- Every helper module ships with a `<name>.spec.js` next to it (same style: sync tests returning boolean, `export const tests`, wired into `test_runtime.js`): a function lands only with a spec that fails when the function is stubbed out. Pre-existing spec-less modules are backlog, not precedent. The stub test is the extraction test: if stubbing the helper breaks nothing the suite can name, the file captured no meaning and the code belongs inline at the call site instead.
 - Exception: `src-runtime/jsx.js` stays whole (`genJsx`, `appendChildren` and the tag factories live together) because the factories call `appendChildren` and splitting them only trades a working module for a circular import.
 
 ## Plugins

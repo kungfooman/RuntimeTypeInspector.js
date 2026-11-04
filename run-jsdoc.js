@@ -8,6 +8,8 @@
  * type error to stdout (nothing is written, like `tsc --noEmit` — redirect
  * output yourself if you want it in a file). With `--emit`, the transpiled
  * source is additionally kept next to the input as `<basename>.rti.mjs`.
+ * Relative ESM `.mjs` and `.js` dependencies are also transpiled. `--emit`
+ * keeps their generated files alongside them so the retained entry remains executable.
  * Exits 1 when errors were reported.
  */
 import {basename, dirname, join, resolve} from 'path';

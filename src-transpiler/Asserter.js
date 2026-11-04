@@ -1,4 +1,15 @@
 import {annotateOptional   } from './annotateOptional.js';
+import {arrowArity} from './arrowArity.js';
+import {arrowInferredName} from './arrowInferredName.js';
+import {collectOverloadBlocks} from './collectOverloadBlocks.js';
+import {dummyArityHead} from './dummyArityHead.js';
+import {freshKeyName} from './freshKeyName.js';
+import {overloadArity} from './overloadArity.js';
+import {overloadIgnoreSet} from './overloadIgnoreSet.js';
+import {overloadInspectionArgs} from './overloadInspectionArgs.js';
+import {overloadNameKey} from './overloadNameKey.js';
+import {overloadSignatures} from './overloadSignatures.js';
+import {splitOverloadSections} from './splitOverloadSections.js';
 import {requiredTypeofs    } from './expandType.js';
 import {expandTypeDepFree  } from './expandTypeDepFree.js';
 import {harvestClassShape  } from './harvestClassShape.js';
@@ -84,13 +95,41 @@ class Asserter extends Stringifier {
    */
   ArrowFunctionExpression(node) {
     const {async, body, generator, params/*, extra*/} = node;
+    const {wrapper, keepName, nameKey} = this.overloadArrowHead(node, async, generator);
+    if (!wrapper) {
+      let plain = '';
+      if (async) {
+        plain += 'async ';
+      }
+      if (generator) {
+        plain += ' * ';
+      }
+      plain += this.FunctionDeclarationParams(params);
+      plain += ' =>';
+      if (body.type === 'BlockStatement') {
+        plain += this.toSource(body);
+      } else {
+        plain += ' {\n';
+        plain += this.generateTypeChecks(node);
+        const {spaces} = this;
+        this.numSpaces++;
+        plain += this.spaces + 'return ' + this.toSource(body) + ';\n';
+        this.numSpaces--;
+        plain += spaces;
+        plain += '}';
+      }
+      return plain;
+    }
     let out = '';
-    if (async) {
-      out += 'async ';
+    if (keepName) {
+      out += '({\n';
+      this.numSpaces++;
+      out += this.spaces + nameKey + ': ';
     }
-    if (generator) {
-      out += ' * ';
-    }
+    out += wrapper.open + '\n';
+    this.numSpaces++;
+    out += this.spaces + wrapper.store + '\n';
+    out += this.spaces + wrapper.entry;
     out += this.FunctionDeclarationParams(params);
     out += ' =>';
     if (body.type === 'BlockStatement') {
@@ -105,6 +144,188 @@ class Asserter extends Stringifier {
       out += spaces;
       out += '}';
     }
+    out += '\n' + this.spaces + ')(' + wrapper.invocation + ');\n';
+    this.numSpaces--;
+    out += this.spaces + '}';
+    if (keepName) {
+      this.numSpaces--;
+      out += '\n' + this.spaces + '})' + nameKey;
+    }
+    return out;
+  }
+  /**
+   * Builds the dummy wrapper and static name key for an overloaded arrow.
+   * Static literal keys keep the object shell that restores quoting on
+   * Node 18 class fields; computed keys are captured outside the arrow by
+   * the property emitters, so they need no shell here.
+   * @param {import("@babel/types").ArrowFunctionExpression} node - The Babel AST node.
+   * @param {boolean} isAsync - Whether the arrow is async.
+   * @param {boolean} isGenerator - Whether the arrow is a generator.
+   * @returns {{wrapper: object|null, keepName: boolean|null, nameKey: string}} Wrapper head.
+   */
+  overloadArrowHead(node, isAsync, isGenerator) {
+    const sections = splitOverloadSections(collectOverloadBlocks(node, this.parents));
+    let wrapper = null;
+    if (sections.overloads.length) {
+      wrapper = dummyArityHead(node, this.overloadArityOf(node), isAsync, isGenerator);
+      node.rtiOverloadArguments = wrapper.callName;
+      node.rtiOverloadWrapper = wrapper;
+    }
+    let arrowName = null;
+    if (wrapper) {
+      arrowName = arrowInferredName(node, this.parent);
+    }
+    const keepName = Boolean(wrapper && arrowName !== null && !node.rtiOverloadKeyName);
+    const nameKey = keepName ? overloadNameKey(null, arrowName) : '';
+    return {wrapper, keepName, nameKey};
+  }
+  /**
+   * Counts the dummy parameters an overload arrow wrapper needs.
+   * @param {import('@babel/types').ArrowFunctionExpression} node - Arrow node.
+   * @returns {number} Required parameter count, else zero.
+   */
+  overloadArityOf(node) {
+    return overloadArity(node, this.parents);
+  }
+  /**
+   * Decides whether a property keeps plain emission.
+   * @param {import('@babel/types').ObjectProperty} node - Object property.
+   * @param {import('@babel/types').Node|null} value - Property value.
+   * @returns {boolean} True when the property stays untouched.
+   */
+  keepPlainProperty(node, value) {
+    if (!node.computed) {
+      return true;
+    }
+    if (!value) {
+      return true;
+    }
+    if (value.type !== 'ArrowFunctionExpression') {
+      return true;
+    }
+    if (arrowInferredName(value, node) !== null) {
+      return true;
+    }
+    return this.overloadArityOf(value) === 0;
+  }
+  /**
+   * Decides whether a class field arrow keeps plain emission.
+   * @param {import('@babel/types').Node} node - Class field node.
+   * @param {import('@babel/types').Node|null} value - Field value.
+   * @returns {boolean} True when the field stays untouched.
+   */
+  keepPlainClassField(node, value) {
+    if (!node.computed) {
+      return true;
+    }
+    if (!value) {
+      return true;
+    }
+    if (value.type !== 'ArrowFunctionExpression') {
+      return true;
+    }
+    if (arrowInferredName(value, node) !== null) {
+      return true;
+    }
+    return !this.hasFieldOverloads(node, value);
+  }
+  /**
+   * Reports whether a class field carries overload documentation. A
+   * rest-only or zero-parameter arrow still needs the captured key: its
+   * wrapper has arity zero but its name still comes from the capture.
+   * Docs live on the field while params live on the arrow, so the field
+   * supplies the section lookup with the arrow appended for the walk-up.
+   * @param {import('@babel/types').Node} node - Class field node.
+   * @param {import('@babel/types').Node} value - Field arrow value.
+   * @returns {boolean} True when overload sections exist.
+   */
+  hasFieldOverloads(node, value) {
+    const parents = [...this.parents, value];
+    const sections = splitOverloadSections(collectOverloadBlocks(node, parents));
+    return sections.overloads.length > 0;
+  }
+  /**
+   * Counts the dummy parameters a class-field overload wrapper needs.
+   * Docs live on the field while params live on the arrow, so the field
+   * supplies the section lookup and the arrow supplies the parameter list.
+   * @param {import('@babel/types').Node} node - Class field node.
+   * @param {import('@babel/types').Node} value - Field arrow value.
+   * @returns {number} Required parameter count, else zero.
+   */
+  fieldOverloadArity(node, value) {
+    if (!this.hasFieldOverloads(node, value)) return 0;
+    return arrowArity(value);
+  }
+  /**
+   * Emits a class field whose computed arrow needs a captured key. The
+   * captured key carries the coerced field key into the value, so each
+   * instance evaluates the outer expression once and the inner object
+   * restores the inferred name on every engine.
+   * @param {import('@babel/types').Node} node - Class field node.
+   * @param {string} key - Source of the computed field key.
+   * @param {string} arrow - Source of the overloaded arrow.
+   * @param {string} keyName - Carrier holding the coerced key.
+   * @returns {string} Stringification of the field.
+   */
+  capturedClassField(node, key, arrow, keyName) {
+    const prefix = node.static ? 'static ' : '';
+    const fieldKey = `overloadPropertyKey((${key}))`;
+    const entry = `((${keyName}) => ({`;
+    const carrier = `[${keyName}]: ${arrow}`;
+    const close = '}))';
+    let out = `${this.spaces}${prefix}[${fieldKey}] = ${entry}\n`;
+    this.numSpaces++;
+    this.numSpaces++;
+    out += `${this.spaces}${carrier}\n`;
+    this.numSpaces--;
+    this.numSpaces--;
+    out += `${this.spaces}${close}(` + fieldKey + `)[` + fieldKey + `];`;
+    return out;
+  }
+  /**
+   * Emits a class field, capturing the computed key when an overloaded
+   * arrow needs it for its inferred name.
+   * @override
+   * @param {import("@babel/types").Node} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  ClassProperty(node) {
+    const {value} = node;
+    if (this.keepPlainClassField(node, value)) {
+      return super.ClassProperty(node);
+    }
+    const keyName = freshKeyName(node);
+    const key = this.toSource(node.key);
+    const arrow = this.toSource(value);
+    return this.capturedClassField(node, key, arrow, keyName);
+  }
+  /**
+   * Captures a dynamic object key outside the arrow that uses it. A spread
+   * preserves evaluation order and makes the captured key local to this one
+   * property, including when object creation is reentrant.
+   * @override
+   * @param {import('@babel/types').Node} node - Object property.
+   * @returns {string} Stringification of the property.
+   */
+  ObjectProperty(node) {
+    const {value} = node;
+    if (this.keepPlainProperty(node, value)) {
+      return super.ObjectProperty(node);
+    }
+    const keyName = freshKeyName(node);
+    const key = this.toSource(node.key);
+    const arrow = this.toSource(value);
+    const capturedKey = `overloadPropertyKey((${key}))`;
+    const spreadOpen = `...(${keyName} => ({`;
+    const carrier = `[${keyName}]: ${arrow}`;
+    const spreadClose = '}))';
+    let out = `${this.spaces}${spreadOpen}\n`;
+    this.numSpaces++;
+    this.numSpaces++;
+    out += `${this.spaces}${carrier}\n`;
+    this.numSpaces--;
+    this.numSpaces--;
+    out += `${this.spaces}${spreadClose}(${capturedKey})`;
     return out;
   }
   /**
@@ -167,6 +388,9 @@ class Asserter extends Stringifier {
     }
     let header = super.getHeader();
     const names = ['inspectIndexedAccess', 'inspectType', 'inspectTypeWithTemplates', 'youCanAddABreakpointHere', 'registerVariable'];
+    if (this.hasOverloadChecks || ast?.comments?.some((comment) => /@overload\b/.test(comment.value))) {
+      names.push('inspectOverloads', 'overloadPropertyKey');
+    }
     if (this.validateDivision) {
       names.push('validateDivision');
     }
@@ -337,7 +561,10 @@ class Asserter extends Stringifier {
    * @returns {Record<string, any>|undefined} asd
    */
   getJSDoc(node) {
-    const comment = this.getLeadingComment(node);
+    let comment = this.getLeadingComment(node);
+    const sections = splitOverloadSections(collectOverloadBlocks(node, this.parents));
+    if (sections.overloads.length) comment = sections.impl || '';
+    if (sections.overloads.length && !comment) return {templates: undefined, params: {}};
     if (!comment) {
       return;
     }
@@ -573,6 +800,43 @@ class Asserter extends Stringifier {
     });
   }
   /**
+   * Emits the runtime check block for one overload group. Defaults still
+   * need checking: the impl section documents unlisted params, so it joins
+   * the suppression set for the default pass.
+   * @param {Node} node - The Babel AST node for which to generate type checks.
+   * @param {*} sections - Split overload and implementation doc sections.
+   * @param {Set<string>|string|null} ignored - Suppressed parameter names.
+   * @returns {string} Overload check block plus default checks.
+   */
+  emitOverloadChecks(node, sections, ignored) {
+    const {parent} = this;
+    const fnNode = node.type === 'BlockStatement' ? parent : node;
+    const loc = this.getName(node);
+    if (this.ignoreLocations.includes(loc)) {
+      return '// IGNORE RTI TYPE VALIDATIONS, KNOWN ISSUES\n';
+    }
+    const scopeTemplates = this.getScopeTemplates(node);
+    const signatures = overloadSignatures(sections.overloads, fnNode, {
+      expandType: this.expandType,
+      scopeTemplates,
+      ignored,
+    });
+    this.hasOverloadChecks = true;
+    this.getStatsForNode(node).checked++;
+    const args = overloadInspectionArgs(fnNode, fnNode, fnNode.rtiOverloadWrapper || null);
+    const source = JSON.stringify(signatures, null, 2).replaceAll('\n', '\n' + this.spaces);
+    const atLoc = escapeName(loc);
+    let guard = '';
+    if (loc === 'ContactPoint#constructor' || loc === 'ContactResult#constructor' || loc === 'SingleContactResult#constructor') {
+      guard = 'arguments.length !== 0 && ';
+    }
+    let out = `\n${this.spaces}if (${guard}!inspectOverloads(${args}, ${source}, '${atLoc}', 'arguments')) {\n${this.spaces}  youCanAddABreakpointHere();\n${this.spaces}}\n`;
+    const implParams = sections.impl ? parseJSDoc(sections.impl, this.expandType) : undefined;
+    const documented = new Set([...Object.keys(implParams || {}), ...(ignored instanceof Set ? ignored : [])]);
+    out += this.emitDefaultChecks(node, this.collectDefaultChecks(node, documented), false);
+    return out;
+  }
+  /**
    * Generates a string containing type checks for a given Babel AST node based on associated JSDoc information.
    *
    * This function analyzes the node and its JSDoc annotations to construct runtime type
@@ -594,9 +858,13 @@ class Asserter extends Stringifier {
     // the rest validate normally. Bare `@ignoreRTI` silences everything,
     // including default-inferred checks.
     const leading = this.getLeadingComment(node);
-    const ignored = leading ? ignoredParamsIn(leading) : null;
+    const ignored = overloadIgnoreSet(leading);
     if (ignored === 'all') {
       return '';
+    }
+    const sections = splitOverloadSections(collectOverloadBlocks(node, this.parents));
+    if (sections.overloads.length) {
+      return this.emitOverloadChecks(node, sections, ignored);
     }
     const jsdoc = this.getJSDoc(node);
     // return '// ' + JSON.stringify(jsdoc) + '\n';
@@ -1155,7 +1423,7 @@ class Asserter extends Stringifier {
     return null;
   }
   /**
-   * @param {Node} node - The ClassMethod or ClassPrivateMethod node.
+   * @param {Node} node - The class method or field node.
    * @returns {string} Class-qualified name: `C#m` for instance members,
    * `C.m` for static ones, bare `m` when the class stays anonymous.
    */
@@ -1205,6 +1473,11 @@ class Asserter extends Stringifier {
    * object or declarator, legacy fallback otherwise.
    */
   getNameForArrowFunction(node) {
+    const index = this.parents.findLastIndex((parent) => parent === node);
+    const field = this.parents[index - 1];
+    if (field && (field.type === 'ClassProperty' || field.type === 'ClassPrivateProperty') && field.value === node) {
+      return this.getNameForClassMethod(field);
+    }
     // Arrow as object value (`arrow: (y) => y`): the property key plus the
     // owner chain name it, mirroring function expressions. Bare arrows
     // have no key of their own, so the walk result is already complete.
