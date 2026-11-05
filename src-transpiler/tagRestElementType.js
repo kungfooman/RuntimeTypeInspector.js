@@ -18,9 +18,7 @@
 import {isArrayNode} from './isArrayNode.js';
 function tagRestElementType(tag, type) {
   const markerInBraces = tag.typeRaw.trim().startsWith('...');
-  const taggedOptional = tag.optional === true;
-  const rejectedOptional = markerInBraces && taggedOptional;
-  if (rejectedOptional) {
+  if (markerInBraces && tag.optional === true) {
     return {elementType: 'never', dotDot: false};
   }
   if (markerInBraces && isArrayNode(type)) {

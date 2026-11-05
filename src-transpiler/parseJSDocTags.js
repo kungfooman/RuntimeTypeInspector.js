@@ -52,9 +52,8 @@ function parseJSDocTags(section) {
     const after = from.slice(nextIndex).trim();
     const cut = after.search(/@\w|\*\//);
     const head = (cut === -1 ? after : after.slice(0, cut)).trim();
-    const [headName, optional] = extractNameAndOptionality(head);
+    const [name, optional] = extractNameAndOptionality(head);
     const nameRaw = head;
-    const name = headName;
     const invalidRest = nameRaw.trimStart().startsWith('...');
     tags.push({typeRaw, nameRaw, invalidRest, optional, name});
   }

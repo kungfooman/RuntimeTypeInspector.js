@@ -29,19 +29,33 @@ import {expandTypeDepFree} from './expandTypeDepFree.js';
 function overloadToTuple(section, expandType = expandTypeDepFree, ignored = new Set()) {
   const params = parseJSDoc(section, expandType) || {};
   const tags = parseJSDocTags(section);
-  const restNames = new Set();
+  const tagsByName = new Map();
+  const droppedNames = new Set();
   for (const tag of tags) {
-    if (tag.invalidRest) {
-      restNames.add(tag.name.slice(3).trim());
+    if (tagsByName.has(tag.name) === false) {
+      tagsByName.set(tag.name, tag);
+    }
+    if (tag.invalidRest === true) {
+      droppedNames.add(tag.name.slice(3).trim());
     }
   }
   const elements = [];
   for (const [name, type] of Object.entries(params)) {
-    const tag = tags.find((candidate) => candidate.name === name);
-    const namelessDots = name === '' || name.startsWith('...');
+    const tag = tagsByName.get(name);
+    // A rest marker before the name (`{number[]} ...values`) is the
+    // TS1003/TS8032 error and is dropped. The parser splits the dots into
+    // phantom keys (`''` plus the stripped name), so the stripped name is
+    // dropped via the set while the empty key falls out with other
+    // untagged dot-garbage; untagged real names (inline `@overload @param`
+    // sections the line scanner skips) still pass.
     const tagInvalidRest = tag !== undefined && tag.invalidRest === true;
-    const poisonOrigin = tagInvalidRest || restNames.has(name) || (tag === undefined && namelessDots);
-    if (poisonOrigin) {
+    const phantomRest = tag === undefined && (name === '' || name.startsWith('...'));
+    const droppedRest = (
+      tagInvalidRest ||
+      droppedNames.has(name) ||
+      phantomRest
+    );
+    if (droppedRest) {
       continue;
     }
     const optional = isExpandedObject(type) && type.optional === true;
