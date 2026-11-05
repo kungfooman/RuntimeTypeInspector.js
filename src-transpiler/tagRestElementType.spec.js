@@ -1,7 +1,7 @@
 import {tagRestElementType} from './tagRestElementType.js';
 import {deepEqualType} from '../src-runtime/deepEqualType.js';
 
-// The `...T[]` spelling turns variadic over the array's element type.
+// The `...T[]` spelling turns variadic over the gathered element type.
 function testDocumentedRestUnwraps() {
   const actual = tagRestElementType({typeRaw: '...number[]', nameRaw: 'values', invalidRest: false, optional: false, name: 'values'}, {type: 'array', elementType: {type: 'array', elementType: 'number'}});
   return deepEqualType(actual, {elementType: {type: 'array', elementType: 'number'}, dotDot: true});
@@ -13,7 +13,7 @@ function testBareRestKeepsGathered() {
   return deepEqualType(actual, {elementType: 'number', dotDot: true});
 }
 
-// Nested arrays survive: `...T[][]` varies over the written element type.
+// Nested arrays flow through: `...T[][]` varies over the gathered element.
 function testNestedRestVariesOuter() {
   const actual = tagRestElementType({typeRaw: '...number[][]', nameRaw: 'values', invalidRest: false, optional: false, name: 'values'}, {type: 'array', elementType: {type: 'array', elementType: {type: 'array', elementType: 'number'}}});
   return deepEqualType(actual, {elementType: {type: 'array', elementType: {type: 'array', elementType: 'number'}}, dotDot: true});
@@ -31,4 +31,15 @@ function testPlainParamPassesThrough() {
   return deepEqualType(actual, {elementType: {type: 'array', elementType: 'number'}, dotDot: false});
 }
 
-export const tests = [testDocumentedRestUnwraps, testBareRestKeepsGathered, testNestedRestVariesOuter, testOptionalRestRejects, testPlainParamPassesThrough];
+// Parenthesized and generic array spellings flow through like `T[]`.
+function testParenAndGenericRestUnwrap() {
+  const first = tagRestElementType({typeRaw: '...(number[])', nameRaw: 'values', invalidRest: false, optional: false, name: 'values'}, {type: 'array', elementType: {type: 'array', elementType: 'number'}});
+  const second = tagRestElementType({typeRaw: '...Array<number>', nameRaw: 'values', invalidRest: false, optional: false, name: 'values'}, {type: 'array', elementType: {type: 'array', elementType: 'number'}});
+  const expected = {elementType: {type: 'array', elementType: 'number'}, dotDot: true};
+  return (
+    deepEqualType(first, expected) &&
+    deepEqualType(second, expected)
+  );
+}
+
+export const tests = [testDocumentedRestUnwraps, testBareRestKeepsGathered, testNestedRestVariesOuter, testOptionalRestRejects, testPlainParamPassesThrough, testParenAndGenericRestUnwrap];

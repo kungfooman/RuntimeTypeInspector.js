@@ -1,13 +1,13 @@
 /**
  * Resolves one overload tag's rest shape. A rest marker with an optional
  * name is the TS2370 error: the member becomes `never` so every call
- * warns. Other spellings never reject. A `...T[]` tag turns variadic
- * over `T[]`'s element type (the inner array is the written element
- * type); a `...T` tag turns variadic over the tag's expanded `T`, which
- * the expander already gathered into an array when `T` is a plain name
- * (`...number` reads as `number[]`). Array-element spellings of the bare
- * form (`...number[]`) keep their nesting, so trailing positions now
- * match tsc and leading lone positions reject like tsc does.
+ * warns. Otherwise the expanded type flows through untouched: a `...T`
+ * marker on an array type turns variadic over the gathered element, a
+ * plain type passes through fixed. The expander already gathered the
+ * element (`...number` reads as `number[]`, `...number[]` as
+ * `number[][]`), so no second expansion of the written text is needed.
+ * Non-array expansions (unions from `...T|U`, `rest` nodes from the
+ * TypeScript parser) pass through for the runtime to handle.
  * @example
  * tagRestElementType({typeRaw: '...number[]', nameRaw: 'values', invalidRest: false, optional: false, name: 'values'}, {type: 'array', elementType: 'number'});
  * // {elementType: 'number', dotDot: true}
@@ -15,6 +15,7 @@
  * @param {*} type - Expanded type for the parameter.
  * @returns {{elementType: *, dotDot: boolean}} Unwrapped member type and rest flag.
  */
+import {isArrayNode} from './isArrayNode.js';
 function tagRestElementType(tag, type) {
   const markerInBraces = tag.typeRaw.trim().startsWith('...');
   const taggedOptional = tag.optional === true;
@@ -22,25 +23,9 @@ function tagRestElementType(tag, type) {
   if (rejectedOptional) {
     return {elementType: 'never', dotDot: false};
   }
-  const restTarget = markerInBraces &&
-    type !== null &&
-    typeof type === 'object' &&
-    type.type === 'array';
-  if (restTarget === false) {
-    return {elementType: type, dotDot: false};
+  if (markerInBraces && isArrayNode(type)) {
+    return {elementType: type.elementType, dotDot: true};
   }
-  const written = tag.typeRaw.trim().slice(3).trim();
-  const writtenIsArray = written.endsWith('[]') || written.startsWith('Array<');
-  const inner = type.elementType;
-  if (writtenIsArray) {
-    const innerIsArray = inner !== null &&
-      typeof inner === 'object' &&
-      inner.type === 'array';
-    if (innerIsArray) {
-      return {elementType: inner, dotDot: true};
-    }
-    return {elementType: type, dotDot: false};
-  }
-  return {elementType: inner, dotDot: true};
+  return {elementType: type, dotDot: false};
 }
 export {tagRestElementType};
