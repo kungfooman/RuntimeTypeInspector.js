@@ -1,0 +1,50 @@
+{
+  "throws": [
+    {
+      "loc": "documented",
+      "name": "arguments",
+      "value": [
+        "x",
+        1,
+        "bad"
+      ]
+    },
+    {
+      "loc": "bare",
+      "name": "arguments",
+      "value": [
+        "x",
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    {
+      "loc": "optionalRest",
+      "name": "arguments",
+      "value": [
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    {
+      "loc": "misplaced",
+      "name": "arguments",
+      "value": [
+        1
+      ]
+    },
+    {
+      "loc": "misplaced",
+      "name": "arguments",
+      "value": [
+        [
+          1
+        ]
+      ]
+    }
+  ]
+}

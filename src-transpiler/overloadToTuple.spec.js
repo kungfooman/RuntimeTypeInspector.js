@@ -15,4 +15,25 @@ function testRestMember() {
   return deepEqualType(actual, expected);
 }
 
-export const tests = [testOptionalMember, testRestMember];
+// A bare rest marker gathers into the element itself (`...number`).
+function testBareRestMember() {
+  const actual = overloadToTuple('@param {...number} values');
+  const expected = {type: 'tuple', elements: [{type: 'tupleMember', name: 'values', elementType: 'number', dotDot: true}]};
+  return deepEqualType(actual, expected);
+}
+
+// An optional rest marker is the TS2370 error: no value validates.
+function testOptionalRestRejects() {
+  const actual = overloadToTuple('@param {...number[]} [values]');
+  const expected = {type: 'tuple', elements: [{type: 'tupleMember', name: 'values', elementType: 'never', optional: true}]};
+  return deepEqualType(actual, expected);
+}
+
+// A rest marker before the name is the TS1003 error: the member drops.
+function testMisplacedRestDrops() {
+  const actual = overloadToTuple('@param {number[]} ...values');
+  const expected = {type: 'tuple', elements: []};
+  return deepEqualType(actual, expected);
+}
+
+export const tests = [testOptionalMember, testRestMember, testBareRestMember, testOptionalRestRejects, testMisplacedRestDrops];

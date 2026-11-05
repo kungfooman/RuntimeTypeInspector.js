@@ -5,6 +5,9 @@
 Never commit, amend, push, or open pull requests unless the user explicitly
 asks for it ("commit", "push", "open a PR", and the like). Do the work,
 leave it staged or unstaged in the working tree, and report what changed.
+Never amend a commit that has already been pushed: a pushed commit is shared
+history, so follow up with a new commit instead. Never push to a remote
+without an explicit push request; committing is not pushing.
 When a commit is requested, inspect `git status` and `git diff` first, stage
 only the intended files, and write the message in the established repo style.
 

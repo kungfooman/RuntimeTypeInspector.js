@@ -200,6 +200,8 @@ const tests = [
   ...(await import('./src-transpiler/overloadSignatures.spec.js'        )).tests,
   ...(await import('./src-transpiler/splitOverloadSections.spec.js'      )).tests,
   ...(await import('./src-transpiler/overloadToTuple.spec.js'            )).tests,
+  ...(await import('./src-transpiler/parseJSDocTags.spec.js'          )).tests,
+  ...(await import('./src-transpiler/tagRestElementType.spec.js'      )).tests,
   ...(await import('./src-transpiler/arrowArity.spec.js'                 )).tests,
   ...(await import('./src-transpiler/arrowInferredName.spec.js'          )).tests,
   ...(await import('./src-runtime/inspectOverloads.spec.js'              )).tests,

@@ -228,6 +228,10 @@
     "output": "./test/typechecking/overload-fields-output.mjs"
   },
   {
+    "input": "./test/typechecking/overload-rest-input.mjs",
+    "output": "./test/typechecking/overload-rest-output.mjs"
+  },
+  {
     "input": "./test/typechecking/overloads-crossfile-input.mjs",
     "output": "./test/typechecking/overloads-crossfile-output.mjs"
   },
