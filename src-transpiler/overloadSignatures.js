@@ -1,5 +1,5 @@
 import {overloadToTuple} from './overloadToTuple.js';
-import {parseJSDocTemplates} from './parseJSDocTemplates.js';
+import {parseJSDocDocument} from './parseJSDocDocument.js';
 import {expandTypeDepFree} from './expandTypeDepFree.js';
 import {eraseIgnoredOverloadParams} from './eraseIgnoredOverloadParams.js';
 
@@ -20,7 +20,7 @@ function overloadSignatures(overloads, fnNode, options = {}) {
   return overloads.map((section) => {
     const tuple = overloadToTuple(section, parser, ignoreSet);
     if (ignored instanceof Set) eraseIgnoredOverloadParams(tuple, fnNode, ignored);
-    const own = parseJSDocTemplates(section, parser);
+    const {templates: own} = parseJSDocDocument(section, parser);
     const templates = {...scopeTemplates, ...own};
     return {tuple, templates};
   });

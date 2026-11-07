@@ -3,9 +3,7 @@ import {collectOverloadBlocks} from './collectOverloadBlocks.js';
 import {splitOverloadSections} from './splitOverloadSections.js';
 import {nodeChildren} from './nodeChildren.js';
 import {nodeIsFunctionLike} from './nodeIsFunctionLike.js';
-import {parseJSDoc} from './parseJSDoc.js';
-import {parseJSDocSetter} from './parseJSDocSetter.js';
-import {parseJSDocTemplates} from './parseJSDocTemplates.js';
+import {parseJSDocDocument} from './parseJSDocDocument.js';
 import {parseJSDocTypedef} from './parseJSDocTypedef.js';
 class JSDocAnnotator {
   /** @type {import('@babel/types').Node[]} */
@@ -279,16 +277,15 @@ class JSDocAnnotator {
       if (node.params.length !== 1) {
         console.warn('getJSDoc> setters require exactly one argument');
       }
-      const setterType = parseJSDocSetter(comment, this.expandType);
-      if (!setterType) {
+      const {setter} = parseJSDocDocument(comment, this.expandType);
+      if (!setter) {
         return;
       }
       const paramName = node.params[0].type === 'Identifier' ? node.params[0].name : 'value';
-      const params = {[paramName]: setterType};
+      const params = {[paramName]: setter};
       return {templates: undefined, params};
     }
-    const templates = parseJSDocTemplates(comment, this.expandType);
-    const params = parseJSDoc(comment, this.expandType);
+    const {templates, params} = parseJSDocDocument(comment, this.expandType);
     if (!templates && !params) {
       return;
     }

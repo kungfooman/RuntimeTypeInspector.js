@@ -1,8 +1,3 @@
-import {overloadToTuple} from './overloadToTuple.js';
-import {parseJSDocTemplates} from './parseJSDocTemplates.js';
-import {expandTypeDepFree} from './expandTypeDepFree.js';
-import {ignoredParamsIn} from './ignoredParamsIn.js';
-
 /**
  * Erases suppressed parameters from one overload tuple in place.
  * @param {*} tuple - Positional parameter tuple for one overload.

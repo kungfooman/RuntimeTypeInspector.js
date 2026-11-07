@@ -18,8 +18,7 @@ import {parseInlineParamType} from './parseInlineParamType.js';
 import {escapeName} from './escapeName.js';
 import {nodeIsFunctionLike } from './nodeIsFunctionLike.js';
 import {parseJSDoc         } from './parseJSDoc.js';
-import {parseJSDocSetter   } from './parseJSDocSetter.js';
-import {parseJSDocTemplates} from './parseJSDocTemplates.js';
+import {parseJSDocDocument} from './parseJSDocDocument.js';
 import {parseJSDocTypedef  } from './parseJSDocTypedef.js';
 import {markTypeofRequirements} from './markTypeofRequirements.js';
 import {ignoredParamsIn     } from './ignoredParamsIn.js';
@@ -586,17 +585,16 @@ class Asserter extends Stringifier {
         if (node.params.length !== 1) {
           this.warn("getJSDoc> setters require exactly one argument");
         }
-        const setterType = parseJSDocSetter(comment, this.expandType);
-        if (!setterType) {
+        const {setter} = parseJSDocDocument(comment, this.expandType);
+        if (!setter) {
           return;
         }
         const paramName = this.getNameOfParam(node.params[0]);
-        const params    = {[paramName]: setterType};
+        const params    = {[paramName]: setter};
         return {templates: undefined, params};
       }
     }
-    const templates = parseJSDocTemplates(comment, this.expandType);
-    const params = parseJSDoc(comment, this.expandType);
+    const {templates, params} = parseJSDocDocument(comment, this.expandType);
     if (!templates && !params) {
       return;
     }
@@ -629,10 +627,8 @@ class Asserter extends Stringifier {
         continue;
       }
       let templates;
-      if (ancestor.type === 'ClassDeclaration' || ancestor.type === 'ClassExpression') {
-        templates = this.classTemplatesOf(ancestor);
-      } else if (nodeIsFunctionLike(ancestor)) {
-        templates = this.functionTemplatesOf(ancestor);
+      if (ancestor.type === 'ClassDeclaration' || ancestor.type === 'ClassExpression' || nodeIsFunctionLike(ancestor)) {
+        templates = this.templatesOf(ancestor);
       }
       if (templates) {
         merged = {...merged, ...templates};
@@ -641,25 +637,34 @@ class Asserter extends Stringifier {
     return merged;
   }
   /**
-   * Reads the `@template` bindings off one class node.
-   * @param {Node} classDecl - The ClassDeclaration or ClassExpression node.
+   * Reads the `@template` bindings off one node: classes (declaration or
+   * expression, incl. `export` wrappers) and functions with their own
+   * `@template` tags, resolving the same wrappers the node's own JSDoc
+   * lookup uses.
+   * @param {Node} node - The class or function-like node.
    * @returns {Record<string, any>|undefined} Its templates or undefined.
    */
-  classTemplatesOf(classDecl) {
-    let leadingComments = classDecl.leadingComments;
-    if (!leadingComments) {
-      const exportNamed = this.findParentOfType(classDecl, 'ExportNamedDeclaration');
+  templatesOf(node) {
+    let leadingComments = node.leadingComments;
+    if (!leadingComments && (node.type === 'ClassDeclaration' || node.type === 'ClassExpression')) {
+      const exportNamed = this.findParentOfType(node, 'ExportNamedDeclaration');
       leadingComments = exportNamed?.leadingComments;
       if (!leadingComments) {
-        const exportDefault = this.findParentOfType(classDecl, 'ExportDefaultDeclaration');
+        const exportDefault = this.findParentOfType(node, 'ExportDefaultDeclaration');
         leadingComments = exportDefault?.leadingComments;
       }
-      if (!leadingComments && classDecl.type === 'ClassExpression') {
+      if (!leadingComments && node.type === 'ClassExpression') {
         // `/** @template K */ const Box = class {...}`: the comment lives on
         // the declaration, mirroring function-expression handling.
-        const varDecl = this.findParentOfType(classDecl, 'VariableDeclaration');
+        const varDecl = this.findParentOfType(node, 'VariableDeclaration');
         leadingComments = varDecl?.leadingComments;
       }
+    } else if (!leadingComments && node.type === 'FunctionDeclaration') {
+      leadingComments = this.findParentOfType(node, 'ExportNamedDeclaration')?.leadingComments;
+    } else if (!leadingComments && node.type === 'FunctionExpression') {
+      leadingComments = this.getLeadingCommentsNodeForFunctionExpression(node)?.leadingComments;
+    } else if (!leadingComments && node.type === 'ArrowFunctionExpression') {
+      leadingComments = this.getLeadingCommentsNodeForArrowFunctionExpression(node)?.leadingComments;
     }
     if (!leadingComments?.length) {
       return;
@@ -668,36 +673,7 @@ class Asserter extends Stringifier {
     if (lastComment.type !== 'CommentBlock') {
       return;
     }
-    return parseJSDocTemplates(lastComment.value, this.expandType);
-  }
-  /**
-   * Reads the `@template` bindings off one enclosing function: its own
-   * leading comment, resolving the same `export`/declarator wrappers the
-   * node's own JSDoc lookup uses.
-   * @param {Node} fnNode - The enclosing function-like node.
-   * @returns {Record<string, any>|undefined} Its templates or undefined.
-   */
-  functionTemplatesOf(fnNode) {
-    let leadingComments;
-    if (fnNode.type === 'FunctionDeclaration') {
-      leadingComments = fnNode.leadingComments ??
-        this.findParentOfType(fnNode, 'ExportNamedDeclaration')?.leadingComments;
-    } else if (fnNode.type === 'FunctionExpression') {
-      leadingComments = this.getLeadingCommentsNodeForFunctionExpression(fnNode)?.leadingComments;
-    } else if (fnNode.type === 'ArrowFunctionExpression') {
-      leadingComments = this.getLeadingCommentsNodeForArrowFunctionExpression(fnNode)?.leadingComments;
-    } else {
-      // ObjectMethod, ClassMethod, ClassPrivateMethod: docs sit on the node.
-      leadingComments = fnNode.leadingComments;
-    }
-    if (!leadingComments?.length) {
-      return;
-    }
-    const lastComment = leadingComments[leadingComments.length - 1];
-    if (lastComment.type !== 'CommentBlock') {
-      return;
-    }
-    return parseJSDocTemplates(lastComment.value, this.expandType);
+    return parseJSDocDocument(lastComment.value, this.expandType).templates;
   }
   /**
    * Retrieves the name of a parameter from a Babel AST node.
@@ -831,7 +807,7 @@ class Asserter extends Stringifier {
       guard = 'arguments.length !== 0 && ';
     }
     let out = `\n${this.spaces}if (${guard}!inspectOverloads(${args}, ${source}, '${atLoc}', 'arguments')) {\n${this.spaces}  youCanAddABreakpointHere();\n${this.spaces}}\n`;
-    const implParams = sections.impl ? parseJSDoc(sections.impl, this.expandType) : undefined;
+    const implParams = sections.impl ? parseJSDocDocument(sections.impl, this.expandType).params : undefined;
     const documented = new Set([...Object.keys(implParams || {}), ...(ignored instanceof Set ? ignored : [])]);
     out += this.emitDefaultChecks(node, this.collectDefaultChecks(node, documented), false);
     return out;

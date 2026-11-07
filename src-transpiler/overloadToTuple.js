@@ -1,5 +1,4 @@
-import {parseJSDoc} from './parseJSDoc.js';
-import {parseJSDocTags} from './parseJSDocTags.js';
+import {parseJSDocDocument} from './parseJSDocDocument.js';
 import {tagRestElementType} from './tagRestElementType.js';
 import {isArrayNode} from './isArrayNode.js';
 import {isExpandedObject} from './isExpandedObject.js';
@@ -27,35 +26,20 @@ import {expandTypeDepFree} from './expandTypeDepFree.js';
  * // {type: 'tuple', elements: [{type: 'tupleMember', name: 'x', elementType: 'number'}]}
  */
 function overloadToTuple(section, expandType = expandTypeDepFree, ignored = new Set()) {
-  const params = parseJSDoc(section, expandType) || {};
-  const tags = parseJSDocTags(section);
+  const {params, tags} = parseJSDocDocument(section, expandType);
   const tagsByName = new Map();
-  const droppedNames = new Set();
   for (const tag of tags) {
     if (tagsByName.has(tag.name) === false) {
       tagsByName.set(tag.name, tag);
     }
-    if (tag.invalidRest === true) {
-      droppedNames.add(tag.name.slice(3).trim());
-    }
   }
   const elements = [];
-  for (const [name, type] of Object.entries(params)) {
+  for (const [name, type] of Object.entries(params || {})) {
     const tag = tagsByName.get(name);
     // A rest marker before the name (`{number[]} ...values`) is the
-    // TS1003/TS8032 error and is dropped. The parser splits the dots into
-    // phantom keys (`''` plus the stripped name), so the stripped name is
-    // dropped via the set while the empty key falls out with other
-    // untagged dot-garbage; untagged real names (inline `@overload @param`
-    // sections the line scanner skips) still pass.
-    const tagInvalidRest = tag !== undefined && tag.invalidRest === true;
-    const phantomRest = tag === undefined && (name === '' || name.startsWith('...'));
-    const droppedRest = (
-      tagInvalidRest ||
-      droppedNames.has(name) ||
-      phantomRest
-    );
-    if (droppedRest) {
+    // TS1003/TS8032 error: the master scan flags it invalid and skips the
+    // phantom keys, so the member never materializes here.
+    if (tag !== undefined && tag.invalidRest === true) {
       continue;
     }
     const optional = isExpandedObject(type) && type.optional === true;

@@ -11,7 +11,7 @@
  * @example
  * tagRestElementType({typeRaw: '...number[]', nameRaw: 'values', invalidRest: false, optional: false, name: 'values'}, {type: 'array', elementType: 'number'});
  * // {elementType: 'number', dotDot: true}
- * @param {import('./parseJSDocTags.js').ParamTag} tag - Raw tag flags.
+ * @param {import('./parseJSDoc.js').ParamTag} tag - Raw tag flags.
  * @param {*} type - Expanded type for the parameter.
  * @returns {{elementType: *, dotDot: boolean}} Unwrapped member type and rest flag.
  */
