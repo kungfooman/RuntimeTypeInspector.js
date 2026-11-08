@@ -104,6 +104,20 @@ function parseJSDocNodes(src) {
       tags.push({tag, typeRaw: '', headRaw: head});
       continue;
     }
+    // Any other tag still takes a brace type when one opens right after
+    // it on the same line (mid-line `@returns {T}` after a param): the
+    // adjacency rule matches the braceTags path, only spaces/stars may
+    // sit between tag and brace, and no newline may.
+    let look = cursor.index + 1;
+    while (look < cursor.tokens.length && (cursor.tokens[look].kind === 'space' || cursor.tokens[look].kind === 'stars')) {
+      look += 1;
+    }
+    if (look < cursor.tokens.length && cursor.tokens[look].kind === 'lbrace') {
+      cursor.index = look;
+      const {typeRaw, headStart} = parseBraceType(cursor);
+      tags.push({tag, typeRaw, headRaw: sliceHead(cursor, headStart)});
+      continue;
+    }
     tags.push({tag, typeRaw: '', headRaw: ''});
     cursor.index += 1;
   }

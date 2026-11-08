@@ -150,7 +150,7 @@ function activateREPL() {
     .map(([key, val]) => data2code(key, val))
     .sort(compareBaseClasses)
     .join('\n');
-  const codeLocal = [getPreferredExpandType, expandTypeAll, docReaderAll].join('\n');
+  const codeLocal = [getPreferredExpandType, expandTypeAll, docReaderOne, docReaderAll].join('\n');
   const leftContent = aceEditorLeft.getValue().replaceAll('`', '\\`');
   const leftContentAsCode = `const jsdoc = \`${leftContent}\`;`;
   const out = [leftContentAsCode, code, codeLocal, getCodeForAction()].join('\n');
@@ -304,13 +304,13 @@ function actionJSDoc() {
   setRight(out);
 }
 /**
- * Lowers the left editor's JSDoc through both readers and shows both
+ * Lowers one JSDoc comment block through both readers and shows both
  * JSON documents plus the verdict: structurally equal, covered (merged
  * container granularity), or drift (with both sides inline).
- * @param {string} comment - JSDoc comment text.
- * @returns {string} Right-editor text.
+ * @param {string} comment - One `/** *\/` comment block.
+ * @returns {string} Right-editor text for the block.
  */
-function docReaderAll(comment) {
+function docReaderOne(comment) {
   const bare = comment.replace(/^\/\*\*\s?/, '').replace(/\s?\*\/$/, '');
   const depfree = docReaderDepFree(bare);
   let both = '// docReaderDepFree:\n' + JSON.stringify(depfree, null, 2) + '\n';
@@ -324,10 +324,24 @@ function docReaderAll(comment) {
     } else {
       both += '// verdict: DRIFT';
     }
-  } catch (e) {
-    both += '// docReaderTS threw: ' + e + '\n';
+  } catch (error) {
+    both += '// docReaderTS threw: ' + error + '\n';
   }
   return both;
+}
+/**
+ * Runs both readers over every `/** *\/` block in the left editor: a
+ * whole JS file feeds one document per comment instead of one document
+ * for the file, so each block gets its own verdict.
+ * @param {string} source - Left-editor text (JS source or bare JSDoc).
+ * @returns {string} Right-editor text.
+ */
+function docReaderAll(source) {
+  const blocks = source.match(/\/\*\*[\s\S]*?\*\//g);
+  if (blocks === null) {
+    return docReaderOne(source);
+  }
+  return blocks.map((block, index) => '// block ' + (index + 1) + ':\n' + docReaderOne(block)).join('\n');
 }
 function actionDocReader() {
   setRight(docReaderAll(getLeft()));
@@ -577,6 +591,7 @@ export {
   compareAST,
   getPreferredExpandType,
   expandTypeAll,
+  docReaderOne,
   docReaderAll,
   runAction,
   data2code,

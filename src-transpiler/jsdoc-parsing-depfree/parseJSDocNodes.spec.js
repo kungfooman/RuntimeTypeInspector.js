@@ -54,6 +54,17 @@ function testParserRecoversUnbalanced() {
   );
 }
 
+// Mid-line `@returns {T}` after a param keeps its brace type, matching
+// tsc which binds the return whatever line it sits on.
+function testParserKeepsMidlineReturnType() {
+  const actual = parseJSDocNodes('@param {number} a @param {number} b @returns {number[]}');
+  return (
+    actual.length === 3 &&
+    actual[2].tag === '@returns' &&
+    actual[2].typeRaw === 'number[]'
+  );
+}
+
 export const tests = [
   testParserSplitsRows,
   testParserSkipsProse,
@@ -61,4 +72,5 @@ export const tests = [
   testParserChainsBareTemplate,
   testParserDeclinesBareTypes,
   testParserRecoversUnbalanced,
+  testParserKeepsMidlineReturnType,
 ];
