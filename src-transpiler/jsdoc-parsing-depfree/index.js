@@ -1,6 +1,7 @@
 export * from './braceDepth.js';
 export * from './canonicalDocCompare.js';
 export * from './canonicalDocRoundTrip.js';
+export * from './docReaderDepFree.js';
 export * from './collectOverloadBlocks.js';
 export * from './extractNameAndOptionality.js';
 export * from './foldParam.js';

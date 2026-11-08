@@ -3,6 +3,10 @@ import {ace} from 'ace-builds';
 import ts from 'typescript';
 import {
   parseJSDoc,
+  docReaderDepFree,
+  docReaderTS,
+  canonicalDocEqual,
+  canonicalDocCovers,
   addTypeChecks,
   expandType,
   expandTypeBabelTS,
@@ -100,6 +104,8 @@ function getCodeForAction() {
       return "const ret = addTypeChecks(jsdoc, {expandType: getPreferredExpandType()});\nsetRight(ret);";
     case 'jsdoc':
       return "const ret = parseJSDoc(jsdoc);\nsetRight(JSON.stringify(ret, null, 2));";
+    case 'docreader':
+      return "setRight(docReaderAll(jsdoc));";
     case 'code2ast2code':
       return "const ret = code2ast2code(jsdoc);\nsetRight(ret);";
     case 'ts2js':
@@ -144,7 +150,7 @@ function activateREPL() {
     .map(([key, val]) => data2code(key, val))
     .sort(compareBaseClasses)
     .join('\n');
-  const codeLocal = [getPreferredExpandType, expandTypeAll].join('\n');
+  const codeLocal = [getPreferredExpandType, expandTypeAll, docReaderAll].join('\n');
   const leftContent = aceEditorLeft.getValue().replaceAll('`', '\\`');
   const leftContentAsCode = `const jsdoc = \`${leftContent}\`;`;
   const out = [leftContentAsCode, code, codeLocal, getCodeForAction()].join('\n');
@@ -297,6 +303,35 @@ function actionJSDoc() {
   }
   setRight(out);
 }
+/**
+ * Lowers the left editor's JSDoc through both readers and shows both
+ * JSON documents plus the verdict: structurally equal, covered (merged
+ * container granularity), or drift (with both sides inline).
+ * @param {string} comment - JSDoc comment text.
+ * @returns {string} Right-editor text.
+ */
+function docReaderAll(comment) {
+  const bare = comment.replace(/^\/\*\*\s?/, '').replace(/\s?\*\/$/, '');
+  const depfree = docReaderDepFree(bare);
+  let both = '// docReaderDepFree:\n' + JSON.stringify(depfree, null, 2) + '\n';
+  try {
+    const fromTs = docReaderTS(bare);
+    both += '// docReaderTS:\n' + JSON.stringify(fromTs, null, 2) + '\n';
+    if (canonicalDocEqual(depfree, fromTs)) {
+      both += '// verdict: SAME';
+    } else if (canonicalDocCovers(depfree, fromTs)) {
+      both += '// verdict: SAME (covered: container + sub-rows)';
+    } else {
+      both += '// verdict: DRIFT';
+    }
+  } catch (e) {
+    both += '// docReaderTS threw: ' + e + '\n';
+  }
+  return both;
+}
+function actionDocReader() {
+  setRight(docReaderAll(getLeft()));
+}
 function actionTypeChecking() {
   const expandType = getPreferredExpandType();
   const filename = 'repl.js';
@@ -358,6 +393,9 @@ async function runAction() {
     case 'jsdoc':
       await actionJSDoc();
       break;
+    case 'docreader':
+      await actionDocReader();
+      break;
     case 'typechecking':
       await actionTypeChecking();
       break;
@@ -400,7 +438,7 @@ async function insertTypes() {
   aceEditorRight.clearSelection(); // setValue() selects everything, so unselect it now
 }
 /**
- * @typedef {'typechecking'|'code2ast2code'|'ast'|'ast-annotator'|'ast-ts'|'jsdoc'|'eval'|'expand-type'|'ast2wat'} Action
+ * @typedef {'typechecking'|'code2ast2code'|'ast'|'ast-annotator'|'ast-ts'|'jsdoc'|'docreader'|'eval'|'expand-type'|'ast2wat'} Action
  */
 /** @returns {Action} */
 const getAction = () => selectAction.value;
@@ -539,6 +577,7 @@ export {
   compareAST,
   getPreferredExpandType,
   expandTypeAll,
+  docReaderAll,
   runAction,
   data2code,
   activateREPL,
