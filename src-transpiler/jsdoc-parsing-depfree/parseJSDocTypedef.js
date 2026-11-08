@@ -1,6 +1,6 @@
 import {extractNameAndOptionality} from './extractNameAndOptionality.js';
-import {annotateOptional     } from './annotateOptional.js';
-import {extractCurlyContent } from './extractCurlyContent.js';
+import {annotateOptional     } from '../annotateOptional.js';
+import {extractCurlyContent } from '../extractCurlyContent.js';
 import {braceDepth           } from './braceDepth.js';
 /**
  * Parses JSDoc comments to extract and expand typedefs and their associated properties.

@@ -1,10 +1,10 @@
 import {expandTypeDepFree} from './expandTypeDepFree.js';
-import {collectOverloadBlocks} from './collectOverloadBlocks.js';
-import {splitOverloadSections} from './splitOverloadSections.js';
+import {collectOverloadBlocks} from './jsdoc-parsing-depfree/collectOverloadBlocks.js';
+import {splitOverloadSections} from './jsdoc-parsing-depfree/splitOverloadSections.js';
 import {nodeChildren} from './nodeChildren.js';
 import {nodeIsFunctionLike} from './nodeIsFunctionLike.js';
-import {parseJSDocDocument} from './parseJSDocDocument.js';
-import {parseJSDocTypedef} from './parseJSDocTypedef.js';
+import {parseJSDocDocument} from './jsdoc-parsing-depfree/parseJSDocDocument.js';
+import {parseJSDocTypedef} from './jsdoc-parsing-depfree/parseJSDocTypedef.js';
 class JSDocAnnotator {
   /** @type {import('@babel/types').Node[]} */
   parents = [];

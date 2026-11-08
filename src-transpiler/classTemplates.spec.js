@@ -1,4 +1,4 @@
-import {parseJSDocDocument} from './parseJSDocDocument.js';
+import {parseJSDocDocument} from './jsdoc-parsing-depfree/parseJSDocDocument.js';
 import {runChecks} from './runChecks.js';
 import {noneUnchecked} from './noneUnchecked.js';
 // `@template {Constraint} [K=Default]` keeps the constraint: the default

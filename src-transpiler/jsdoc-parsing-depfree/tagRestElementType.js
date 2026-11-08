@@ -15,7 +15,7 @@
  * @param {*} type - Expanded type for the parameter.
  * @returns {{elementType: *, dotDot: boolean}} Unwrapped member type and rest flag.
  */
-import {isArrayNode} from './isArrayNode.js';
+import {isArrayNode} from '../isArrayNode.js';
 function tagRestElementType(tag, type) {
   const markerInBraces = tag.typeRaw.trim().startsWith('...');
   if (markerInBraces && tag.optional === true) {

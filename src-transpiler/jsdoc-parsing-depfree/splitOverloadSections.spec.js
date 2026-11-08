@@ -1,5 +1,5 @@
 import {splitOverloadSections} from './splitOverloadSections.js';
-import {deepEqualType} from '../src-runtime/deepEqualType.js';
+import {deepEqualType} from '../../src-runtime/deepEqualType.js';
 
 // Stacked blocks preserve the implementation separately from the signatures.
 function testStackedSections() {

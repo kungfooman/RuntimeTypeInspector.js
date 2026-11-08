@@ -1,5 +1,5 @@
 import {extractCurlyContent} from './extractCurlyContent.js';
-import {parseJSDocDocument} from './parseJSDocDocument.js';
+import {parseJSDocDocument} from './jsdoc-parsing-depfree/parseJSDocDocument.js';
 import {inferTypeFromDefault} from './inferTypeFromDefault.js';
 // Declaration-site ranks: the field always beats constructor assignments,
 // like TSC where the declared type wins over assigned values.

@@ -1,7 +1,7 @@
-import {annotateOptional} from "./annotateOptional.js";
-import {isUnionNode} from "./isUnionNode.js";
-import {isArrayNode} from "./isArrayNode.js";
-import {isObjectNode} from "./isObjectNode.js";
+import {annotateOptional} from "../annotateOptional.js";
+import {isUnionNode} from "../isUnionNode.js";
+import {isArrayNode} from "../isArrayNode.js";
+import {isObjectNode} from "../isObjectNode.js";
 /** @import {ExpandedType} from './expandedType.js' */
 /** @import {ParamTag} from './parseJSDoc.js' */
 

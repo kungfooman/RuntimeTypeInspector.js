@@ -1,4 +1,4 @@
-import {expandTypeDepFree} from "./expandTypeDepFree.js";
+import {expandTypeDepFree} from "../expandTypeDepFree.js";
 /** @import {ExpandType, ExpandTypeReturnType} from './parseJSDoc.js' */
 
 /**

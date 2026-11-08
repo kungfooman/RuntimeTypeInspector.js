@@ -1,5 +1,5 @@
-import {parseJSDocDocument} from './parseJSDocDocument.js';
-import {tagRestElementType} from './tagRestElementType.js';
+import {parseJSDocDocument} from './jsdoc-parsing-depfree/parseJSDocDocument.js';
+import {tagRestElementType} from './jsdoc-parsing-depfree/tagRestElementType.js';
 import {isArrayNode} from './isArrayNode.js';
 import {isExpandedObject} from './isExpandedObject.js';
 import {expandTypeDepFree} from './expandTypeDepFree.js';

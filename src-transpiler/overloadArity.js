@@ -1,6 +1,6 @@
 import {arrowArity} from './arrowArity.js';
-import {collectOverloadBlocks} from './collectOverloadBlocks.js';
-import {splitOverloadSections} from './splitOverloadSections.js';
+import {collectOverloadBlocks} from './jsdoc-parsing-depfree/collectOverloadBlocks.js';
+import {splitOverloadSections} from './jsdoc-parsing-depfree/splitOverloadSections.js';
 
 /**
  * Counts the leading dummy parameters an overload wrapper needs.

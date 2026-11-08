@@ -1,4 +1,4 @@
-import {nodeIsFunctionLike} from './nodeIsFunctionLike.js';
+import {nodeIsFunctionLike} from '../nodeIsFunctionLike.js';
 
 /**
  * Finds documentation blocks attached to a function or its declaration.

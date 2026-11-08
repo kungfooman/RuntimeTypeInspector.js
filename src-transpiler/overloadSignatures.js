@@ -1,5 +1,5 @@
 import {overloadToTuple} from './overloadToTuple.js';
-import {parseJSDocDocument} from './parseJSDocDocument.js';
+import {parseJSDocDocument} from './jsdoc-parsing-depfree/parseJSDocDocument.js';
 import {expandTypeDepFree} from './expandTypeDepFree.js';
 import {eraseIgnoredOverloadParams} from './eraseIgnoredOverloadParams.js';
 

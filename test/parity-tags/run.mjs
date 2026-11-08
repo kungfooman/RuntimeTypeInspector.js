@@ -19,10 +19,10 @@
  */
 import ts from 'typescript';
 import {canonicalize} from '../../src-runtime/canonicalize.js';
-import {parseJSDocNodes} from '../../src-transpiler/parseJSDocNodes.js';
-import {parseJSDocDocument} from '../../src-transpiler/parseJSDocDocument.js';
-import {makeParamTag} from '../../src-transpiler/makeParamTag.js';
-import {splitOverloadSections} from '../../src-transpiler/splitOverloadSections.js';
+import {parseJSDocNodes} from '../../src-transpiler/jsdoc-parsing-depfree/parseJSDocNodes.js';
+import {parseJSDocDocument} from '../../src-transpiler/jsdoc-parsing-depfree/parseJSDocDocument.js';
+import {makeParamTag} from '../../src-transpiler/jsdoc-parsing-depfree/makeParamTag.js';
+import {splitOverloadSections} from '../../src-transpiler/jsdoc-parsing-depfree/splitOverloadSections.js';
 
 /**
  * Canonical JSDoc document schema. Both sides produce this shape; the
