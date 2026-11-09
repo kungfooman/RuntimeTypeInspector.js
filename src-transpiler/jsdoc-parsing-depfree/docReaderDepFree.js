@@ -1,54 +1,9 @@
-import {expandTypeDepFree} from '../expandTypeDepFree.js';
 import {parseJSDocNodes} from './parseJSDocNodes.js';
-import {parseJSDocDocument} from './parseJSDocDocument.js';
 import {makeParamTag} from './makeParamTag.js';
 import {splitOverloadSections} from './splitOverloadSections.js';
-
-/**
- * Reads one parameter node to the shared schema row. The name is the
- * validated bind name (empty when the tag binds nothing, like tsc's
- * empty name): raw head text is diagnostics, not parity business.
- * @param {{name: string, optional: boolean, invalidRest: boolean}} tag - Raw depfree param tag.
- * @param {string} typeRaw - Brace text (the tag's own, for flat rows).
- * @returns {import('./canonicalDoc.js').CanonicalParam} Canonical parameter.
- */
-function docParamTag(tag, typeRaw) {
-  return {
-    name: tag.name.split(/\s+/)[0].split('=')[0] ?? '',
-    bracketed: tag.optional === true,
-    type: typeRaw,
-    dropped: tag.invalidRest === true || tag.name === '',
-    merged: false,
-  };
-}
-
-/**
- * Lowers one template node to the shared schema row: the head splits
- * into binding name and `= default`, the brace text is the constraint.
- * @param {{typeRaw: string, headRaw: string}} node - Raw tag node.
- * @returns {{name: string, constraint: string, default: string}} Canonical template.
- */
-function docTemplateNode(node) {
-  const head = node.headRaw.trim().split(/\s+/)[0] ?? '';
-  const match = head.match(/^\[([A-Za-z_$][\w$]*)(?:=(.*))?\]$/);
-  if (match) {
-    return {name: match[1], constraint: node.typeRaw, default: (match[2] ?? '').trim()};
-  }
-  return {name: head, constraint: node.typeRaw, default: ''};
-}
-
-/**
- * Lowers one overload section to the shared schema entry: each section's
- * params (names, brackets, brace text) and return type agree.
- * @param {string} section - One overload section.
- * @returns {import('./canonicalDoc.js').CanonicalOverload} Canonical overload entry.
- */
-function docOverloadSection(section) {
-  const sectionDoc = parseJSDocDocument(section);
-  const params = (sectionDoc.tags ?? []).map((tag) => docParamTag(tag, tag.typeRaw));
-  const returns = section.match(/@returns?\s*\{([^}]*)\}/)?.[1] ?? '';
-  return {params, returns};
-}
+import {docParamTag} from './docParamTag.js';
+import {docTemplateNode} from './docTemplateNode.js';
+import {docOverloadSection} from './docOverloadSection.js';
 
 /**
  * Lowers one JSDoc comment through the dependency-free reader to the
