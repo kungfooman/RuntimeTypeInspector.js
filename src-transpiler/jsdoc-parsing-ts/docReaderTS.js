@@ -52,6 +52,13 @@ function docReaderTS(comment) {
       continue;
     }
     if (tag.kind === ts.SyntaxKind.JSDocTypeTag) {
+      // tsc's own text is the contract: `stripTsBraces` unwraps the type
+      // node — stripping the cast tail's orphan `;` when the braces
+      // balance without it (the svelte shape `...; }`), re-balancing the
+      // recovery tail when they do not — and `recoverTildeTag` restores
+      // tilde spellings. The strip never fires on a function tail: an
+      // already-balanced `() => void & {...}` with no `;` keeps its own
+      // `}`.
       const parsed = tag.typeExpression ? stripTsBraces(tag.typeExpression.getText()) : '';
       doc.returns = recoverTildeTag(tag.getText?.(), parsed)?.typeRaw ?? parsed;
     }

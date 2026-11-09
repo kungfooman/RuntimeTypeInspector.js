@@ -157,6 +157,13 @@ const cases = [
   {comment: '/**\n * @template {Map<any, any>} [T=Map<any, any>]\n * @param {T} x\n */'},
   // Braceless `@type` words: tsc reads the head word as the type.
   {comment: '/** @type Expression */'},
+  // Braceless `@type` clauses: tsc reparses `&`/`|` after the word and
+  // splits trailing prose into the comment.
+  {comment: '/** @type Foo & Bar */'},
+  {comment: '/** @type Foo & Bar some prose here */'},
+  {comment: '/** @type Foo | Bar | Baz */'},
+  {comment: '/** @type HTMLElement & { object: { test: true }; } */'},
+  {comment: '/** @type HTMLAnchorElement & { object: { test: true }; } */'},
   // Mid-line `@type`: tsc attaches it wherever it sits.
   {comment: '/**\n * Sources note @type {Set<Value>}\n */'},
   {comment: '/**\n * @readonly @type {() => string}\n */'},

@@ -1,5 +1,6 @@
 import {parseJSDocNodes} from './parseJSDocNodes.js';
 import {makeParamTag} from './makeParamTag.js';
+import {readUnbracedType} from './readUnbracedType.js';
 import {splitOverloadSections} from './splitOverloadSections.js';
 import {docParamTag} from './docParamTag.js';
 import {docTemplateNode} from './docTemplateNode.js';
@@ -12,7 +13,7 @@ import {docOverloadSection} from './docOverloadSection.js';
  * JSON-serializable data only. This is the default reader: no TS
  * install, same token scan the fold uses, so the rows and the runtime
  * types can never disagree. A lone `@type` with no node behind it still
- * reads (mid-line braced `{T}` or a braceless class word tsc attaches):
+ * reads (mid-line braced `{T}` or a braceless clause tsc attaches):
  * the brace scan balances, so nested generics read whole.
  * @example
  * docReaderDepFree('@param {number} x');
@@ -52,7 +53,11 @@ function docReaderDepFree(comment) {
     } else if (node.tag === '@returns' || node.tag === '@return') {
       doc.returns = node.typeRaw;
     } else if (node.tag === '@type') {
-      doc.returns = node.typeRaw;
+      // The node layer reads the clause through `readUnbracedType`; the
+      // fallback only fires when the node bound nothing.
+      if (node.typeRaw !== '') {
+        doc.returns = node.typeRaw;
+      }
     } else if (node.tag === '@callback') {
       // Callback rows follow as flat `@param` tags; they group under the
       // callback name, mirroring the TS nested signature.
@@ -76,17 +81,20 @@ function docReaderDepFree(comment) {
   doc.params = doc.params.filter((param) => !callbackNames.has(param.name));
   if (doc.returns === '') {
     // A lone `@type` with no node behind it still reads: mid-line braced
-    // `{T}` (no consumed head before it, so the chain dropped it) or a
-    // braceless class word tsc attaches wherever it sits. The brace scan
-    // balances, so nested generics read whole; a `{` clause after an
-    // unbraced word stays out (that row is the TS reader's taxonomy: its
-    // reparse owns the whole clause, and only an intersection-capable
-    // expander narrows it). Braced rows the nodes already read stay
-    // untouched, and prose `@mentions` never reach here: the shared node
-    // scan already declined them.
+    // `{T}` (no consumed head before it, so the chain dropped it), a
+    // clause the node bound nothing for, or an unbraced word tsc binds
+    // wherever it sits. The brace scan balances, so nested generics read
+    // whole; otherwise the clause re-reads through `readUnbracedType`
+    // (which owns tsc's rest-of-line boundary) starting from the head the
+    // node already sliced — or from the raw comment when no node exists.
+    // Braced rows the nodes already read stay untouched, and prose
+    // `@mentions` never reach here: the shared node scan already
+    // declined them.
+    const nodes = parseJSDocNodes(comment);
     const at = comment.search(/@type(?![\w$])/);
     if (at !== -1) {
-      const rest = comment.slice(at + '@type'.length);
+      const head = nodes.find((node) => node.tag === '@type')?.headRaw;
+      const rest = (head ?? comment.slice(at + '@type'.length)).split('\n')[0] ?? '';
       const brace = rest.match(/^\s*\{/);
       if (brace) {
         const after = rest.slice(brace[0].length);
@@ -107,14 +115,10 @@ function docReaderDepFree(comment) {
           doc.returns = after.slice(0, end);
         }
       } else {
-        // An unbraced `@type` word reads one token: a class name, an
-        // import path. A `{` clause after it stays out here: that row is
-        // the TS reader's taxonomy (its reparse owns the whole clause),
-        // and only its own class covers it.
-        const word = rest.match(/^\s*([A-Za-z_$][\w$]*)(?!\s*\{)/);
-        if (word) {
-          doc.returns = word[1];
-        }
+        // An unbraced `@type` reads the clause tsc reparses after the
+        // word: `readUnbracedType` splits trailing prose at the first
+        // non-type token, so only the clause binds.
+        doc.returns = readUnbracedType(rest);
       }
     }
   }

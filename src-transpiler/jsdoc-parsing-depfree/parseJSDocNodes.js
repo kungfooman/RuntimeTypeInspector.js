@@ -1,6 +1,7 @@
 import {isTagToken} from './isTagToken.js';
 import {makeJSDocCursor} from './makeJSDocCursor.js';
 import {parseBraceType} from './parseBraceType.js';
+import {readUnbracedType} from './readUnbracedType.js';
 
 /**
  * Parses one JSDoc text into raw tag nodes in source order. A cursor owns
@@ -296,12 +297,15 @@ function parseJSDocNodes(src) {
       if (tag === '@type') {
         // `@type` without braces is the only braceless braceTag the parser
         // keeps: `@typedef`/`@property` without braces describe structure
-        // the row schema cannot hold. A braceless `@type` reads the head
-        // word as the type (like tsc's unbraced type tag); any other head
-        // binds nothing.
+        // the row schema cannot hold. A braceless `@type` reads the clause
+        // tsc reparses after the word (`Foo & Bar`, `A & {...}`), split
+        // from trailing prose at the first non-type token. The node keeps
+        // both: `typeRaw` is the clause (what `docReaderDepFree` binds),
+        // `headRaw` is the full head (what the lone-`@type` fallback
+        // re-reads when the node bound nothing).
         cursor.index += 1;
         const headRaw = sliceHead(cursor, token.end ?? token.pos);
-        const typeRaw = (/^[A-Za-z_$][\w$]*$/.test(headRaw) ? headRaw : '');
+        const typeRaw = readUnbracedType(headRaw);
         tags.push({tag, typeRaw, headRaw});
         continue;
       }

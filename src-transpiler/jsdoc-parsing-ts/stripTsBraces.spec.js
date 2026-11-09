@@ -11,12 +11,21 @@ function testUnterminatedKeepsInner() {
   return stripTsBraces('{number') === 'number';
 }
 
-// tsc's recovery tail on an unbraced class plus clause re-balances to
-// the balanced brace type: the depfree side reads the whole clause the
-// same way, so the stranded `;` never leaks into the row.
+// The svelte cast tail strips its orphan `;`: the brace group owns the
+// clause extent, and the `;` is statement text on both sides (the TS
+// reader strips it at the tag boundary; `readUnbracedType` reads the
+// same on the depfree side).
+function testCastTailStaysOut() {
+  const actual = stripTsBraces('HTMLElement & { object: { test: true }; }');
+  return actual === 'HTMLElement & { object: { test: true } }';
+}
+
+// tsc's recovery tail on an unclosed object re-balances to the balanced
+// brace type: `stripTsBraces` closes the clause the same way the depfree
+// `readUnbracedType` recovery path does.
 function testRecoveryTailRebalances() {
   const actual = stripTsBraces('HTMLElement & { object: { test: true }; ');
   return actual === 'HTMLElement & { object: { test: true } }';
 }
 
-export const tests = [testFullBracesUnwrap, testUnterminatedKeepsInner, testRecoveryTailRebalances];
+export const tests = [testFullBracesUnwrap, testUnterminatedKeepsInner, testCastTailStaysOut, testRecoveryTailRebalances];

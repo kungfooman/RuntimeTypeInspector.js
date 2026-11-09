@@ -216,6 +216,7 @@ const tests = [
   ...(await import('./src-transpiler/jsdoc-parsing-depfree/docTemplateNode.spec.js'         )).tests,
   ...(await import('./src-transpiler/jsdoc-parsing-depfree/splitTemplateBindings.spec.js'   )).tests,
   ...(await import('./src-transpiler/jsdoc-parsing-depfree/readTemplateBinding.spec.js'     )).tests,
+  ...(await import('./src-transpiler/jsdoc-parsing-depfree/readUnbracedType.spec.js'        )).tests,
   ...(await import('./src-transpiler/jsdoc-parsing-depfree/docOverloadSection.spec.js'      )).tests,
   ...(await import('./src-transpiler/jsdoc-parsing-depfree/canonicalDocCompare.spec.js'      )).tests,
   ...(await import('./src-transpiler/jsdoc-parsing-depfree/tagRestElementType.spec.js'      )).tests,
