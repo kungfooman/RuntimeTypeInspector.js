@@ -20,6 +20,7 @@ import {nodeIsFunctionLike } from './nodeIsFunctionLike.js';
 import {parseJSDoc         } from './jsdoc-parsing-depfree/parseJSDoc.js';
 import {parseJSDocDocument} from './jsdoc-parsing-depfree/parseJSDocDocument.js';
 import {parseJSDocTypedef  } from './jsdoc-parsing-depfree/parseJSDocTypedef.js';
+import {docReaderBoth} from './jsdoc-parsing-ts/docReaderBoth.js';
 import {markTypeofRequirements} from './markTypeofRequirements.js';
 import {ignoredParamsIn     } from './ignoredParamsIn.js';
 import {runtimeImportNames  } from './runtimeImportNames.js';
@@ -45,6 +46,10 @@ import {Stringifier        } from './Stringifier.js';
  * the emitted header via `setProjectVersion(...)`, so `Download log` meta
  * identifies the app build. Bundler plugins resolve it from their own
  * option or the host package.json.
+ * @property {import('./jsdoc-parsing-ts/docReaderBoth.js').DocReader} [docReader] - Injectable
+ * doc-reader probe running over every JSDoc comment at transpile time.
+ * Absent unless set: import `docReaderBoth` from the transpiler and pass
+ * it to observe depfree-vs-TS parity (warns on DRIFT in devtools).
  */
 class Asserter extends Stringifier {
   /**
@@ -59,6 +64,7 @@ class Asserter extends Stringifier {
     addHeader = true,
     ignoreLocations = [],
     projectVersion,
+    docReader,
   } = {}) {
     super();
     this.forceCurly = forceCurly;
@@ -71,6 +77,10 @@ class Asserter extends Stringifier {
     this.addHeader = addHeader;
     this.ignoreLocations = ignoreLocations;
     this.projectVersion = projectVersion;
+    // Fail closed: only a real function probes. Garbage (a typo, a
+    // deleted key, a stale string) disables instead of enabling.
+    /** @type {import('./jsdoc-parsing-ts/docReaderBoth.js').DocReader|undefined} */
+    this.docReader = typeof docReader === 'function' ? docReader : undefined;
   }
   /** @type {Record<string, Stat>} */
   stats = {
@@ -572,6 +582,12 @@ class Asserter extends Stringifier {
     }
     if (ignoredParamsIn(comment) === 'all') {
       return;
+    }
+    // Live reader probe: runs the injected docReader over every comment
+    // at transpile time (e.g. `docReaderBoth` for depfree-vs-TS drift
+    // warns in devtools). Fail closed: only a real function probes.
+    if (typeof this.docReader === 'function') {
+      this.docReader(comment);
     }
     // Need to do same resolving as in: this.getLeadingComment(node)
     if (node.type === 'BlockStatement') {

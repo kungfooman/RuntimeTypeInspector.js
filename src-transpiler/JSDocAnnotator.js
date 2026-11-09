@@ -5,6 +5,7 @@ import {nodeChildren} from './nodeChildren.js';
 import {nodeIsFunctionLike} from './nodeIsFunctionLike.js';
 import {parseJSDocDocument} from './jsdoc-parsing-depfree/parseJSDocDocument.js';
 import {parseJSDocTypedef} from './jsdoc-parsing-depfree/parseJSDocTypedef.js';
+import {docReaderBoth} from './jsdoc-parsing-ts/docReaderBoth.js';
 class JSDocAnnotator {
   /** @type {import('@babel/types').Node[]} */
   parents = [];
@@ -15,10 +16,16 @@ class JSDocAnnotator {
   /**
    * @param {Object} [options] - Options for the annotator.
    * @param {import('./parseJSDoc.js').ExpandType} [options.expandType] - Function to expand types.
+   * @param {import('./jsdoc-parsing-ts/docReaderBoth.js').DocReader} [options.docReader] - Injectable
+   * doc-reader probe running over every JSDoc comment. Absent unless set.
    */
   constructor(options = {}) {
     /** @type {import('./parseJSDoc.js').ExpandType} */
     this.expandType = options.expandType || expandTypeDepFree;
+    // Fail closed: only a real function probes. Garbage (a typo, a
+    // deleted key, a stale string) disables instead of enabling.
+    /** @type {import('./jsdoc-parsing-ts/docReaderBoth.js').DocReader|undefined} */
+    this.docReader = typeof options.docReader === 'function' ? options.docReader : undefined;
   }
   /**
    * Annotates the AST by adding 'jsdoc' properties to relevant nodes.
@@ -272,6 +279,12 @@ class JSDocAnnotator {
     }
     if (comment.includes('@event') || comment.includes('@ignoreRTI')) {
       return;
+    }
+    // Live reader probe: runs the injected docReader over every comment
+    // at transpile time (e.g. `docReaderBoth` for depfree-vs-TS drift
+    // warns in devtools). Fail closed: only a real function probes.
+    if (typeof this.docReader === 'function') {
+      this.docReader(comment);
     }
     if (node.type === 'ClassMethod' && node.kind === 'set') {
       if (node.params.length !== 1) {

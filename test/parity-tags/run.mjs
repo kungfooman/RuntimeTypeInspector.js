@@ -126,6 +126,11 @@ const cases = [
   // depfree side keeps the written brace text. The walk compares
   // containers by name and brackets, children whole.
   {comment: '/**\n * @param {string} url\n * @param {object} options Opts.\n * @param {number} [options.maxRetries] Max.\n * @param {boolean} [options.json] Flag.\n */'},
+  // Bracketed container: the `[options]` head still matches the container
+  // row (trailing `]` strips), so the first child is not skipped.
+  {comment: '/**\n * @param {object} [properties] - Properties object.\n * @param {number} [properties.aspectRatio] - Aspect ratio.\n * @param {number} [properties.farClip] - Far clip.\n */'},
+  // Mid-line dotted children: segments split on `@param`, not lines.
+  {comment: '/** @param {object} options @param {number} [options.maxRetries] */'},
   // Callbacks nest params in the signature on both sides now (the schema
   // carries them as callback entries), so they compare whole.
   {comment: '/**\n * @callback SwapFunction\n * @param {Object} newState - The new state.\n */'},

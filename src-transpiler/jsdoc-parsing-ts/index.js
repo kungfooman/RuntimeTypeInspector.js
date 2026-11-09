@@ -4,4 +4,5 @@ export * from './tsTemplateTag.js';
 export * from './tsOverloadTag.js';
 export * from './tsCallbackTag.js';
 export * from './tsDottedChildren.js';
+export * from './docReaderBoth.js';
 export * from './docReaderTS.js';

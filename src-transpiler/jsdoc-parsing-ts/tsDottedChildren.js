@@ -6,25 +6,22 @@ import {parseParamHead} from '../jsdoc-parsing-depfree/parseParamHead.js';
  * rows as container type text. So TS owns discovery (which row is a
  * merged container), and this re-slices the raw source for the children:
  * each following `@param` whose head starts with `container + '.'`
- * contributes its head grammar and brace text.
+ * contributes its head grammar and brace text. Tags scan per tag
+ * segment, not per line, so mid-line children (container and child on
+ * one line) recover too.
  * @example
  * tsDottedChildren('options', '@param {object} options @param {number} [options.maxRetries]', 1);
  * // [{name: 'options.maxRetries', bracketed: true, type: 'number', dropped: false, merged: false}]
  * @param {string} container - Container name (e.g. `options`).
  * @param {string} src - Raw JSDoc comment text.
- * @param {number} fromLine - Comment line index after the container row.
+ * @param {number} fromTag - Tag segment index after the container row.
  * @returns {import('../jsdoc-parsing-depfree/canonicalDoc.js').CanonicalParam[]} Child rows in order.
  */
-function tsDottedChildren(container, src, fromLine) {
-  const lines = src.split('\n');
+function tsDottedChildren(container, src, fromTag) {
+  const segments = src.split('@param');
   const children = [];
-  for (const line of lines.slice(fromLine)) {
-    const atParam = line.indexOf('@param');
-    if (atParam === -1) {
-      continue;
-    }
-    const after = line.slice(atParam + '@param'.length);
-    const brace = after.match(/^\s*\{([^}]*)\}\s*(\S+)/);
+  for (const segment of segments.slice(fromTag)) {
+    const brace = segment.match(/^\s*\{([^}]*)\}\s*(\S+)/);
     if (brace === null) {
       break;
     }

@@ -55,26 +55,25 @@ function docReaderTS(comment) {
   // Dotted sub-params resolve into the container on the TS side, and the
   // container carries the absorbed text as its type: mark it merged and
   // re-slice the children from source so both readers cover every row.
-  // The container row is found by head match: `options` must not match
+  // The container row is found by head match over `@param` segments
+  // (not lines, so mid-line children recover): `options` must not match
   // `options2`, and `@param` alone must not match `@paramfoo`. The
-  // bracket strip keeps `[options.x]` findable under `options`.
-  const lines = comment.split('\n');
-  const atParam = (line, name) => {
-    const at = line.indexOf('@param');
-    if (at === -1) {
-      return false;
-    }
-    const head = line.slice(at + '@param'.length).match(/^\s*(\{[^{}]*\})?\s*(\S+)/);
-    const raw = (head?.[2] ?? '').replace(/^\[/, '');
+  // bracket strip keeps `[options.x]` findable under `options`; the
+  // trailing strip keeps a bracketed container (`[options]`) findable
+  // under `options` too.
+  const segments = comment.split('@param');
+  const atParam = (segment, name) => {
+    const head = segment.match(/^\s*(\{[^{}]*\})?\s*(\S+)/);
+    const raw = (head?.[2] ?? '').replace(/^\[/, '').replace(/\]$/, '');
     return raw === name || raw.startsWith(name + '.') || raw.startsWith(name + '[');
   };
   const out = [];
   for (const param of doc.params) {
     if (param.type.includes('@param')) {
       const container = param.name;
-      const atLine = lines.findIndex((line) => atParam(line, container));
+      const atTag = segments.findIndex((segment) => atParam(segment, container));
       out.push({...param, type: '', merged: true});
-      out.push(...tsDottedChildren(container, comment, atLine + 1));
+      out.push(...tsDottedChildren(container, comment, atTag + 1));
       continue;
     }
     out.push(param);
