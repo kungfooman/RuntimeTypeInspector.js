@@ -22,4 +22,35 @@ function testEmptyNameDrops() {
   return tsParamTag(tag).dropped === true;
 }
 
-export const tests = [testPlainRowReadsThrough, testMisplacedRestDrops, testEmptyNameDrops];
+// A tilde-truncated type recovers the raw row through the depfree
+// builders: the name binds and the type reads whole, like the depfree
+// reader, instead of parroting tsc's truncation.
+function testTildeTypeRecoversRawRow() {
+  const tag = {
+    getText: () => '@param {Array<X~Y>} intersects',
+    name: {getText: () => ''},
+    isBracketed: false,
+    typeExpression: {getText: () => '{Array<X'},
+  };
+  const actual = tsParamTag(tag);
+  return (
+    actual.name === 'intersects' &&
+    actual.bracketed === false &&
+    actual.type === 'Array<X~Y>' &&
+    actual.dropped === false
+  );
+}
+
+// A bracketed tilde head recovers the bracket flag the parse lost.
+function testTildeBracketedHeadRecoversFlag() {
+  const tag = {
+    getText: () => '@param {Array<X~Y>} [hits=[]]',
+    name: {getText: () => ''},
+    isBracketed: false,
+    typeExpression: {getText: () => '{Array<X'},
+  };
+  const actual = tsParamTag(tag);
+  return actual.name === 'hits' && actual.bracketed === true && actual.dropped === false;
+}
+
+export const tests = [testPlainRowReadsThrough, testMisplacedRestDrops, testEmptyNameDrops, testTildeTypeRecoversRawRow, testTildeBracketedHeadRecoversFlag];

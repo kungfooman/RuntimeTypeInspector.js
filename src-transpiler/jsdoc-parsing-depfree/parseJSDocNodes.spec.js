@@ -32,12 +32,19 @@ function testParserChainsBareTemplate() {
   );
 }
 
-// Braceless `@typedef`/`@type` decline: no brace type, no node, and the
-// following `@param` still scans on its own line.
+// Braceless `@typedef`/`@type` declensions: `@typedef` without braces
+// carries structure the row schema cannot hold, so only a following tag
+// still scans. A braceless `@type` reads the head word as the type (like
+// tsc's unbraced type tag), so its row survives.
 function testParserDeclinesBareTypes() {
   const noTypedef = parseJSDocNodes('@typedef Foo @param {number} x');
-  const noType = parseJSDocNodes('@type Foo @param {number} x');
-  return noTypedef.length === 0 && noType.length === 0;
+  const bareType = parseJSDocNodes('@type Foo @param {number} x');
+  return (
+    noTypedef.length === 0 &&
+    bareType.length === 2 &&
+    bareType[0].typeRaw === 'Foo' &&
+    bareType[1].headRaw === 'x'
+  );
 }
 
 // An unclosed brace recovers the head word and the following tag still
@@ -65,6 +72,45 @@ function testParserKeepsMidlineReturnType() {
   );
 }
 
+// A braceless `@param` keeps its head word (prose rides after): tsc
+// binds the name and carries the rest as comment text, so the node must
+// read the whole head for the shared grammar to split.
+function testParserKeepsBracelessParamHead() {
+  const actual = parseJSDocNodes('@param value Wrapped native hook.');
+  return (
+    actual.length === 1 &&
+    actual[0].tag === '@param' &&
+    actual[0].typeRaw === '' &&
+    actual[0].headRaw === 'value Wrapped native hook.'
+  );
+}
+
+// A bare `@template O, P` keeps the whole head: the comma list binds
+// two names downstream, and truncation at the comma would amputate one.
+function testParserKeepsTemplateCommaHead() {
+  const actual = parseJSDocNodes('@template O, P The obj and props types');
+  return actual.length === 1 && actual[0].headRaw === 'O, P The obj and props types';
+}
+
+// A template head still chains into the next row: the follower tag opens.
+function testParserChainsTemplateIntoFollower() {
+  const actual = parseJSDocNodes('@template K email me @foo.com');
+  return actual.length === 1 && actual[0].headRaw === 'K email me @foo.com';
+}
+
+// A mention between two known tags attaches on its own: tsc binds all
+// three rows (the mention's head stops at the next tag), so the parser
+// keeps all three too.
+function testParserSpendsChainOnMention() {
+  const actual = parseJSDocNodes('* @param {A} a mentions @param vaguely @param {B} c');
+  return (
+    actual.length === 3 &&
+    actual[0].headRaw === 'a mentions' &&
+    actual[1].headRaw === 'vaguely' &&
+    actual[2].headRaw === 'c'
+  );
+}
+
 export const tests = [
   testParserSplitsRows,
   testParserSkipsProse,
@@ -73,4 +119,8 @@ export const tests = [
   testParserDeclinesBareTypes,
   testParserRecoversUnbalanced,
   testParserKeepsMidlineReturnType,
+  testParserKeepsBracelessParamHead,
+  testParserKeepsTemplateCommaHead,
+  testParserChainsTemplateIntoFollower,
+  testParserSpendsChainOnMention,
 ];

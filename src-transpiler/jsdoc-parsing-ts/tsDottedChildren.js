@@ -21,7 +21,10 @@ function tsDottedChildren(container, src, fromTag) {
   const segments = src.split('@param');
   const children = [];
   for (const segment of segments.slice(fromTag)) {
-    const brace = segment.match(/^\s*\{([^}]*)\}\s*(\S+)/);
+    // Bracketed heads may carry spaces inside defaults (`=new
+    // Object3D()`), so the bracket group reads whole before the bare
+    // token fallback: the head grammar below validates either way.
+    const brace = segment.match(/^\s*\{([^}]*)\}\s*(\[.*?\]|\S+)/);
     if (brace === null) {
       break;
     }

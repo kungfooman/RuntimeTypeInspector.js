@@ -23,4 +23,18 @@ function testNonDottedRowStopsSlice() {
   return actual.length === 1 && actual[0].name === 'options.maxRetries';
 }
 
-export const tests = [testDottedRowsRecoverHeads, testNonDottedRowStopsSlice];
+// A bracketed head with spaces inside its default (`=new Object3D()`)
+// reads whole: the bracket group wins over the bare token, so the child
+// survives instead of truncating at the space and breaking the slice.
+function testBracketedHeadWithSpacedDefaultReadsWhole() {
+  const src = '@param {Object} [parameters={}] O.\n@param {Object3D} [parameters.target=new Object3D()] T.\n@param {number} [parameters.resolutionScale=1] R.';
+  const actual = tsDottedChildren('parameters', src, 2);
+  return (
+    actual.length === 2 &&
+    actual[0].name === 'parameters.target' &&
+    actual[0].type === 'Object3D' &&
+    actual[1].name === 'parameters.resolutionScale'
+  );
+}
+
+export const tests = [testDottedRowsRecoverHeads, testNonDottedRowStopsSlice, testBracketedHeadWithSpacedDefaultReadsWhole];

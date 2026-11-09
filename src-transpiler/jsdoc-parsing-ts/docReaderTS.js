@@ -1,10 +1,12 @@
 import ts from 'typescript';
+import {parseParamHead} from '../jsdoc-parsing-depfree/parseParamHead.js';
 import {stripTsBraces} from './stripTsBraces.js';
 import {tsParamTag} from './tsParamTag.js';
 import {tsTemplateTag} from './tsTemplateTag.js';
 import {tsOverloadTag} from './tsOverloadTag.js';
 import {tsCallbackTag} from './tsCallbackTag.js';
 import {tsDottedChildren} from './tsDottedChildren.js';
+import {recoverTildeTag} from './recoverTildeTag.js';
 
 /**
  * Lowers one JSDoc comment through the TypeScript compiler to the shared
@@ -33,7 +35,7 @@ function docReaderTS(comment) {
       continue;
     }
     if (tag.kind === ts.SyntaxKind.JSDocTemplateTag) {
-      doc.templates.push(tsTemplateTag(tag));
+      doc.templates.push(...tsTemplateTag(tag));
       continue;
     }
     if (tag.kind === ts.SyntaxKind.JSDocParameterTag) {
@@ -41,7 +43,8 @@ function docReaderTS(comment) {
       continue;
     }
     if (tag.kind === ts.SyntaxKind.JSDocReturnTag) {
-      doc.returns = tag.typeExpression ? stripTsBraces(tag.typeExpression.getText()) : '';
+      const parsed = tag.typeExpression ? stripTsBraces(tag.typeExpression.getText()) : '';
+      doc.returns = recoverTildeTag(tag.getText?.(), parsed)?.typeRaw ?? parsed;
       continue;
     }
     if (tag.kind === ts.SyntaxKind.JSDocCallbackTag) {
@@ -49,23 +52,28 @@ function docReaderTS(comment) {
       continue;
     }
     if (tag.kind === ts.SyntaxKind.JSDocTypeTag) {
-      doc.returns = tag.typeExpression ? stripTsBraces(tag.typeExpression.getText()) : '';
+      const parsed = tag.typeExpression ? stripTsBraces(tag.typeExpression.getText()) : '';
+      doc.returns = recoverTildeTag(tag.getText?.(), parsed)?.typeRaw ?? parsed;
     }
   }
   // Dotted sub-params resolve into the container on the TS side, and the
   // container carries the absorbed text as its type: mark it merged and
   // re-slice the children from source so both readers cover every row.
-  // The container row is found by head match over `@param` segments
-  // (not lines, so mid-line children recover): `options` must not match
-  // `options2`, and `@param` alone must not match `@paramfoo`. The
-  // bracket strip keeps `[options.x]` findable under `options`; the
-  // trailing strip keeps a bracketed container (`[options]`) findable
-  // under `options` too.
+  // The container row is found by parsed-name match over `@param`
+  // segments (not lines, so mid-line children recover): the single
+  // depfree head grammar reads `[options]`, `[options={}]`, and bare
+  // `options` all as `options`, so bracketed and defaulted containers
+  // match exactly and the first child is never mistaken for the
+  // container. `options` must not match `options2`: the grammar parses
+  // whole names, so prefix collisions cannot occur.
   const segments = comment.split('@param');
   const atParam = (segment, name) => {
     const head = segment.match(/^\s*(\{[^{}]*\})?\s*(\S+)/);
-    const raw = (head?.[2] ?? '').replace(/^\[/, '').replace(/\]$/, '');
-    return raw === name || raw.startsWith(name + '.') || raw.startsWith(name + '[');
+    if (head === null) {
+      return false;
+    }
+    const parsed = parseParamHead(head[2]);
+    return parsed.valid === true && parsed.name === name;
   };
   const out = [];
   for (const param of doc.params) {

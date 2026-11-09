@@ -1,4 +1,6 @@
 export * from './stripTsBraces.js';
+export * from './balancedBraceInner.js';
+export * from './recoverTildeTag.js';
 export * from './tsParamTag.js';
 export * from './tsTemplateTag.js';
 export * from './tsOverloadTag.js';

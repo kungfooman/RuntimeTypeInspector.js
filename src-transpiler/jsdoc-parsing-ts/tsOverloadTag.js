@@ -1,5 +1,6 @@
 import {stripTsBraces} from './stripTsBraces.js';
 import {tsParamTag} from './tsParamTag.js';
+import {recoverTildeTag} from './recoverTildeTag.js';
 
 /**
  * Reads one TS `@overload` marker to the shared schema entry: TS emits
@@ -14,9 +15,11 @@ import {tsParamTag} from './tsParamTag.js';
 function tsOverloadTag(tag) {
   const signature = tag.typeExpression;
   const params = (signature.parameters ?? []).map((parameter) => tsParamTag(parameter));
-  const returns = signature.type && signature.type.typeExpression ?
-    stripTsBraces(signature.type.typeExpression.getText()) :
-    '';
+  let returns = '';
+  if (signature.type && signature.type.typeExpression) {
+    const parsed = stripTsBraces(signature.type.typeExpression.getText());
+    returns = recoverTildeTag(signature.type.getText?.(), parsed)?.typeRaw ?? parsed;
+  }
   return {params, returns};
 }
 export {tsOverloadTag};

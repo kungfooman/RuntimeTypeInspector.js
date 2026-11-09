@@ -11,4 +11,12 @@ function testUnterminatedKeepsInner() {
   return stripTsBraces('{number') === 'number';
 }
 
-export const tests = [testFullBracesUnwrap, testUnterminatedKeepsInner];
+// tsc's recovery tail on an unbraced class plus clause re-balances to
+// the balanced brace type: the depfree side reads the whole clause the
+// same way, so the stranded `;` never leaks into the row.
+function testRecoveryTailRebalances() {
+  const actual = stripTsBraces('HTMLElement & { object: { test: true }; ');
+  return actual === 'HTMLElement & { object: { test: true } }';
+}
+
+export const tests = [testFullBracesUnwrap, testUnterminatedKeepsInner, testRecoveryTailRebalances];

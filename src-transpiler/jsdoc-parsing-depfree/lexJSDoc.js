@@ -125,6 +125,11 @@ function lexJSDoc(src) {
       i = j;
       continue;
     }
+    if (c === '(' || c === ')') {
+      tokens.push({kind: 'paren', value: c, pos: i, end: i + 1});
+      i += 1;
+      continue;
+    }
     if (c === '@') {
       let j = i + 1;
       while (j < src.length && isWord(src[j])) {

@@ -24,5 +24,7 @@ export * from './parseJSDocTemplates.js';
 export * from './parseJSDocTypedef.js';
 export * from './parseNamePath.js';
 export * from './parseParamHead.js';
+export * from './readTemplateBinding.js';
 export * from './splitOverloadSections.js';
+export * from './splitTemplateBindings.js';
 export * from './tagRestElementType.js';

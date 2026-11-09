@@ -131,6 +131,36 @@ const cases = [
   {comment: '/**\n * @param {object} [properties] - Properties object.\n * @param {number} [properties.aspectRatio] - Aspect ratio.\n * @param {number} [properties.farClip] - Far clip.\n */'},
   // Mid-line dotted children: segments split on `@param`, not lines.
   {comment: '/** @param {object} options @param {number} [options.maxRetries] */'},
+  // Defaulted container: `[options={}]` still finds the container row, so
+  // the first child is not mistaken for it.
+  {comment: '/**\n * @param {Object} [options={}] - O.\n * @param {number} [options.type=1] - T.\n * @param {boolean} [options.autoUpdate=true] - A.\n */'},
+  // Spaced default inside a child head (`=new Object3D()`): the bracket
+  // group reads whole instead of truncating at the space.
+  {comment: '/**\n * @param {Object} [parameters={}] - O.\n * @param {Object3D} [parameters.target=new Object3D()] - T.\n * @param {number} [parameters.resolutionScale=1] - R.\n */'},
+  // Tilde inner-scope names: tsc has no `~` in type position, so the TS
+  // reader recovers the jsdoc spelling instead of parroting the
+  // truncation (RTI reads JSDoc first, tsc second).
+  {comment: '/** @param {Array<Raycaster~Intersection>} intersects */'},
+  {comment: '/** @param {Array<Raycaster~Intersection>} [hits=[]] - T. */'},
+  {comment: '/** @returns {Array<Raycaster~Intersection>} The result. */'},
+  {comment: '/**\n * @overload\n * @param {Raycaster~Intersection} x\n * @returns {number}\n */'},
+  {comment: '/**\n * @template {Raycaster~Intersection} [K=x]\n * @param {K} y\n */'},
+  // Braceless params: tsc binds the name and carries the rest as prose.
+  {comment: '/**\n * @param value Wrapped native hook.\n * @param name Custom name\n */'},
+  {comment: '/**\n * @param [detail]\n * @param [options]\n */'},
+  // Multi-name template lists: tsc splits `O, P` into two bindings, each
+  // carrying the braced constraint.
+  {comment: '/**\n * @template O, P The obj and props types\n * @param {O} obj\n * @param {P} props\n * @returns {O}\n */'},
+  // Spaced bracketed binding: tsc binds `EventMap` from `[EventMap = any]`.
+  {comment: '/**\n * @template [EventMap = any]\n * @param {EventMap} cb\n */'},
+  {comment: '/**\n * @template {Record<string, any>} [EventMap = any]\n * @param {EventMap} cb\n */'},
+  {comment: '/**\n * @template {Map<any, any>} [T=Map<any, any>]\n * @param {T} x\n */'},
+  // Braceless `@type` words: tsc reads the head word as the type.
+  {comment: '/** @type Expression */'},
+  // Mid-line `@type`: tsc attaches it wherever it sits.
+  {comment: '/**\n * Sources note @type {Set<Value>}\n */'},
+  {comment: '/**\n * @readonly @type {() => string}\n */'},
+  {comment: '/**\n * @param {A} x and more @type {Y}\n */'},
   // Callbacks nest params in the signature on both sides now (the schema
   // carries them as callback entries), so they compare whole.
   {comment: '/**\n * @callback SwapFunction\n * @param {Object} newState - The new state.\n */'},
