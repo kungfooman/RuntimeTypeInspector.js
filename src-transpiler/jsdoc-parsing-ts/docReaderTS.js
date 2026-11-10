@@ -1,4 +1,7 @@
 import ts from 'typescript';
+import {parseJSDocNodes} from '../jsdoc-parsing-depfree/parseJSDocNodes.js';
+import {docTemplateNode} from '../jsdoc-parsing-depfree/docTemplateNode.js';
+import {balancedBraceInner} from './balancedBraceInner.js';
 import {parseParamHead} from '../jsdoc-parsing-depfree/parseParamHead.js';
 import {stripTsBraces} from './stripTsBraces.js';
 import {tsParamTag} from './tsParamTag.js';
@@ -48,7 +51,63 @@ function docReaderTS(comment) {
       continue;
     }
     if (tag.kind === ts.SyntaxKind.JSDocCallbackTag) {
-      doc.callbacks.push(tsCallbackTag(tag));
+      // TS parses the whole callback tail (prose, `@param` rows and a
+      // trailing `@returns`) into one `JSDocSignature`: the return sits in
+      // `signature.type` as its own `JSDocReturnTag` node, exactly like an
+      // overload signature's return, so it reads the same way (the
+      // depfree side lowers the same trailing `@returns` to top-level
+      // `returns`, and the readers agree instead of dropping it here).
+      // Three callback-only gaps close around it. First, the trailing
+      // rows never surface as tags: an `@template` nested in the tail
+      // dies with the signature (flat `@template` is order-blind —
+      // `@param` before `@template` reads on both sides), so it binds
+      // here from the tag's own source like the depfree row does.
+      // Second, a container row absorbs its dotted children as type
+      // text inside the signature, so the nested params un-merge the
+      // same way the flat tail below does. Third, the return sees the
+      // tilde path too: a leading `~` truncates the node to an empty
+      // brace, which `recoverTildeTag` declines, so the callback form
+      // re-slices the raw group whenever the parse is empty.
+      const callback = tsCallbackTag(tag);
+      const signature = tag.typeExpression;
+      const text = tag.getText?.() ?? '';
+      for (const node of parseJSDocNodes(text)) {
+        if (node.tag === '@template') {
+          doc.templates.push(...docTemplateNode(node));
+        }
+      }
+      for (const [index, parameter] of callback.params.entries()) {
+        if (parameter.type.includes('@param') === false) {
+          continue;
+        }
+        // The container's type text is the raw remaining tag line(s), not
+        // a tag segment: one splitter segment holds the whole tail, so
+        // re-slice from the container head inside the collected type text
+        // (segment 0 is `@param`-free preamble, 1 is the container head
+        // itself, the children start at 2 — the same caller contract as
+        // the flat tail, which passes the comment with the container at
+        // its own segment).
+        const tail = signature.parameters[index]?.getText?.() ?? '';
+        const inner = '@param ' + tail.split('@param').slice(1).join('@param');
+        const nested = tsDottedChildren(parameter.name, inner, 2);
+        callback.params.splice(index, 1, {...parameter, type: '', merged: true}, ...nested);
+      }
+      if (signature.type && signature.type.typeExpression) {
+        const returnText = signature.type.typeExpression.getText();
+        const parsed = stripTsBraces(returnText);
+        const tilde = recoverTildeTag(signature.type.getText?.(), parsed);
+        if (tilde !== null) {
+          doc.returns = tilde.typeRaw;
+        } else if (parsed === '' && typeof returnText === 'string') {
+          // An empty parse means tsc bailed on the spelling (leading
+          // `~` empties the node): the raw group reads whole, matching
+          // the depfree row exactly. No braces, no recovery.
+          doc.returns = balancedBraceInner(signature.type.getText?.() ?? '')?.text ?? '';
+        } else {
+          doc.returns = tilde?.typeRaw ?? parsed;
+        }
+      }
+      doc.callbacks.push(callback);
       continue;
     }
     if (tag.kind === ts.SyntaxKind.JSDocTypeTag) {

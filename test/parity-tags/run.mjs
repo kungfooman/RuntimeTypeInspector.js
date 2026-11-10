@@ -180,6 +180,20 @@ const cases = [
   // Callbacks nest params in the signature on both sides now (the schema
   // carries them as callback entries), so they compare whole.
   {comment: '/**\n * @callback SwapFunction\n * @param {Object} newState - The new state.\n */'},
+  // A callback with a trailing `@returns` binds it on both sides: TS
+  // carries the return as its own node on the signature, which the
+  // reader must surface like the depfree flat row does.
+  // A nested `@template` dies with the TS signature (flat is
+  // order-blind), so the TS reader binds it from tag source.
+  {comment: '/**\n * @callback G\n * @param {T} x\n * @template T\n * @returns {T}\n */'},
+  // Dotted children merge into the container inside the TS signature,
+  // so the nested rows un-merge like the flat tail (covered, not same).
+  {comment: '/**\n * @callback O\n * @param {object} opts\n * @param {string} opts.name\n * @returns {void}\n */'},
+  // A leading `~` empties the TS return node; the callback form
+  // re-slices the raw group whole.
+  {comment: '/**\n * @callback T\n * @param {number} x\n * @returns {~Foo}\n */'},
+  // An inline callback type carries no name binding on either side.
+  {comment: '/**\n * @callback {function(number): void} Fn\n */'},
 ];
 
 // Hostile matrix: every rest/optional spelling crossed with every nesting

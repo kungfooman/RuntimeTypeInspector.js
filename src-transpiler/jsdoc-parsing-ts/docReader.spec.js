@@ -30,6 +30,28 @@ const inputs = [
   '@template K @template V @param {K} a @param {V} b',
   '@param {string} url\n@param {object} options Opts.\n@param {number} [options.maxRetries] Max.\n@param {boolean} [options.json] Flag.',
   '@callback SwapFunction\n@param {Object} newState - The new state.',
+  // A callback with a trailing `@returns` binds the return like the
+  // depfree flat row does (the TS signature carries it as its own node,
+  // which the reader must surface instead of dropping).
+  '@callback HandleEventCallback\n@param {any} [arg1] - First argument.\n@returns {void}',
+  // An `@template` nested in a callback tail dies with the TS signature
+  // (flat `@template` is order-blind), so the TS reader binds it from
+  // the tag source like the depfree row does.
+  '@callback G\n@param {T} x\n@template T\n@returns {T}',
+  '@callback G\n@template T\n@param {T} x\n@returns {T}',
+  '@callback G\n@param {T} x\n@template {string} T\n@returns {T}',
+  // A dotted child merges into its container inside the TS signature,
+  // so the nested rows un-merge like the flat tail does (container
+  // marked, children re-sliced — names and brackets pinned, not text).
+  '@callback O\n@param {object} opts\n@param {string} opts.name\n@returns {void}',
+  '@callback O\n@param {object} [opts]\n@param {string} [opts.name]\n@returns {void}',
+  '@callback A\n@param {number} x\n@callback B\n@param {object} opts\n@param {string} opts.name\n@returns {void}',
+  // A leading `~` empties the TS return node, which `recoverTildeTag`
+  // declines: the callback form re-slices the raw group whole.
+  '@callback T\n@param {number} x\n@returns {~Foo}',
+  // An inline callback type carries no name on either side (tsc parses
+  // it as the signature type with no binding), never a brace fragment.
+  '@callback {function(number): void} Fn',
   '@overload\n@param {string} label\n@param {...number[][]} values\n@returns {number}',
   '@overload\n@param {string} label\n@param {...number[][]} [values]\n@returns {number}',
 ];

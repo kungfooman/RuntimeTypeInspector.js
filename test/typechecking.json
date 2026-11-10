@@ -64,6 +64,10 @@
     "output": "./test/typechecking/builtin-utilities-output.mjs"
   },
   {
+    "input": "./test/typechecking/callback-returns-input.mjs",
+    "output": "./test/typechecking/callback-returns-output.mjs"
+  },
+  {
     "input": "./test/typechecking/callbacks-input.mjs",
     "output": "./test/typechecking/callbacks-output.mjs"
   },

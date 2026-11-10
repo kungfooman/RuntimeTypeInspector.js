@@ -23,6 +23,8 @@ function canonicalDocEqual(actual, expected) {
  * match on name and brackets only (type text and the flag are the
  * documented difference), every other row matches whole. Any breakage
  * (wrong sub-row name, lost row, bracket flip) fails the check.
+ * Containers live in flat rows and inside callback entries; both walk
+ * the same way.
  * @example
  * canonicalDocCovers({templates: [], overloads: [], params: [], returns: '', callbacks: []}, {templates: [], overloads: [], params: [], returns: '', callbacks: []});
  * // true
@@ -33,9 +35,9 @@ function canonicalDocEqual(actual, expected) {
 function canonicalDocCovers(actual, expected) {
   if (
     JSON.stringify(canonicalize(actual.templates)) !== JSON.stringify(canonicalize(expected.templates)) ||
-    JSON.stringify(canonicalize(actual.callbacks)) !== JSON.stringify(canonicalize(expected.callbacks)) ||
     actual.returns !== expected.returns ||
-    actual.overloads.length !== expected.overloads.length
+    actual.overloads.length !== expected.overloads.length ||
+    actual.callbacks.length !== expected.callbacks.length
   ) {
     return false;
   }
@@ -62,6 +64,9 @@ function canonicalDocCovers(actual, expected) {
     return true;
   };
   if (!walk(actual.params, expected.params)) {
+    return false;
+  }
+  if (actual.callbacks.some((entry, index) => entry.name !== expected.callbacks[index].name || !walk(entry.params, expected.callbacks[index].params))) {
     return false;
   }
   return actual.overloads.every((signature, index) => walk(signature.params, expected.overloads[index].params));

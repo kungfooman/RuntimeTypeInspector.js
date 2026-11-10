@@ -75,9 +75,13 @@ function docReaderDepFree(comment) {
       }
     } else if (node.tag === '@callback') {
       // Callback rows follow as flat `@param` tags; they group under the
-      // callback name, mirroring the TS nested signature.
-      const name = node.headRaw.split(/\s+/)[0] ?? '';
-      const entry = {name, params: []};
+      // callback name, mirroring the TS nested signature. An inline type
+      // (`@callback {function(...): ...} Fn`) carries no separate name on
+      // either side (tsc parses it as the signature type with no `Fn`
+      // binding), so the entry stays unnamed instead of splitting the
+      // first brace word as a name.
+      const head = node.headRaw.startsWith('{') ? '' : (node.headRaw.split(/\s+/)[0] ?? '');
+      const entry = {name: head, params: []};
       doc.callbacks.push(entry);
       const rows = parseJSDocNodes(comment);
       const start = rows.findIndex((row) => row.tag === '@callback' && row.headRaw === node.headRaw);

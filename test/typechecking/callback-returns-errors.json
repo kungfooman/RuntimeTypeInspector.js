@@ -1,0 +1,23 @@
+{
+  "throws": [
+    {
+      "loc": "takeHandler",
+      "name": "cb",
+      "value": 1
+    },
+    {
+      "loc": "takeReturning",
+      "name": "cb",
+      "value": 42
+    },
+    {
+      "loc": "takeOpts",
+      "name": "cb",
+      "value": null
+    },
+    {
+      "loc": "takeEmpty",
+      "name": "cb"
+    }
+  ]
+}
