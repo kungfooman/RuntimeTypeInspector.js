@@ -1,4 +1,5 @@
 import {parseJSDocNodes} from "./parseJSDocNodes.js";
+import {parseParamHead} from "./parseParamHead.js";
 import {expandTypeDepFree} from "../expandTypeDepFree.js";
 import {extractNameAndOptionality} from "./extractNameAndOptionality.js";
 import {annotateOptional} from "../annotateOptional.js";
@@ -32,16 +33,26 @@ function parseJSDocDocument(src, expandType = expandTypeDepFree) {
   const foundSetter = [];
   for (const scanned of parseJSDocNodes(src)) {
     if (scanned.tag === '@param') {
-      const rawType = expandType(scanned.typeRaw.trim());
+      // The head may carry the type itself (matter-js swaps the order:
+      // `@param label {string}`): tsc binds the head's first word as the
+      // name and the first `{...}` group past it as the type, so the
+      // fold splits the same way instead of binding nothing. The probe
+      // readers apply the identical split; the grammar owns the name
+      // boundary on every side, so rows and runtime types agree.
+      const headName = parseParamHead(scanned.headRaw).name;
+      const group = scanned.typeRaw === '' && headName !== '' ? scanned.headRaw.slice(scanned.headRaw.indexOf(headName) + headName.length).match(/\{([^{}]*)\}/) : null;
+      const brace = group !== null && group[1].trim() !== '' ? group[1] : scanned.typeRaw;
+      const head = group !== null && group[1].trim() !== '' ? headName : scanned.headRaw;
+      const rawType = expandType(brace.trim());
       if (rawType === undefined) {
-        tags.push(makeParamTag(scanned.typeRaw, scanned.headRaw));
+        tags.push(makeParamTag(brace, head));
         console.warn(
           "parseJSDoc> Skipping @param, type is unrepresentable. Please check if your JSDoc is valid or open an issue about this!",
-          {src, match: scanned.typeRaw}
+          {src, match: brace}
         );
         continue;
       }
-      const tag = makeParamTag(scanned.typeRaw, scanned.headRaw);
+      const tag = makeParamTag(brace, head);
       tags.push(tag);
       if (tag.invalidRest === true || tag.name === '') {
         continue;

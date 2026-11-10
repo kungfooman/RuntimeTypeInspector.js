@@ -35,6 +35,17 @@ function docReaderTS(comment) {
   for (const tag of ts.getJSDocTags(fn) ?? []) {
     if (tag.kind === ts.SyntaxKind.JSDocOverloadTag) {
       doc.overloads.push(tsOverloadTag(tag));
+      // Rows nested in the marker die with it: a `@template` the marker
+      // absorbs never surfaces as a tag (tsc rejects it with TS8039),
+      // so it binds here from the marker's own text like the depfree
+      // whole-comment scan does — the same precedent as the callback
+      // branch, which binds trailing templates from tag source.
+      const text = tag.getText?.() ?? '';
+      for (const node of parseJSDocNodes(text)) {
+        if (node.tag === '@template') {
+          doc.templates.push(...docTemplateNode(node));
+        }
+      }
       continue;
     }
     if (tag.kind === ts.SyntaxKind.JSDocTemplateTag) {
@@ -76,8 +87,14 @@ function docReaderTS(comment) {
           doc.templates.push(...docTemplateNode(node));
         }
       }
+      // rows collect first and splice once: a fixed-index splice inside
+      // the loop corrupts the tail whenever one row absorbs rows after
+      // it (two dotted containers lose their join), so each entry lands
+      // at its shifted home instead.
+      const rows = [];
       for (const [index, parameter] of callback.params.entries()) {
         if (parameter.type.includes('@param') === false) {
+          rows.push(parameter);
           continue;
         }
         // The container's type text is the raw remaining tag line(s), not
@@ -90,8 +107,9 @@ function docReaderTS(comment) {
         const tail = signature.parameters[index]?.getText?.() ?? '';
         const inner = '@param ' + tail.split('@param').slice(1).join('@param');
         const nested = tsDottedChildren(parameter.name, inner, 2);
-        callback.params.splice(index, 1, {...parameter, type: '', merged: true}, ...nested);
+        rows.push({...parameter, type: '', merged: true}, ...nested);
       }
+      callback.params = rows;
       if (signature.type && signature.type.typeExpression) {
         const returnText = signature.type.typeExpression.getText();
         const parsed = stripTsBraces(returnText);

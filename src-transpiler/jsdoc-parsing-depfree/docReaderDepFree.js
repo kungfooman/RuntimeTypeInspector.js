@@ -36,11 +36,60 @@ function docReaderDepFree(comment) {
       doc.overloads.push(docOverloadSection(section));
     }
     if (sections.impl !== undefined && sections.impl !== null && sections.impl !== '') {
-      for (const node of parseJSDocNodes(sections.impl)) {
+      // The tail past the last section binds like the non-split path:
+      // flat `@param`/`@returns` rows, callback entries nesting their
+      // own rows, a stray `@type` binding its return. Section rows stay
+      // in their entries (depfree sections and the impl tail partition
+      // the comment, exactly like the TS marker spans).
+      const rows = parseJSDocNodes(sections.impl);
+      for (const node of rows) {
         if (node.tag === '@param') {
           doc.params.push(docParamTag(makeParamTag(node.typeRaw, node.headRaw), node.typeRaw));
         } else if (node.tag === '@returns' || node.tag === '@return') {
-          doc.returns = sections.impl.match(/@returns?\s*\{([^}]*)\}/)?.[1] ?? '';
+          doc.returns = node.typeRaw;
+        } else if (node.tag === '@type') {
+          if (node.typeRaw !== '') {
+            doc.returns = node.typeRaw;
+          }
+        } else if (node.tag === '@callback') {
+          const head = node.headRaw.startsWith('{') ? '' : (node.headRaw.split(/\s+/)[0] ?? '');
+          const entry = {name: head, params: []};
+          doc.callbacks.push(entry);
+          const start = rows.findIndex((row) => row.tag === '@callback' && row.headRaw === node.headRaw);
+          for (const row of rows.slice(start + 1)) {
+            if (row.tag !== '@param') {
+              break;
+            }
+            entry.params.push(docParamTag(makeParamTag(row.typeRaw, row.headRaw), row.typeRaw));
+          }
+        }
+      }
+      const callbackNames = new Set(doc.callbacks.flatMap((entry) => entry.params.map((param) => param.name)));
+      doc.params = doc.params.filter((param) => !callbackNames.has(param.name));
+      return doc;
+    }
+    // No implementation tail: sections bound everything, unless a
+    // section-breaking marker (`@callback`/`@type`) was the only row.
+    // A stray `@callback` nests its rows like its own branch; a stray
+    // `@type` binds its return like the flat path.
+    for (const section of sections.overloads) {
+      const rows = parseJSDocNodes(section);
+      for (const node of rows) {
+        if (node.tag === '@callback') {
+          const head = node.headRaw.startsWith('{') ? '' : (node.headRaw.split(/\s+/)[0] ?? '');
+          const entry = {name: head, params: []};
+          doc.callbacks.push(entry);
+          const start = rows.findIndex((row) => row.tag === '@callback' && row.headRaw === node.headRaw);
+          for (const row of rows.slice(start + 1)) {
+            if (row.tag !== '@param') {
+              break;
+            }
+            entry.params.push(docParamTag(makeParamTag(row.typeRaw, row.headRaw), row.typeRaw));
+          }
+        } else if (node.tag === '@type') {
+          if (node.typeRaw !== '') {
+            doc.returns = node.typeRaw;
+          }
         }
       }
     }

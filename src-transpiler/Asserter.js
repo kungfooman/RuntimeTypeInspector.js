@@ -812,6 +812,7 @@ class Asserter extends Stringifier {
       expandType: this.expandType,
       scopeTemplates,
       ignored,
+      preMarker: sections.preMarker,
     });
     this.hasOverloadChecks = true;
     this.getStatsForNode(node).checked++;

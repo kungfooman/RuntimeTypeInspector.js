@@ -236,6 +236,10 @@
     "output": "./test/typechecking/overload-fields-output.mjs"
   },
   {
+    "input": "./test/typechecking/overload-hostile-input.mjs",
+    "output": "./test/typechecking/overload-hostile-output.mjs"
+  },
+  {
     "input": "./test/typechecking/overload-rest-input.mjs",
     "output": "./test/typechecking/overload-rest-output.mjs"
   },

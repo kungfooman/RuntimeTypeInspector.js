@@ -5,6 +5,9 @@ import {eraseIgnoredOverloadParams} from './eraseIgnoredOverloadParams.js';
 
 /**
  * Builds runtime overload signatures for one documented function.
+ * Pre-marker templates scope every section (flat scope, matching tsc
+ * where the tag parses outside every marker span): each section
+ * inherits them under its own rows, which win on collision.
  * @param {string[]} overloads - Overload documentation sections.
  * @param {object} fnNode - Function node carrying declared parameters.
  * @param {object} options - Scope templates, ignore set, and type parser.
@@ -17,11 +20,12 @@ function overloadSignatures(overloads, fnNode, options = {}) {
   const scopeTemplates = options.scopeTemplates;
   const ignored = options.ignored;
   const ignoreSet = ignored instanceof Set ? ignored : undefined;
+  const preMarker = options.preMarker === undefined || options.preMarker === '' ? undefined : parseJSDocDocument(options.preMarker, parser).templates;
   return overloads.map((section) => {
     const tuple = overloadToTuple(section, parser, ignoreSet);
     if (ignored instanceof Set) eraseIgnoredOverloadParams(tuple, fnNode, ignored);
     const {templates: own} = parseJSDocDocument(section, parser);
-    const templates = {...scopeTemplates, ...own};
+    const templates = {...preMarker, ...scopeTemplates, ...own};
     return {tuple, templates};
   });
 }

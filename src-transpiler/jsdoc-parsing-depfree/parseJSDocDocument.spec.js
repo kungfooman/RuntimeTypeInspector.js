@@ -91,6 +91,31 @@ function testBracketDefaultExpands() {
   return params?.kwargs !== undefined;
 }
 
+// A swapped head carries the type itself (`@param label {string}`):
+// tsc binds the first word as the name and the first group past it as
+// the type, so the fold splits the same way instead of binding nothing.
+function testSwappedHeadSplits() {
+  const doc = parseJSDocDocument('@param label {string}');
+  const tag = doc.tags[0];
+  return (
+    tag.name === 'label' &&
+    tag.typeRaw === 'string' &&
+    doc.params?.label === 'string'
+  );
+}
+
+// The split needs a non-empty group past the name: a leading group is
+// the braced tag's own type, so it never re-splits. (The YUIDoc `{}`
+// vacancy still expands to `any` at the fold — pre-existing behavior,
+// pinned by the depfree reader suite, not changed here.)
+function testSwappedHeadNeedsGroup() {
+  const braced = parseJSDocDocument('@param {string} label');
+  return (
+    braced.tags[0].name === 'label' &&
+    braced.tags[0].typeRaw === 'string'
+  );
+}
+
 export const tests = [
   testDocumentFeedsAllViews,
   testLexerRules,
@@ -99,4 +124,6 @@ export const tests = [
   testHeadsAndDottedNames,
   testTemplatesAndSetter,
   testBracketDefaultExpands,
+  testSwappedHeadSplits,
+  testSwappedHeadNeedsGroup,
 ];

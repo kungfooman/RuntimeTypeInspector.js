@@ -57,6 +57,26 @@ const inputs = [
   // so the nested rows un-merge per section like the flat tail does.
   '@overload\n@param {object} [args] - Opts.\n@param {boolean} [args.enabled] - Flag.\n@returns {void}',
   '@overload\n@param {string} a\n@param {object} [args]\n@param {boolean} [args.x]\n@returns {string}\n@overload\n@param {number} b\n@param {object} [args]\n@param {boolean} [args.y]\n@returns {number}',
+  // A section-breaking marker terminates the section: the break text
+  // belongs to the tail, never to the entry — tsc parses the marker as
+  // its own tag. The tail binds flat as the implementation.
+  '@overload\n@param {number} x\n@callback Cb\n@param {string} y\n@returns {void}',
+  '@overload\n@callback Cb\n@param {number} x\n@returns {void}',
+  '@overload\n@param {number} x\n@type {string}',
+  // Template position decides the route. A template-first part stalls
+  // before any row (empty entry, stranded rows bind flat); a template
+  // after rows rode the same marker that holds them (the entry absorbs
+  // the whole piece); a pre-marker template is flat scope.
+  '@overload\n@template K\n@param {K} a\n@returns {K}',
+  '@overload\n@param {T} x\n@template T\n@returns {T}',
+  '@overload\n@param {T} x\n@template {string} T\n@returns {T}',
+  '@overload\n@param {K} a\n@returns {K}\n@template K',
+  '@template K\n@overload\n@param {K} a\n@returns {K}',
+  // A swapped head carries the type itself (matter-js spelling): tsc
+  // binds the first word as the name and the group past it as the type.
+  '@overload\n@param label {string}\n@returns {string}',
+  // A tilde in the return re-slices raw when the TS node empties.
+  '@overload\n@param {number} x\n@returns {~Foo}',
   '@overload\n@param {number[]} ...values\n@returns {number}',
   '@overload\n@param {string} label\n@param {...number[][]} [values]\n@returns {number}',
 ];

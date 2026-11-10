@@ -197,6 +197,13 @@ const cases = [
   // A dotted child merges into the container inside an `@overload`
   // signature too (playcanvas `args`), un-merging per section.
   {comment: '/**\n * @overload\n * @param {object} [args] - Opts.\n * @param {boolean} [args.enabled] - Flag.\n * @returns {void}\n */'},
+  // A section-breaking marker terminates the section: the break text
+  // binds flat as the implementation, never in the entry.
+  {comment: '/**\n * @overload\n * @param {number} x\n * @callback Cb\n * @param {string} y\n * @returns {void}\n */'},
+  // Template position decides the route: first stalls, mid absorbs,
+  // pre-marker stays flat scope.
+  {comment: '/**\n * @overload\n * @template K\n * @param {K} a\n * @returns {K}\n */'},
+  {comment: '/**\n * @overload\n * @param {T} x\n * @template T\n * @returns {T}\n */'},
 ];
 
 // Hostile matrix: every rest/optional spelling crossed with every nesting
