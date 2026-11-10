@@ -64,6 +64,10 @@
     "output": "./test/typechecking/builtin-utilities-output.mjs"
   },
   {
+    "input": "./test/typechecking/callback-returns-input.mjs",
+    "output": "./test/typechecking/callback-returns-output.mjs"
+  },
+  {
     "input": "./test/typechecking/callbacks-input.mjs",
     "output": "./test/typechecking/callbacks-output.mjs"
   },
@@ -224,8 +228,20 @@
     "output": "./test/typechecking/only-description-output.mjs"
   },
   {
+    "input": "./test/typechecking/overload-dotted-input.mjs",
+    "output": "./test/typechecking/overload-dotted-output.mjs"
+  },
+  {
     "input": "./test/typechecking/overload-fields-input.mjs",
     "output": "./test/typechecking/overload-fields-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/overload-hostile-input.mjs",
+    "output": "./test/typechecking/overload-hostile-output.mjs"
+  },
+  {
+    "input": "./test/typechecking/overload-rest-input.mjs",
+    "output": "./test/typechecking/overload-rest-output.mjs"
   },
   {
     "input": "./test/typechecking/overloads-crossfile-input.mjs",

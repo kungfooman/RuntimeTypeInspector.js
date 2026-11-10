@@ -475,7 +475,8 @@ function pair(first, second) {
         ]
       },
       "templates": {
-        "T": "string"
+        "T": "string",
+        "U": "number"
       }
     },
     {
@@ -495,6 +496,7 @@ function pair(first, second) {
         ]
       },
       "templates": {
+        "T": "string",
         "U": "number"
       }
     }

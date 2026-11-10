@@ -832,9 +832,33 @@ function expandTypeDepFree(type) {
       return {type: 'function', parameters, ret};
     }
   }
-  // (1) Rest parameters like ...string
+  // (1) Rest parameters like `...string`: the top level of the gathered
+  // element stops at unions, commas, semicolons, and question marks, so
+  // `...number|string` gathers only the first element (`(number[])|string`,
+  // matching tsc) instead of the whole tail.
   if (type[0] === '.' && type[1] === '.' && type[2] === '.') {
-    const elementType = expandTypeDepFreeOrAny(type.slice(3).trim());
+    const rest = type.slice(3).trim();
+    let depth = 0;
+    let split = -1;
+    for (let i = 0; i < rest.length; i++) {
+      const c = rest[i];
+      if (c === '<' || c === '(' || c === '[' || c === '{') {
+        depth++;
+      } else if (c === '>' || c === ')' || c === ']' || c === '}') {
+        if (depth > 0) {
+          depth--;
+        }
+      } else if (depth === 0 && (c === '|' || c === ',' || c === ';' || c === '?')) {
+        split = i;
+        break;
+      }
+    }
+    if (split !== -1) {
+      const first = expandTypeDepFreeOrAny(rest.slice(0, split).trim());
+      const tail = expandTypeDepFreeOrAny(rest.slice(split + 1).trim());
+      return {type: 'union', members: [{type: 'array', elementType: first}, tail]};
+    }
+    const elementType = expandTypeDepFreeOrAny(rest);
     return {type: 'array', elementType};
   }
   // (2)

@@ -1,12 +1,11 @@
 import {expandTypeDepFree} from './expandTypeDepFree.js';
-import {collectOverloadBlocks} from './collectOverloadBlocks.js';
-import {splitOverloadSections} from './splitOverloadSections.js';
+import {collectOverloadBlocks} from './jsdoc-parsing-depfree/collectOverloadBlocks.js';
+import {splitOverloadSections} from './jsdoc-parsing-depfree/splitOverloadSections.js';
 import {nodeChildren} from './nodeChildren.js';
 import {nodeIsFunctionLike} from './nodeIsFunctionLike.js';
-import {parseJSDoc} from './parseJSDoc.js';
-import {parseJSDocSetter} from './parseJSDocSetter.js';
-import {parseJSDocTemplates} from './parseJSDocTemplates.js';
-import {parseJSDocTypedef} from './parseJSDocTypedef.js';
+import {parseJSDocDocument} from './jsdoc-parsing-depfree/parseJSDocDocument.js';
+import {parseJSDocTypedef} from './jsdoc-parsing-depfree/parseJSDocTypedef.js';
+import {docReaderBoth} from './jsdoc-parsing-ts/docReaderBoth.js';
 class JSDocAnnotator {
   /** @type {import('@babel/types').Node[]} */
   parents = [];
@@ -17,10 +16,16 @@ class JSDocAnnotator {
   /**
    * @param {Object} [options] - Options for the annotator.
    * @param {import('./parseJSDoc.js').ExpandType} [options.expandType] - Function to expand types.
+   * @param {import('./jsdoc-parsing-ts/docReaderBoth.js').DocReader} [options.docReader] - Injectable
+   * doc-reader probe running over every JSDoc comment. Absent unless set.
    */
   constructor(options = {}) {
     /** @type {import('./parseJSDoc.js').ExpandType} */
     this.expandType = options.expandType || expandTypeDepFree;
+    // Fail closed: only a real function probes. Garbage (a typo, a
+    // deleted key, a stale string) disables instead of enabling.
+    /** @type {import('./jsdoc-parsing-ts/docReaderBoth.js').DocReader|undefined} */
+    this.docReader = typeof options.docReader === 'function' ? options.docReader : undefined;
   }
   /**
    * Annotates the AST by adding 'jsdoc' properties to relevant nodes.
@@ -275,20 +280,25 @@ class JSDocAnnotator {
     if (comment.includes('@event') || comment.includes('@ignoreRTI')) {
       return;
     }
+    // Live reader probe: runs the injected docReader over every comment
+    // at transpile time (e.g. `docReaderBoth` for depfree-vs-TS drift
+    // warns in devtools). Fail closed: only a real function probes.
+    if (typeof this.docReader === 'function') {
+      this.docReader(comment);
+    }
     if (node.type === 'ClassMethod' && node.kind === 'set') {
       if (node.params.length !== 1) {
         console.warn('getJSDoc> setters require exactly one argument');
       }
-      const setterType = parseJSDocSetter(comment, this.expandType);
-      if (!setterType) {
+      const {setter} = parseJSDocDocument(comment, this.expandType);
+      if (!setter) {
         return;
       }
       const paramName = node.params[0].type === 'Identifier' ? node.params[0].name : 'value';
-      const params = {[paramName]: setterType};
+      const params = {[paramName]: setter};
       return {templates: undefined, params};
     }
-    const templates = parseJSDocTemplates(comment, this.expandType);
-    const params = parseJSDoc(comment, this.expandType);
+    const {templates, params} = parseJSDocDocument(comment, this.expandType);
     if (!templates && !params) {
       return;
     }

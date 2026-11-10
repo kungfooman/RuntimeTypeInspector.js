@@ -1,5 +1,5 @@
 import {extractCurlyContent} from './extractCurlyContent.js';
-import {parseJSDoc} from './parseJSDoc.js';
+import {parseJSDocDocument} from './jsdoc-parsing-depfree/parseJSDocDocument.js';
 import {inferTypeFromDefault} from './inferTypeFromDefault.js';
 // Declaration-site ranks: the field always beats constructor assignments,
 // like TSC where the declared type wins over assigned values.
@@ -343,7 +343,7 @@ function setterParamName(param) {
 function setterType(set, expandType) {
   const setComment = lastBlockComment(set);
   const paramName = setterParamName(set.params[0]);
-  const params = parseJSDoc(setComment ?? '', expandType);
+  const params = parseJSDocDocument(setComment ?? '', expandType).params;
   if (paramName && params && params[paramName] !== undefined) {
     return {type: params[paramName], raw: undefined, jsdoc: true};
   }
