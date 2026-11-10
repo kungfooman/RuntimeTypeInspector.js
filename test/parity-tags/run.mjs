@@ -194,6 +194,9 @@ const cases = [
   {comment: '/**\n * @callback T\n * @param {number} x\n * @returns {~Foo}\n */'},
   // An inline callback type carries no name binding on either side.
   {comment: '/**\n * @callback {function(number): void} Fn\n */'},
+  // A dotted child merges into the container inside an `@overload`
+  // signature too (playcanvas `args`), un-merging per section.
+  {comment: '/**\n * @overload\n * @param {object} [args] - Opts.\n * @param {boolean} [args.enabled] - Flag.\n * @returns {void}\n */'},
 ];
 
 // Hostile matrix: every rest/optional spelling crossed with every nesting

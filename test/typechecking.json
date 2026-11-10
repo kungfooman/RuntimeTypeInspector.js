@@ -228,6 +228,10 @@
     "output": "./test/typechecking/only-description-output.mjs"
   },
   {
+    "input": "./test/typechecking/overload-dotted-input.mjs",
+    "output": "./test/typechecking/overload-dotted-output.mjs"
+  },
+  {
     "input": "./test/typechecking/overload-fields-input.mjs",
     "output": "./test/typechecking/overload-fields-output.mjs"
   },

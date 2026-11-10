@@ -1,0 +1,24 @@
+{
+  "throws": [
+    {
+      "loc": "Scripts#create",
+      "name": "arguments",
+      "value": [
+        "player",
+        {
+          "enabled": 1
+        }
+      ]
+    },
+    {
+      "loc": "Scripts#create",
+      "name": "arguments",
+      "value": [
+        1,
+        {
+          "enabled": true
+        }
+      ]
+    }
+  ]
+}

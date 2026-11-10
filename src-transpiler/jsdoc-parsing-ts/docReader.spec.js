@@ -52,7 +52,12 @@ const inputs = [
   // An inline callback type carries no name on either side (tsc parses
   // it as the signature type with no binding), never a brace fragment.
   '@callback {function(number): void} Fn',
-  '@overload\n@param {string} label\n@param {...number[][]} values\n@returns {number}',
+  // A dotted child merges into its container inside an `@overload`
+  // signature too (the playcanvas `script/component.js` `args` shape),
+  // so the nested rows un-merge per section like the flat tail does.
+  '@overload\n@param {object} [args] - Opts.\n@param {boolean} [args.enabled] - Flag.\n@returns {void}',
+  '@overload\n@param {string} a\n@param {object} [args]\n@param {boolean} [args.x]\n@returns {string}\n@overload\n@param {number} b\n@param {object} [args]\n@param {boolean} [args.y]\n@returns {number}',
+  '@overload\n@param {number[]} ...values\n@returns {number}',
   '@overload\n@param {string} label\n@param {...number[][]} [values]\n@returns {number}',
 ];
 
