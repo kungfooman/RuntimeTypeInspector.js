@@ -46,6 +46,17 @@ function testNewlineEndsClause() {
   return readUnbracedType('Foo & { a: number }\nnext ') === 'Foo & { a: number }';
 }
 
+// An array suffix binds to the word: tsc reads `body[]` whole.
+function testArraySuffixBinds() {
+  return readUnbracedType('body[] ') === 'body[]';
+}
+
+// The suffix walks with each union member: spacing is the node's own,
+// so a tight head stays tight.
+function testUnionSuffixesBind() {
+  return readUnbracedType('body[]|null ') === 'body[]|null';
+}
+
 // A leading `-` binds nothing: tsc parses no type there.
 function testLeadingDashBindsNothing() {
   return readUnbracedType('-Foo ') === '';
@@ -60,5 +71,7 @@ export const tests = [
   testTrailingProseKeepsObject,
   testRecoveryTailRebalances,
   testNewlineEndsClause,
+  testArraySuffixBinds,
+  testUnionSuffixesBind,
   testLeadingDashBindsNothing,
 ];

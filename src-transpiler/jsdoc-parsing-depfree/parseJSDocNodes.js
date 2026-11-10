@@ -174,11 +174,14 @@ function sliceParenHead(cursor, start) {
 }
 /**
  * Slices a braceless head: like `sliceHead` (same stop set: known tags,
- * comment end, input end, newlines). A braceless head binds exactly one
- * word, and a prose mention can never be a node, so the head must not
- * smuggle the mention's text in — but `@unknown` mentions must not end
- * the slice either, or the head amputates (`@param [detail]` must read
- * `detail`, and `@foo.com` must ride along). Only a known `tag` ends it:
+ * comment end, input end, newlines). A braceless head binds its first
+ * word as the name, and a prose mention can never be a node, so the head
+ * must not smuggle the mention's text in — but `@unknown` mentions must
+ * not end the slice either, or the head amputates (`@param [detail]`
+ * must read `detail`, and `@foo.com` must ride along). A `{...}` group
+ * later in the head rides along too (matter-js swaps the order:
+ * `@param ...plugin {Function} The plugins` binds the head's first word
+ * as the name and the group as the type). Only a known `tag` ends it:
  * the chain rule decides whether that tag opens, and unknown mentions
  * ride through as head text.
  * @param {object} cursor - Cursor to read from and advance.
@@ -282,13 +285,17 @@ function parseJSDocNodes(src) {
         continue;
       }
       if (tag === '@param') {
-        // Braceless `@param` reads the head word: tsc binds the name and
-        // carries the rest as prose, so the node keeps the whole head for
-        // the shared grammar to split instead of skipping the row. The
-        // head ends where the chain's hygiene ends it: an `@`-mention
-        // inside prose never opens downstream, and its text can never be
-        // a name, so the head stops before it (`* @param {A} a mentions
-        // @param vaguely` keeps `a`).
+        // Braceless `@param` reads through the shared grammar: tsc binds
+        // the head's first word as the name and a `{...}` group later in
+        // the head as the type (matter-js swaps the order:
+        // `@param ...plugin {Function} The plugins`), and carries the
+        // rest as prose — so the node keeps the whole head for the
+        // grammar to split instead of skipping the row. A braceless head
+        // binds its first word as the name; the head ends where the
+        // chain's hygiene ends it: an `@`-mention inside prose never
+        // opens downstream, and its text can never be a name, so the head
+        // stops before it (`* @param {A} a mentions @param vaguely`
+        // keeps `a`).
         cursor.index += 1;
         const headRaw = sliceBareHead(cursor, token.end ?? token.pos);
         tags.push({tag, typeRaw: '', headRaw});

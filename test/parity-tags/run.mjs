@@ -164,6 +164,15 @@ const cases = [
   {comment: '/** @type Foo | Bar | Baz */'},
   {comment: '/** @type HTMLElement & { object: { test: true }; } */'},
   {comment: '/** @type HTMLAnchorElement & { object: { test: true }; } */'},
+  // Braceless `@type` array suffix: tsc reads `body[]` whole.
+  {comment: '/** @type body[] */'},
+  {comment: '/** @type body[]|null */'},
+  // Swapped type-after-name `@param` (matter-js order): tsc binds the
+  // head's first word as the name and the group as the type.
+  {comment: '/** @param ...plugin {Function} The plugin(s) */'},
+  {comment: '/** @param dependency {string} The dependency. */'},
+  // YUIDoc `{}` vacancy binds nothing on both sides.
+  {comment: '/** @param module {} The module. */'},
   // Mid-line `@type`: tsc attaches it wherever it sits.
   {comment: '/**\n * Sources note @type {Set<Value>}\n */'},
   {comment: '/**\n * @readonly @type {() => string}\n */'},

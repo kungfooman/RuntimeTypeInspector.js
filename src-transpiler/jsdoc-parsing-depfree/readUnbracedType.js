@@ -1,16 +1,19 @@
 /**
  * Reads an unbraced `@type` clause: the head word tsc binds plus the
- * `&`/`|` chain it reparses after it. tsc owns the boundary: the clause
- * holds type tokens (`&`, `|`, words, parenthesized and generic members,
- * one balanced `{...}`), and the first token that cannot continue it
- * starts the comment (`Foo & Bar some prose` binds `Foo & Bar`). The
- * line ends the clause (a newline splits type from comment even inside
- * braces). The clause strips its orphan `;` exactly like `stripTsBraces`
- * when the braces balance without it (the svelte cast `...; }` is closed
- * text with a statement tail, not recovery), and re-balances the same
- * way when they do not. A word with no clause reads alone; anything else
- * (a leading `-`, a digit, a quote) binds nothing, matching tsc which
- * parses no type there.
+ * suffix and `&`/`|` chain it reparses after it. tsc owns the boundary:
+ * the clause holds type tokens (words, `[]` suffixes, `&`, `|`,
+ * parenthesized and generic members, one balanced `{...}`), and the
+ * first token that cannot continue it starts the comment (`Foo & Bar
+ * some prose` binds `Foo & Bar`). The line ends the clause (a newline
+ * splits type from comment even inside braces). Spacing is the node's
+ * own: `body[]|null` prints tight because tsc never re-typesets it —
+ * only the spaced head spellings (`Foo & Bar`) join spaced. The clause
+ * strips its orphan `;` exactly like `stripTsBraces` when the braces
+ * balance without it (the svelte cast `...; }` is closed text with a
+ * statement tail, not recovery), and re-balances the same way when they
+ * do not. A word with no clause reads alone; anything else (a leading
+ * `-`, a digit, a quote) binds nothing, matching tsc which parses no
+ * type there.
  * @example
  * readUnbracedType('HTMLElement & { object: { test: true }; } ');
  * // 'HTMLElement & { object: { test: true } }'
@@ -33,11 +36,7 @@ function readUnbracedType(headRaw) {
   let rest = line.slice(word[0].length);
   // Braced heads slice differently by caller: `sliceHead` trims the cast
   // tail's outer ` }` (the head ends at the object's own `}`), while the
-  // lone-`@type` fallback passes the raw line through. The strip below
-  // covers both: the node path Strips through the tail match (a bare `;`
-  // with nothing after it), and the trailing-prose path strips here — a
-  // `; }` followed by prose is still the cast shape, since a continued
-  // clause after the object is not tsc's shape either way.
+  // lone-`@type` fallback passes the raw line through.
   const castTail = rest.match(/^(.*\})\s*;\s*(\}\s*)?$/);
   if (castTail) {
     rest = castTail[1] + ' }';
@@ -46,6 +45,24 @@ function readUnbracedType(headRaw) {
   if (castProse) {
     rest = castProse[1] + ' } ' + rest.slice(castProse[0].length);
   }
+  // An array suffix binds to the word: tsc reads `body[]` whole (the
+  // node text carries the suffix), so the head word carries it here. The
+  // suffix walks with each union member below as well: `body[]|null`
+  // keeps every member's brackets, spaced exactly as written (tsc never
+  // re-typesets the clause: the node's own text is the contract).
+  // Only one level binds per member (deeper suffixes never appear in the
+  // probe).
+  const bindSuffix = () => {
+    for (;;) {
+      const suffix = rest.match(/^\s*(\[\])/);
+      if (suffix === null) {
+        return;
+      }
+      out += '[]';
+      rest = rest.slice(suffix[0].length);
+    }
+  };
+  bindSuffix();
   // A generic head binds whole: without it the member match below stops
   // at the word and the `<...>` tail never chains. tsc prints the
   // arguments spaced (`Array<string>`), so the head carries them raw
@@ -60,22 +77,29 @@ function readUnbracedType(headRaw) {
     if (operator === null) {
       break;
     }
+    // Spacing is the node's own: the operator joins with exactly the
+    // whitespace the head carried (`Foo & Bar` joins spaced, `Foo&Bar`
+    // joins tight), because tsc never re-typesets the clause.
+    const join = operator[0].startsWith(' ') || operator[0].endsWith(' ') || rest.startsWith(' ') ? ' ' + operator[1] + ' ' : operator[1];
     const after = rest.slice(operator[0].length);
     const member = after.match(/^[A-Za-z_$][\w$]*/);
     const generic = after.match(/^[A-Za-z_$][\w$]*\s*(<[^<>\n]*>)/);
     const paren = after.match(/^(\([^()\n]*\))/);
     if (generic !== null) {
-      out += ' ' + operator[1] + ' ' + generic[0].replace(/\s+/, '');
+      out += join + generic[0].replace(/\s+/, '');
       rest = after.slice(generic[0].length);
       continue;
     }
     if (member !== null && /^\s*\{/.test(after.slice(member[0].length)) === false) {
-      out += ' ' + operator[1] + ' ' + member[0];
+      out += join + member[0];
       rest = after.slice(member[0].length);
+      // The suffix walks with each union member: `body[]|null` keeps
+      // every member's brackets, spaced exactly as written.
+      bindSuffix();
       continue;
     }
     if (paren !== null) {
-      out += ' ' + operator[1] + ' ' + paren[1];
+      out += join + paren[1];
       rest = after.slice(paren[0].length);
       continue;
     }
@@ -98,7 +122,7 @@ function readUnbracedType(headRaw) {
       if (recovery === null) {
         break;
       }
-      out += ' ' + operator[1] + ' ' + recovery[1] + ' }';
+      out += join + recovery[1] + ' }';
       break;
     }
     // The orphan `;` is statement text on a closed clause (the svelte
@@ -109,13 +133,13 @@ function readUnbracedType(headRaw) {
     if (afterTail !== '' && /^[A-Za-z_$]/.test(afterTail)) {
       // Trailing prose the head sliced in: keep the stripped object
       // (tsc splits the comment there while keeping the object).
-      out += ' ' + operator[1] + ' ' + stripped;
+      out += join + stripped;
       break;
     }
     if (afterTail !== '') {
       break;
     }
-    out += ' ' + operator[1] + ' ' + stripped;
+    out += join + stripped;
     break;
   }
   return out;

@@ -1,5 +1,6 @@
 import {parseJSDocNodes} from './parseJSDocNodes.js';
 import {makeParamTag} from './makeParamTag.js';
+import {parseParamHead} from './parseParamHead.js';
 import {readUnbracedType} from './readUnbracedType.js';
 import {splitOverloadSections} from './splitOverloadSections.js';
 import {docParamTag} from './docParamTag.js';
@@ -47,7 +48,21 @@ function docReaderDepFree(comment) {
   }
   for (const node of parseJSDocNodes(comment)) {
     if (node.tag === '@param') {
-      doc.params.push(docParamTag(makeParamTag(node.typeRaw, node.headRaw), node.typeRaw));
+      // The head may carry the type itself (matter-js swaps the order:
+      // `@param ...plugin {Function} The plugins`): tsc binds the head's
+      // first word as the name and the first `{...}` group past it as the
+      // type, so the depfree side splits the same way — name from the
+      // shared grammar (`parseParamHead` owns the name boundary),
+      // type from the first non-empty group past the name. The group must
+      // sit past the name (a leading group is a braced tag's type, never
+      // a head's) and must not be the YUIDoc `{}` vacancy (`@param
+      // module {}` binds nothing). The grammar reads the name on both
+      // sides of the split, so the name and the type agree instead of
+      // second-guessing each other.
+      const name = parseParamHead(node.headRaw).name;
+      const group = node.typeRaw === '' && name !== '' ? node.headRaw.slice(node.headRaw.indexOf(name) + name.length).match(/\{([^{}]*)\}/) : null;
+      const typeRaw = group !== null && group[1].trim() !== '' ? group[1] : node.typeRaw;
+      doc.params.push(docParamTag(makeParamTag(typeRaw, node.headRaw), typeRaw));
     } else if (node.tag === '@template') {
       doc.templates.push(...docTemplateNode(node));
     } else if (node.tag === '@returns' || node.tag === '@return') {

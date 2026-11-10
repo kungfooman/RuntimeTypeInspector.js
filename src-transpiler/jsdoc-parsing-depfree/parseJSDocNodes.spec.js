@@ -85,6 +85,20 @@ function testParserKeepsBracelessParamHead() {
   );
 }
 
+// A swapped type-after-name head keeps the group for the reader split:
+// tsc binds the head's first word as the name and the group as the type
+// (matter-js `@param ...plugin {Function} The plugins`), so the node
+// must not swallow the group as prose.
+function testParserKeepsPostBraceHead() {
+  const actual = parseJSDocNodes('@param ...plugin {Function} The plugin(s)');
+  return (
+    actual.length === 1 &&
+    actual[0].tag === '@param' &&
+    actual[0].typeRaw === '' &&
+    actual[0].headRaw === '...plugin {Function} The plugin(s)'
+  );
+}
+
 // A bare `@template O, P` keeps the whole head: the comma list binds
 // two names downstream, and truncation at the comma would amputate one.
 function testParserKeepsTemplateCommaHead() {
@@ -120,6 +134,7 @@ export const tests = [
   testParserRecoversUnbalanced,
   testParserKeepsMidlineReturnType,
   testParserKeepsBracelessParamHead,
+  testParserKeepsPostBraceHead,
   testParserKeepsTemplateCommaHead,
   testParserChainsTemplateIntoFollower,
   testParserSpendsChainOnMention,
