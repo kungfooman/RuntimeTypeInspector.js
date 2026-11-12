@@ -66,11 +66,14 @@ function testCyclesSafe() {
 }
 function testNeverThrows() {
   // Hostile values fall back to the input for today's behavior.
-  const proxy = new Proxy({}, {
-    getPrototypeOf() {
-      throw new Error('nope');
+  const proxy = new Proxy(
+    {},
+    {
+      getPrototypeOf() {
+        throw new Error('nope');
+      },
     },
-  });
+  );
   return tagSnapshot(proxy) === proxy;
 }
 function testPostedValuesTagged() {

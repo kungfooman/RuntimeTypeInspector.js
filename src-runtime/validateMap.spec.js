@@ -50,10 +50,18 @@ function testNumberKeysRejectStrings() {
   const expect = expandType('Map<number, string>');
   const warnings = [];
   const infos = [];
-  const ret = validateType(new Map([['1', 'a']]), expect, 'loc', 'name', true, (...args) => {
-    warnings.push(args[0]);
-    infos.push(args[1]);
-  }, 0);
+  const ret = validateType(
+    new Map([['1', 'a']]),
+    expect,
+    'loc',
+    'name',
+    true,
+    (...args) => {
+      warnings.push(args[0]);
+      infos.push(args[1]);
+    },
+    0,
+  );
   return ret === false && warnings.some((_) => typeof _ === 'string' && _.includes('Map key')) &&
     infos.some((info) => info && info.expect === 'number' && info.value === '1');
 }

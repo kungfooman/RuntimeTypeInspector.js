@@ -15,10 +15,15 @@ function testListUnchanged() {
 // We want: nested lists substitute recursively, because an element may
 // itself contain the search key at any depth.
 function testListNested() {
-  return JSON.stringify(substituteList([{
-    type: 'array',
-    elementType: 'K',
-  }, 'number'], 'K', '"a"', noop)) ===
+  return JSON.stringify(substituteList(
+    [{
+      type: 'array',
+      elementType: 'K',
+    }, 'number'],
+    'K',
+    '"a"',
+    noop,
+  )) ===
     JSON.stringify([{type: 'array', elementType: '"a"'}, 'number']);
 }
 // We want: an empty list returns an empty list, because there is nothing

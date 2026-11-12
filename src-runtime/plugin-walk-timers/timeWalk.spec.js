@@ -13,17 +13,25 @@ function testOffIsPassthrough() {
   // the slot works everywhere and the captured descriptor restores it.
   options.checkStats = false;
   const virginNow = Object.getOwnPropertyDescriptor(performance, 'now');
-  Object.defineProperty(performance, 'now', {
-    value: () => {
-      throw new Error('clock must not run when stats are off');
+  Object.defineProperty(
+    performance,
+    'now',
+    {
+      value: () => {
+        throw new Error('clock must not run when stats are off');
+      },
+      configurable: true,
+      writable: true,
     },
-    configurable: true,
-    writable: true,
-  });
+  );
   try {
-    const done = timeWalk('T#x', 'items', () => {
-      throw new Error('recorder must not run when stats are off');
-    });
+    const done = timeWalk(
+      'T#x',
+      'items',
+      () => {
+        throw new Error('recorder must not run when stats are off');
+      },
+    );
     return done(true) === true && done(false) === false;
   } finally {
     if (virginNow === undefined) {

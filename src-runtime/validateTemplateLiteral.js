@@ -14,22 +14,28 @@ import {resolveTemplateLiteralValues} from "./resolveTemplateLiteralValues.js";
 function validateTemplateLiteral(value, expect, loc, name, critical, warn, depth) {
   const values = resolveTemplateLiteralValues(expect, warn);
   if (!values) {
-    warn(`Given value '${value}' couldn't be checked against template literal type.`, {
-      loc,
-      name,
-      expect,
-    });
+    warn(
+      `Given value '${value}' couldn't be checked against template literal type.`,
+      {
+        loc,
+        name,
+        expect,
+      },
+    );
     return false;
   }
   if (values.includes(value)) {
     return true;
   }
-  warn(`Given value '${value}' doesn't satisfy template literal type.`, {
-    loc,
-    name,
-    expect,
-    values,
-  });
+  warn(
+    `Given value '${value}' doesn't satisfy template literal type.`,
+    {
+      loc,
+      name,
+      expect,
+      values,
+    },
+  );
   return false;
 }
 export {validateTemplateLiteral};

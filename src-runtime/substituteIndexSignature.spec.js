@@ -3,10 +3,15 @@ const noop = () => undefined;
 // We want: the index type of an index signature substitutes, because it is
 // the value type of the signature.
 function testIndexSignatureType() {
-  return JSON.stringify(substituteIndexSignature({
-    type: 'indexSignature',
-    indexType: 'K',
-  }, 'K', '"a"', noop)) ===
+  return JSON.stringify(substituteIndexSignature(
+    {
+      type: 'indexSignature',
+      indexType: 'K',
+    },
+    'K',
+    '"a"',
+    noop,
+  )) ===
     JSON.stringify({type: 'indexSignature', indexType: '"a"'});
 }
 // We want: the index parameters substitute, because they are descriptors

@@ -16,30 +16,36 @@ function testSecondHitRefreshesExpect() {
   // failing with a re-substituted type must replace the first call's
   // expect — otherwise the modal explains value #2 with type #1.
   const warnObj = stubWarning();
-  refreshWarning(warnObj, {
-    value: 'Single Error',
-    expect: {
-      type: 'condition',
-      checkType: true,
-      extendsType: true,
-      trueType: 'string[]',
-      falseType: 'string',
+  refreshWarning(
+    warnObj,
+    {
+      value: 'Single Error',
+      expect: {
+        type: 'condition',
+        checkType: true,
+        extendsType: true,
+        trueType: 'string[]',
+        falseType: 'string',
+      },
+      msg: 'm1',
+      strings: ['s1'],
     },
-    msg: 'm1',
-    strings: ['s1'],
-  });
-  refreshWarning(warnObj, {
-    value: ['Error 1'],
-    expect: {
-      type: 'condition',
-      checkType: false,
-      extendsType: true,
-      trueType: 'string[]',
-      falseType: 'string',
+  );
+  refreshWarning(
+    warnObj,
+    {
+      value: ['Error 1'],
+      expect: {
+        type: 'condition',
+        checkType: false,
+        extendsType: true,
+        trueType: 'string[]',
+        falseType: 'string',
+      },
+      msg: 'm2',
+      strings: ['s2'],
     },
-    msg: 'm2',
-    strings: ['s2'],
-  });
+  );
   return warnObj.value.join() === 'Error 1' && warnObj.expect.checkType === false &&
     warnObj.msg === 'm2' && warnObj.detailStrings.join() === 's2';
 }

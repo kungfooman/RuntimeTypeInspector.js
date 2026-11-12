@@ -115,10 +115,16 @@ function testFirstPinWins() {
 // matching tsc.
 function testNestedFirstPins() {
   const templates = {T: 'any'};
-  const first = captureWarns(() => inspectTypeWithTemplates(['a'], {
-    type: 'array',
-    elementType: 'T',
-  }, 'loc', 'x', templates));
+  const first = captureWarns(() => inspectTypeWithTemplates(
+    ['a'],
+    {
+      type: 'array',
+      elementType: 'T',
+    },
+    'loc',
+    'x',
+    templates,
+  ));
   if (!first.ret || templates.T !== '"a"') {
     return false;
   }
@@ -133,10 +139,16 @@ function testNestedAfterBareWidens() {
   if (!first.ret) {
     return false;
   }
-  const second = captureWarns(() => inspectTypeWithTemplates({sub: 'b'}, {
-    type: 'object',
-    properties: {sub: 'K'},
-  }, 'loc', 'opts', templates));
+  const second = captureWarns(() => inspectTypeWithTemplates(
+    {sub: 'b'},
+    {
+      type: 'object',
+      properties: {sub: 'K'},
+    },
+    'loc',
+    'opts',
+    templates,
+  ));
   return second.ret && second.warnings.length === 0 && templates.K === 'string';
 }
 // Literal-union constraints union instead of widening: `hD('a', 'b')` with
@@ -182,14 +194,26 @@ function testNoInferBlocksAndKeepsLiteral() {
 // later nested occurrences precise (the `addComponent` pattern).
 function testNestedStaysPrecise() {
   const templates = {T: '"camera"'};
-  const good = captureWarns(() => inspectTypeWithTemplates(['camera'], {
-    type: 'array',
-    elementType: 'T',
-  }, 'loc', 'opts', templates));
-  const bad = captureWarns(() => inspectTypeWithTemplates(['light'], {
-    type: 'array',
-    elementType: 'T',
-  }, 'loc', 'opts', templates));
+  const good = captureWarns(() => inspectTypeWithTemplates(
+    ['camera'],
+    {
+      type: 'array',
+      elementType: 'T',
+    },
+    'loc',
+    'opts',
+    templates,
+  ));
+  const bad = captureWarns(() => inspectTypeWithTemplates(
+    ['light'],
+    {
+      type: 'array',
+      elementType: 'T',
+    },
+    'loc',
+    'opts',
+    templates,
+  ));
   return good.ret === true && bad.ret === false;
 }
 // Failure messages are a superset of tsc's: they contain the actual type, the

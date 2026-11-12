@@ -91,21 +91,27 @@ function test6() {
   // References to registered typedefs are resolved recursively
   clearObject(typedefs);
   registerTypedef('Lang', {type: 'union', members: ['"en"', '"ja"', '"pt"']});
-  registerTypedef('AllLocaleIDs', {
-    type: 'templateLiteral',
-    quasis: ['', '_id'],
-    types: [
-      {
-        type: 'union',
-        members: ['"welcome_email"', '"email_heading"', '"footer_title"', '"footer_sendoff"'],
-      },
-    ],
-  });
-  registerTypedef('LocaleMessageIDs', {
-    type: 'templateLiteral',
-    quasis: ['', '_', ''],
-    types: ['Lang', 'AllLocaleIDs'],
-  });
+  registerTypedef(
+    'AllLocaleIDs',
+    {
+      type: 'templateLiteral',
+      quasis: ['', '_id'],
+      types: [
+        {
+          type: 'union',
+          members: ['"welcome_email"', '"email_heading"', '"footer_title"', '"footer_sendoff"'],
+        },
+      ],
+    },
+  );
+  registerTypedef(
+    'LocaleMessageIDs',
+    {
+      type: 'templateLiteral',
+      quasis: ['', '_', ''],
+      types: ['Lang', 'AllLocaleIDs'],
+    },
+  );
   const values = resolveTemplateLiteralValues(typedefs.LocaleMessageIDs, () => undefined);
   // 3 langs x 4 ids = 12 permutations
   if (values?.length !== 12) {

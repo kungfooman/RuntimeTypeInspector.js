@@ -179,12 +179,16 @@ function tagProvenance(result, name, args) {
   const members = isUnion ? result.members : [result];
   for (const member of members) {
     if (member && typeof member === 'object') {
-      Object.defineProperty(member, '__provenance', {
-        value: info,
-        enumerable: false,
-        writable: true,
-        configurable: true,
-      });
+      Object.defineProperty(
+        member,
+        '__provenance',
+        {
+          value: info,
+          enumerable: false,
+          writable: true,
+          configurable: true,
+        },
+      );
     }
   }
   return result;

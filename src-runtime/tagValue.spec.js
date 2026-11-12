@@ -35,11 +35,15 @@ function testThrowingGetterFallsBack() {
   // degrades to `'object'`: the handler exists so reporting never crashes
   // on the value it reports about.
   const evil = {};
-  Object.defineProperty(evil, 'constructor', {
-    get() {
-      throw new Error('nope');
+  Object.defineProperty(
+    evil,
+    'constructor',
+    {
+      get() {
+        throw new Error('nope');
+      },
     },
-  });
+  );
   return tagValue(evil) === 'object';
 }
 const tests = [

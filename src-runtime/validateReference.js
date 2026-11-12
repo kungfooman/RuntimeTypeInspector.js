@@ -243,31 +243,55 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         warn('ReadonlyArray requires one type argument.', {expect});
         return false;
       }
-      return validators.validateArray(value, {
-        type: 'array',
-        elementType: firstArg,
-      }, loc, name, critical, warn, depth + 1);
+      return validators.validateArray(
+        value,
+        {
+          type: 'array',
+          elementType: firstArg,
+        },
+        loc,
+        name,
+        critical,
+        warn,
+        depth + 1,
+      );
     case 'ReadonlyMap':
       // Readonly-ness is erased at runtime, same shape as Map.
       if (args?.length !== 2) {
         warn('ReadonlyMap requires two type arguments.', {expect});
         return false;
       }
-      return validators.validateMap(value, {
-        type: 'map',
-        key: args[0],
-        val: args[1],
-      }, loc, name, critical, warn, depth + 1);
+      return validators.validateMap(
+        value,
+        {
+          type: 'map',
+          key: args[0],
+          val: args[1],
+        },
+        loc,
+        name,
+        critical,
+        warn,
+        depth + 1,
+      );
     case 'ReadonlySet':
       // Readonly-ness is erased at runtime, same shape as Set.
       if (!firstArg) {
         warn('ReadonlySet requires one type argument.', {expect});
         return false;
       }
-      return validators.validateSet(value, {
-        type: 'set',
-        elementType: firstArg,
-      }, loc, name, critical, warn, depth + 1);
+      return validators.validateSet(
+        value,
+        {
+          type: 'set',
+          elementType: firstArg,
+        },
+        loc,
+        name,
+        critical,
+        warn,
+        depth + 1,
+      );
     case 'ConcatArray':
       // ConcatArray<T> is array-like (length + indexed access) plus join/slice.
       // Accept anything array-like here; arrays trivially satisfy it.
@@ -312,11 +336,19 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
           }
           [inner] = nested;
         }
-        return recurse(value, {
-          type: 'reference',
-          name: 'Partial',
-          args: [inner],
-        }, loc, name, critical, warn, depth + 1);
+        return recurse(
+          value,
+          {
+            type: 'reference',
+            name: 'Partial',
+            args: [inner],
+          },
+          loc,
+          name,
+          critical,
+          warn,
+          depth + 1,
+        );
       }
       // Nominal classes accept their instances (including subclasses)
       // outright: a genuine instance already carries every member, so it
@@ -343,11 +375,19 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         const create = validators.createTypeFromIndexedAccess ?? createTypeFromIndexedAccess;
         const resolved = create ? create(firstArg, () => undefined) : undefined;
         if (resolved !== undefined) {
-          return recurse(value, {
-            type: 'reference',
-            name: 'Partial',
-            args: [resolved],
-          }, loc, name, critical, warn, depth + 1);
+          return recurse(
+            value,
+            {
+              type: 'reference',
+              name: 'Partial',
+              args: [resolved],
+            },
+            loc,
+            name,
+            critical,
+            warn,
+            depth + 1,
+          );
         }
       }
       // Transparent wrappers keep homomorphic behavior through recursion.
@@ -359,11 +399,19 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
       const isTransparent = isNonNull || isReadonly || isNoInfer;
       if (isTransparent) {
         const [unwrapped] = firstArg.args;
-        return recurse(value, {
-          type: 'reference',
-          name: 'Partial',
-          args: [unwrapped],
-        }, loc, name, critical, warn, depth + 1);
+        return recurse(
+          value,
+          {
+            type: 'reference',
+            name: 'Partial',
+            args: [unwrapped],
+          },
+          loc,
+          name,
+          critical,
+          warn,
+          depth + 1,
+        );
       }
       // Typedef aliases (e.g. `type Id = number`) re-enter through Partial
       // so the underlying kind takes its own branch below (primitives pass
@@ -372,11 +420,19 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         const aliased = typedefs[firstArg];
         const isBare = typeof aliased === 'string' && !typedefs[aliased] && !classes[aliased];
         if (isBare) {
-          return recurse(value, {
-            type: 'reference',
-            name: 'Partial',
-            args: [aliased],
-          }, loc, name, critical, warn, depth + 1);
+          return recurse(
+            value,
+            {
+              type: 'reference',
+              name: 'Partial',
+              args: [aliased],
+            },
+            loc,
+            name,
+            critical,
+            warn,
+            depth + 1,
+          );
         }
       }
       if (firstArg && firstArg.type === 'reference' && typedefs[firstArg.name]) {
@@ -384,33 +440,49 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         const isBare = typeof instancePartial === 'string';
         const isKnown = isBare && (typedefs[instancePartial] || classes[instancePartial]);
         if (isBare && !isKnown) {
-          return recurse(value, {
-            type: 'reference',
-            name: 'Partial',
-            args: [instancePartial],
-          }, loc, name, critical, warn, depth + 1);
+          return recurse(
+            value,
+            {
+              type: 'reference',
+              name: 'Partial',
+              args: [instancePartial],
+            },
+            loc,
+            name,
+            critical,
+            warn,
+            depth + 1,
+          );
         }
       }
       // `any` maps over its string/number/symbol keys: an object bag with
       // `any` signatures, admitting objects (and functions, arrays) while
       // rejecting primitives and nullish values, exactly like TypeScript.
       if (firstArg === 'any') {
-        return recurse(value, {
-          type: 'object',
-          properties: {},
-          indexSignatures: [
-            {
-              type: 'indexSignature',
-              indexType: 'any',
-              indexParameters: [{type: 'parameter', paramType: 'string', name: 'k'}],
-            },
-            {
-              type: 'indexSignature',
-              indexType: 'any',
-              indexParameters: [{type: 'parameter', paramType: 'number', name: 'n'}],
-            },
-          ],
-        }, loc, name, critical, warn, depth + 1);
+        return recurse(
+          value,
+          {
+            type: 'object',
+            properties: {},
+            indexSignatures: [
+              {
+                type: 'indexSignature',
+                indexType: 'any',
+                indexParameters: [{type: 'parameter', paramType: 'string', name: 'k'}],
+              },
+              {
+                type: 'indexSignature',
+                indexType: 'any',
+                indexParameters: [{type: 'parameter', paramType: 'number', name: 'n'}],
+              },
+            ],
+          },
+          loc,
+          name,
+          critical,
+          warn,
+          depth + 1,
+        );
       }
       // `unknown` maps over `never` keys: the bare object, admitting every
       // non-nullish value and nothing else.
@@ -437,10 +509,18 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
           }
           return out;
         });
-        return recurse(value, members.length === 1 ? members[0] : {
-          type: 'union',
-          members,
-        }, loc, name, critical, warn, depth + 1);
+        return recurse(
+          value,
+          members.length === 1 ? members[0] : {
+            type: 'union',
+            members,
+          },
+          loc,
+          name,
+          critical,
+          warn,
+          depth + 1,
+        );
       }
       // Homomorphic passthrough: `Partial<number>` is `number` (and the same
       // for other primitives and literals), matching TypeScript. (`any`
@@ -494,11 +574,19 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
           type: 'union',
           members: [element, 'undefined'],
         };
-        return recurse(value, {
-          ...firstArg,
-          type: 'array',
-          elementType: partialElement,
-        }, loc, name, critical, warn, depth + 1);
+        return recurse(
+          value,
+          {
+            ...firstArg,
+            type: 'array',
+            elementType: partialElement,
+          },
+          loc,
+          name,
+          critical,
+          warn,
+          depth + 1,
+        );
       }
       // `Partial<[number, string]>` is `[(number | undefined)?, (string |
       // undefined)?]`: tuples stay tuples with optional undefined-able
@@ -519,11 +607,19 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
           }
           return {type: 'tupleMember', elementType, optional: true};
         });
-        return recurse(value, {
-          ...firstArg,
-          type: 'tuple',
-          elements,
-        }, loc, name, critical, warn, depth + 1);
+        return recurse(
+          value,
+          {
+            ...firstArg,
+            type: 'tuple',
+            elements,
+          },
+          loc,
+          name,
+          critical,
+          warn,
+          depth + 1,
+        );
       }
       // Decidable conditions resolve to a branch first: `Partial<Cond>` is
       // `Partial<TrueBranch>` (or false). Typedef aliases (and generic
@@ -549,18 +645,34 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         if (target && target.type === 'condition') {
           const decision = evaluateCondition(target.checkType, target.extendsType, warn);
           if (decision === true) {
-            return recurse(value, {
-              type: 'reference',
-              name: 'Partial',
-              args: [target.trueType],
-            }, loc, name, critical, warn, depth + 1);
+            return recurse(
+              value,
+              {
+                type: 'reference',
+                name: 'Partial',
+                args: [target.trueType],
+              },
+              loc,
+              name,
+              critical,
+              warn,
+              depth + 1,
+            );
           }
           if (decision === false) {
-            return recurse(value, {
-              type: 'reference',
-              name: 'Partial',
-              args: [target.falseType],
-            }, loc, name, critical, warn, depth + 1);
+            return recurse(
+              value,
+              {
+                type: 'reference',
+                name: 'Partial',
+                args: [target.falseType],
+              },
+              loc,
+              name,
+              critical,
+              warn,
+              depth + 1,
+            );
           }
         }
       }
@@ -611,10 +723,18 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         }
         return out;
       });
-      return recurse(value, members.length === 1 ? members[0] : {
-        type: 'union',
-        members,
-      }, loc, name, critical, warn, depth + 1);
+      return recurse(
+        value,
+        members.length === 1 ? members[0] : {
+          type: 'union',
+          members,
+        },
+        loc,
+        name,
+        critical,
+        warn,
+        depth + 1,
+      );
     }
     case 'IfEquals': {
       // Identity comparison for WritableKeys-style filtering. Missing A/B
@@ -697,11 +817,19 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
           }
           [inner] = nested;
         }
-        return recurse(value, {
-          type: 'reference',
-          name: 'Required',
-          args: [inner],
-        }, loc, name, critical, warn, depth + 1);
+        return recurse(
+          value,
+          {
+            type: 'reference',
+            name: 'Required',
+            args: [inner],
+          },
+          loc,
+          name,
+          critical,
+          warn,
+          depth + 1,
+        );
       }
       // Same nominal shortcut as Partial: instances already carry every
       // member the bare class check demands.
@@ -723,11 +851,19 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         const access = validators.createTypeFromIndexedAccess ?? createTypeFromIndexedAccess;
         const resolved = access ? access(firstArg, () => undefined) : undefined;
         if (resolved !== undefined) {
-          return recurse(value, {
-            type: 'reference',
-            name: 'Required',
-            args: [resolved],
-          }, loc, name, critical, warn, depth + 1);
+          return recurse(
+            value,
+            {
+              type: 'reference',
+              name: 'Required',
+              args: [resolved],
+            },
+            loc,
+            name,
+            critical,
+            warn,
+            depth + 1,
+          );
         }
       }
       const isWrapper = firstArg?.type === 'reference' && firstArg?.args?.length;
@@ -736,21 +872,37 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
       const isNoInfer = wrapperName === 'NoInfer';
       if (isTransparent || isNoInfer) {
         const [unwrapped] = firstArg.args;
-        return recurse(value, {
-          type: 'reference',
-          name: 'Required',
-          args: [unwrapped],
-        }, loc, name, critical, warn, depth + 1);
+        return recurse(
+          value,
+          {
+            type: 'reference',
+            name: 'Required',
+            args: [unwrapped],
+          },
+          loc,
+          name,
+          critical,
+          warn,
+          depth + 1,
+        );
       }
       if (typeof firstArg === 'string' && typedefs[firstArg]) {
         const aliased = typedefs[firstArg];
         const isBare = typeof aliased === 'string' && !typedefs[aliased] && !classes[aliased];
         if (isBare) {
-          return recurse(value, {
-            type: 'reference',
-            name: 'Required',
-            args: [aliased],
-          }, loc, name, critical, warn, depth + 1);
+          return recurse(
+            value,
+            {
+              type: 'reference',
+              name: 'Required',
+              args: [aliased],
+            },
+            loc,
+            name,
+            critical,
+            warn,
+            depth + 1,
+          );
         }
       }
       if (firstArg && firstArg.type === 'reference' && typedefs[firstArg.name]) {
@@ -758,32 +910,48 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         const isBare = typeof instanceRequired === 'string';
         const isKnown = isBare && (typedefs[instanceRequired] || classes[instanceRequired]);
         if (isBare && !isKnown) {
-          return recurse(value, {
-            type: 'reference',
-            name: 'Required',
-            args: [instanceRequired],
-          }, loc, name, critical, warn, depth + 1);
+          return recurse(
+            value,
+            {
+              type: 'reference',
+              name: 'Required',
+              args: [instanceRequired],
+            },
+            loc,
+            name,
+            critical,
+            warn,
+            depth + 1,
+          );
         }
       }
       // `any`/`unknown`/template literals/`keyof` behave exactly like under
       // Partial (see above): signatures bag, bare object, identity.
       if (firstArg === 'any') {
-        return recurse(value, {
-          type: 'object',
-          properties: {},
-          indexSignatures: [
-            {
-              type: 'indexSignature',
-              indexType: 'any',
-              indexParameters: [{type: 'parameter', paramType: 'string', name: 'k'}],
-            },
-            {
-              type: 'indexSignature',
-              indexType: 'any',
-              indexParameters: [{type: 'parameter', paramType: 'number', name: 'n'}],
-            },
-          ],
-        }, loc, name, critical, warn, depth + 1);
+        return recurse(
+          value,
+          {
+            type: 'object',
+            properties: {},
+            indexSignatures: [
+              {
+                type: 'indexSignature',
+                indexType: 'any',
+                indexParameters: [{type: 'parameter', paramType: 'string', name: 'k'}],
+              },
+              {
+                type: 'indexSignature',
+                indexType: 'any',
+                indexParameters: [{type: 'parameter', paramType: 'number', name: 'n'}],
+              },
+            ],
+          },
+          loc,
+          name,
+          critical,
+          warn,
+          depth + 1,
+        );
       }
       if (firstArg === 'unknown') {
         return recurse(value, {type: 'object'}, loc, name, critical, warn, depth + 1);
@@ -806,10 +974,18 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
           }
           return out;
         });
-        return recurse(value, members.length === 1 ? members[0] : {
-          type: 'union',
-          members,
-        }, loc, name, critical, warn, depth + 1);
+        return recurse(
+          value,
+          members.length === 1 ? members[0] : {
+            type: 'union',
+            members,
+          },
+          loc,
+          name,
+          critical,
+          warn,
+          depth + 1,
+        );
       }
       // `Required<number>` is `number`, mirroring Partial passthrough
       // (`any`/`unknown` take their dedicated shapes above).
@@ -861,11 +1037,19 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
           }
           return element;
         });
-        return recurse(value, {
-          ...firstArg,
-          type: 'tuple',
-          elements,
-        }, loc, name, critical, warn, depth + 1);
+        return recurse(
+          value,
+          {
+            ...firstArg,
+            type: 'tuple',
+            elements,
+          },
+          loc,
+          name,
+          critical,
+          warn,
+          depth + 1,
+        );
       }
       // Decidable conditions resolve to a branch first, mirroring Partial.
       if (firstArg !== undefined) {
@@ -888,18 +1072,34 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         if (target && target.type === 'condition') {
           const decision = evaluateCondition(target.checkType, target.extendsType, warn);
           if (decision === true) {
-            return recurse(value, {
-              type: 'reference',
-              name: 'Required',
-              args: [target.trueType],
-            }, loc, name, critical, warn, depth + 1);
+            return recurse(
+              value,
+              {
+                type: 'reference',
+                name: 'Required',
+                args: [target.trueType],
+              },
+              loc,
+              name,
+              critical,
+              warn,
+              depth + 1,
+            );
           }
           if (decision === false) {
-            return recurse(value, {
-              type: 'reference',
-              name: 'Required',
-              args: [target.falseType],
-            }, loc, name, critical, warn, depth + 1);
+            return recurse(
+              value,
+              {
+                type: 'reference',
+                name: 'Required',
+                args: [target.falseType],
+              },
+              loc,
+              name,
+              critical,
+              warn,
+              depth + 1,
+            );
           }
         }
       }

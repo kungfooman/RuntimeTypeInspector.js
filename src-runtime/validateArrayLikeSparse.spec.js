@@ -25,10 +25,18 @@ function testHolesSkipped() {
   grown.length = 3;
   return validateArrayLikeSparse(grown, numbers(), 'loc', 'name', true, warn, 0) === true &&
     validateArrayLikeSparse(new Array(3), numbers(), 'loc', 'name', true, warn, 0) === true &&
-    validateArrayLikeSparse({
-      length: 2,
-      0: 1,
-    }, likeNumbers(), 'loc', 'name', true, warn, 0) === true;
+    validateArrayLikeSparse(
+      {
+        length: 2,
+        0: 1,
+      },
+      likeNumbers(),
+      'loc',
+      'name',
+      true,
+      warn,
+      0,
+    ) === true;
 }
 function testElementTypeGeneric() {
   // Any element type works: holey string arrays pass, mixed fail.
@@ -46,16 +54,32 @@ function testBadShapesFail() {
 }
 function testBareArrayLikeIsShapeOnly() {
   // Bare `ArrayLike` (no args) checks shape only, like the strict branch.
-  return validateArrayLikeSparse([1, '2'], {
-    type: 'reference',
-    name: 'ArrayLike',
-    args: [],
-  }, 'loc', 'name', true, warn, 0) === true &&
-    validateArrayLikeSparse({}, {
+  return validateArrayLikeSparse(
+    [1, '2'],
+    {
       type: 'reference',
       name: 'ArrayLike',
       args: [],
-    }, 'loc', 'name', true, warn, 0) === false;
+    },
+    'loc',
+    'name',
+    true,
+    warn,
+    0,
+  ) === true &&
+    validateArrayLikeSparse(
+      {},
+      {
+        type: 'reference',
+        name: 'ArrayLike',
+        args: [],
+      },
+      'loc',
+      'name',
+      true,
+      warn,
+      0,
+    ) === false;
 }
 const tests = [
   testDensePasses,

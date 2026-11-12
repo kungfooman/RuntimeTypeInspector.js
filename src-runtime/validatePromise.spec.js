@@ -17,11 +17,19 @@ function testPromiseNumberValid() {
   const promise = new Promise((resolve) => {
     resolve(123);
   });
-  const ret = validateType(promise, expect, 'test', 'a', true, (...args) => {
-    if (args[0] === 'unchecked') {
-      unchecked = true;
-    }
-  }, 0);
+  const ret = validateType(
+    promise,
+    expect,
+    'test',
+    'a',
+    true,
+    (...args) => {
+      if (args[0] === 'unchecked') {
+        unchecked = true;
+      }
+    },
+    0,
+  );
   return ret === true && unchecked === false;
 }
 function testPromiseNumberInvalid() {
@@ -55,9 +63,17 @@ function testPromiseRejectsWithWarning() {
   // Failure must warn (not silently pass) and must not warn 'unchecked'.
   const expect = expandType('Promise<number>');
   const warnings = [];
-  const ret = validateType(123, expect, 'test', 'a', true, (...args) => {
-    warnings.push(args[0]);
-  }, 0);
+  const ret = validateType(
+    123,
+    expect,
+    'test',
+    'a',
+    true,
+    (...args) => {
+      warnings.push(args[0]);
+    },
+    0,
+  );
   if (ret !== false) {
     return false;
   }

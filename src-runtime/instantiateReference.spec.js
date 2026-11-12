@@ -26,22 +26,28 @@ function testStableNodeReturnsSameInstance() {
 // An unknown name instantiates nothing: the caller sees undefined and can
 // report `unchecked` instead of validating against a phantom type.
 function testMissingTypedefReturnsUndefined() {
-  return instantiateReference({
-    type: 'reference',
-    name: 'UnregisteredBox',
-    args: ['number'],
-  }, warn) === undefined;
+  return instantiateReference(
+    {
+      type: 'reference',
+      name: 'UnregisteredBox',
+      args: ['number'],
+    },
+    warn,
+  ) === undefined;
 }
 // Without template parameters or arguments there is nothing to substitute:
 // the registry object itself comes back by identity, uncloned.
 function testNoArgsReturnsRegistryEntry() {
   registerTypedef('PlainBox', {type: 'object', properties: {n: 'number'}});
   try {
-    return instantiateReference({
-      type: 'reference',
-      name: 'PlainBox',
-      args: [],
-    }, warn) === typedefs.PlainBox;
+    return instantiateReference(
+      {
+        type: 'reference',
+        name: 'PlainBox',
+        args: [],
+      },
+      warn,
+    ) === typedefs.PlainBox;
   } finally {
     dropTypedef('PlainBox');
   }
@@ -51,11 +57,14 @@ function testNoArgsReturnsRegistryEntry() {
 function testInstanceFrozen() {
   registerTypedef('FrozenBox', {type: 'object', properties: {v: 'T'}}, ['T']);
   try {
-    const inst = instantiateReference({
-      type: 'reference',
-      name: 'FrozenBox',
-      args: ['number'],
-    }, warn);
+    const inst = instantiateReference(
+      {
+        type: 'reference',
+        name: 'FrozenBox',
+        args: ['number'],
+      },
+      warn,
+    );
     let loud = false;
     try {
       inst.properties.v = 'string';
@@ -72,16 +81,22 @@ function testInstanceFrozen() {
 function testArgFillMatchesTypeScript() {
   registerTypedef('TwoParamBox', {type: 'object', properties: {a: 'T', b: 'U'}}, ['T', 'U']);
   try {
-    const missing = instantiateReference({
-      type: 'reference',
-      name: 'TwoParamBox',
-      args: ['number'],
-    }, warn);
-    const extra = instantiateReference({
-      type: 'reference',
-      name: 'TwoParamBox',
-      args: ['number', 'string', 'boolean'],
-    }, warn);
+    const missing = instantiateReference(
+      {
+        type: 'reference',
+        name: 'TwoParamBox',
+        args: ['number'],
+      },
+      warn,
+    );
+    const extra = instantiateReference(
+      {
+        type: 'reference',
+        name: 'TwoParamBox',
+        args: ['number', 'string', 'boolean'],
+      },
+      warn,
+    );
     return missing.properties.a === 'number' && missing.properties.b === 'any' &&
       extra.properties.a === 'number' && extra.properties.b === 'string';
   } finally {

@@ -35,10 +35,13 @@ function validateRecord(value, expect, loc, name, critical, warn, depth) {
     } else if (key !== undefined && key !== 'any' && key !== 'unknown' && key !== '*' &&
       key !== 'string') {
       if (!recurse(prop, key, loc, nameKey, critical, warn, depth + 1)) {
-        warn(`> validateType> record> key '${prop}' has an invalid type.`, {
-          expect: key,
-          value: prop,
-        });
+        warn(
+          `> validateType> record> key '${prop}' has an invalid type.`,
+          {
+            expect: key,
+            value: prop,
+          },
+        );
         return false;
       }
     }

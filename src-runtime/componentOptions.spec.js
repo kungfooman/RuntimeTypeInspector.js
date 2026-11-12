@@ -41,10 +41,13 @@ function prepare() {
   registerClass(Component);
   registerClass(CameraComponent);
   // Static shape used by the key machinery.
-  registerTypedef('Entity', {
-    type: 'object',
-    properties: {camera: 'CameraComponent', name: 'string'},
-  });
+  registerTypedef(
+    'Entity',
+    {
+      type: 'object',
+      properties: {camera: 'CameraComponent', name: 'string'},
+    },
+  );
 }
 /**
  * Already working: NonNullable unwraps while rejecting null.
@@ -248,45 +251,57 @@ function prepareCameraTower() {
   registerClass(Component);
   registerClass(Color);
   registerClass(CamComponent);
-  registerTypedef('Color', {
-    type: 'object',
-    properties: {r: 'number', g: 'number', b: 'number', a: 'number'},
-  });
-  registerTypedef('CamComponent', {
-    type: 'object',
-    properties: {clearColor: 'Color', fov: 'number'},
-  });
-  registerTypedef('CamEntity', {
-    type: 'object',
-    properties: {
-      camera: {type: 'union', members: ['CamComponent', 'undefined'], readonly: true},
-      store: {type: 'record', key: 'string', val: 'Component'},
-      tags: {type: 'array', elementType: 'string'},
-      name: 'string',
-      addComponent: 'Function',
+  registerTypedef(
+    'Color',
+    {
+      type: 'object',
+      properties: {r: 'number', g: 'number', b: 'number', a: 'number'},
     },
-  });
+  );
+  registerTypedef(
+    'CamComponent',
+    {
+      type: 'object',
+      properties: {clearColor: 'Color', fov: 'number'},
+    },
+  );
+  registerTypedef(
+    'CamEntity',
+    {
+      type: 'object',
+      properties: {
+        camera: {type: 'union', members: ['CamComponent', 'undefined'], readonly: true},
+        store: {type: 'record', key: 'string', val: 'Component'},
+        tags: {type: 'array', elementType: 'string'},
+        name: 'string',
+        addComponent: 'Function',
+      },
+    },
+  );
   registerTypedef('CamMap', expandType('{ [K in keyof CamEntity as NonNullable<CamEntity[K]> extends Component ? K : never]: NonNullable<CamEntity[K]> }'));
   registerTypedef('CamName', expandType('keyof CamMap & string'));
   registerTypedef('CamWritableKeys', expandType('{ [P in keyof T]-?: IfEquals<{ [Q in P]: T[P] }, { -readonly [Q in P]: T[P] }, P> }[keyof T]'), ['T']);
   registerTypedef('CamOptionKeys', expandType('{ [K in CamWritableKeys<C>]: K extends \'system\' | \'entity\' | `_${string}` ? never : NonNullable<C[K]> extends Function ? never : K }[CamWritableKeys<C>]'), ['C']); // eslint-disable-line no-template-curly-in-string
   registerTypedef('CamOptionsOf', expandType('Partial<Pick<C, Extract<CamOptionKeys<C>, keyof C>>>'), ['C']);
-  registerTypedef('CamOverrides', {
-    type: 'object',
-    properties: {
-      camera: {
-        type: 'object',
-        properties: {
-          calculateProjection: {type: 'Function', optional: true},
-          clearColor: {
-            type: 'union',
-            members: ['Color', {type: 'array', elementType: 'number'}],
-            optional: true,
+  registerTypedef(
+    'CamOverrides',
+    {
+      type: 'object',
+      properties: {
+        camera: {
+          type: 'object',
+          properties: {
+            calculateProjection: {type: 'Function', optional: true},
+            clearColor: {
+              type: 'union',
+              members: ['Color', {type: 'array', elementType: 'number'}],
+              optional: true,
+            },
           },
         },
       },
     },
-  });
+  );
   registerTypedef('CamOverridesOf', expandType('K extends keyof CamOverrides ? CamOverrides[K] : {}'), ['K']);
   registerTypedef('CamMerged', expandType('Omit<CamOptionsOf<CamMap[K]>, keyof CamOverridesOf<K>> & CamOverridesOf<K>'), ['K']);
   registerTypedef('CamOptions', expandType('{ [P in keyof CamMerged<K>]: CamMerged<K>[P] }'), ['K']);

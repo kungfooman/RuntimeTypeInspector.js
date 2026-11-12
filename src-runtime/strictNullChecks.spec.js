@@ -53,10 +53,18 @@ function testNonStrictStillRejectsWrong() {
     if (validateType(1, 'string', 'loc', 'name', true, warn, 0)) {
       return false;
     }
-    if (validateType([1, 'x'], {
-      type: 'array',
-      elementType: 'number',
-    }, 'loc', 'name', true, warn, 0)) {
+    if (validateType(
+      [1, 'x'],
+      {
+        type: 'array',
+        elementType: 'number',
+      },
+      'loc',
+      'name',
+      true,
+      warn,
+      0,
+    )) {
       return false;
     }
     return true;
@@ -64,11 +72,19 @@ function testNonStrictStillRejectsWrong() {
 }
 function testNonStrictNonNullable() {
   // Matches TypeScript with strictNullChecks off: null is in every domain.
-  return withNonStrict(() => validateType(null, {
-    type: 'reference',
-    name: 'NonNullable',
-    args: ['number'],
-  }, 'loc', 'name', true, warn, 0));
+  return withNonStrict(() => validateType(
+    null,
+    {
+      type: 'reference',
+      name: 'NonNullable',
+      args: ['number'],
+    },
+    'loc',
+    'name',
+    true,
+    warn,
+    0,
+  ));
 }
 function testFlagRestored() {
   withNonStrict(() => true);

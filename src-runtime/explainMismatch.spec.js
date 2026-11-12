@@ -118,10 +118,14 @@ function testPresentValuesLoseOptionalWrapper() {
   // not `('draft' | ...)|undefined` — presence settles optionality.
   reset();
   registerTypedef('Article', expandType('{title: string, status: "draft" | "published"}'));
-  const {findings} = explainMismatch({
-    title: 'x',
-    status: 1,
-  }, expandType('Partial<Article>'), 'patch');
+  const {findings} = explainMismatch(
+    {
+      title: 'x',
+      status: 1,
+    },
+    expandType('Partial<Article>'),
+    'patch',
+  );
   const wrong = findings.find((_) => _.path === 'patch.status');
   return findings.length === 1 && !!wrong && !wrong.expected.includes('undefined');
 }
@@ -131,7 +135,9 @@ function testOmitExcessNamesRemoval() {
   reset();
   registerTypedef('Account', expandType('{id: string, email: string, role: string}'));
   const {findings} = explainMismatch(
-    {email: 'a', role: 'b', id: 1}, expandType('Omit<Account, "id">'), 'payload',
+    {email: 'a', role: 'b', id: 1},
+    expandType('Omit<Account, "id">'),
+    'payload',
   );
   const extra = findings.find((_) => _.path === 'payload.id');
   return findings.length === 1 && !!extra && extra.kind === 'extra' &&
@@ -142,7 +148,9 @@ function testPickExcessNamesSelection() {
   reset();
   registerTypedef('User', expandType('{id: number, name: string}'));
   const {findings} = explainMismatch(
-    {name: 'x', id: 1}, expandType('Pick<User, "name">'), 'user',
+    {name: 'x', id: 1},
+    expandType('Pick<User, "name">'),
+    'user',
   );
   const extra = findings.find((_) => _.path === 'user.id');
   return findings.length === 1 && !!extra &&
@@ -152,7 +160,9 @@ function testPickExcessNamesSelection() {
 function testPlainExcessStillSuspectsTypo() {
   reset();
   const {findings} = explainMismatch(
-    {fov: 60, fovv: 1}, expandType('{fov: number}'), 'options',
+    {fov: 60, fovv: 1},
+    expandType('{fov: number}'),
+    'options',
   );
   const extra = findings.find((_) => _.path === 'options.fovv');
   return !!extra && extra.detail.includes('check spelling');
@@ -165,7 +175,9 @@ function testExtrasInformationalWhenLenient() {
   options.exactObjects = false;
   try {
     const {findings} = explainMismatch(
-      {fov: 60, fovv: 1}, expandType('{fov: number}'), 'options',
+      {fov: 60, fovv: 1},
+      expandType('{fov: number}'),
+      'options',
     );
     const extra = findings.find((_) => _.path === 'options.fovv');
     return !!extra && extra.info === true && !extra.fix &&
@@ -207,9 +219,11 @@ function testCollectFailPathsEmpty() {
  */
 function testCollectFailPathsMapMismatch() {
   reset();
-  const {findings} = explainMismatch(new Map([['apiKey', null]]),
-                                     expandType('Map<string, string | number>'),
-                                     'config');
+  const {findings} = explainMismatch(
+    new Map([['apiKey', null]]),
+    expandType('Map<string, string | number>'),
+    'config',
+  );
   const paths = collectFailPaths(findings);
   return paths.has("config.get('apiKey')");
 }
@@ -221,9 +235,11 @@ function testCollectFailPathsMapMismatch() {
  */
 function testSetMemberUnionAdmitsShape() {
   reset();
-  const {findings} = explainMismatch(new Set(['admin', true]),
-                                     expandType('Set<string | number>'),
-                                     'items');
+  const {findings} = explainMismatch(
+    new Set(['admin', true]),
+    expandType('Set<string | number>'),
+    'items',
+  );
   if (findings.length !== 1) {
     return false;
   }
@@ -238,9 +254,11 @@ function testSetMemberUnionAdmitsShape() {
  */
 function testMapEntryUnionAdmitsShape() {
   reset();
-  const {findings} = explainMismatch(new Map([['apiKey', null]]),
-                                     expandType('Map<string, string | number>'),
-                                     'config');
+  const {findings} = explainMismatch(
+    new Map([['apiKey', null]]),
+    expandType('Map<string, string | number>'),
+    'config',
+  );
   if (findings.length !== 1) {
     return false;
   }
@@ -256,9 +274,11 @@ function testMapEntryUnionAdmitsShape() {
  */
 function testPropertyUnionNamesSubject() {
   reset();
-  const {findings} = explainMismatch({color: true},
-                                     expandType('{color: string | number}'),
-                                     'options');
+  const {findings} = explainMismatch(
+    {color: true},
+    expandType('{color: string | number}'),
+    'options',
+  );
   if (findings.length !== 1) {
     return false;
   }

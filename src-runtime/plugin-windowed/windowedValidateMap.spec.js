@@ -26,10 +26,18 @@ const virginCheckStats = options.checkStats;
 function check(map, expect, depth = 0) {
   const infos = [];
   const messages = [];
-  const good = windowedValidateMap(map, expect, 'TestSite#method', 'mapProperty', true, (msg, info) => {
-    messages.push(msg);
-    infos.push(info);
-  }, depth);
+  const good = windowedValidateMap(
+    map,
+    expect,
+    'TestSite#method',
+    'mapProperty',
+    true,
+    (msg, info) => {
+      messages.push(msg);
+      infos.push(info);
+    },
+    depth,
+  );
   return {good, infos, messages};
 }
 /**
@@ -44,10 +52,18 @@ function check(map, expect, depth = 0) {
 function checkPedantic(map, expect) {
   const infos = [];
   const messages = [];
-  const good = validateMap(map, expect, 'TestSite#method', 'mapProperty', true, (msg, info) => {
-    messages.push(msg);
-    infos.push(info);
-  }, 0);
+  const good = validateMap(
+    map,
+    expect,
+    'TestSite#method',
+    'mapProperty',
+    true,
+    (msg, info) => {
+      messages.push(msg);
+      infos.push(info);
+    },
+    0,
+  );
   return {good, infos, messages};
 }
 function testFirstCheckScansAndDoubles() {

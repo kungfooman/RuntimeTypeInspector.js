@@ -58,10 +58,13 @@ function testUndecidableFailsClosed() {
  */
 function testOverridesOf() {
   clearTypedefs();
-  registerTypedef('Overrides', {
-    type: 'object',
-    properties: {a: {type: 'object', properties: {x: 'number'}}},
-  });
+  registerTypedef(
+    'Overrides',
+    {
+      type: 'object',
+      properties: {a: {type: 'object', properties: {x: 'number'}}},
+    },
+  );
   const expect = () => expandType('K extends keyof Overrides ? Overrides[K] : {}');
   if (!inspectTypeWithTemplates({x: 1}, expect(), 'loc', 'name', {K: '"a"'})) {
     return false;
@@ -172,10 +175,13 @@ function testComponentNameCondition() {
   registerClass(CondComponent);
   registerClass(CondRender);
   registerClass(CondLight);
-  registerTypedef('CondEntity', {
-    type: 'object',
-    properties: {render: 'CondRender', light: 'CondLight', name: 'string'},
-  });
+  registerTypedef(
+    'CondEntity',
+    {
+      type: 'object',
+      properties: {render: 'CondRender', light: 'CondLight', name: 'string'},
+    },
+  );
   registerTypedef('CondMap', expandType('{[K in keyof CondEntity as NonNullable<CondEntity[K]> extends CondComponent ? K : never]: NonNullable<CondEntity[K]>}'));
   registerTypedef('CondName', expandType('keyof CondMap & string'));
   try {

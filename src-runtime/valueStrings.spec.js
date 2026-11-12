@@ -9,14 +9,19 @@ function testUnclonableStaysStructured() {
   let msgs;
   try {
     msgs = captureMessages(() => {
-      inspectType({
-        type: 'sphere',
-        material: {
-          name: 'Untitled',
-          update() {},
+      inspectType(
+        {
+          type: 'sphere',
+          material: {
+            name: 'Untitled',
+            update() {},
+          },
+          castShadows: false,
         },
-        castShadows: false,
-      }, 'number', 'loc', 'unclonable');
+        'number',
+        'loc',
+        'unclonable',
+      );
     });
   } finally {
     options.exactObjects = prev;
@@ -41,10 +46,15 @@ function testExtrasSnapshotted() {
   let msgs;
   try {
     msgs = captureMessages(() => {
-      inspectType({
-        a: 1,
-        f: () => {},
-      }, {type: 'object', properties: {a: 'number'}}, 'loc', 'extras');
+      inspectType(
+        {
+          a: 1,
+          f: () => {},
+        },
+        {type: 'object', properties: {a: 'number'}},
+        'loc',
+        'extras',
+      );
     });
   } finally {
     options.exactObjects = prev;

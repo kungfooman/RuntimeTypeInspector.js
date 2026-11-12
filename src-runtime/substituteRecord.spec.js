@@ -15,9 +15,14 @@ function testRecordUnchanged() {
 // We want: nested record values substitute recursively, because a value
 // may itself contain the search key at any depth.
 function testRecordNested() {
-  return JSON.stringify(substituteRecord({
-    a: {type: 'array', elementType: 'K'},
-  }, 'K', '"a"', noop)) ===
+  return JSON.stringify(substituteRecord(
+    {
+      a: {type: 'array', elementType: 'K'},
+    },
+    'K',
+    '"a"',
+    noop,
+  )) ===
     JSON.stringify({a: {type: 'array', elementType: '"a"'}});
 }
 // We want: an empty record returns an empty record, because there is

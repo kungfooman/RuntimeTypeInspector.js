@@ -91,26 +91,42 @@ function testInfinityOptOut() {
 function testReferenceNodeVal() {
   // A concrete `{type:'reference', name}` node mirrors the registered-class
   // `instanceof` branch of the reference validator.
-  return withScanClasses(() => firstBadEntry(new Map([[1, new ScanBox(1)], [2, new ScanBox(2)]]), 'number', {
-    type: 'reference',
-    name: 'ScanBox',
-  }) === -1 &&
-    firstBadEntry(new Map([[1, new ScanBox(1)], [2, new ScanOther()]]), 'number', {
+  return withScanClasses(() => firstBadEntry(
+    new Map([[1, new ScanBox(1)], [2, new ScanBox(2)]]),
+    'number',
+    {
       type: 'reference',
       name: 'ScanBox',
-    }) === 1);
+    },
+  ) === -1 &&
+    firstBadEntry(
+      new Map([[1, new ScanBox(1)], [2, new ScanOther()]]),
+      'number',
+      {
+        type: 'reference',
+        name: 'ScanBox',
+      },
+    ) === 1);
 }
 function testUtilityNameBailsOut() {
   // Utility names (`Partial` and friends) never take the class branch of
   // the reference validator, so the scan must not distrust them.
-  return withScanClasses(() => firstBadEntry(new Map([[1, new ScanBox(1)]]), 'number', {
-    type: 'reference',
-    name: 'Partial',
-  }) === -2 &&
-    firstBadEntry(new Map([[1, new ScanBox(1)]]), 'number', {
+  return withScanClasses(() => firstBadEntry(
+    new Map([[1, new ScanBox(1)]]),
+    'number',
+    {
       type: 'reference',
-      name: 'Iterable',
-    }) === -2);
+      name: 'Partial',
+    },
+  ) === -2 &&
+    firstBadEntry(
+      new Map([[1, new ScanBox(1)]]),
+      'number',
+      {
+        type: 'reference',
+        name: 'Iterable',
+      },
+    ) === -2);
 }
 function testUtilityNameCollisionBailsOut() {
   // Hostile registration: classes named exactly like utilities the
@@ -127,10 +143,17 @@ function testUtilityNameCollisionBailsOut() {
     const ref = (name, args) => ({type: 'reference', name, args});
     return firstBadEntry(new Map([['a', new ReadonlyMap()]]), 'string', ref('ReadonlyMap', ['string', 'number'])) === -2 &&
       firstBadEntry(new Map([[1, new ArrayLike()]]), 'number', ref('ArrayLike', ['number'])) === -2 &&
-      firstBadEntry(new Map([[1, new Awaited()]]), 'number', ref('Awaited', [{
-        type: 'promise',
-        elementType: 'number',
-      }])) === -2;
+      firstBadEntry(
+        new Map([[1, new Awaited()]]),
+        'number',
+        ref(
+          'Awaited',
+          [{
+            type: 'promise',
+            elementType: 'number',
+          }],
+        ),
+      ) === -2;
   } finally {
     delete classes.ReadonlyMap;
     delete classes.ArrayLike;
@@ -140,10 +163,14 @@ function testUtilityNameCollisionBailsOut() {
 function testComplexValBailsOut() {
   // Object nodes, unions and unknown names are full-loop territory.
   return firstBadEntry(new Map([[1, {x: 1}]]), 'number', {type: 'object'}) === -2 &&
-    firstBadEntry(new Map([[1, 'a']]), 'number', {
-      type: 'union',
-      members: ['number', 'string'],
-    }) === -2 &&
+    firstBadEntry(
+      new Map([[1, 'a']]),
+      'number',
+      {
+        type: 'union',
+        members: ['number', 'string'],
+      },
+    ) === -2 &&
     firstBadEntry(new Map([[1, 'a']]), 'number', 'NeverHeardOfIt') === -2;
 }
 function testComplexKeyBailsOut() {

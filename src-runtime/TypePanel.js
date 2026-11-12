@@ -1,7 +1,7 @@
-import {assertMode } from "./assertMode.js";
-import {decodeBase64 } from "./decodeBase64.js";
-import {encodeBase64 } from "./encodeBase64.js";
-import {options    } from "./options.js";
+import {assertMode} from "./assertMode.js";
+import {decodeBase64} from "./decodeBase64.js";
+import {encodeBase64} from "./encodeBase64.js";
+import {options} from "./options.js";
 import {reportedKeys} from "./reportedKeys.js";
 import {captureStackLines} from "./captureStack.js";
 import {createTable} from "./warnedTable.js";
@@ -58,7 +58,7 @@ const Label = genJsx('label');
  * @param {HTMLDivElement} div - The <div>.
  */
 function niceDiv(div) {
-  div.style.border  = "1px solid #0058e6";
+  div.style.border = "1px solid #0058e6";
   div.style.margin = "10px";
   div.style.padding = "0px";
   div.style.textAlign = "left";
@@ -79,7 +79,8 @@ function niceDiv(div) {
   // window when resizing instead of being stuck at a fixed max-height.
   div.style.display = "flex";
   div.style.flexDirection = "column";
-  const rule = Style({},
+  const rule = Style(
+    {},
     /* css */ `
     .rti tr:nth-child(even) {
       background-color: #ccc;
@@ -581,7 +582,8 @@ function niceDiv(div) {
     .rti-dimmed {
       opacity: 0.55;
     }
-  `);
+  `,
+  );
   div.classList.add('rti');
   document.head.appendChild(rule);
 }
@@ -783,14 +785,17 @@ function toggleWindowMaximize(el, btn) {
     }
     return false;
   }
-  maxGeoStore.set(el, {
-    left: el.style.left,
-    top: el.style.top,
-    width: el.style.width,
-    height: el.style.height,
-    maxWidth: el.style.maxWidth,
-    maxHeight: el.style.maxHeight,
-  });
+  maxGeoStore.set(
+    el,
+    {
+      left: el.style.left,
+      top: el.style.top,
+      width: el.style.width,
+      height: el.style.height,
+      maxWidth: el.style.maxWidth,
+      maxHeight: el.style.maxHeight,
+    },
+  );
   el.dataset.maximized = 'true';
   el.classList.add('rti-maximized');
   el.style.left = '8px';
@@ -1043,76 +1048,114 @@ class TypePanel {
     // `value`/children straight off the DOM, never mirror them in JS state.
     // (Sizing/positioning lives in `niceDiv` + saved geometry, not here.)
     this.div = Div({});
-    this.inputEnable = Input({type: 'checkbox', checked: isEnabled(), onchange: () => {
-      if (this.inputEnable.checked) {
-        this.enableTypeChecking();
-      } else {
-        this.disableTypeChecking();
-      }
-    }});
-    this.inputStrict = Input({type: 'checkbox', checked: isStrictNullChecks(), onchange: () => {
-      options.strictNullChecks = this.inputStrict.checked;
-      localStorage.setItem('rti-strict-null-checks', String(this.inputStrict.checked));
-      this.sendStrictStateToWorker();
-    }});
-    this.inputInfinity = Input({type: 'checkbox', checked: isCheckInfinity(), onchange: () => {
-      options.checkInfinity = this.inputInfinity.checked;
-      localStorage.setItem('rti-check-infinity', String(this.inputInfinity.checked));
-      this.sendInfinityStateToWorker();
-    }});
-    this.inputExact = Input({type: 'checkbox', checked: isExactObjects(), onchange: () => {
-      options.exactObjects = this.inputExact.checked;
-      localStorage.setItem('rti-exact-objects', String(this.inputExact.checked));
-      this.sendExactStateToWorker();
-    }});
-    this.inputWindowed = Input({type: 'checkbox', checked: isWindowedChecks(), onchange: () => {
-      options.windowedChecks = this.inputWindowed.checked;
-      localStorage.setItem('rti-windowed-checks', String(this.inputWindowed.checked));
-      this.sendWindowedStateToWorker();
-      this.updateCheckStats();
-    }});
+    this.inputEnable = Input({
+      type: 'checkbox',
+      checked: isEnabled(),
+      onchange: () => {
+        if (this.inputEnable.checked) {
+          this.enableTypeChecking();
+        } else {
+          this.disableTypeChecking();
+        }
+      },
+    });
+    this.inputStrict = Input({
+      type: 'checkbox',
+      checked: isStrictNullChecks(),
+      onchange: () => {
+        options.strictNullChecks = this.inputStrict.checked;
+        localStorage.setItem('rti-strict-null-checks', String(this.inputStrict.checked));
+        this.sendStrictStateToWorker();
+      },
+    });
+    this.inputInfinity = Input({
+      type: 'checkbox',
+      checked: isCheckInfinity(),
+      onchange: () => {
+        options.checkInfinity = this.inputInfinity.checked;
+        localStorage.setItem('rti-check-infinity', String(this.inputInfinity.checked));
+        this.sendInfinityStateToWorker();
+      },
+    });
+    this.inputExact = Input({
+      type: 'checkbox',
+      checked: isExactObjects(),
+      onchange: () => {
+        options.exactObjects = this.inputExact.checked;
+        localStorage.setItem('rti-exact-objects', String(this.inputExact.checked));
+        this.sendExactStateToWorker();
+      },
+    });
+    this.inputWindowed = Input({
+      type: 'checkbox',
+      checked: isWindowedChecks(),
+      onchange: () => {
+        options.windowedChecks = this.inputWindowed.checked;
+        localStorage.setItem('rti-windowed-checks', String(this.inputWindowed.checked));
+        this.sendWindowedStateToWorker();
+        this.updateCheckStats();
+      },
+    });
     // The constructor runs after engine `setOptions`, so the code
     // values below are already the host's: the inputs display the stored
     // tuning only when it still applies, and every user edit is stamped
     // with the base it overrides. Stale storage never reaches `options`.
     const inputWindowCapBase = options.mapCheckWindowCap;
     const inputWindowMinTotalBase = options.mapCheckWindowMinTotalMs;
-    this.inputWindowCap = Input({type: 'number', value: storedMapCheckWindowCap(), min: '1', step: '1', title: 'Longest rescan window in checks: bounds how long drift can hide', onchange: () => {
+    this.inputWindowCap = Input({
+      type: 'number',
+      value: storedMapCheckWindowCap(),
+      min: '1',
+      step: '1',
+      title: 'Longest rescan window in checks: bounds how long drift can hide',
+      onchange: () => {
       // Captured at construction: the code value this session's edits
       // override, so the stored entry records what it was set against.
-      const n = Math.floor(Number(this.inputWindowCap.value));
+        const n = Math.floor(Number(this.inputWindowCap.value));
       // Silly input guard: a half typed value ("", "3.7", "-5") must not
       // clobber the live cap; the checkbox styled minimum of 1 mirrors
       // `windowCap()`'s floor in validateMap.
-      if (Number.isFinite(n) && n >= 1) {
-        options.mapCheckWindowCap = n;
-        rememberNumberKnob('rti-window-cap', n, inputWindowCapBase);
-        this.sendMapCheckWindowCapToWorker();
-      }
-      this.updateCheckStats();
-    }});
-    this.inputWindowMinTotal = Input({type: 'number', value: storedMapCheckWindowMinTotalMs(), min: '0', step: '10', title: 'Scan time budget in ms a map must accumulate before checks may ride windows; 0 rides without any budget', onchange: () => {
-      const raw = this.inputWindowMinTotal.value.trim();
-      const n = Number(raw);
+        if (Number.isFinite(n) && n >= 1) {
+          options.mapCheckWindowCap = n;
+          rememberNumberKnob('rti-window-cap', n, inputWindowCapBase);
+          this.sendMapCheckWindowCapToWorker();
+        }
+        this.updateCheckStats();
+      },
+    });
+    this.inputWindowMinTotal = Input({
+      type: 'number',
+      value: storedMapCheckWindowMinTotalMs(),
+      min: '0',
+      step: '10',
+      title: 'Scan time budget in ms a map must accumulate before checks may ride windows; 0 rides without any budget',
+      onchange: () => {
+        const raw = this.inputWindowMinTotal.value.trim();
+        const n = Number(raw);
       // Same silly input guard as the cap: half typed values must not
       // clobber the live budget. The empty string check matters extra
       // here because `Number('')` is 0, which would silently turn a
       // field the user is still typing into ride-always windowing. `0`
       // typed on purpose still passes, mirroring `minTotalMs()`'s open
       // fallback.
-      if (raw !== '' && Number.isFinite(n) && n >= 0) {
-        options.mapCheckWindowMinTotalMs = n;
-        rememberNumberKnob('rti-window-min-total-ms', n, inputWindowMinTotalBase);
-        this.sendMapCheckWindowMinTotalMsToWorker();
-      }
-      this.updateCheckStats();
-    }});
-    this.inputCheckStats = Input({type: 'checkbox', checked: isCheckStats(), onchange: () => {
-      options.checkStats = this.inputCheckStats.checked;
-      localStorage.setItem('rti-check-stats', String(this.inputCheckStats.checked));
-      this.sendCheckStatsStateToWorker();
-      this.updateCheckStats();
-    }});
+        if (raw !== '' && Number.isFinite(n) && n >= 0) {
+          options.mapCheckWindowMinTotalMs = n;
+          rememberNumberKnob('rti-window-min-total-ms', n, inputWindowMinTotalBase);
+          this.sendMapCheckWindowMinTotalMsToWorker();
+        }
+        this.updateCheckStats();
+      },
+    });
+    this.inputCheckStats = Input({
+      type: 'checkbox',
+      checked: isCheckStats(),
+      onchange: () => {
+        options.checkStats = this.inputCheckStats.checked;
+        localStorage.setItem('rti-check-stats', String(this.inputCheckStats.checked));
+        this.sendCheckStatsStateToWorker();
+        this.updateCheckStats();
+      },
+    });
     this.spanErrors = Span({});
     this.span = Span({innerText: 'Report mode:'});
     this.spanStrict = Span({innerText: ' Strict null checks'});
@@ -1125,21 +1168,33 @@ class TypePanel {
     this.option_spam = Option({text: 'spam'});
     this.option_once = Option({text: 'once'});
     this.option_never = Option({text: 'never'});
-    this.select = Select({onchange: () => {
-      const {value} = this.select;
-      localStorage.setItem('rti-spam-type-reports', value);
-      assertMode(value);
-      options.mode = value;
-    }}, this.option_spam, this.option_once, this.option_never);
+    this.select = Select(
+      {
+        onchange: () => {
+          const {value} = this.select;
+          localStorage.setItem('rti-spam-type-reports', value);
+          assertMode(value);
+          options.mode = value;
+        },
+      },
+      this.option_spam,
+      this.option_once,
+      this.option_never,
+    );
     this.spanPosition = Span({innerText: ' Panel start:'});
     this.option_pos_bottom_right = Option({text: 'bottom-right'});
     this.option_pos_bottom_left = Option({text: 'bottom-left'});
     this.option_pos_top_right = Option({text: 'top-right'});
     this.option_pos_top_left = Option({text: 'top-left'});
     this.option_pos_center = Option({text: 'center'});
-    this.selectPosition = Select({onchange: () => this.applyChosenPosition()},
-                                 this.option_pos_bottom_right, this.option_pos_bottom_left,
-                                 this.option_pos_top_right, this.option_pos_top_left, this.option_pos_center);
+    this.selectPosition = Select(
+      {onchange: () => this.applyChosenPosition()},
+      this.option_pos_bottom_right,
+      this.option_pos_bottom_left,
+      this.option_pos_top_right,
+      this.option_pos_top_left,
+      this.option_pos_center,
+    );
     this.buttonHide = Button({textContent: '_', title: 'Hide', onclick: () => this.hide()});
     this.buttonLoadState = Button({textContent: 'Load', title: 'Load warning states from the #typepanel URL hash', onclick: () => this.loadState()});
     this.buttonSaveState = Button({textContent: 'Save', title: 'Save warning states into the #typepanel URL hash', onclick: () => this.saveState()});
@@ -1149,62 +1204,105 @@ class TypePanel {
     this.buttonPopout = Button({textContent: '⧉', title: 'Pop out to own window', onclick: () => this.popout()});
     this.buttonMaximize = Button({textContent: '□', title: 'Maximize', onclick: () => this.togglePanelMaximize()});
     this.titleText = Span({className: 'rti-title', textContent: 'Runtime Type Inspector'});
-    this.titlebar = Div({className: 'rti-titlebar', title: 'Drag to move panel'},
-                        this.titleText,
-                        Div({className: 'rti-caption'}, this.buttonHide, this.buttonMaximize, this.buttonPopout));
+    this.titlebar = Div(
+      {className: 'rti-titlebar', title: 'Drag to move panel'},
+      this.titleText,
+      Div({className: 'rti-caption'}, this.buttonHide, this.buttonMaximize, this.buttonPopout),
+    );
     // Chrome-style overflow menu: status + frequent actions stay visible,
     // rare configuration lives behind `⋮` and costs zero lines when closed.
     this.menuButton = Button({
-      className: 'rti-menu-btn', textContent: '⋮', title: 'Settings',
+      className: 'rti-menu-btn',
+      textContent: '⋮',
+      title: 'Settings',
       onclick: (e) => {
         e.stopPropagation();
         this.toggleMenu();
       },
     });
-    this.menu = Div({className: 'rti-menu', hidden: true, role: 'menu'},
-                    Div({className: 'rti-setting-row'},
-                        Label({}, this.inputEnable, ' Enabled')),
-                    Div({className: 'rti-setting-row'},
-                        Label({}, this.span, ' ', this.select)),
-                    Div({className: 'rti-setting-row'},
-                        Label({}, this.spanPosition, ' ', this.selectPosition)),
-                    Div({className: 'rti-setting-row'},
-                        Label({}, this.inputStrict, this.spanStrict)),
-                    Div({className: 'rti-setting-row'},
-                        Label({}, this.inputInfinity, this.spanInfinity)),
-                    Div({className: 'rti-setting-row'},
-                        Label({}, this.inputExact, this.spanExact)),
-                    Div({className: 'rti-setting-row'},
-                        Label({}, this.inputWindowed, this.spanWindowed)),
-                    Div({className: 'rti-setting-row'},
-                        Label({}, this.spanWindowCap, this.inputWindowCap)),
-                    Div({className: 'rti-setting-row'},
-                        Label({title: 'Scan time budget in ms a map must accumulate before checks may ride windows; 0 rides without any budget'}, this.spanWindowMinTotal, this.inputWindowMinTotal)),
-                    Div({className: 'rti-setting-row'},
-                        Label({}, this.inputCheckStats, this.spanCheckStats)),
-                    Div({className: 'rti-setting-row'},
-                        this.buttonLoadState, this.buttonSaveState, this.buttonResetStorage));
-    this.menu.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        this.toggleMenu(false);
-        this.menuButton.focus();
-      }
-    });
+    this.menu = Div(
+      {className: 'rti-menu', hidden: true, role: 'menu'},
+      Div(
+        {className: 'rti-setting-row'},
+        Label({}, this.inputEnable, ' Enabled'),
+      ),
+      Div(
+        {className: 'rti-setting-row'},
+        Label({}, this.span, ' ', this.select),
+      ),
+      Div(
+        {className: 'rti-setting-row'},
+        Label({}, this.spanPosition, ' ', this.selectPosition),
+      ),
+      Div(
+        {className: 'rti-setting-row'},
+        Label({}, this.inputStrict, this.spanStrict),
+      ),
+      Div(
+        {className: 'rti-setting-row'},
+        Label({}, this.inputInfinity, this.spanInfinity),
+      ),
+      Div(
+        {className: 'rti-setting-row'},
+        Label({}, this.inputExact, this.spanExact),
+      ),
+      Div(
+        {className: 'rti-setting-row'},
+        Label({}, this.inputWindowed, this.spanWindowed),
+      ),
+      Div(
+        {className: 'rti-setting-row'},
+        Label({}, this.spanWindowCap, this.inputWindowCap),
+      ),
+      Div(
+        {className: 'rti-setting-row'},
+        Label({title: 'Scan time budget in ms a map must accumulate before checks may ride windows; 0 rides without any budget'}, this.spanWindowMinTotal, this.inputWindowMinTotal),
+      ),
+      Div(
+        {className: 'rti-setting-row'},
+        Label({}, this.inputCheckStats, this.spanCheckStats),
+      ),
+      Div(
+        {className: 'rti-setting-row'},
+        this.buttonLoadState,
+        this.buttonSaveState,
+        this.buttonResetStorage,
+      ),
+    );
+    this.menu.addEventListener(
+      'keydown',
+      (e) => {
+        if (e.key === 'Escape') {
+          this.toggleMenu(false);
+          this.menuButton.focus();
+        }
+      },
+    );
     this.buttonStats = Button({textContent: 'Stats', title: 'Check stats (hotspots)', onclick: () => this.toggleStatsWin()});
-    this.toolbar = Div({className: 'rti-toolbar'},
-                       this.spanErrors, this.buttonClear, this.buttonDownloadLog,
-                       this.buttonStats, this.menuButton, this.menu);
+    this.toolbar = Div(
+      {className: 'rti-toolbar'},
+      this.spanErrors,
+      this.buttonClear,
+      this.buttonDownloadLog,
+      this.buttonStats,
+      this.menuButton,
+      this.menu,
+    );
     this.body = Div({className: 'rti-body'});
     this.warnedTable = createTable();
     this.body.append(this.warnedTable);
     // Check stats section: the hotspot table under the warnings. Rows are
     // rebuilt from `getCheckStats()` on demand (button, settings flips,
     // error arrivals), never on a timer, so idle pages stay idle.
-    this.buttonResetCheckStats = Button({textContent: 'Reset stats', title: 'Forget all recorded check statistics', onclick: () => {
-      resetCheckStats();
-      this.hideLocDetail();
-      this.updateCheckStats();
-    }});
+    this.buttonResetCheckStats = Button({
+      textContent: 'Reset stats',
+      title: 'Forget all recorded check statistics',
+      onclick: () => {
+        resetCheckStats();
+        this.hideLocDetail();
+        this.updateCheckStats();
+      },
+    });
     this.buttonRefreshCheckStats = Button({textContent: 'Refresh stats', title: 'Re-read the latest check statistics', onclick: () => this.updateCheckStats()});
     this.checksTable = createChecksTable();
     // Sort state of the stats table: which column, and which direction.
@@ -1215,11 +1313,17 @@ class TypePanel {
     // it, so the answer appears where the user looks instead of at the
     // bottom of the window. One open at a time, tracked by loc.
     this.checksDetailLoc = null;
-    this.checksHead = Div({className: 'rti-checks-head'},
-                          Span({innerText: 'Check stats (hotspots by scan cost)'}),
-                          this.buttonRefreshCheckStats, this.buttonResetCheckStats);
-    this.checksWrap = Div({className: 'rti-checks'},
-                          this.checksHead, this.checksTable);
+    this.checksHead = Div(
+      {className: 'rti-checks-head'},
+      Span({innerText: 'Check stats (hotspots by scan cost)'}),
+      this.buttonRefreshCheckStats,
+      this.buttonResetCheckStats,
+    );
+    this.checksWrap = Div(
+      {className: 'rti-checks'},
+      this.checksHead,
+      this.checksTable,
+    );
     this.statsWin = null;
     this.statsWinHidden = true;
     // Mini taskbar (our stand-in for the missing OS taskbar): the panel is
@@ -1227,8 +1331,11 @@ class TypePanel {
     // minimized maximizes. The error count lives in the RTI title.
     this.taskbarRti = Button({textContent: 'RTI', title: 'Focus RTI panel', onclick: () => this.togglePanel()});
     this.taskbarWins = Span({});
-    this.taskbar = Div({className: 'rti-taskbar', style: {display: 'none'}},
-                       this.taskbarRti, this.taskbarWins);
+    this.taskbar = Div(
+      {className: 'rti-taskbar', style: {display: 'none'}},
+      this.taskbarRti,
+      this.taskbarWins,
+    );
     const {
       div, titlebar, toolbar, body,
     } = this;
@@ -1272,9 +1379,12 @@ class TypePanel {
     } else {
       this.applyChosenPosition();
     }
-    this.makeDraggable(titlebar, divAll,
-                       () => this.togglePanelMaximize(),
-                       () => this.div?.dataset?.maximized === 'true');
+    this.makeDraggable(
+      titlebar,
+      divAll,
+      () => this.togglePanelMaximize(),
+      () => this.div?.dataset?.maximized === 'true',
+    );
     this.observeGeometry(div);
     const finalFunc = () => {
       document.body.append(divAll);
@@ -1301,19 +1411,22 @@ class TypePanel {
     this.updateTaskbarVisibility();
     // In the simplest case RTI sends its errors onto `window` to update UI state.
     // If you start a Worker, you have to attach RTI yourself.
-    window.addEventListener('message', (e) => {
+    window.addEventListener(
+      'message',
+      (e) => {
       // Foreign traffic (analytics, devtools, other libs) posts here too,
       // sometimes without any payload — only `rti`-shaped mail proceeds.
-      const {type, destination} = e.data ?? {};
+        const {type, destination} = e.data ?? {};
       // console.log("TypePanel Message event", e);
-      if (type !== 'rti') {
-        return;
-      }
-      if (destination !== 'ui') {
-        return;
-      }
-      this.handleEvent(e);
-    });
+        if (type !== 'rti') {
+          return;
+        }
+        if (destination !== 'ui') {
+          return;
+        }
+        this.handleEvent(e);
+      },
+    );
     // Fresh panel starts front and active (it is the only thing on screen),
     // so the first RTI taskbar click minimizes instead of no-op fronting.
     this.setActive('panel');
@@ -1397,21 +1510,28 @@ class TypePanel {
     const btnMin = Button({textContent: '_', title: 'Hide to the Stats button', onclick: () => this.hideStatsWin()});
     const btnMax = Button({textContent: '□', title: 'Maximize', onclick: () => this.toggleStatsMaximize()});
     const closeBtn = Button({textContent: '×', title: 'Close', onclick: () => this.hideStatsWin()});
-    const titlebar = Div({className: 'rti-titlebar', title: 'Drag to move'},
-                         Span({className: 'rti-title', textContent: 'Check stats'}),
-                         Div({className: 'rti-caption'}, btnMin, btnMax, closeBtn));
-    const el = Div({className: 'rti-stats-win'},
-                   titlebar,
-                   Div({className: 'rti-body'}, this.checksWrap));
+    const titlebar = Div(
+      {className: 'rti-titlebar', title: 'Drag to move'},
+      Span({className: 'rti-title', textContent: 'Check stats'}),
+      Div({className: 'rti-caption'}, btnMin, btnMax, closeBtn),
+    );
+    const el = Div(
+      {className: 'rti-stats-win'},
+      titlebar,
+      Div({className: 'rti-body'}, this.checksWrap),
+    );
     el.style.width = '620px';
     el.style.height = '380px';
     el.style.top = '60px';
     el.style.left = '60px';
     this.statsWin = el;
     this.statsWinBtnMax = btnMax;
-    this.makeDraggable(titlebar, el,
-                       () => this.toggleStatsMaximize(),
-                       () => el.dataset?.maximized === 'true');
+    this.makeDraggable(
+      titlebar,
+      el,
+      () => this.toggleStatsMaximize(),
+      () => el.dataset?.maximized === 'true',
+    );
     for (const dir of ['n', 'e', 's', 'w', 'ne', 'nw', 'se', 'sw']) {
       const handle = Div({className: `rti-handle rti-handle-${dir}`, dataset: {dir}});
       el.append(handle);
@@ -1553,9 +1673,11 @@ class TypePanel {
       // once appended, and the menu path always measures laid-out DOM.
       const w = divAll.offsetWidth || 640;
       const h = divAll.offsetHeight || 320;
-      const at = this.clampToViewport(divAll,
-                                      Math.round(window.innerWidth / 2 - w / 2),
-                                      Math.round(window.innerHeight / 2 - h / 2));
+      const at = this.clampToViewport(
+        divAll,
+        Math.round(window.innerWidth / 2 - w / 2),
+        Math.round(window.innerHeight / 2 - h / 2),
+      );
       divAll.style.left = `${at.x}px`;
       divAll.style.top = `${at.y}px`;
       divAll.style.right = 'auto';
@@ -1595,12 +1717,15 @@ class TypePanel {
     }
     try {
       const {divAll} = TypePanel;
-      localStorage.setItem('rti-panel-geometry', JSON.stringify({
-        width: this.div.style.width || undefined,
-        height: this.div.style.height || undefined,
-        left: divAll.style.left || undefined,
-        top: divAll.style.top || undefined,
-      }));
+      localStorage.setItem(
+        'rti-panel-geometry',
+        JSON.stringify({
+          width: this.div.style.width || undefined,
+          height: this.div.style.height || undefined,
+          left: divAll.style.left || undefined,
+          top: divAll.style.top || undefined,
+        }),
+      );
     } catch {
       // Storage may be unavailable; panel still works.
     }
@@ -1692,11 +1817,14 @@ class TypePanel {
       return;
     }
     TypePanel.pageshowViews.add(view);
-    view.addEventListener('pageshow', (e) => {
-      if (e?.persisted && TypePanel.instance?.reattachStranded()) {
-        TypePanel.instance.show();
-      }
-    });
+    view.addEventListener(
+      'pageshow',
+      (e) => {
+        if (e?.persisted && TypePanel.instance?.reattachStranded()) {
+          TypePanel.instance.show();
+        }
+      },
+    );
   }
   /**
    * A window is never draggable fully off-screen — its caption
@@ -1740,52 +1868,58 @@ class TypePanel {
    * @param {Function} [isMaximized] - True while the window is maximized.
    */
   makeDraggable(handle, root, onDblClick, isMaximized) {
-    handle.addEventListener('mousedown', (e) => {
+    handle.addEventListener(
+      'mousedown',
+      (e) => {
       // The window's own document (popup or page): moves land where the grab
       // lives. Resolved per grab, so windows adopted across documents (pop-out)
       // follow their current home, not the one they were built in.
-      const moveDoc = root?.ownerDocument || document;
-      const target = /** @type {HTMLElement} */ (e.target);
-      if (target.closest('button')) {
-        return;
-      }
-      if (isMaximized?.()) {
-        return;
-      }
-      this.activateRoot(root);
-      e.preventDefault();
-      const startX = e.clientX;
-      const startY = e.clientY;
-      const rect = root.getBoundingClientRect();
-      // Switch from bottom/right anchoring to explicit left/top while dragging.
-      root.style.left = `${rect.left}px`;
-      root.style.top = `${rect.top}px`;
-      root.style.right = 'auto';
-      root.style.bottom = 'auto';
-      root.style.position = 'fixed';
-      const captionH = handle.offsetHeight || 28;
-      const onMove = (ev) => {
-        const pos = this.clampToViewport(root, rect.left + ev.clientX - startX, rect.top + ev.clientY - startY, captionH);
-        root.style.left = `${pos.x}px`;
-        root.style.top = `${pos.y}px`;
-      };
-      const onUp = () => {
-        moveDoc.removeEventListener('mousemove', onMove);
-        moveDoc.removeEventListener('mouseup', onUp);
-        this.saveGeometry();
-      };
-      moveDoc.addEventListener('mousemove', onMove);
-      moveDoc.addEventListener('mouseup', onUp);
-    });
-    if (onDblClick) {
-      handle.addEventListener('dblclick', (e) => {
+        const moveDoc = root?.ownerDocument || document;
         const target = /** @type {HTMLElement} */ (e.target);
-        const tag = target.tagName ?? target.tag;
-        if (target.closest?.('button') || (typeof tag === 'string' && tag.toLowerCase() === 'button')) {
+        if (target.closest('button')) {
           return;
         }
-        onDblClick();
-      });
+        if (isMaximized?.()) {
+          return;
+        }
+        this.activateRoot(root);
+        e.preventDefault();
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const rect = root.getBoundingClientRect();
+      // Switch from bottom/right anchoring to explicit left/top while dragging.
+        root.style.left = `${rect.left}px`;
+        root.style.top = `${rect.top}px`;
+        root.style.right = 'auto';
+        root.style.bottom = 'auto';
+        root.style.position = 'fixed';
+        const captionH = handle.offsetHeight || 28;
+        const onMove = (ev) => {
+          const pos = this.clampToViewport(root, rect.left + ev.clientX - startX, rect.top + ev.clientY - startY, captionH);
+          root.style.left = `${pos.x}px`;
+          root.style.top = `${pos.y}px`;
+        };
+        const onUp = () => {
+          moveDoc.removeEventListener('mousemove', onMove);
+          moveDoc.removeEventListener('mouseup', onUp);
+          this.saveGeometry();
+        };
+        moveDoc.addEventListener('mousemove', onMove);
+        moveDoc.addEventListener('mouseup', onUp);
+      },
+    );
+    if (onDblClick) {
+      handle.addEventListener(
+        'dblclick',
+        (e) => {
+          const target = /** @type {HTMLElement} */ (e.target);
+          const tag = target.tagName ?? target.tag;
+          if (target.closest?.('button') || (typeof tag === 'string' && tag.toLowerCase() === 'button')) {
+            return;
+          }
+          onDblClick();
+        },
+      );
     }
   }
   /**
@@ -1807,59 +1941,62 @@ class TypePanel {
    * @param {Function} onDone - Called on mouse-up (e.g. persist geometry).
    */
   makeResizable(handle, dir, box, root, onDone) {
-    handle.addEventListener('mousedown', (e) => {
+    handle.addEventListener(
+      'mousedown',
+      (e) => {
       // The window's own document (popup or page): moves land where the grab
       // lives — resolved per grab like dragging, for the same pop-out reason.
-      const moveDoc = root?.ownerDocument || document;
-      if (box?.dataset?.maximized === 'true') {
-        return;
-      }
-      this.activateRoot(root);
-      e.preventDefault();
-      e.stopPropagation();
-      const startX = e.clientX;
-      const startY = e.clientY;
-      const startW = box.offsetWidth;
-      const startH = box.offsetHeight;
-      const rect = root.getBoundingClientRect();
+        const moveDoc = root?.ownerDocument || document;
+        if (box?.dataset?.maximized === 'true') {
+          return;
+        }
+        this.activateRoot(root);
+        e.preventDefault();
+        e.stopPropagation();
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const startW = box.offsetWidth;
+        const startH = box.offsetHeight;
+        const rect = root.getBoundingClientRect();
       // Anchor explicitly so west/north growth can push left/top around.
-      root.style.left = `${rect.left}px`;
-      root.style.top = `${rect.top}px`;
-      root.style.right = 'auto';
-      root.style.bottom = 'auto';
-      root.style.position = 'fixed';
-      const minW = 320;
-      const minH = 120;
-      const onMove = (ev) => {
-        const dx = ev.clientX - startX;
-        const dy = ev.clientY - startY;
-        if (dir.includes('e')) {
-          box.style.width = `${Math.max(minW, startW + dx)}px`;
-        }
-        if (dir.includes('s')) {
-          box.style.height = `${Math.max(minH, startH + dy)}px`;
-        }
-        if (dir.includes('w')) {
-          const grow = Math.min(dx, startW - minW);
-          box.style.width = `${startW - grow}px`;
-          const topNow = Number.parseFloat(root.style.top) || rect.top;
-          root.style.left = `${this.clampToViewport(root, rect.left + grow, topNow).x}px`;
-        }
-        if (dir.includes('n')) {
-          const grow = Math.min(dy, startH - minH);
-          box.style.height = `${startH - grow}px`;
-          const leftNow = Number.parseFloat(root.style.left) || rect.left;
-          root.style.top = `${this.clampToViewport(root, leftNow, rect.top + grow).y}px`;
-        }
-      };
-      const onUp = () => {
-        moveDoc.removeEventListener('mousemove', onMove);
-        moveDoc.removeEventListener('mouseup', onUp);
-        onDone();
-      };
-      moveDoc.addEventListener('mousemove', onMove);
-      moveDoc.addEventListener('mouseup', onUp);
-    });
+        root.style.left = `${rect.left}px`;
+        root.style.top = `${rect.top}px`;
+        root.style.right = 'auto';
+        root.style.bottom = 'auto';
+        root.style.position = 'fixed';
+        const minW = 320;
+        const minH = 120;
+        const onMove = (ev) => {
+          const dx = ev.clientX - startX;
+          const dy = ev.clientY - startY;
+          if (dir.includes('e')) {
+            box.style.width = `${Math.max(minW, startW + dx)}px`;
+          }
+          if (dir.includes('s')) {
+            box.style.height = `${Math.max(minH, startH + dy)}px`;
+          }
+          if (dir.includes('w')) {
+            const grow = Math.min(dx, startW - minW);
+            box.style.width = `${startW - grow}px`;
+            const topNow = Number.parseFloat(root.style.top) || rect.top;
+            root.style.left = `${this.clampToViewport(root, rect.left + grow, topNow).x}px`;
+          }
+          if (dir.includes('n')) {
+            const grow = Math.min(dy, startH - minH);
+            box.style.height = `${startH - grow}px`;
+            const leftNow = Number.parseFloat(root.style.left) || rect.left;
+            root.style.top = `${this.clampToViewport(root, leftNow, rect.top + grow).y}px`;
+          }
+        };
+        const onUp = () => {
+          moveDoc.removeEventListener('mousemove', onMove);
+          moveDoc.removeEventListener('mouseup', onUp);
+          onDone();
+        };
+        moveDoc.addEventListener('mousemove', onMove);
+        moveDoc.addEventListener('mouseup', onUp);
+      },
+    );
   }
   /**
    * Maximizes the panel to fill the viewport, or restores the last saved
@@ -1947,23 +2084,48 @@ class TypePanel {
     this.ensureFocus(popup.document);
     // Fill the popup window; flex column lets the body take leftover space no
     // matter how tall the wrapped toolbar is (no magic-number max-heights).
-    Object.assign(TypePanel.divAll.style, {
-      position: 'static', left: '', top: '', right: '', bottom: '',
-      width: '100%', margin: '0', zIndex: '',
-    });
-    Object.assign(this.div.style, {
-      width: '100%', maxWidth: 'none', maxHeight: 'none', height: '100vh',
-      margin: '0', borderRadius: '0', border: 'none', boxShadow: 'none',
-      display: 'flex', flexDirection: 'column',
-    });
+    Object.assign(
+      TypePanel.divAll.style,
+      {
+        position: 'static',
+        left: '',
+        top: '',
+        right: '',
+        bottom: '',
+        width: '100%',
+        margin: '0',
+        zIndex: '',
+      },
+    );
+    Object.assign(
+      this.div.style,
+      {
+        width: '100%',
+        maxWidth: 'none',
+        maxHeight: 'none',
+        height: '100vh',
+        margin: '0',
+        borderRadius: '0',
+        border: 'none',
+        boxShadow: 'none',
+        display: 'flex',
+        flexDirection: 'column',
+      },
+    );
     Object.assign(this.titlebar.style, {borderRadius: '0'});
-    Object.assign(this.body.style, {
-      flex: '1', minHeight: '0', maxHeight: 'none', overflow: 'auto',
-    });
+    Object.assign(
+      this.body.style,
+      {
+        flex: '1', minHeight: '0', maxHeight: 'none', overflow: 'auto',
+      },
+    );
     TypePanel.divAll.classList.add('rti-popped');
-    popup.addEventListener('beforeunload', () => {
-      this.dock();
-    });
+    popup.addEventListener(
+      'beforeunload',
+      () => {
+        this.dock();
+      },
+    );
     this.popoutWin = popup;
     this.buttonPopout.textContent = '🗗';
     this.buttonPopout.title = 'Dock back to page';
@@ -2036,19 +2198,25 @@ class TypePanel {
    * @returns {HTMLElement} The row element.
    */
   renderFinding(finding) {
-    const row = Div({className: `rti-finding rti-finding-${finding.kind}${finding.info ? ' rti-finding-info' : ''}`},
-                    Div({},
-                        Span({className: 'rti-badge', textContent: finding.info ? `${finding.kind} · info` : finding.kind}),
-                        Span({className: 'rti-path', textContent: finding.path})),
-                    Div({textContent: finding.detail || ''}),
-                    Div({textContent: `expected ${finding.expected}, got ${finding.actual}`}));
+    const row = Div(
+      {className: `rti-finding rti-finding-${finding.kind}${finding.info ? ' rti-finding-info' : ''}`},
+      Div(
+        {},
+        Span({className: 'rti-badge', textContent: finding.info ? `${finding.kind} · info` : finding.kind}),
+        Span({className: 'rti-path', textContent: finding.path}),
+      ),
+      Div({textContent: finding.detail || ''}),
+      Div({textContent: `expected ${finding.expected}, got ${finding.actual}`}),
+    );
     if (finding.fix) {
       row.append(Div({className: 'rti-fix', textContent: `→ ${finding.fix}`}));
     }
     if (finding.children?.length) {
-      row.append(Details({open: finding.children.length <= 2},
-                         Summary({textContent: `Closest match problems (${finding.children.length})`}),
-                         ...finding.children.map((_) => this.renderFinding(_))));
+      row.append(Details(
+        {open: finding.children.length <= 2},
+        Summary({textContent: `Closest match problems (${finding.children.length})`}),
+        ...finding.children.map((_) => this.renderFinding(_)),
+      ));
     }
     return row;
   }
@@ -2067,10 +2235,12 @@ class TypePanel {
   renderTypeNode(node, depth, dimmed = false) {
     const mark = node.passes === true ? '✓' : node.passes === 'shape' ? '⚠' : node.passes === false ? '✗' : '?';
     const markCls = node.passes === true ? 'rti-pass' : node.passes === 'shape' ? 'rti-warn' : node.passes === false ? 'rti-fail' : '';
-    const head = Summary({title: node.full},
-                         Span({className: markCls, textContent: `${mark} `}),
-                         Span({className: 'rti-path', textContent: node.label}),
-                         Span({className: 'rti-kind', textContent: node.kind}));
+    const head = Summary(
+      {title: node.full},
+      Span({className: markCls, textContent: `${mark} `}),
+      Span({className: 'rti-path', textContent: node.label}),
+      Span({className: 'rti-kind', textContent: node.kind}),
+    );
     if (node.optional === true) {
       head.append(Span({className: 'rti-optional', textContent: 'optional'}));
     }
@@ -2088,23 +2258,29 @@ class TypePanel {
       open.append(Div({className: 'rti-fix', textContent: `→ ${node.fix}`}));
     }
     if (node.keys) {
-      const chips = Div({},
-                        Span({textContent: 'Allowed: '}),
-                        ...node.keys.map((_) => Span({className: 'rti-chip', textContent: String(_) })));
+      const chips = Div(
+        {},
+        Span({textContent: 'Allowed: '}),
+        ...node.keys.map((_) => Span({className: 'rti-chip', textContent: String(_)})),
+      );
       if (node.moreKeys > 0) {
         chips.append(Span({textContent: ` (+${node.moreKeys} more)`}));
       }
       if (node.valueInKeys === false) {
-        chips.append(Div({},
-                         Span({className: 'rti-chip rti-chip-bad', textContent: JSON.stringify(node.value ?? null) ?? '?'}),
-                         Span({textContent: ' is not among them.'})));
+        chips.append(Div(
+          {},
+          Span({className: 'rti-chip rti-chip-bad', textContent: JSON.stringify(node.value ?? null) ?? '?'}),
+          Span({textContent: ' is not among them.'}),
+        ));
         if (node.suggestion) {
           chips.append(Div({className: 'rti-fix', textContent: `→ Did you mean \`${node.suggestion}\`?`}));
         }
       } else if (node.valueInKeys === true) {
-        chips.append(Div({},
-                         Span({className: 'rti-chip rti-chip-ok', textContent: JSON.stringify(node.value ?? null) ?? '?'}),
-                         Span({textContent: ' is allowed here — another level fails.'})));
+        chips.append(Div(
+          {},
+          Span({className: 'rti-chip rti-chip-ok', textContent: JSON.stringify(node.value ?? null) ?? '?'}),
+          Span({textContent: ' is allowed here — another level fails.'}),
+        ));
       }
       open.append(chips);
     }
@@ -2185,19 +2361,24 @@ class TypePanel {
       body.append(this.renderTypeNode(tree, 0));
     }
     body.append(
-      Grid({className: 'rti-compare'},
-           Div({}, H3({}, 'Expected'), Pre({}, expectPretty)),
-           Div({}, H3({}, 'Actual'), actualNode),
+      Grid(
+        {className: 'rti-compare'},
+        Div({}, H3({}, 'Expected'), Pre({}, expectPretty)),
+        Div({}, H3({}, 'Actual'), actualNode),
       ),
     );
     if (warnObj.detailStrings?.length) {
-      body.append(Details({},
-                          Summary({textContent: `Raw validator messages (${warnObj.detailStrings.length})`}),
-                          ...warnObj.detailStrings.map((_) => Div({textContent: _}))));
+      body.append(Details(
+        {},
+        Summary({textContent: `Raw validator messages (${warnObj.detailStrings.length})`}),
+        ...warnObj.detailStrings.map((_) => Div({textContent: _})),
+      ));
     }
     body.append(
-      Div({style: {fontSize: '12px', color: '#555'}},
-          `Hits: ${warnObj.hits} — fix the JSDoc/type or the value, then reload.`),
+      Div(
+        {style: {fontSize: '12px', color: '#555'}},
+        `Hits: ${warnObj.hits} — fix the JSDoc/type or the value, then reload.`,
+      ),
     );
     return body;
   }
@@ -2241,8 +2422,11 @@ class TypePanel {
     const btnMin = Button({textContent: '_', title: 'Minimize to taskbar', onclick: () => this.minimizeCompare(key)});
     const btnMax = Button({textContent: '□', title: 'Maximize', onclick: () => this.toggleCompareMaximize(key)});
     const btnClose = Button({textContent: '×', title: 'Close', onclick: () => this.closeCompare(key)});
-    const titlebar = Div({className: 'rti-titlebar', title: 'Drag to move window'},
-                         title, Div({className: 'rti-caption'}, btnMin, btnMax, btnClose));
+    const titlebar = Div(
+      {className: 'rti-titlebar', title: 'Drag to move window'},
+      title,
+      Div({className: 'rti-caption'}, btnMin, btnMax, btnClose),
+    );
     el.append(titlebar, Div({className: 'rti-compare-body'}, this.buildCompareContent(warnObj)));
     for (const dir of ['n', 'e', 's', 'w', 'ne', 'nw', 'se', 'sw']) {
       const handle = Div({className: `rti-handle rti-handle-${dir}`, dataset: {dir}});
@@ -2253,9 +2437,12 @@ class TypePanel {
     // the window even when a subtree grip stops mousedown propagation.
     hostDoc.body.append(el);
     this.compareWins.set(key, {el, titlebar, btnMax, minimized: false});
-    this.makeDraggable(titlebar, el,
-                       () => this.toggleCompareMaximize(key),
-                       () => el.dataset?.maximized === 'true');
+    this.makeDraggable(
+      titlebar,
+      el,
+      () => this.toggleCompareMaximize(key),
+      () => el.dataset?.maximized === 'true',
+    );
     this.ensureEsc(hostDoc);
     this.ensureFocus(hostDoc);
     this.refreshCompareTaskbar();
@@ -2433,11 +2620,14 @@ class TypePanel {
       return;
     }
     this.escDocs.add(doc);
-    doc.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        this.closeTopCompare();
-      }
-    });
+    doc.addEventListener(
+      'keydown',
+      (e) => {
+        if (e.key === 'Escape') {
+          this.closeTopCompare();
+        }
+      },
+    );
   }
   /**
    * Fronts whichever compare window a mousedown lands in, or the main panel
@@ -2919,22 +3109,26 @@ class TypePanel {
     for (const row of rows) {
       const cells = cols.map((col) => {
         if (col.id === 'loc') {
-          const locBtn = Button({textContent: row.loc, title: `${row.loc} (click: call stack, copy)`, onclick: () => {
-            try {
-              copyText(row.loc);
-            } catch (unused) {
+          const locBtn = Button({
+            textContent: row.loc,
+            title: `${row.loc} (click: call stack, copy)`,
+            onclick: () => {
+              try {
+                copyText(row.loc);
+              } catch (unused) {
               // ignore copy failure
-            }
-            try {
-              console.log('RTI checkStats loc:', row.loc);
-              if (row.stack) {
-                console.log(row.stack);
               }
-            } catch (unused) {
+              try {
+                console.log('RTI checkStats loc:', row.loc);
+                if (row.stack) {
+                  console.log(row.stack);
+                }
+              } catch (unused) {
               // ignore logging failure
-            }
-            this.showLocDetail(row);
-          }});
+              }
+              this.showLocDetail(row);
+            },
+          });
           return Td({}, locBtn);
         }
         if (col.id === 'skipPct') {
@@ -2960,9 +3154,13 @@ class TypePanel {
       });
       this.checksTable.append(Tr({}, ...cells));
       if (this.checksDetailLoc === row.loc) {
-        this.checksTable.append(Tr({className: 'rti-checks-loc-detail'},
-                                   Td({colSpan: String(cols.length)},
-                                      Pre({textContent: `${row.loc}\n\n${row.stack || '(no call stack was captured for this loc)'}`}))));
+        this.checksTable.append(Tr(
+          {className: 'rti-checks-loc-detail'},
+          Td(
+            {colSpan: String(cols.length)},
+            Pre({textContent: `${row.loc}\n\n${row.stack || '(no call stack was captured for this loc)'}`}),
+          ),
+        ));
       }
     }
   }

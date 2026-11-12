@@ -48,15 +48,18 @@ function prepare() {
   registerClass(LightComponent);
   registerClass(Entity);
   // Static shape of Entity: what TypeScript sees for `keyof Entity`.
-  registerTypedef('Entity', {
-    type: 'object',
-    properties: {
-      camera: 'CameraComponent',
-      light: 'LightComponent',
-      name: 'string',
-      enabled: 'boolean',
+  registerTypedef(
+    'Entity',
+    {
+      type: 'object',
+      properties: {
+        camera: 'CameraComponent',
+        light: 'LightComponent',
+        name: 'string',
+        enabled: 'boolean',
+      },
     },
-  });
+  );
   /**
    * The components an {@link Entity} can hold, keyed by name: only props
    * whose type extends {@link Component} survive the `as` remapping.

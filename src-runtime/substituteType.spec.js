@@ -29,10 +29,15 @@ function testPrimitivesAndAtoms() {
 }
 function testObjects() {
   // Properties substitute per key; index signatures follow.
-  const out = substituteType({
-    type: 'object',
-    properties: {a: 'K', b: 'number'},
-  }, 'K', '"a"', () => {});
+  const out = substituteType(
+    {
+      type: 'object',
+      properties: {a: 'K', b: 'number'},
+    },
+    'K',
+    '"a"',
+    () => {},
+  );
   if (!same(out, {type: 'object', properties: {a: '"a"', b: 'number'}})) {
     return false;
   }
@@ -53,10 +58,15 @@ function testSequences() {
   if (!same(rest, {type: 'rest', annotation: '"a"'})) {
     return false;
   }
-  const literal = substituteType({
-    type: 'templateLiteral',
-    types: ['K', 'x'],
-  }, 'K', '"a"', () => {});
+  const literal = substituteType(
+    {
+      type: 'templateLiteral',
+      types: ['K', 'x'],
+    },
+    'K',
+    '"a"',
+    () => {},
+  );
   return same(literal, {type: 'templateLiteral', types: ['"a"', 'x']});
 }
 function testReferencesUnionsIntersections() {
@@ -70,10 +80,15 @@ function testReferencesUnionsIntersections() {
     return false;
   }
   // The `'fixed' & K` case from the old todo: literal members stay put.
-  const inter = substituteType({
-    type: 'intersection',
-    members: ["'fixed'", 'K'],
-  }, 'K', '"a"', () => {});
+  const inter = substituteType(
+    {
+      type: 'intersection',
+      members: ["'fixed'", 'K'],
+    },
+    'K',
+    '"a"',
+    () => {},
+  );
   return same(inter, {type: 'intersection', members: ["'fixed'", '"a"']});
 }
 function testMappingsRecords() {
@@ -83,18 +98,26 @@ function testMappingsRecords() {
   if (substituteType(shadowed, 'K', '"a"', () => {}) !== shadowed) {
     return false;
   }
-  const mapped = substituteType({
-    type: 'mapping',
-    element: 'X',
-    iterable: 'K',
-    result: {type: 'array', elementType: 'K'},
-  }, 'K', '"a"', () => {});
-  if (!same(mapped, {
-    type: 'mapping',
-    element: 'X',
-    iterable: '"a"',
-    result: {type: 'array', elementType: '"a"'},
-  })) {
+  const mapped = substituteType(
+    {
+      type: 'mapping',
+      element: 'X',
+      iterable: 'K',
+      result: {type: 'array', elementType: 'K'},
+    },
+    'K',
+    '"a"',
+    () => {},
+  );
+  if (!same(
+    mapped,
+    {
+      type: 'mapping',
+      element: 'X',
+      iterable: '"a"',
+      result: {type: 'array', elementType: '"a"'},
+    },
+  )) {
     return false;
   }
   const record = substituteType({type: 'record', key: 'K', val: 'number'}, 'K', '"a"', () => {});
@@ -106,27 +129,40 @@ function testMappingsRecords() {
 }
 function testConditionsIndexedKeyof() {
   // Conditions substitute all four branches; indexed access both sides.
-  const cond = substituteType({
-    type: 'condition',
-    checkType: 'K',
-    extendsType: 'string',
-    trueType: 'K',
-    falseType: 'never',
-  }, 'K', '"a"', () => {});
-  if (!same(cond, {
-    type: 'condition',
-    checkType: '"a"',
-    extendsType: 'string',
-    trueType: '"a"',
-    falseType: 'never',
-  })) {
+  const cond = substituteType(
+    {
+      type: 'condition',
+      checkType: 'K',
+      extendsType: 'string',
+      trueType: 'K',
+      falseType: 'never',
+    },
+    'K',
+    '"a"',
+    () => {},
+  );
+  if (!same(
+    cond,
+    {
+      type: 'condition',
+      checkType: '"a"',
+      extendsType: 'string',
+      trueType: '"a"',
+      falseType: 'never',
+    },
+  )) {
     return false;
   }
-  const indexed = substituteType({
-    type: 'indexedAccess',
-    object: 'K',
-    index: '"a"',
-  }, 'K', 'Box', () => {});
+  const indexed = substituteType(
+    {
+      type: 'indexedAccess',
+      object: 'K',
+      index: '"a"',
+    },
+    'K',
+    'Box',
+    () => {},
+  );
   if (!same(indexed, {type: 'indexedAccess', object: 'Box', index: '"a"'})) {
     return false;
   }
@@ -140,14 +176,22 @@ function testConditionsIndexedKeyof() {
 }
 function testFunctions() {
   // Only `.type` positions of descriptors and returns substitute.
-  const fn = substituteType({
-    type: 'function',
-    parameters: [{type: 'parameter', paramType: 'K', name: 'a'}],
-  }, 'K', '"a"', () => {});
-  if (!same(fn, {
-    type: 'function',
-    parameters: [{type: 'parameter', paramType: '"a"', name: 'a'}],
-  })) {
+  const fn = substituteType(
+    {
+      type: 'function',
+      parameters: [{type: 'parameter', paramType: 'K', name: 'a'}],
+    },
+    'K',
+    '"a"',
+    () => {},
+  );
+  if (!same(
+    fn,
+    {
+      type: 'function',
+      parameters: [{type: 'parameter', paramType: '"a"', name: 'a'}],
+    },
+  )) {
     return false;
   }
   const tupleMember = substituteType({type: 'tupleMember', elementType: 'K'}, 'K', '"a"', () => {});
@@ -171,9 +215,14 @@ function testSharingAndDefault() {
   }
   let warned = 0;
   const unknown = {type: 'frobnicate', inner: 'K'};
-  const kept = substituteType(unknown, 'K', '"a"', () => {
-    warned++;
-  });
+  const kept = substituteType(
+    unknown,
+    'K',
+    '"a"',
+    () => {
+      warned++;
+    },
+  );
   return kept === unknown && warned === 1;
 }
 const tests = [

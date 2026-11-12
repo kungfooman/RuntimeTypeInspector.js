@@ -234,9 +234,12 @@ function giantWindow() {
   const win = new FakeWindow();
   win.window = win;
   win.self = win;
-  win.document = Object.assign(new FakeDocument(), {
-    location: Object.assign(new FakeLocation(), {href: 'https://x/', origin: 'https://x'}),
-  });
+  win.document = Object.assign(
+    new FakeDocument(),
+    {
+      location: Object.assign(new FakeLocation(), {href: 'https://x/', origin: 'https://x'}),
+    },
+  );
   win.name = '';
   win.location = win.document.location;
   for (let i = 0; i < 200; i++) {
@@ -274,10 +277,13 @@ function testSnipGiantInstanceCollapsesToTag() {
   return snip(giantWindow()) === 'FakeWindow';
 }
 function testNestedGiantCollapses() {
-  const outer = Object.assign(Object.create((class Box {}).prototype), {
-    label: 'x',
-    win: giantWindow(),
-  });
+  const outer = Object.assign(
+    Object.create((class Box {}).prototype),
+    {
+      label: 'x',
+      win: giantWindow(),
+    },
+  );
   return describeValueType(outer) === 'Box {label: "x", win: FakeWindow}';
 }
 function testInspectSummaryShowsGiantTag() {

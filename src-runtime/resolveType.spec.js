@@ -9,11 +9,14 @@ function prepare() {
    */
   // Upper typedef's create these:
   registerTypedef('Obj', {"type": "object", "properties": {"a": "'aa'", "b": "'bb'", "c": "'cc'"}});
-  registerTypedef('ObjValues', {
-    "type": "indexedAccess",
-    "index": {"type": "keyof", "argument": "Obj"},
-    "object": "Obj",
-  });
+  registerTypedef(
+    'ObjValues',
+    {
+      "type": "indexedAccess",
+      "index": {"type": "keyof", "argument": "Obj"},
+      "object": "Obj",
+    },
+  );
   registerTypedef('ObjValuesTypedef', "ObjValues");
   registerTypedef('ObjValuesTypedef2', "ObjValuesTypedef");
   for (let i = 2; i < 30; i++) {

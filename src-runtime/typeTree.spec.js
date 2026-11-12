@@ -168,10 +168,14 @@ function testObjectChildrenProbeValues() {
   // their own value: name ✗, email ✓.
   reset();
   registerTypedef('User', expandType('{id: number, name: string, email: string, passwordHash: string}'));
-  const tree = buildTypeTree(expandType('Pick<User, "name" | "email">'), {
-    name: 1,
-    email: 'a@b.c',
-  }, 'userInfo');
+  const tree = buildTypeTree(
+    expandType('Pick<User, "name" | "email">'),
+    {
+      name: 1,
+      email: 'a@b.c',
+    },
+    'userInfo',
+  );
   const [shape] = tree.children ?? [];
   if (tree.kind !== 'reference' || shape?.kind !== 'object') {
     return false;
@@ -196,11 +200,17 @@ function testTreeExtrasOmit() {
   // removal wording and a dotted fix path, not just in Diagnosis.
   reset();
   registerTypedef('User', expandType('{id: number, name: string, email: string}'));
-  const tree = buildTypeTree(expandType('Pick<User, "name" | "email">'), {
-    name: 1,
-    email: 'a',
-    id: 2,
-  }, 'userInfo', undefined, 'userInfo');
+  const tree = buildTypeTree(
+    expandType('Pick<User, "name" | "email">'),
+    {
+      name: 1,
+      email: 'a',
+      id: 2,
+    },
+    'userInfo',
+    undefined,
+    'userInfo',
+  );
   const [shape] = tree.children ?? [];
   const extra = shape?.children?.find((_) => _.kind === 'extra');
   return shape?.kind === 'object' && !!extra && extra.passes === false &&
@@ -209,10 +219,16 @@ function testTreeExtrasOmit() {
 }
 function testTreeExtrasPlain() {
   reset();
-  const tree = buildTypeTree(expandType('{fov: number}'), {
-    fov: 60,
-    fovv: 1,
-  }, 'options', undefined, 'options');
+  const tree = buildTypeTree(
+    expandType('{fov: number}'),
+    {
+      fov: 60,
+      fovv: 1,
+    },
+    'options',
+    undefined,
+    'options',
+  );
   const extra = tree.children?.find((_) => _.kind === 'extra');
   return !!extra && extra.passes === false && extra.detail.includes('check spelling');
 }
@@ -232,10 +248,16 @@ function testTreeExtrasUnmarkedWhenLenient() {
   const prev = options.exactObjects;
   options.exactObjects = false;
   try {
-    const tree = buildTypeTree(expandType('{fov: number}'), {
-      fov: 60,
-      fovv: 1,
-    }, 'options', undefined, 'options');
+    const tree = buildTypeTree(
+      expandType('{fov: number}'),
+      {
+        fov: 60,
+        fovv: 1,
+      },
+      'options',
+      undefined,
+      'options',
+    );
     const extra = tree.children?.find((_) => _.kind === 'extra');
     return !!extra && extra.passes === undefined && !extra.fix;
   } finally {

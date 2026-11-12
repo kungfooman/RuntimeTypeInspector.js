@@ -42,38 +42,41 @@ import {installWalkTimers} from "./plugin-walk-timers/installWalkTimers.js";
  * module graph stays acyclic. Importing this module (or the package index)
  * guarantees a full table. Shorthand keys mirror the export names.
  */
-Object.assign(validators, {
-  validateType,
-  validateCondition,
-  validateObject,
-  validateRecord,
-  validateReference,
-  validateMap,
-  validateMapping,
-  validateArray,
-  validateIntersection,
-  validateGlobalConstructor,
-  validateIndexedAccess,
-  validateIArguments,
-  validateKeyof,
-  validateUnion,
-  validateSet,
-  validateTemplateLiteral,
-  validateTuple,
-  validateTypeof,
-  validateNumber,
-  validatePromise,
-  validateArrayLike,
-  validateTypedef,
-  createTypeFromIndexedAccess,
-  validateString,
-  validateBoolean,
-  validateNull,
-  validateUndefined,
-  validateSymbol,
-  validateBigint,
-  validateVoid,
-});
+Object.assign(
+  validators,
+  {
+    validateType,
+    validateCondition,
+    validateObject,
+    validateRecord,
+    validateReference,
+    validateMap,
+    validateMapping,
+    validateArray,
+    validateIntersection,
+    validateGlobalConstructor,
+    validateIndexedAccess,
+    validateIArguments,
+    validateKeyof,
+    validateUnion,
+    validateSet,
+    validateTemplateLiteral,
+    validateTuple,
+    validateTypeof,
+    validateNumber,
+    validatePromise,
+    validateArrayLike,
+    validateTypedef,
+    createTypeFromIndexedAccess,
+    validateString,
+    validateBoolean,
+    validateNull,
+    validateUndefined,
+    validateSymbol,
+    validateBigint,
+    validateVoid,
+  },
+);
 /**
  * Walk timing is a table plugin, installed once the table is populated.
  * When stats are off at import (the consumer never opted in), install is
@@ -211,7 +214,13 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
       return validators.validateSet(value, expect, loc, name, critical, warn, depth + 1);
     case 'templateLiteral':
       return validators.validateTemplateLiteral(
-        value, expect, loc, name, critical, warn, depth + 1,
+        value,
+        expect,
+        loc,
+        name,
+        critical,
+        warn,
+        depth + 1,
       );
     case 'tuple':
       // Trigger: pc.app.scene.setSkybox([1, 2, 3]);

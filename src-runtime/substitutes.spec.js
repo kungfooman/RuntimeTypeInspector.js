@@ -73,23 +73,34 @@ function testOverrideComposes() {
   // records, single positions, sibling lists and descriptors all recurse
   // through the dispatcher, not past it. The restore is asserted by
   // `withOverride`, so no later test can observe the swap.
-  return withOverride(substitutes, 'substituteType', substituteType, (type, search, replace, warn) => {
-    return type === 'K' ? '"winning"' : substituteType(type, search, replace, warn);
-  }, () => {
-    const out = substituteType({
-      type: 'object',
-      properties: {
-        a: 'K',
-        els: {type: 'array', elementType: 'K'},
-        u: {type: 'union', members: ['K', 'number']},
-        f: {type: 'function', parameters: [{type: 'parameter', paramType: 'K', name: 'x'}]},
-      },
-    }, 'K', '"a"', noop);
-    return out.properties.a === '"winning"' &&
+  return withOverride(
+    substitutes,
+    'substituteType',
+    substituteType,
+    (type, search, replace, warn) => {
+      return type === 'K' ? '"winning"' : substituteType(type, search, replace, warn);
+    },
+    () => {
+      const out = substituteType(
+        {
+          type: 'object',
+          properties: {
+            a: 'K',
+            els: {type: 'array', elementType: 'K'},
+            u: {type: 'union', members: ['K', 'number']},
+            f: {type: 'function', parameters: [{type: 'parameter', paramType: 'K', name: 'x'}]},
+          },
+        },
+        'K',
+        '"a"',
+        noop,
+      );
+      return out.properties.a === '"winning"' &&
       out.properties.els.elementType === '"winning"' &&
       out.properties.u.members[0] === '"winning"' &&
       out.properties.f.parameters[0].paramType === '"winning"';
-  });
+    },
+  );
 }
 function testUnknownKindWarnsAndKeepsSearch() {
   // A project-specific node kind passes through untouched with a warning:
@@ -104,27 +115,33 @@ function testOpaqueOverrideInstantiatesNested() {
   // Taught via the table, the custom kind instantiates everywhere stock
   // routing reaches — bare, inside arrays, inside object properties — and
   // nothing warns anymore. Models branded IDs like `UserId` wrapping `K`.
-  return withOverride(substitutes, 'substituteType', substituteType, (type, search, replace, warn) => {
-    if (type?.type === 'opaque') {
-      const underlying = substituteType(type.underlying, search, replace, warn);
-      return underlying === type.underlying ? type : {...type, underlying};
-    }
-    return substituteType(type, search, replace, warn);
-  }, () => {
-    const warnings = [];
-    const warn = (...args) => warnings.push(args);
-    const tree = {
-      type: 'object',
-      properties: {
-        id: {type: 'opaque', name: 'UserId', underlying: 'K'},
-        ids: {type: 'array', elementType: {type: 'opaque', name: 'UserId', underlying: 'K'}},
-      },
-    };
-    const out = substituteType(tree, 'K', '"a"', warn);
-    return out.properties.id.underlying === '"a"' &&
+  return withOverride(
+    substitutes,
+    'substituteType',
+    substituteType,
+    (type, search, replace, warn) => {
+      if (type?.type === 'opaque') {
+        const underlying = substituteType(type.underlying, search, replace, warn);
+        return underlying === type.underlying ? type : {...type, underlying};
+      }
+      return substituteType(type, search, replace, warn);
+    },
+    () => {
+      const warnings = [];
+      const warn = (...args) => warnings.push(args);
+      const tree = {
+        type: 'object',
+        properties: {
+          id: {type: 'opaque', name: 'UserId', underlying: 'K'},
+          ids: {type: 'array', elementType: {type: 'opaque', name: 'UserId', underlying: 'K'}},
+        },
+      };
+      const out = substituteType(tree, 'K', '"a"', warn);
+      return out.properties.id.underlying === '"a"' &&
       out.properties.ids.elementType.underlying === '"a"' &&
       warnings.length === 0;
-  });
+    },
+  );
 }
 const tests = [
   testTablePopulated,

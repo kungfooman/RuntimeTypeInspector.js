@@ -484,11 +484,13 @@ function renderActualItem(item, depth, ancestors, failPaths) {
  */
 function buildActualBranch(header, items, path, depth, ancestors, failPaths) {
   const failed = failPaths.has(path);
-  const details = Details({
-    open: depth === 0 || actualCovers(path, failPaths) ? true : undefined,
-    className: failed ? 'rti-fail-hit' : undefined,
-  },
-                          Summary({textContent: header}));
+  const details = Details(
+    {
+      open: depth === 0 || actualCovers(path, failPaths) ? true : undefined,
+      className: failed ? 'rti-fail-hit' : undefined,
+    },
+    Summary({textContent: header}),
+  );
   renderActualBatch(details, items, failPaths, depth + 1, ancestors);
   return details;
 }

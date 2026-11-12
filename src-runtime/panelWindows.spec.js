@@ -605,9 +605,11 @@ function actualFor(value, expect, name) {
  */
 function testActualMapFailureHighlighted() {
   return withPanel(() => {
-    const node = actualFor(new Map([['apiKey', null], ['other', 'x']]),
-                           expandType('Map<string, string | number>'),
-                           'config');
+    const node = actualFor(
+      new Map([['apiKey', null], ['other', 'x']]),
+      expandType('Map<string, string | number>'),
+      'config',
+    );
     if (!node || node.children[0]?.open !== true) {
       return false;
     }
@@ -622,9 +624,11 @@ function testActualMapFailureHighlighted() {
  */
 function testActualNestedFailureExpands() {
   return withPanel(() => {
-    const node = actualFor({a: {b: 1}, z: {y: 2}},
-                           expandType('{a: {b: string}, z: {y: number}}'),
-                           'config');
+    const node = actualFor(
+      {a: {b: 1}, z: {y: 2}},
+      expandType('{a: {b: string}, z: {y: number}}'),
+      'config',
+    );
     if (!node) {
       return false;
     }
@@ -738,11 +742,15 @@ function testActualBranchHeaders() {
     if (!live || !textOf(live).includes('array [2]')) {
       return false;
     }
-    const snap = renderActualValue({
-      $type: 'Uint8Array',
-      length: 2,
-      values: [1, 2],
-    }, 'v', new Set());
+    const snap = renderActualValue(
+      {
+        $type: 'Uint8Array',
+        length: 2,
+        values: [1, 2],
+      },
+      'v',
+      new Set(),
+    );
     return !!snap && textOf(snap).includes('Uint8Array(2)') && !textOf(snap).includes('$type');
   });
 }
@@ -1172,10 +1180,13 @@ function testResizeKeepsCaptionOnScreen() {
  */
 function testStaleGeometryClampedToViewport() {
   return withPanel((panel) => {
-    globalThis.localStorage.setItem('rti-panel-geometry', JSON.stringify({
-      left: '-2000px',
-      top: '3000px',
-    }));
+    globalThis.localStorage.setItem(
+      'rti-panel-geometry',
+      JSON.stringify({
+        left: '-2000px',
+        top: '3000px',
+      }),
+    );
     panel.applyGeometry();
     return TypePanel.divAll.style.left === '64px' && TypePanel.divAll.style.top === '872px';
   });
@@ -1311,10 +1322,13 @@ function testPersistedPositionWinsOverStart() {
     const prev = options.panelPosition;
     try {
       globalThis.localStorage.setItem('rti-panel-position', 'top-left');
-      globalThis.localStorage.setItem('rti-panel-geometry', JSON.stringify({
-        left: '100px',
-        top: '100px',
-      }));
+      globalThis.localStorage.setItem(
+        'rti-panel-geometry',
+        JSON.stringify({
+          left: '100px',
+          top: '100px',
+        }),
+      );
       TypePanel.instance = null;
       TypePanel.divAll = null;
       const fresh = new TypePanel();
@@ -1446,10 +1460,13 @@ function testCompareActualShowsTree() {
     if (!text.includes('a') || !text.includes('1')) {
       return false;
     }
-    const snap = actualPane(panel, {
-      ...stubWarn('L1', 'b'),
-      value: {$type: 'FakeWindow', name: '', location: {$type: 'FakeLocation'}},
-    });
+    const snap = actualPane(
+      panel,
+      {
+        ...stubWarn('L1', 'b'),
+        value: {$type: 'FakeWindow', name: '', location: {$type: 'FakeLocation'}},
+      },
+    );
     const snapText = textOf(snap);
     return snap.className.includes('rti-line') && snapText.includes('FakeWindow') &&
       snapText.includes('FakeLocation') && !snapText.includes('$type');
@@ -1562,11 +1579,14 @@ function testUnknownActionWarnsInsteadOfThrowing() {
     try {
       const sink = {postMessage: () => {}};
       const warns = recordWarns(() => {
-        globalThis.window.fire('message', {
-          source: null,
-          srcElement: sink,
-          data: {type: 'rti', destination: 'ui', action: 'bogus', key: 'x'},
-        });
+        globalThis.window.fire(
+          'message',
+          {
+            source: null,
+            srcElement: sink,
+            data: {type: 'rti', destination: 'ui', action: 'bogus', key: 'x'},
+          },
+        );
       });
       return warns.length === 1 && Object.keys(panel.warnings).length === 0;
     } finally {

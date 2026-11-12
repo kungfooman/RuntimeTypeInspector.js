@@ -320,10 +320,13 @@ function extendsCheck(check, target) {
       if (!Array.isArray(keys)) {
         return undefined;
       }
-      return extendsCheck(check, {
-        type: 'union',
-        members: keys.map((key) => (typeof key === 'string' ? literalType(key) : key)),
-      });
+      return extendsCheck(
+        check,
+        {
+          type: 'union',
+          members: keys.map((key) => (typeof key === 'string' ? literalType(key) : key)),
+        },
+      );
     }
     if (target && target.type === 'templateLiteral') {
       if (typeof check === 'string') {

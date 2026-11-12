@@ -140,12 +140,16 @@ function testThrowingGetter() {
   // both on first paint and on refill.
   return withFake(() => {
     const bad = {};
-    Object.defineProperty(bad, 'boom', {
-      enumerable: true,
-      get() {
-        throw new Error('nope');
+    Object.defineProperty(
+      bad,
+      'boom',
+      {
+        enumerable: true,
+        get() {
+          throw new Error('nope');
+        },
       },
-    });
+    );
     const {root, el} = renderTree({a: 1});
     root.refill(bad);
     const refilled = dump(el).includes('Getter threw');

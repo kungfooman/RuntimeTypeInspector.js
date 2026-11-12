@@ -102,9 +102,12 @@ function testEnableAfterSkippedInstallWiresTable() {
     }
     return new Promise((resolve) => {
       const wait = waits.shift();
-      setTimeout(() => {
-        resolve(poll());
-      }, wait);
+      setTimeout(
+        () => {
+          resolve(poll());
+        },
+        wait,
+      );
     });
   };
   return poll();

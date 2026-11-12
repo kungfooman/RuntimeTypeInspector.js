@@ -56,10 +56,13 @@ function validateObject(value, expect, loc, name, critical, warn, depth) {
               leafDepth,
             );
             if (!leafOk) {
-              warn(`Element ${name}.${key} has wrong type.`, {
-                expect: signature.indexType,
-                value: value[key],
-              });
+              warn(
+                `Element ${name}.${key} has wrong type.`,
+                {
+                  expect: signature.indexType,
+                  value: value[key],
+                },
+              );
               failed = true;
             }
             return;
@@ -113,10 +116,13 @@ function validateObject(value, expect, loc, name, critical, warn, depth) {
           leafDepth,
         );
         if (!leafOk) {
-          warn(`Element ${name}.${key} has wrong type.`, {
-            expect: signature.indexType,
-            value: value[key],
-          });
+          warn(
+            `Element ${name}.${key} has wrong type.`,
+            {
+              expect: signature.indexType,
+              value: value[key],
+            },
+          );
           failed = true;
         }
       }

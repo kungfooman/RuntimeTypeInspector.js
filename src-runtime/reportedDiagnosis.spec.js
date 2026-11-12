@@ -36,14 +36,20 @@ function prepare() {
   // next to the classes so snapshots diff against data, not just methods.
   registerClass(ReportWidget);
   registerClass(ReportVec2);
-  registerTypedef('ReportWidget', {
-    type: 'object',
-    properties: {r: 'number', g: 'number', b: 'number', a: 'number', spin: 'Function'},
-  });
-  registerTypedef('ReportVec2', {
-    type: 'object',
-    properties: {x: 'number', y: 'number', set: 'Function'},
-  });
+  registerTypedef(
+    'ReportWidget',
+    {
+      type: 'object',
+      properties: {r: 'number', g: 'number', b: 'number', a: 'number', spin: 'Function'},
+    },
+  );
+  registerTypedef(
+    'ReportVec2',
+    {
+      type: 'object',
+      properties: {x: 'number', y: 'number', set: 'Function'},
+    },
+  );
 }
 /**
  * Captures the posted report of one failing check. Cross-realm mode pushes
@@ -192,10 +198,16 @@ function testOptionDriftShowsInLocalDiff() {
   setOptions({strictNullChecks: true, checkInfinity: false, exactObjects: false});
   let posted;
   try {
-    posted = postReport({a: [0, Infinity], b: 'x'}, {
-      type: 'object',
-      properties: {a: {type: 'array', elementType: 'number'}, b: 'number'},
-    }, 'reportLocFive', 'reportNameFive', false);
+    posted = postReport(
+      {a: [0, Infinity], b: 'x'},
+      {
+        type: 'object',
+        properties: {a: {type: 'array', elementType: 'number'}, b: 'number'},
+      },
+      'reportLocFive',
+      'reportNameFive',
+      false,
+    );
   } finally {
     setOptions(prev);
   }

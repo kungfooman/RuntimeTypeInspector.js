@@ -12,22 +12,10 @@ function collect(node, out) {
     return;
   }
   if (typeof node.type === 'string') {
-    if ((node.type === 'CallExpression' || node.type === 'NewExpression') &&
+    if ((node.type === 'CallExpression' || node.type === 'NewExpression' || node.type === 'OptionalCallExpression') &&
       node.arguments.length > 1 &&
       node.loc.start.line !== node.loc.end.line) {
-      const first = node.arguments[0];
-      if (first.loc.start.line === node.callee.loc.end.line) {
-        // Break after '(' so the first argument drops to its own line.
-        out.push(node.callee.range[1]);
-      }
-      // Break between any two arguments sharing one line.
-      for (let index = 1; index < node.arguments.length; index += 1) {
-        const prev = node.arguments[index - 1];
-        const current = node.arguments[index];
-        if (prev.loc.end.line === current.loc.start.line) {
-          out.push(prev.range[1]);
-        }
-      }
+      out.push(node);
     }
     for (const key of Object.keys(node)) {
       if (key === 'parent') {
@@ -56,13 +44,51 @@ function breakFile(file) {
     sourceType: 'module',
     loc: true,
     range: true,
+    tokens: true,
   });
+  const calls = [];
+  collect(ast, calls);
+  const {tokens} = ast;
   const edits = [];
-  collect(ast, edits);
+  for (const node of calls) {
+    const first = node.arguments[0];
+    if (first.loc.start.line === node.callee.loc.end.line) {
+      // Find the '(' that opens this call: first punctuator at or after
+      // the end of the callee (skips the '?.' of an optional chain).
+      const open = tokens.find((token) => token.type === 'Punctuator' &&
+        token.value === '(' &&
+        token.range[0] >= node.callee.range[1] &&
+        token.range[1] <= first.range[0]);
+      if (open !== undefined) {
+        edits.push(open.range[1]);
+      }
+    }
+    // Break between any two arguments sharing one line, after the comma.
+    for (let index = 1; index < node.arguments.length; index += 1) {
+      const prev = node.arguments[index - 1];
+      const current = node.arguments[index];
+      if (prev.loc.end.line === current.loc.start.line) {
+        const comma = tokens.find((token) => token.type === 'Punctuator' &&
+          token.value === ',' &&
+          token.range[0] >= prev.range[1] &&
+          token.range[1] <= current.range[0]);
+        if (comma !== undefined) {
+          edits.push(comma.range[1]);
+        }
+      }
+    }
+  }
   edits.sort((a, b) => b - a);
   let next = code;
+  let prevPos = Infinity;
   for (const pos of edits) {
-    next = next.slice(0, pos + 1) + '\n' + next.slice(pos + 1);
+    // Edits are exclusive end offsets: insert the newline after pos - 1.
+    // Skip duplicates from overlapping calls sharing one boundary.
+    if (pos === prevPos) {
+      continue;
+    }
+    prevPos = pos;
+    next = next.slice(0, pos) + '\n' + next.slice(pos);
   }
   if (next !== code) {
     writeFileSync(file, next);

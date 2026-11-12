@@ -47,17 +47,20 @@ function prepareStress() {
   registerTypedef('TwChain', 'TwTint');
   registerTypedef('TwOptBox', {type: 'object', properties: {v: 'number'}, optional: true});
   registerTypedef('TwRoBox', {type: 'object', properties: {v: 'number'}, readonly: true});
-  registerTypedef('TwRich', {
-    type: 'object',
-    properties: {
-      plain: 'TwColor',
-      alias: 'TwTint',
-      chain: 'TwChain',
-      union: {type: 'union', members: ['TwColor', {type: 'array', elementType: 'number'}]},
-      list: {type: 'array', elementType: 'TwColor'},
-      count: 'number',
+  registerTypedef(
+    'TwRich',
+    {
+      type: 'object',
+      properties: {
+        plain: 'TwColor',
+        alias: 'TwTint',
+        chain: 'TwChain',
+        union: {type: 'union', members: ['TwColor', {type: 'array', elementType: 'number'}]},
+        list: {type: 'array', elementType: 'TwColor'},
+        count: 'number',
+      },
     },
-  });
+  );
   registerTypedef('TwWritable', expandType('{ [P in keyof T]-?: IfEquals<{ [Q in P]: T[P] }, { -readonly [Q in P]: T[P] }, P> }[keyof T]'), ['T']);
 }
 // --- Point 1: `-?` / `-readonly` preserve reference identity. ---
@@ -142,10 +145,13 @@ function testWritableKeysRichSpelling() {
 // Getter-only (readonly) properties are still filtered out.
 function testWritableKeysDropsGetterOnly() {
   prepareStress();
-  registerTypedef('TwMixed', {
-    type: 'object',
-    properties: {ro: {type: 'TwColor', readonly: true}, rw: 'TwColor'},
-  });
+  registerTypedef(
+    'TwMixed',
+    {
+      type: 'object',
+      properties: {ro: {type: 'TwColor', readonly: true}, rw: 'TwColor'},
+    },
+  );
   const keys = getTypeKeys(expandType('TwWritable<TwMixed>'), warn);
   if (!Array.isArray(keys) || JSON.stringify(keys) !== JSON.stringify(['rw'])) {
     return false;
@@ -191,15 +197,21 @@ function testSingleMemberUnionResolution() {
 // key reads resolve through them instead of returning member names.
 function testNullSlotJoinsMap() {
   prepareStress();
-  registerTypedef('TwNullEntity', {
-    type: 'object',
-    properties: {camera: {type: 'union', members: ['TwCam', 'null']}, name: 'string'},
-  });
+  registerTypedef(
+    'TwNullEntity',
+    {
+      type: 'object',
+      properties: {camera: {type: 'union', members: ['TwCam', 'null']}, name: 'string'},
+    },
+  );
   registerTypedef('TwNullMap', expandType('{ [K in keyof TwNullEntity as NonNullable<TwNullEntity[K]> extends TwComponent ? K : never]: NonNullable<TwNullEntity[K]> }'));
   let count = 0;
-  const type = createType('TwNullMap', () => {
-    count++;
-  });
+  const type = createType(
+    'TwNullMap',
+    () => {
+      count++;
+    },
+  );
   if (!type || JSON.stringify(Object.keys(type.properties)) !== JSON.stringify(['camera'])) {
     return false;
   }
@@ -344,13 +356,16 @@ function testDeferredStaysUndecidable() {
   if (extendsCheck({type: 'keyof', argument: 'TwMissing'}, 'TwComponent') !== undefined) {
     return false;
   }
-  if (extendsCheck({
-    type: 'condition',
-    checkType: 'TwBox',
-    extendsType: 'TwComponent',
-    trueType: '"a"',
-    falseType: '"b"',
-  }, 'TwComponent') !== undefined) {
+  if (extendsCheck(
+    {
+      type: 'condition',
+      checkType: 'TwBox',
+      extendsType: 'TwComponent',
+      trueType: '"a"',
+      falseType: '"b"',
+    },
+    'TwComponent',
+  ) !== undefined) {
     return false;
   }
   return true;
@@ -412,29 +427,35 @@ function testNominalChainDualPackage() {
 // nested shapes, methods, primitives) maps to its slots with zero warnings.
 function testBigMapSilent() {
   prepareStress();
-  registerTypedef('TwBig', {
-    type: 'object',
-    properties: {
-      camera: {type: 'union', members: ['TwCam', 'undefined']},
-      tup: {type: 'tuple', elements: ['string', 'number']},
-      prom: {type: 'promise', elementType: 'number'},
-      grid: {type: 'map', key: 'string', val: 'number'},
-      tags: expandType('ReadonlyArray<string>'),
-      run: 'Function',
-      rec: {type: 'record', key: 'string', val: 'number'},
-      nested: {
-        type: 'object',
-        properties: {deep: {type: 'array', elementType: {type: 'tuple', elements: ['number']}}},
+  registerTypedef(
+    'TwBig',
+    {
+      type: 'object',
+      properties: {
+        camera: {type: 'union', members: ['TwCam', 'undefined']},
+        tup: {type: 'tuple', elements: ['string', 'number']},
+        prom: {type: 'promise', elementType: 'number'},
+        grid: {type: 'map', key: 'string', val: 'number'},
+        tags: expandType('ReadonlyArray<string>'),
+        run: 'Function',
+        rec: {type: 'record', key: 'string', val: 'number'},
+        nested: {
+          type: 'object',
+          properties: {deep: {type: 'array', elementType: {type: 'tuple', elements: ['number']}}},
+        },
+        name: 'string',
+        addComponent: 'Function',
       },
-      name: 'string',
-      addComponent: 'Function',
     },
-  });
+  );
   registerTypedef('TwBigMap', expandType('{ [K in keyof TwBig as NonNullable<TwBig[K]> extends TwComponent ? K : never]: NonNullable<TwBig[K]> }'));
   let count = 0;
-  const type = createType('TwBigMap', () => {
-    count++;
-  });
+  const type = createType(
+    'TwBigMap',
+    () => {
+      count++;
+    },
+  );
   if (!type || JSON.stringify(Object.keys(type.properties)) !== JSON.stringify(['camera'])) {
     return false;
   }
