@@ -1339,7 +1339,17 @@ class TypePanel {
     const {
       div, titlebar, toolbar, body,
     } = this;
-    const {inputEnable, inputStrict, inputInfinity, inputExact, inputWindowed, inputWindowCap, inputWindowMinTotal, inputCheckStats, select} = this;
+    const {
+      inputEnable,
+      inputStrict,
+      inputInfinity,
+      inputExact,
+      inputWindowed,
+      inputWindowCap,
+      inputWindowMinTotal,
+      inputCheckStats,
+      select,
+    } = this;
     TypePanel.divAll ??= Div({
       className: 'rti-all',
       style: {position: 'fixed', bottom: '0px', right: '0px', zIndex: '10000', overflow: 'unset'},
@@ -1600,7 +1610,10 @@ class TypePanel {
     this.menuButton.setAttribute('aria-expanded', String(show));
     if (show) {
       this.menuCloser = (e) => {
-        const target = /** @type {HTMLElement} */ (e.target);
+        const {target} = e;
+        if (!(target instanceof HTMLElement)) {
+          return;
+        }
         if (!this.menu.hidden && !this.menu.contains(target) && !this.menuButton.contains(target)) {
           this.toggleMenu(false);
         }
@@ -1875,8 +1888,8 @@ class TypePanel {
       // lives. Resolved per grab, so windows adopted across documents (pop-out)
       // follow their current home, not the one they were built in.
         const moveDoc = root?.ownerDocument || document;
-        const target = /** @type {HTMLElement} */ (e.target);
-        if (target.closest('button')) {
+        const {target} = e;
+        if (!(target instanceof HTMLElement) || target.closest('button')) {
           return;
         }
         if (isMaximized?.()) {
@@ -1895,7 +1908,12 @@ class TypePanel {
         root.style.position = 'fixed';
         const captionH = handle.offsetHeight || 28;
         const onMove = (ev) => {
-          const pos = this.clampToViewport(root, rect.left + ev.clientX - startX, rect.top + ev.clientY - startY, captionH);
+          const pos = this.clampToViewport(
+            root,
+            rect.left + ev.clientX - startX,
+            rect.top + ev.clientY - startY,
+            captionH,
+          );
           root.style.left = `${pos.x}px`;
           root.style.top = `${pos.y}px`;
         };
@@ -1912,9 +1930,13 @@ class TypePanel {
       handle.addEventListener(
         'dblclick',
         (e) => {
-          const target = /** @type {HTMLElement} */ (e.target);
-          const tag = target.tagName ?? target.tag;
-          if (target.closest?.('button') || (typeof tag === 'string' && tag.toLowerCase() === 'button')) {
+          const {target} = e;
+          if (!(target instanceof Element)) {
+            return;
+          }
+          const tag = target.tagName;
+          const isButton = tag.toLowerCase() === 'button';
+          if (target.closest('button') || isButton) {
             return;
           }
           onDblClick();
@@ -3204,7 +3226,18 @@ class TypePanel {
    * @param {MessageEventRTI} event - The event from Worker, IFrame or own window.
    */
   addError(event) {
-    const {value, expect, loc, name, valueToString, strings, extras = [], key, repeat, stack} = event.data;
+    const {
+      value,
+      expect,
+      loc,
+      name,
+      valueToString,
+      strings,
+      extras = [],
+      key,
+      repeat,
+      stack,
+    } = event.data;
     if (repeat) {
       // Checking-side dedup: the full report already sits under this key,
       // so only the hit count and totals advance — no value, no log churn.
@@ -3228,13 +3261,32 @@ class TypePanel {
     // Prefer the checking-side stack (real call site, captured synchronously
     // at the check); fall back to a local capture for senders that predate
     // it (indexed-access/division warnings) or run older runtimes.
-    this.eventLog.push({timestamp: Date.now(), loc, name, key, expect, value: stringifyValue(value), valueToString, messages: [...strings], detail, message: msg, stack: stack ?? this.captureStack()});
+    this.eventLog.push({
+      timestamp: Date.now(),
+      loc,
+      name,
+      key,
+      expect,
+      value: stringifyValue(value),
+      valueToString,
+      messages: [...strings],
+      detail,
+      message: msg,
+      stack: stack ?? this.captureStack(),
+    });
     if (this.eventLog.length > this.maxEventLogSize) {
       this.eventLog.splice(0, this.eventLog.length - this.maxEventLogSize);
     }
     let warnObj = this.warnings[key];
     if (!warnObj) {
-      warnObj = new Warning(detail || msg, value, expect, loc, name, () => this.openComparator(warnObj));
+      warnObj = new Warning(
+        detail || msg,
+        value,
+        expect,
+        loc,
+        name,
+        () => this.openComparator(warnObj),
+      );
       this.warnedTable?.append(warnObj.tr);
       this.warnings[key] = warnObj;
     }
@@ -3296,4 +3348,12 @@ class TypePanel {
     this.sendEnabledDisabledStateToWorker();
   }
 }
-export {niceDiv, TypePanel, refreshWarning, storedMapCheckWindowCap, storedMapCheckWindowMinTotalMs, storedNumberKnob, rememberNumberKnob};
+export {
+  niceDiv,
+  TypePanel,
+  refreshWarning,
+  storedMapCheckWindowCap,
+  storedMapCheckWindowMinTotalMs,
+  storedNumberKnob,
+  rememberNumberKnob,
+};
