@@ -10,14 +10,15 @@ function testConditionAllBranches() {
     trueType: 'K',
     falseType: 'boolean',
   };
-  return JSON.stringify(substituteCondition(input, 'K', '"a"', noop)) ===
-    JSON.stringify({
-      type: 'condition',
-      checkType: '"a"',
-      extendsType: 'string',
-      trueType: '"a"',
-      falseType: 'boolean',
-    });
+  const actual = JSON.stringify(substituteCondition(input, 'K', '"a"', noop));
+  const expected = JSON.stringify({
+    type: 'condition',
+    checkType: '"a"',
+    extendsType: 'string',
+    trueType: '"a"',
+    falseType: 'boolean',
+  });
+  return actual === expected;
 }
 // We want: a conditional type with no matching key is returned by identity,
 // so unchanged subtrees keep their identity for downstream memos.
@@ -44,17 +45,18 @@ function testConditionNested() {
     },
     falseType: 'boolean',
   };
-  return JSON.stringify(substituteCondition(input, 'K', '"a"', noop)) ===
-    JSON.stringify({
-      type: 'condition',
-      checkType: '"a"',
-      extendsType: 'string',
-      trueType: {
-        type: 'array',
-        elementType: '"a"',
-      },
-      falseType: 'boolean',
-    });
+  const actual = JSON.stringify(substituteCondition(input, 'K', '"a"', noop));
+  const expected = JSON.stringify({
+    type: 'condition',
+    checkType: '"a"',
+    extendsType: 'string',
+    trueType: {
+      type: 'array',
+      elementType: '"a"',
+    },
+    falseType: 'boolean',
+  });
+  return actual === expected;
 }
 const tests = [
   testConditionAllBranches,

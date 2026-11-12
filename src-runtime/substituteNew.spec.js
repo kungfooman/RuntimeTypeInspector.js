@@ -12,16 +12,17 @@ function testNewParamsAndRet() {
     }],
     ret: 'K',
   };
-  return JSON.stringify(substituteNew(input, 'K', '"a"', noop)) ===
-    JSON.stringify({
-      type: 'new',
-      parameters: [{
-        type: 'parameter',
-        paramType: '"a"',
-        name: 'x',
-      }],
-      ret: '"a"',
-    });
+  const actual = JSON.stringify(substituteNew(input, 'K', '"a"', noop));
+  const expected = JSON.stringify({
+    type: 'new',
+    parameters: [{
+      type: 'parameter',
+      paramType: '"a"',
+      name: 'x',
+    }],
+    ret: '"a"',
+  });
+  return actual === expected;
 }
 // We want: a new type with no matching key is returned by identity, so
 // unchanged subtrees keep their identity for downstream memos.
@@ -48,15 +49,16 @@ function testNewNoRet() {
       name: 'x',
     }],
   };
-  return JSON.stringify(substituteNew(input, 'K', '"a"', noop)) ===
-    JSON.stringify({
-      type: 'new',
-      parameters: [{
-        type: 'parameter',
-        paramType: '"a"',
-        name: 'x',
-      }],
-    });
+  const actual = JSON.stringify(substituteNew(input, 'K', '"a"', noop));
+  const expected = JSON.stringify({
+    type: 'new',
+    parameters: [{
+      type: 'parameter',
+      paramType: '"a"',
+      name: 'x',
+    }],
+  });
+  return actual === expected;
 }
 const tests = [
   testNewParamsAndRet,

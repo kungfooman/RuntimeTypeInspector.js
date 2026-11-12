@@ -32,16 +32,18 @@ function testNullishSkipped() {
   return true;
 }
 function testContainers() {
-  if (JSON.stringify(inferTypeFromDefault(defaultOf('[]'))) !== JSON.stringify({
+  const anyArray = {
     type: 'array',
     elementType: 'any',
-  })) {
+  };
+  if (JSON.stringify(inferTypeFromDefault(defaultOf('[]'))) !== JSON.stringify(anyArray)) {
     return false;
   }
-  if (JSON.stringify(inferTypeFromDefault(defaultOf('{}'))) !== JSON.stringify({
+  const emptyObject = {
     type: 'object',
     properties: {},
-  })) {
+  };
+  if (JSON.stringify(inferTypeFromDefault(defaultOf('{}'))) !== JSON.stringify(emptyObject)) {
     return false;
   }
   return true;
@@ -53,9 +55,10 @@ function testUnaryAndSpecial() {
   if (inferTypeFromDefault(defaultOf('!x')) !== 'boolean') {
     return false;
   }
-  if (JSON.stringify(inferTypeFromDefault(defaultOf('123n'))) !== JSON.stringify({
+  const big = {
     type: 'bigint',
-  })) {
+  };
+  if (JSON.stringify(inferTypeFromDefault(defaultOf('123n'))) !== JSON.stringify(big)) {
     return false;
   }
   if (inferTypeFromDefault(defaultOf('/re/')) !== 'RegExp') {

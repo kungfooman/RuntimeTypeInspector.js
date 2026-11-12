@@ -207,10 +207,11 @@ function testLiteralUnionConstraint() {
   if (!second.ret) {
     return false;
   }
-  return JSON.stringify(templates.K) === JSON.stringify({
+  const narrowed = {
     type: 'union',
     members: ['"a"', '"b"'],
-  });
+  };
+  return JSON.stringify(templates.K) === JSON.stringify(narrowed);
 }
 // `NoInfer<K>` blocks inference AND keeps the literal: `h('a', {sub: 'b'})`
 // with `@template {string} K` warns with `K` still `"a"`, matching tsc.

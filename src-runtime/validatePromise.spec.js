@@ -10,10 +10,11 @@ function testPromiseNumberValid() {
   //   const promise = new Promise((resolve, reject) => resolve(123));
   //   test(promise) must pass with no 'unchecked'.
   const expect = expandType('Promise<number>');
-  if (JSON.stringify(expect) !== JSON.stringify({
+  const desugared = {
     type: 'promise',
     elementType: 'number',
-  })) {
+  };
+  if (JSON.stringify(expect) !== JSON.stringify(desugared)) {
     return false;
   }
   let unchecked = false;

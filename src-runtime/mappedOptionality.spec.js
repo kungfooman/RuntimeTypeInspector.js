@@ -39,14 +39,15 @@ function testSingleUnwrapKeepsFlags() {
   // Single-member indexed access returns the member itself, flags intact.
   prepare();
   const created = createTypeFromIndexedAccess(expandType('Merged["pos"]'), warn);
+  const unionMembers = {
+    type: 'array',
+    elementType: 'number',
+  };
   return (
     created &&
     created.type === 'union' &&
     created.optional === true &&
-    JSON.stringify(created.members) === JSON.stringify(['string', {
-      type: 'array',
-      elementType: 'number',
-    }])
+    JSON.stringify(created.members) === JSON.stringify(['string', unionMembers])
   );
 }
 function testMultiStaysUnion() {
@@ -125,17 +126,20 @@ function testPresentUnionsPass() {
   // Override unions validate through the materialized map, both members.
   prepare();
   const mapped = createType(expandType('{[P in keyof Merged]: Merged[P]}'), warn);
+  const tuple = {
+    pos: [1, 2],
+  };
+  const text = {
+    pos: 'x',
+    count: 1,
+  };
+  const mismatch = {
+    pos: true,
+  };
   return (
-    validateType({
-      pos: [1, 2],
-    }, mapped, 'loc', 'name', true, warn, 0) === true &&
-    validateType({
-      pos: 'x',
-      count: 1,
-    }, mapped, 'loc', 'name', true, warn, 0) === true &&
-    validateType({
-      pos: true,
-    }, mapped, 'loc', 'name', true, warn, 0) === false
+    validateType(tuple, mapped, 'loc', 'name', true, warn, 0) === true &&
+    validateType(text, mapped, 'loc', 'name', true, warn, 0) === true &&
+    validateType(mismatch, mapped, 'loc', 'name', true, warn, 0) === false
   );
 }
 function testTableFallback() {

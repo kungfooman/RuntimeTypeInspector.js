@@ -9,13 +9,14 @@ function testMappingIterableResult() {
     element: 'k',
     result: 'K',
   };
-  return JSON.stringify(substituteMapping(input, 'K', '"a"', noop)) ===
-    JSON.stringify({
-      type: 'mapping',
-      iterable: 'T',
-      element: 'k',
-      result: '"a"',
-    });
+  const actual = JSON.stringify(substituteMapping(input, 'K', '"a"', noop));
+  const expected = JSON.stringify({
+    type: 'mapping',
+    iterable: 'T',
+    element: 'k',
+    result: '"a"',
+  });
+  return actual === expected;
 }
 // We want: the optional nameType substitutes when present, because it is
 // a type position like any other.
@@ -27,14 +28,15 @@ function testMappingNameType() {
     result: 'v',
     nameType: 'K',
   };
-  return JSON.stringify(substituteMapping(input, 'K', '"a"', noop)) ===
-    JSON.stringify({
-      type: 'mapping',
-      iterable: 'T',
-      element: 'k',
-      result: 'v',
-      nameType: '"a"',
-    });
+  const actual = JSON.stringify(substituteMapping(input, 'K', '"a"', noop));
+  const expected = JSON.stringify({
+    type: 'mapping',
+    iterable: 'T',
+    element: 'k',
+    result: 'v',
+    nameType: '"a"',
+  });
+  return actual === expected;
 }
 // We want: the element binding is shadowed and never substituted, because
 // it is the iteration variable — substituting it would produce nonsense.

@@ -3,14 +3,16 @@ const noop = () => undefined;
 // We want: substituting the element type of an array node produces a new array
 // node with the replacement, because the element type is the only type position.
 function testArrayElementType() {
-  return JSON.stringify(substituteArray({
+  const input = {
     type: 'array',
     elementType: 'K',
-  }, 'K', '"a"', noop)) ===
-    JSON.stringify({
-      type: 'array',
-      elementType: '"a"',
-    });
+  };
+  const actual = JSON.stringify(substituteArray(input, 'K', '"a"', noop));
+  const expected = JSON.stringify({
+    type: 'array',
+    elementType: '"a"',
+  });
+  return actual === expected;
 }
 // We want: an array node whose element type does not match the search is
 // returned by identity, so downstream memos keep hitting.
@@ -24,25 +26,22 @@ function testArrayUnchanged() {
 // We want: nested array nodes substitute recursively, because the element
 // type itself may contain the search key at any depth.
 function testArrayNested() {
-  return JSON.stringify(substituteArray(
-    {
+  const input = {
+    type: 'array',
+    elementType: {
       type: 'array',
-      elementType: {
-        type: 'array',
-        elementType: 'K',
-      },
+      elementType: 'K',
     },
-    'K',
-    '"a"',
-    noop,
-  )) ===
-    JSON.stringify({
+  };
+  const actual = JSON.stringify(substituteArray(input, 'K', '"a"', noop));
+  const expected = JSON.stringify({
+    type: 'array',
+    elementType: {
       type: 'array',
-      elementType: {
-        type: 'array',
-        elementType: '"a"',
-      },
-    });
+      elementType: '"a"',
+    },
+  });
+  return actual === expected;
 }
 const tests = [
   testArrayElementType,

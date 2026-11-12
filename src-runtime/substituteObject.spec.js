@@ -3,23 +3,20 @@ const noop = () => undefined;
 // We want: object properties substitute, because each property value is a
 // type position.
 function testObjectProperties() {
-  return JSON.stringify(substituteObject(
-    {
-      type: 'object',
-      properties: {
-        a: 'K',
-      },
+  const input = {
+    type: 'object',
+    properties: {
+      a: 'K',
     },
-    'K',
-    '"a"',
-    noop,
-  )) ===
-    JSON.stringify({
-      type: 'object',
-      properties: {
-        a: '"a"',
-      },
-    });
+  };
+  const actual = JSON.stringify(substituteObject(input, 'K', '"a"', noop));
+  const expected = JSON.stringify({
+    type: 'object',
+    properties: {
+      a: '"a"',
+    },
+  });
+  return actual === expected;
 }
 // We want: index signatures substitute, because they are type positions
 // just like properties.
@@ -28,11 +25,12 @@ function testObjectIndexSignatures() {
     type: 'object',
     indexSignatures: ['K'],
   };
-  return JSON.stringify(substituteObject(input, 'K', '"a"', noop)) ===
-    JSON.stringify({
-      type: 'object',
-      indexSignatures: ['"a"'],
-    });
+  const actual = JSON.stringify(substituteObject(input, 'K', '"a"', noop));
+  const expected = JSON.stringify({
+    type: 'object',
+    indexSignatures: ['"a"'],
+  });
+  return actual === expected;
 }
 // We want: an object with no matching key is returned by identity, so
 // unchanged subtrees keep their identity for downstream memos.
@@ -57,16 +55,17 @@ function testObjectNested() {
       },
     },
   };
-  return JSON.stringify(substituteObject(input, 'K', '"a"', noop)) ===
-    JSON.stringify({
-      type: 'object',
-      properties: {
-        a: {
-          type: 'array',
-          elementType: '"a"',
-        },
+  const actual = JSON.stringify(substituteObject(input, 'K', '"a"', noop));
+  const expected = JSON.stringify({
+    type: 'object',
+    properties: {
+      a: {
+        type: 'array',
+        elementType: '"a"',
       },
-    });
+    },
+  });
+  return actual === expected;
 }
 const tests = [
   testObjectProperties,

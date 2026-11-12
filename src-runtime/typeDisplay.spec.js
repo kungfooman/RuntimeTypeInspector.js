@@ -73,10 +73,11 @@ function testDescribeClassInstance() {
   return describeValueType(vec) === 'Vec3 {x: 1}';
 }
 function testDescribePlainUnaffected() {
+  const plain = {
+    a: 1,
+  };
   return (
-    describeValueType({
-      a: 1,
-    }) === '{a: 1}' &&
+    describeValueType(plain) === '{a: 1}' &&
     describeValueType([1, 2]) === '[1, 2]' &&
     describeValueType('x') === '"x"' &&
     describeValueType(1) === '1'
@@ -121,10 +122,11 @@ function testPrettyLeaves() {
   );
 }
 function testPrettyPlainUnaffected() {
+  const plain = {
+    a: 1,
+  };
   return (
-    prettyValue({
-      a: 1,
-    }) === undefined &&
+    prettyValue(plain) === undefined &&
     prettyValue([1, 2]) === undefined &&
     prettyValue('x') === undefined &&
     prettyValue(1) === undefined &&
@@ -186,20 +188,21 @@ function testSnipNoDollarType() {
   );
 }
 function testSnipPlainUnaffected() {
+  const plain = {
+    a: 1,
+  };
   return (
-    snip({
-      a: 1,
-    }) === '{"a":1}' &&
+    snip(plain) === '{"a":1}' &&
     snip([1, 2]) === '[1,2]' &&
     snip('x') === '"x"'
   );
 }
 function testStringifySharedArrayBuffer() {
-  return JSON.stringify(stringifyValue(new SharedArrayBuffer(8))) ===
-    JSON.stringify({
-      $type: 'SharedArrayBuffer',
-      byteLength: 8,
-    });
+  const snapshot = {
+    $type: 'SharedArrayBuffer',
+    byteLength: 8,
+  };
+  return JSON.stringify(stringifyValue(new SharedArrayBuffer(8))) === JSON.stringify(snapshot);
 }
 function testInspectSummaryShowsTypedArray() {
   // End to end: the `Argument of type …` summary reads console-style
@@ -422,14 +425,11 @@ function testSnapshotMapWithFunction() {
   return text.startsWith('Map(1) {') && text.includes('=>');
 }
 function testSnapshotBigint() {
-  return describeValueType({
+  const snapshot = {
     $type: 'bigint',
     value: '123',
-  }) === '123n' &&
-    prettyValue({
-      $type: 'bigint',
-      value: '123',
-    }) === '123n';
+  };
+  return describeValueType(snapshot) === '123n' && prettyValue(snapshot) === '123n';
 }
 function testSnapshotTypedArray() {
   const snapshot = {

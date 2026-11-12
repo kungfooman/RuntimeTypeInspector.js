@@ -55,11 +55,12 @@ function testInfinityOptOut() {
 }
 function testEmptyAndUnknown() {
   // Empty ranges are clean; non-primitives scan nothing (full loop runs).
+  const shape = {
+    type: 'object',
+  };
   return (
     firstBadIndex([], 0, 'number') === -1 &&
-    firstBadIndex([1], 1, {
-      type: 'object',
-    }) === 0 &&
+    firstBadIndex([1], 1, shape) === 0 &&
     firstBadIndex([1], 1, undefined) === 0 &&
     firstBadIndex([1], 1, '"a"') === 0
   );
@@ -111,16 +112,18 @@ function testNonPrimitiveDeepCheck() {
     },
   };
   const warn = () => undefined;
-  return validateArray([{
+  const good = [{
     a: 1,
   }, {
     a: 2,
-  }], shape, 'loc', 'name', true, warn, 0) === true &&
-    validateArray([{
-      a: 1,
-    }, {
-      a: 'x',
-    }], shape, 'loc', 'name', true, warn, 0) === false;
+  }];
+  const mismatch = [{
+    a: 1,
+  }, {
+    a: 'x',
+  }];
+  return validateArray(good, shape, 'loc', 'name', true, warn, 0) === true &&
+    validateArray(mismatch, shape, 'loc', 'name', true, warn, 0) === false;
 }
 function testSparseHolesPass() {
   // Sparse mode still skips holes: the scan suspects them, the `in` test clears them.

@@ -112,6 +112,42 @@ function collect(node, out) {
     }
   }
 }
+// A multiline `===` needs a readable rewrite by hand (named variables),
+// never an autofix: it only errors here.
+function checkComparisons(file, ast) {
+  const problems = [];
+  const found = [];
+  const walk = (node) => {
+    if (node === null || typeof node !== 'object') {
+      return;
+    }
+    if (Array.isArray(node)) {
+      for (const child of node) {
+        walk(child);
+      }
+      return;
+    }
+    if (typeof node.type === 'string') {
+      if (node.type === 'BinaryExpression' && (node.operator === '===' || node.operator === '!==')) {
+        found.push(node);
+      }
+      for (const key of Object.keys(node)) {
+        if (key === 'parent') {
+          continue;
+        }
+        walk(node[key]);
+      }
+    }
+  };
+  walk(ast);
+  for (const node of found) {
+    if (node.left.loc.start.line === node.right.loc.end.line) {
+      continue;
+    }
+    problems.push(file + ':' + node.left.loc.start.line + ': multiline ' + node.operator + ' needs named variables, not a tail-split');
+  }
+  return problems;
+}
 // The core rule cannot scope by AST node, so this gate owns the split:
 // ImportDeclaration lines carry run padding, and single-line objects
 // must be bare shorthand (see isBareShorthand.mjs).
@@ -191,6 +227,12 @@ for (const file of files) {
   });
   for (const problem of checkBraces(file, code, ast)) {
     console.log(problem + ' (object-curly-spacing)');
+    problems += 1;
+  }
+  // Error-only: a multiline comparison needs a hand rewrite with named
+  // variables. No autofix path exists on purpose.
+  for (const problem of checkComparisons(file, ast)) {
+    console.log(problem + ' (no-tail-split-comparison)');
     problems += 1;
   }
   const owned = [];

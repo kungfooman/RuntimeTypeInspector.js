@@ -83,10 +83,11 @@ function testNumericPrefersNumber() {
 }
 function testUnknownShapes() {
   // Missing signatures, unknown nodes and exotic parameters never match, preserving today's path.
-  if (matchIndexSignature({
+  const bare = {
     type: 'object',
     properties: {},
-  }, 'a') !== undefined) {
+  };
+  if (matchIndexSignature(bare, 'a') !== undefined) {
     return false;
   }
   const exotic = {

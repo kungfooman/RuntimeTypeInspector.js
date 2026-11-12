@@ -33,11 +33,18 @@ function withScanClasses(check) {
 }
 function testExamplesVerbatim() {
   // The documented examples hold exactly.
-  return withScanClasses(() => firstBadEntry(new Map([[1, {
-    x: 1,
-  }]]), 'number', 'Other') === -2 &&
-    firstBadEntry(new Map([[1, new ScanBox()]]), 'number', 'ScanBox') === -1 &&
-    firstBadEntry(new Map([[1, new ScanBox()], [2, new ScanOther()]]), 'number', 'ScanBox') === 1);
+  const check = () => {
+    const plain = new Map([[1, {
+      x: 1,
+    }]]);
+    const mismatch = firstBadEntry(plain, 'number', 'Other') === -2;
+    const clean = new Map([[1, new ScanBox()]]);
+    const cleanOk = firstBadEntry(clean, 'number', 'ScanBox') === -1;
+    const mixed = new Map([[1, new ScanBox()], [2, new ScanOther()]]);
+    const mixedOk = firstBadEntry(mixed, 'number', 'ScanBox') === 1;
+    return mismatch && cleanOk && mixedOk;
+  };
+  return withScanClasses(check);
 }
 function testPrimitiveKeysAndValues() {
   // The three primitive aliases mirror their validators per entry.
@@ -50,7 +57,11 @@ function testPrimitiveKeysAndValues() {
 }
 function testCleanRegisteredClassVal() {
   // A map of registered-class instances scans clean in one pass.
-  return withScanClasses(() => firstBadEntry(new Map([[1, new ScanBox(1)], [2, new ScanBox(2)], [3, new ScanBox(3)]]), 'number', 'ScanBox') === -1);
+  const check = () => {
+    const clean = new Map([[1, new ScanBox(1)], [2, new ScanBox(2)], [3, new ScanBox(3)]]);
+    return firstBadEntry(clean, 'number', 'ScanBox') === -1;
+  };
+  return withScanClasses(check);
 }
 function testSubclassInstancesPass() {
   // `instanceof` accepts subclasses, unlike a constructor-name shortcut.
@@ -77,11 +88,15 @@ function testAliasInstanceofMirror() {
 function testNaNInfinityNullAreSuspects() {
   // Everything `validateNumber` would reject (NaN, Infinity, null) stops
   // the scan at the entry position, never past it.
+  const nanMap = new Map([[1, 2], [2, NaN]]);
+  const infinityMap = new Map([[1, 2], [2, Infinity]]);
+  const nullMap = new Map([[1, 2], [2, null]]);
+  const textMap = new Map([[1, 2], [2, '3']]);
   return (
-    firstBadEntry(new Map([[1, 2], [2, NaN]]), undefined, 'number') === 1 &&
-    firstBadEntry(new Map([[1, 2], [2, Infinity]]), undefined, 'number') === 1 &&
-    firstBadEntry(new Map([[1, 2], [2, null]]), undefined, 'number') === 1 &&
-    firstBadEntry(new Map([[1, 2], [2, '3']]), undefined, 'number') === 1
+    firstBadEntry(nanMap, undefined, 'number') === 1 &&
+    firstBadEntry(infinityMap, undefined, 'number') === 1 &&
+    firstBadEntry(nullMap, undefined, 'number') === 1 &&
+    firstBadEntry(textMap, undefined, 'number') === 1
   );
 }
 function testInfinityOptOut() {
@@ -89,7 +104,8 @@ function testInfinityOptOut() {
   const prev = options.checkInfinity;
   try {
     options.checkInfinity = false;
-    return firstBadEntry(new Map([[1, 2], [2, Infinity]]), undefined, 'number') === -1;
+    const infinityMap = new Map([[1, 2], [2, Infinity]]);
+    return firstBadEntry(infinityMap, undefined, 'number') === -1;
   } finally {
     options.checkInfinity = prev;
   }
@@ -97,42 +113,35 @@ function testInfinityOptOut() {
 function testReferenceNodeVal() {
   // A concrete `{type:'reference', name}` node mirrors the registered-class
   // `instanceof` branch of the reference validator.
-  return withScanClasses(() => firstBadEntry(
-    new Map([[1, new ScanBox(1)], [2, new ScanBox(2)]]),
-    'number',
-    {
+  return withScanClasses(() => {
+    const expect = {
       type: 'reference',
       name: 'ScanBox',
-    },
-  ) === -1 &&
-    firstBadEntry(
-      new Map([[1, new ScanBox(1)], [2, new ScanOther()]]),
-      'number',
-      {
-        type: 'reference',
-        name: 'ScanBox',
-      },
-    ) === 1);
+    };
+    const clean = new Map([[1, new ScanBox(1)], [2, new ScanBox(2)]]);
+    const cleanOk = firstBadEntry(clean, 'number', expect) === -1;
+    const mixed = new Map([[1, new ScanBox(1)], [2, new ScanOther()]]);
+    const mixedOk = firstBadEntry(mixed, 'number', expect) === 1;
+    return cleanOk && mixedOk;
+  });
 }
 function testUtilityNameBailsOut() {
   // Utility names (`Partial` and friends) never take the class branch of
   // the reference validator, so the scan must not distrust them.
-  return withScanClasses(() => firstBadEntry(
-    new Map([[1, new ScanBox(1)]]),
-    'number',
-    {
+  return withScanClasses(() => {
+    const map = new Map([[1, new ScanBox(1)]]);
+    const partialExpect = {
       type: 'reference',
       name: 'Partial',
-    },
-  ) === -2 &&
-    firstBadEntry(
-      new Map([[1, new ScanBox(1)]]),
-      'number',
-      {
-        type: 'reference',
-        name: 'Iterable',
-      },
-    ) === -2);
+    };
+    const partialOk = firstBadEntry(map, 'number', partialExpect) === -2;
+    const iterableExpect = {
+      type: 'reference',
+      name: 'Iterable',
+    };
+    const iterableOk = firstBadEntry(map, 'number', iterableExpect) === -2;
+    return partialOk && iterableOk;
+  });
 }
 function testUtilityNameCollisionBailsOut() {
   // Hostile registration: classes named exactly like utilities the
@@ -151,21 +160,17 @@ function testUtilityNameCollisionBailsOut() {
       name,
       args,
     });
-    return (
-      firstBadEntry(new Map([['a', new ReadonlyMap()]]), 'string', ref('ReadonlyMap', ['string', 'number'])) === -2 &&
-      firstBadEntry(new Map([[1, new ArrayLike()]]), 'number', ref('ArrayLike', ['number'])) === -2 &&
-      firstBadEntry(
-        new Map([[1, new Awaited()]]),
-        'number',
-        ref(
-          'Awaited',
-          [{
-            type: 'promise',
-            elementType: 'number',
-          }],
-        ),
-      ) === -2
-    );
+    const readonlyMap = new Map([['a', new ReadonlyMap()]]);
+    const readonlyOk = firstBadEntry(readonlyMap, 'string', ref('ReadonlyMap', ['string', 'number'])) === -2;
+    const likeMap = new Map([[1, new ArrayLike()]]);
+    const likeOk = firstBadEntry(likeMap, 'number', ref('ArrayLike', ['number'])) === -2;
+    const awaitedMap = new Map([[1, new Awaited()]]);
+    const awaitedExpect = ref('Awaited', [{
+      type: 'promise',
+      elementType: 'number',
+    }]);
+    const awaitedOk = firstBadEntry(awaitedMap, 'number', awaitedExpect) === -2;
+    return readonlyOk && likeOk && awaitedOk;
   } finally {
     delete classes.ReadonlyMap;
     delete classes.ArrayLike;
@@ -174,31 +179,35 @@ function testUtilityNameCollisionBailsOut() {
 }
 function testComplexValBailsOut() {
   // Object nodes, unions and unknown names are full-loop territory.
-  return (
-    firstBadEntry(new Map([[1, {
-      x: 1,
-    }]]), 'number', {
-      type: 'object',
-    }) === -2 &&
-    firstBadEntry(
-      new Map([[1, 'a']]),
-      'number',
-      {
-        type: 'union',
-        members: ['number', 'string'],
-      },
-    ) === -2 &&
-    firstBadEntry(new Map([[1, 'a']]), 'number', 'NeverHeardOfIt') === -2
-  );
+  const plain = new Map([[1, {
+    x: 1,
+  }]]);
+  const objectExpect = {
+    type: 'object',
+  };
+  const objectOk = firstBadEntry(plain, 'number', objectExpect) === -2;
+  const textMap = new Map([[1, 'a']]);
+  const unionExpect = {
+    type: 'union',
+    members: ['number', 'string'],
+  };
+  const unionOk = firstBadEntry(textMap, 'number', unionExpect) === -2;
+  const unknownOk = firstBadEntry(textMap, 'number', 'NeverHeardOfIt') === -2;
+  return objectOk && unionOk && unknownOk;
 }
 function testComplexKeyBailsOut() {
   // Keys outside the specializer shapes keep the full loop; registered
   // class keys mirror the class scan exactly like values do.
-  return withScanClasses(() => firstBadEntry(new Map([[new ScanBox(1), 'a']]), 'ScanNeverHeardOfIt', 'string') === -2 &&
-    firstBadEntry(new Map([[new ScanBox(1), 'a']]), {
+  return withScanClasses(() => {
+    const plain = new Map([[new ScanBox(1), 'a']]);
+    const unknownOk = firstBadEntry(plain, 'ScanNeverHeardOfIt', 'string') === -2;
+    const objectExpect = {
       type: 'object',
-    }, 'string') === -2 &&
-    firstBadEntry(new Map([[new ScanBox(1), 'a']]), 'ScanBox', 'string') === -1);
+    };
+    const objectOk = firstBadEntry(plain, objectExpect, 'string') === -2;
+    const classOk = firstBadEntry(plain, 'ScanBox', 'string') === -1;
+    return unknownOk && objectOk && classOk;
+  });
 }
 function testUserlandOverrideComposition() {
   // An overridden validator turns the scan off (bail), so overrides keep
@@ -229,8 +238,14 @@ function testCustomValidationsFallBack() {
 function testCustomTypeHookBailsOut() {
   customTypes.ScanBox = () => false;
   try {
-    return withScanClasses(() => firstBadEntry(new Map([[1, new ScanBox(1)]]), 'number', 'ScanBox') === -2 &&
-      firstBadEntry(new Map([[new ScanBox(1), 'a']]), 'ScanBox', 'string') === -2);
+    const check = () => {
+      const boxed = new Map([[1, new ScanBox(1)]]);
+      const valueOk = firstBadEntry(boxed, 'number', 'ScanBox') === -2;
+      const keyed = new Map([[new ScanBox(1), 'a']]);
+      const keyOk = firstBadEntry(keyed, 'ScanBox', 'string') === -2;
+      return valueOk && keyOk;
+    };
+    return withScanClasses(check);
   } finally {
     delete customTypes.ScanBox;
   }

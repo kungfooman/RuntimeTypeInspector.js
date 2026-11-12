@@ -17,17 +17,16 @@ function unprepare() {
 // without consulting the registry or the shape behind the name.
 function testBareNameMatchSkipsRegistry() {
   prepare();
+  const snapshot = {
+    r: 1,
+    $type: 'TagBox',
+  };
+  const members = ['TagBox', {
+    type: 'array',
+    elementType: 'number',
+  }];
   try {
-    return unionNominalTag(
-      {
-        r: 1,
-        $type: 'TagBox',
-      },
-      ['TagBox', {
-        type: 'array',
-        elementType: 'number',
-      }],
-    ) === true;
+    return unionNominalTag(snapshot, members) === true;
   } finally {
     unprepare();
   }
@@ -42,10 +41,11 @@ function testWrappedMemberUnwraps() {
       name: 'Readonly',
       args: ['TagBox'],
     };
-    return unionNominalTag({
+    const snapshot = {
       r: 1,
       $type: 'TagBox',
-    }, [wrapped, 'number']) === true;
+    };
+    return unionNominalTag(snapshot, [wrapped, 'number']) === true;
   } finally {
     unprepare();
   }
@@ -54,11 +54,12 @@ function testWrappedMemberUnwraps() {
 // identity walk, the same rule `snapshotMatches` enforces.
 function testSubclassTagSatisfiesParent() {
   prepare();
+  const snapshot = {
+    r: 1,
+    $type: 'TagSubBox',
+  };
   try {
-    return unionNominalTag({
-      r: 1,
-      $type: 'TagSubBox',
-    }, ['TagBox']) === true;
+    return unionNominalTag(snapshot, ['TagBox']) === true;
   } finally {
     unprepare();
   }
@@ -69,40 +70,33 @@ function testSubclassTagSatisfiesParent() {
 function testNonMatchesDecline() {
   prepare();
   try {
-    const plain = unionNominalTag({
+    const untagged = {
       r: 1,
-    }, ['TagBox']) === false;
-    const stranger = unionNominalTag({
+    };
+    const plain = unionNominalTag(untagged, ['TagBox']) === false;
+    const strangerValue = {
       r: 1,
       $type: 'TagGizmo',
-    }, ['TagBox']) === false;
-    const shaped = unionNominalTag(
-      {
-        r: 1,
-        $type: 'TagBox',
-      },
-      [{
-        type: 'object',
-        properties: {
-          r: 'number',
-        },
-      }],
-    ) === false;
-    const opaque = unionNominalTag(
-      {
-        r: 1,
-        $type: 'TagBox',
-      },
-      [{
-        type: 'reference',
-        name: 'Partial',
-        args: ['TagBox'],
-      }],
-    ) === false;
-    const empty = unionNominalTag({
+    };
+    const stranger = unionNominalTag(strangerValue, ['TagBox']) === false;
+    const snapshot = {
       r: 1,
       $type: 'TagBox',
-    }, []) === false;
+    };
+    const shapedExpect = [{
+      type: 'object',
+      properties: {
+        r: 'number',
+      },
+    }];
+    const shaped = unionNominalTag(snapshot, shapedExpect) === false;
+    const opaqueExpect = [{
+      type: 'reference',
+      name: 'Partial',
+      args: ['TagBox'],
+    }];
+    const opaque = unionNominalTag(snapshot, opaqueExpect) === false;
+    const empty = unionNominalTag(snapshot, []) === false;
     return (
       plain &&
       stranger &&

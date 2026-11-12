@@ -51,10 +51,11 @@ function testGenericReferenceResolves() {
   }
   // And the materialized shape is concrete, not `T`.
   const mat = materializeExpect(expect);
+  const clean = {
+    content: 1,
+  };
   return mat?.properties?.content !== 'T' &&
-    explainMismatch({
-      content: 1,
-    }, expect, 'box').findings.length === 0;
+    explainMismatch(clean, expect, 'box').findings.length === 0;
 }
 // Materializing shares instead of cloning: two equal generic references
 // resolve to the same frozen instance, the registry keeps its exact shape,
@@ -114,9 +115,10 @@ function testExtraKey() {
 function testPassingValueHasNoFindings() {
   reset();
   const expect = expandType('{fov: number}');
-  return explainMismatch({
+  const clean = {
     fov: 60,
-  }, expect, 'options').findings.length === 0;
+  };
+  return explainMismatch(clean, expect, 'options').findings.length === 0;
 }
 function testIndexedAccessResolvesConcretely() {
   reset();

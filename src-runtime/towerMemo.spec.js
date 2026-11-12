@@ -462,13 +462,15 @@ function testFrozenSharedTupleMaterializes() {
     const untouched = shared.elements[0].type === 'rest';
     const flat = mat.properties.a;
     const desugared = flat !== shared && flat.elements.length === 2 && flat.elements[0] === 'number' && flat.elements[1] === 'string';
-    const ok = validateType({
+    const good = {
       a: [1, 'x'],
       b: [2, 'y'],
-    }, mat, 'loc', 'name', true, noop, 0);
-    const bad = validateType({
+    };
+    const ok = validateType(good, mat, 'loc', 'name', true, noop, 0);
+    const mismatch = {
       a: [1, 2, 'x'],
-    }, mat, 'loc', 'name', true, noop, 0) === false;
+    };
+    const bad = validateType(mismatch, mat, 'loc', 'name', true, noop, 0) === false;
     return (
       untouched &&
       desugared &&

@@ -25,18 +25,21 @@ function testNestedOrderIndependent() {
   };
   const fromTFirst = substitutedFor('T', 'order-t', 'x', makeDict('T'), noop);
   const fromKFirst = substitutedFor('T', 'order-k', 'x', makeDict('K'), noop);
-  const want = JSON.stringify({
+  const want = {
     type: 'array',
     elementType: '"a"',
-  });
-  return JSON.stringify(fromTFirst) === want && JSON.stringify(fromKFirst) === want;
+  };
+  const tFirstMatches = JSON.stringify(fromTFirst) === JSON.stringify(want);
+  const kFirstMatches = JSON.stringify(fromKFirst) === JSON.stringify(want);
+  return tFirstMatches && kFirstMatches;
 }
 // We want: a single binding to substitute in one pass like before, because
 // nesting needs at least two names and the common case pays no extra walk.
 function testSingleBinding() {
-  return substitutedFor('K', 'order-single', 'x', {
+  const dict = {
     K: '"a"',
-  }, noop) === '"a"';
+  };
+  return substitutedFor('K', 'order-single', 'x', dict, noop) === '"a"';
 }
 // We want: an expect mentioning no binding to come back by identity, so
 // unchanged subtrees keep their identity for downstream memos.
@@ -45,9 +48,10 @@ function testUnrelatedSharedIdentity() {
     type: 'array',
     elementType: 'number',
   };
-  return substitutedFor(expect, 'order-ident', 'x', {
+  const dict = {
     K: '"a"',
-  }, noop) === expect;
+  };
+  return substitutedFor(expect, 'order-ident', 'x', dict, noop) === expect;
 }
 const tests = [
   testNestedOrderIndependent,

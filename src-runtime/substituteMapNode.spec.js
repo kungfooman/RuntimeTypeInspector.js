@@ -3,21 +3,18 @@ const noop = () => undefined;
 // We want: a map's key and value substitute, because both are type
 // positions that may contain the search key.
 function testMapNodeKeyVal() {
-  return JSON.stringify(substituteMapNode(
-    {
-      type: 'map',
-      key: 'K',
-      val: 'string',
-    },
-    'K',
-    '"a"',
-    noop,
-  )) ===
-    JSON.stringify({
-      type: 'map',
-      key: '"a"',
-      val: 'string',
-    });
+  const input = {
+    type: 'map',
+    key: 'K',
+    val: 'string',
+  };
+  const actual = JSON.stringify(substituteMapNode(input, 'K', '"a"', noop));
+  const expected = JSON.stringify({
+    type: 'map',
+    key: '"a"',
+    val: 'string',
+  });
+  return actual === expected;
 }
 // We want: a map with no matching key is returned by identity, so
 // unchanged subtrees keep their identity for downstream memos.
@@ -32,27 +29,24 @@ function testMapNodeUnchanged() {
 // We want: nested map key/value substitute recursively, because
 // either may itself contain the search key at any depth.
 function testMapNodeNested() {
-  return JSON.stringify(substituteMapNode(
-    {
-      type: 'map',
-      key: 'K',
-      val: {
-        type: 'array',
-        elementType: 'K',
-      },
+  const input = {
+    type: 'map',
+    key: 'K',
+    val: {
+      type: 'array',
+      elementType: 'K',
     },
-    'K',
-    '"a"',
-    noop,
-  )) ===
-    JSON.stringify({
-      type: 'map',
-      key: '"a"',
-      val: {
-        type: 'array',
-        elementType: '"a"',
-      },
-    });
+  };
+  const actual = JSON.stringify(substituteMapNode(input, 'K', '"a"', noop));
+  const expected = JSON.stringify({
+    type: 'map',
+    key: '"a"',
+    val: {
+      type: 'array',
+      elementType: '"a"',
+    },
+  });
+  return actual === expected;
 }
 const tests = [
   testMapNodeKeyVal,

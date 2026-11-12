@@ -16,25 +16,28 @@ function testForeignSnapshotTagged() {
 // transported snapshots, never for live objects with methods.
 function testForeignInstanceUntagged() {
   const foreign = vm.runInNewContext('new (class Bar { constructor() { this.r = 1; } })()');
-  return snapshotTag(foreign) === undefined && snapshotTag(new (class Bar {
+  const local = new (class Bar {
     constructor() {
       this.r = 1;
     }
-  })()) === undefined;
+  })();
+  return snapshotTag(foreign) === undefined && snapshotTag(local) === undefined;
 }
 // Plain data, arrays, null-protos and lowercase tags behave as before.
 function testNonSnapshotsUntagged() {
   const bare = Object.assign(Object.create(null), {
     $type: 'Color',
   });
+  const plain = {
+    r: 1,
+  };
+  const lower = {
+    $type: 'color',
+  };
   return (
-    snapshotTag({
-      r: 1,
-    }) === undefined &&
+    snapshotTag(plain) === undefined &&
     snapshotTag(vm.runInNewContext('[1, 2]')) === undefined &&
-    snapshotTag({
-      $type: 'color',
-    }) === undefined &&
+    snapshotTag(lower) === undefined &&
     snapshotTag(bare) === 'Color'
   );
 }

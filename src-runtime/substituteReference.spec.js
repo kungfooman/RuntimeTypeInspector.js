@@ -3,21 +3,18 @@ const noop = () => undefined;
 // We want: reference type arguments substitute, because each argument is
 // a separate type position.
 function testReferenceArgs() {
-  return JSON.stringify(substituteReference(
-    {
-      type: 'reference',
-      name: 'Box',
-      args: ['K'],
-    },
-    'K',
-    '"a"',
-    noop,
-  )) ===
-    JSON.stringify({
-      type: 'reference',
-      name: 'Box',
-      args: ['"a"'],
-    });
+  const input = {
+    type: 'reference',
+    name: 'Box',
+    args: ['K'],
+  };
+  const actual = JSON.stringify(substituteReference(input, 'K', '"a"', noop));
+  const expected = JSON.stringify({
+    type: 'reference',
+    name: 'Box',
+    args: ['"a"'],
+  });
+  return actual === expected;
 }
 // We want: a reference with no matching key is returned by identity, so
 // unchanged subtrees keep their identity for downstream memos.
@@ -41,27 +38,24 @@ function testReferenceNoArgs() {
 // We want: nested reference arguments substitute recursively, because an
 // argument may itself contain the search key at any depth.
 function testReferenceNested() {
-  return JSON.stringify(substituteReference(
-    {
-      type: 'reference',
-      name: 'Box',
-      args: [{
-        type: 'array',
-        elementType: 'K',
-      }],
-    },
-    'K',
-    '"a"',
-    noop,
-  )) ===
-    JSON.stringify({
-      type: 'reference',
-      name: 'Box',
-      args: [{
-        type: 'array',
-        elementType: '"a"',
-      }],
-    });
+  const input = {
+    type: 'reference',
+    name: 'Box',
+    args: [{
+      type: 'array',
+      elementType: 'K',
+    }],
+  };
+  const actual = JSON.stringify(substituteReference(input, 'K', '"a"', noop));
+  const expected = JSON.stringify({
+    type: 'reference',
+    name: 'Box',
+    args: [{
+      type: 'array',
+      elementType: '"a"',
+    }],
+  });
+  return actual === expected;
 }
 const tests = [
   testReferenceArgs,

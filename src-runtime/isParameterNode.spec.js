@@ -28,10 +28,11 @@ function testParameterNodeNullishFalse() {
 // structural probe misprinted any such object as `name: type` while the
 // discriminant lets it fall through to the generic path.
 function testParameterNodeMistaggedFalse() {
-  return isParameterNode({
+  const mistagged = {
     type: 'string',
     name: 'k',
-  }) === false;
+  };
+  return isParameterNode(mistagged) === false;
 }
 const tests = [
   testParameterNodeTrue,

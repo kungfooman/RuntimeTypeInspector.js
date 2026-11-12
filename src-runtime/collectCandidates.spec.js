@@ -23,10 +23,11 @@ function testBareCollects() {
 }
 // Non-literals yield nothing.
 function testNonLiteralsCollectNothing() {
+  const fromObject = keysOf({
+    a: 1,
+  }, 'T');
   return (
-    keysOf({
-      a: 1,
-    }, 'T') === '' &&
+    fromObject === '' &&
     keysOf(null, 'T') === '' &&
     keysOf(undefined, 'T') === ''
   );
@@ -48,26 +49,30 @@ function testAtomWrapperCollects() {
 }
 // Nested positions contribute: arrays, tuples, objects, index signatures.
 function testNestedCollects() {
-  if (keysOf(['a'], {
+  const arrayExpect = {
     type: 'array',
     elementType: 'T',
-  }) !== 'T="\\"a\\""') {
+  };
+  if (keysOf(['a'], arrayExpect) !== 'T="\\"a\\""') {
     return false;
   }
-  if (keysOf(['a', 1], {
+  const tupleExpect = {
     type: 'tuple',
     elements: ['T', 'T'],
-  }) !== 'T="\\"a\\"",T=1') {
+  };
+  if (keysOf(['a', 1], tupleExpect) !== 'T="\\"a\\"",T=1') {
     return false;
   }
-  if (keysOf({
+  const objectValue = {
     sub: 'b',
-  }, {
+  };
+  const objectExpect = {
     type: 'object',
     properties: {
       sub: 'K',
     },
-  }) !== 'K="\\"b\\""') {
+  };
+  if (keysOf(objectValue, objectExpect) !== 'K="\\"b\\""') {
     return false;
   }
   const indexed = {
@@ -79,33 +84,38 @@ function testNestedCollects() {
       indexParameters: [],
     }],
   };
-  return keysOf({
+  const indexedValue = {
     a: 'x',
-  }, indexed) === 'T="\\"x\\""';
+  };
+  return keysOf(indexedValue, indexed) === 'T="\\"x\\""';
 }
 // Record/map values collect; keys never do.
 function testRecordCollectsValuesOnly() {
-  return keysOf({
+  const recordValue = {
     a: 'x',
-  }, {
+  };
+  const recordExpect = {
     type: 'record',
     key: 'string',
     val: 'T',
-  }) === 'T="\\"x\\""';
+  };
+  return keysOf(recordValue, recordExpect) === 'T="\\"x\\""';
 }
 // Unions collect across constituents; references descend into arguments.
 function testUnionAndReferenceCollect() {
-  if (keysOf('x', {
+  const unionExpect = {
     type: 'union',
     members: ['T', 'null'],
-  }) !== 'T="\\"x\\""') {
+  };
+  if (keysOf('x', unionExpect) !== 'T="\\"x\\""') {
     return false;
   }
-  return keysOf('x', {
+  const boxExpect = {
     type: 'reference',
     name: 'Box',
     args: ['T'],
-  }) === 'T="\\"x\\""';
+  };
+  return keysOf('x', boxExpect) === 'T="\\"x\\""';
 }
 // `NoInfer<T>` blocks its whole subtree.
 function testNoInferBlocks() {
@@ -117,14 +127,16 @@ function testNoInferBlocks() {
   if (keysOf('b', noInfer) !== '') {
     return false;
   }
-  return keysOf({
+  const nestedValue = {
     sub: 'b',
-  }, {
+  };
+  const nestedExpect = {
     type: 'object',
     properties: {
       sub: noInfer,
     },
-  }) === '';
+  };
+  return keysOf(nestedValue, nestedExpect) === '';
 }
 // Deferred positions never infer: indexed access, mappings, conditions,
 // keyof/typeof, template literals, functions.
@@ -170,9 +182,10 @@ function testDeferredNeverCollect() {
       }],
     },
   ];
-  return deferred.every((expect) => keysOf('x', expect) === '' && keysOf({
+  const probe = {
     v: 1,
-  }, expect) === '');
+  };
+  return deferred.every((expect) => keysOf('x', expect) === '' && keysOf(probe, expect) === '');
 }
 export const tests = [
   testBareCollects,

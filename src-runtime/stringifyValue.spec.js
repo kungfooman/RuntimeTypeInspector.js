@@ -64,10 +64,11 @@ function testLongString() {
   return true;
 }
 function testExoticTypes() {
-  if (JSON.stringify(stringifyValue(123n)) !== JSON.stringify({
+  const bigintShape = {
     $type: 'bigint',
     value: '123',
-  })) {
+  };
+  if (JSON.stringify(stringifyValue(123n)) !== JSON.stringify(bigintShape)) {
     return false;
   }
   if (stringifyValue(undefined) !== '[undefined]') {
@@ -125,11 +126,12 @@ function testContainers() {
   if (JSON.stringify(out.t.values) !== '[1,2,3]') {
     return false;
   }
-  if (JSON.stringify(stringifyValue(new Map())) !== JSON.stringify({
+  const emptyMap = {
     $type: 'Map',
     size: 0,
     entries: [],
-  })) {
+  };
+  if (JSON.stringify(stringifyValue(new Map())) !== JSON.stringify(emptyMap)) {
     return false;
   }
   return true;

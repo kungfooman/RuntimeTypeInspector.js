@@ -8,12 +8,13 @@ function testIndexedAccessBoth() {
     object: 'T',
     index: 'K',
   };
-  return JSON.stringify(substituteIndexedAccess(input, 'K', '"a"', noop)) ===
-    JSON.stringify({
-      type: 'indexedAccess',
-      object: 'T',
-      index: '"a"',
-    });
+  const actual = JSON.stringify(substituteIndexedAccess(input, 'K', '"a"', noop));
+  const expected = JSON.stringify({
+    type: 'indexedAccess',
+    object: 'T',
+    index: '"a"',
+  });
+  return actual === expected;
 }
 // We want: the object position substitutes when only it matches, because
 // the object is a type position just like the index.
@@ -23,12 +24,13 @@ function testIndexedAccessObject() {
     object: 'K',
     index: 'string',
   };
-  return JSON.stringify(substituteIndexedAccess(input, 'K', '"a"', noop)) ===
-    JSON.stringify({
-      type: 'indexedAccess',
-      object: '"a"',
-      index: 'string',
-    });
+  const actual = JSON.stringify(substituteIndexedAccess(input, 'K', '"a"', noop));
+  const expected = JSON.stringify({
+    type: 'indexedAccess',
+    object: '"a"',
+    index: 'string',
+  });
+  return actual === expected;
 }
 // We want: an indexed access with no matching key is returned by identity,
 // so unchanged subtrees keep their identity for downstream memos.

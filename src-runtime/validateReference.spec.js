@@ -250,11 +250,12 @@ function testReplaceTypeHandlesReference() {
   // @template T ... ArrayLike<T> must support T substitution via inspectTypeWithTemplates.
   const expect = expandType('ArrayLike<T>');
   const replaced = substituteType(expect, 'T', 'number', warn);
-  if (JSON.stringify(replaced) !== JSON.stringify({
+  const numbers = {
     type: 'reference',
     name: 'ArrayLike',
     args: ['number'],
-  })) {
+  };
+  if (JSON.stringify(replaced) !== JSON.stringify(numbers)) {
     return false;
   }
   if (!validateType([1, 2], replaced, 'loc', 'name', true, warn, 0)) {
@@ -267,11 +268,12 @@ function testReplaceTypeHandlesReference() {
 }
 function testExpandTypeDepFreeReference() {
   const ref = expandTypeDepFree('ArrayLike<number>');
-  if (JSON.stringify(ref) !== JSON.stringify({
+  const numbers = {
     type: 'reference',
     name: 'ArrayLike',
     args: ['number'],
-  })) {
+  };
+  if (JSON.stringify(ref) !== JSON.stringify(numbers)) {
     return false;
   }
   if (!validateType([1], ref, 'loc', 'name', true, warn, 0)) {
@@ -311,19 +313,12 @@ function testArrayLikeDirectContract() {
   if (direct([1, '2'], node, 'loc', 'name', true, warn, 0) !== false) {
     return false;
   }
-  if (direct(
-    [1, '2'],
-    {
-      type: 'reference',
-      name: 'ArrayLike',
-      args: [],
-    },
-    'loc',
-    'name',
-    true,
-    warn,
-    0,
-  ) !== true) {
+  const bare = {
+    type: 'reference',
+    name: 'ArrayLike',
+    args: [],
+  };
+  if (direct([1, '2'], bare, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
   const warnings = [];

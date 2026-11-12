@@ -3,14 +3,16 @@ const noop = () => undefined;
 // We want: the annotation of a rest type substitutes, because it is the
 // only type position of the node.
 function testRestAnnotation() {
-  return JSON.stringify(substituteRest({
+  const input = {
     type: 'rest',
     annotation: 'K',
-  }, 'K', '"a"', noop)) ===
-    JSON.stringify({
-      type: 'rest',
-      annotation: '"a"',
-    });
+  };
+  const actual = JSON.stringify(substituteRest(input, 'K', '"a"', noop));
+  const expected = JSON.stringify({
+    type: 'rest',
+    annotation: '"a"',
+  });
+  return actual === expected;
 }
 // We want: a rest type with no matching key is returned by identity, so
 // unchanged subtrees keep their identity for downstream memos.
@@ -24,25 +26,22 @@ function testRestUnchanged() {
 // We want: nested rest annotations substitute recursively, because the
 // annotation may itself contain the search key at any depth.
 function testRestNested() {
-  return JSON.stringify(substituteRest(
-    {
-      type: 'rest',
-      annotation: {
-        type: 'array',
-        elementType: 'K',
-      },
+  const input = {
+    type: 'rest',
+    annotation: {
+      type: 'array',
+      elementType: 'K',
     },
-    'K',
-    '"a"',
-    noop,
-  )) ===
-    JSON.stringify({
-      type: 'rest',
-      annotation: {
-        type: 'array',
-        elementType: '"a"',
-      },
-    });
+  };
+  const actual = JSON.stringify(substituteRest(input, 'K', '"a"', noop));
+  const expected = JSON.stringify({
+    type: 'rest',
+    annotation: {
+      type: 'array',
+      elementType: '"a"',
+    },
+  });
+  return actual === expected;
 }
 const tests = [
   testRestAnnotation,

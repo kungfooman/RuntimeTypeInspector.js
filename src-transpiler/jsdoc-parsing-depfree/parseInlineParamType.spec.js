@@ -14,20 +14,22 @@ function testNestedBraces() {
     value: '* @type {{a: number}} ',
   }];
   const type = parseInlineParamType(comments, expandTypeDepFree);
-  if (JSON.stringify(type) !== JSON.stringify({
+  const shaped = {
     type: 'object',
     properties: {
       a: 'number',
     },
-  })) {
+  };
+  if (JSON.stringify(type) !== JSON.stringify(shaped)) {
     return false;
   }
   return true;
 }
 function testNoAtType() {
-  if (parseInlineParamType([{
+  const plain = [{
     value: ' just a comment ',
-  }], expandTypeDepFree) !== undefined) {
+  }];
+  if (parseInlineParamType(plain, expandTypeDepFree) !== undefined) {
     return false;
   }
   if (parseInlineParamType(undefined, expandTypeDepFree) !== undefined) {

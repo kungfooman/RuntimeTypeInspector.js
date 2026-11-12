@@ -45,19 +45,13 @@ function testOverrideTakesEffect() {
 // Restoring the override brings back real validation.
 function testOverrideRestored() {
   // After restore, real validation is back (invalid element fails).
-  return validateType(
-    [1, 2, '3'],
-    {
-      type: 'reference',
-      name: 'ArrayLike',
-      args: ['number'],
-    },
-    'loc',
-    'name',
-    true,
-    warn,
-    0,
-  ) === false;
+  const arrayLike = {
+    type: 'reference',
+    name: 'ArrayLike',
+    args: ['number'],
+  };
+  const invalid = [1, 2, '3'];
+  return validateType(invalid, arrayLike, 'loc', 'name', true, warn, 0) === false;
 }
 // Recursing without registration throws a helpful error.
 function testRecurseGuard() {

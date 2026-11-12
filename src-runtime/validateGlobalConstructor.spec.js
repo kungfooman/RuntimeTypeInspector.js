@@ -17,9 +17,10 @@ function testForeignInstancePassesByName() {
 // A same-named impostor shape is not the platform constructor: plain
 // data with matching structure but no constructor name fails.
 function testImpostorFails() {
-  return validateGlobalConstructor({
+  const impostor = {
     length: 2,
-  }, 'Float32Array', 'loc', 'name', true, silent, 0) === false &&
+  };
+  return validateGlobalConstructor(impostor, 'Float32Array', 'loc', 'name', true, silent, 0) === false &&
     validateGlobalConstructor(2, 'Float32Array', 'loc', 'name', true, silent, 0) === false;
 }
 // Unknown names and non-string expects fail closed without throwing.

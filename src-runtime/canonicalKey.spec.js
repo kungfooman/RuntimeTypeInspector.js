@@ -10,21 +10,24 @@ function testLossySiblingsDistinct() {
 // We want: key order to never split a hit, while functions and symbols
 // opt out instead of sharing wrongly.
 function testOrderInsensitiveUnserializableOut() {
-  if (canonicalKey({
+  const reordered = canonicalKey({
     b: 1,
     a: 2,
-  }) !== canonicalKey({
+  });
+  const ordered = canonicalKey({
     a: 2,
     b: 1,
-  })) {
+  });
+  if (reordered !== ordered) {
     return false;
   }
   if (canonicalKey(() => {}) !== undefined || canonicalKey(Symbol('s')) !== undefined) {
     return false;
   }
-  return canonicalKey({
+  const keyed = canonicalKey({
     fn: () => {},
-  }) === undefined;
+  });
+  return keyed === undefined;
 }
 // We want: cycles to skip the cache instead of crashing the key builder,
 // while shared (non-cyclic) subtrees still key — the guard tracks the
@@ -52,10 +55,11 @@ function testCyclesSkipSharedStillKeys() {
   const leaf = {
     a: 1,
   };
-  return canonicalKey({
+  const shared = canonicalKey({
     x: leaf,
     y: leaf,
-  }) === canonicalKey({
+  });
+  const rebuilt = canonicalKey({
     x: {
       a: 1,
     },
@@ -63,6 +67,7 @@ function testCyclesSkipSharedStillKeys() {
       a: 1,
     },
   });
+  return shared === rebuilt;
 }
 // We want: class instances and built-ins with invisible state (`Map`,
 // `Set`, `Date`, `RegExp`) to skip the cache — own-enumerable keys alone

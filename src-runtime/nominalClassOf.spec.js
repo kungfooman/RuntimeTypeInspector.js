@@ -65,10 +65,11 @@ function testHarvestedPair() {
 function testNonString() {
   // Nodes pass through untouched: only names can denote classes.
   clearTypedefs();
-  return nominalClassOf({
+  const node = {
     type: 'object',
     properties: {},
-  }) === undefined;
+  };
+  return nominalClassOf(node) === undefined;
 }
 const tests = [
   testDirectClass,

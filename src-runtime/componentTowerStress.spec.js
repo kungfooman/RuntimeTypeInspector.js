@@ -239,16 +239,18 @@ function testSingleMemberUnionResolution() {
   if (!single || single.type !== 'object' || JSON.stringify(Object.keys(single.properties).sort()) !== JSON.stringify(['a', 'b'])) {
     return false;
   }
-  if (resolveObject({
+  const ambiguous = {
     type: 'union',
     members: ['TwBox', 'TwBox2'],
-  }, warn, 0) !== undefined) {
+  };
+  if (resolveObject(ambiguous, warn, 0) !== undefined) {
     return false;
   }
-  if (resolveObject({
+  const empty = {
     type: 'union',
     members: ['null', 'undefined'],
-  }, warn, 0) !== undefined) {
+  };
+  if (resolveObject(empty, warn, 0) !== undefined) {
     return false;
   }
   return true;
@@ -482,22 +484,21 @@ function testDeferredStaysUndecidable() {
   if (extendsCheck(expandType('TwBoxed<number>'), 'TwComponent') !== undefined) {
     return false;
   }
-  if (extendsCheck({
+  const missingKey = {
     type: 'keyof',
     argument: 'TwMissing',
-  }, 'TwComponent') !== undefined) {
+  };
+  if (extendsCheck(missingKey, 'TwComponent') !== undefined) {
     return false;
   }
-  if (extendsCheck(
-    {
-      type: 'condition',
-      checkType: 'TwBox',
-      extendsType: 'TwComponent',
-      trueType: '"a"',
-      falseType: '"b"',
-    },
-    'TwComponent',
-  ) !== undefined) {
+  const deferredCond = {
+    type: 'condition',
+    checkType: 'TwBox',
+    extendsType: 'TwComponent',
+    trueType: '"a"',
+    falseType: '"b"',
+  };
+  if (extendsCheck(deferredCond, 'TwComponent') !== undefined) {
     return false;
   }
   return true;
@@ -640,12 +641,13 @@ function testStaticRuntimeAgreement() {
   if (!validateType(new TwColor(), 'TwColor', 'loc', 'name', true, warn, 0)) {
     return false;
   }
-  if (extendsCheck({
+  const plainShape = {
     type: 'object',
     properties: {
       r: 'number',
     },
-  }, 'TwColor') !== false) {
+  };
+  if (extendsCheck(plainShape, 'TwColor') !== false) {
     return false;
   }
   return true;
@@ -715,10 +717,11 @@ function testSubclassSatisfiesBase() {
   }, 'TwCam', 'loc', 'name', true, warn, 0)) {
     return false;
   }
-  return validateType({
+  const stranger = {
     fov: 1,
     $type: 'TwOther',
-  }, 'TwCam', 'loc', 'name', true, warn, 0) === false;
+  };
+  return validateType(stranger, 'TwCam', 'loc', 'name', true, warn, 0) === false;
 }
 export const tests = [
   testStripKeepsAliasSpelling,

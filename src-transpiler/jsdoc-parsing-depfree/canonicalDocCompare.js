@@ -33,8 +33,9 @@ function canonicalDocEqual(actual, expected) {
  * @returns {boolean} True when coverage holds both ways.
  */
 function canonicalDocCovers(actual, expected) {
-  const sameTemplates = JSON.stringify(canonicalize(actual.templates)) ===
-    JSON.stringify(canonicalize(expected.templates));
+  const actualTemplates = JSON.stringify(canonicalize(actual.templates));
+  const expectedTemplates = JSON.stringify(canonicalize(expected.templates));
+  const sameTemplates = actualTemplates === expectedTemplates;
   if (
     sameTemplates === false ||
     actual.returns !== expected.returns ||

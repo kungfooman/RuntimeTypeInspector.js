@@ -12,16 +12,17 @@ function testFunctionParamsAndRet() {
     }],
     ret: 'K',
   };
-  return JSON.stringify(substituteFunction(input, 'K', '"a"', noop)) ===
-    JSON.stringify({
-      type: 'function',
-      parameters: [{
-        type: 'parameter',
-        paramType: '"a"',
-        name: 'x',
-      }],
-      ret: '"a"',
-    });
+  const actual = JSON.stringify(substituteFunction(input, 'K', '"a"', noop));
+  const expected = JSON.stringify({
+    type: 'function',
+    parameters: [{
+      type: 'parameter',
+      paramType: '"a"',
+      name: 'x',
+    }],
+    ret: '"a"',
+  });
+  return actual === expected;
 }
 // We want: a function without a return type substitutes only parameters,
 // because there is no ret field to touch.
@@ -34,15 +35,16 @@ function testFunctionNoRet() {
       name: 'x',
     }],
   };
-  return JSON.stringify(substituteFunction(input, 'K', '"a"', noop)) ===
-    JSON.stringify({
-      type: 'function',
-      parameters: [{
-        type: 'parameter',
-        paramType: '"a"',
-        name: 'x',
-      }],
-    });
+  const actual = JSON.stringify(substituteFunction(input, 'K', '"a"', noop));
+  const expected = JSON.stringify({
+    type: 'function',
+    parameters: [{
+      type: 'parameter',
+      paramType: '"a"',
+      name: 'x',
+    }],
+  });
+  return actual === expected;
 }
 // We want: a function with no matching key is returned by identity, so
 // unchanged subtrees keep their identity for downstream memos.
@@ -70,16 +72,17 @@ function testNewType() {
     }],
     ret: 'K',
   };
-  return JSON.stringify(substituteFunction(input, 'K', '"a"', noop)) ===
-    JSON.stringify({
-      type: 'new',
-      parameters: [{
-        type: 'parameter',
-        paramType: '"a"',
-        name: 'x',
-      }],
-      ret: '"a"',
-    });
+  const actual = JSON.stringify(substituteFunction(input, 'K', '"a"', noop));
+  const expected = JSON.stringify({
+    type: 'new',
+    parameters: [{
+      type: 'parameter',
+      paramType: '"a"',
+      name: 'x',
+    }],
+    ret: '"a"',
+  });
+  return actual === expected;
 }
 const tests = [
   testFunctionParamsAndRet,

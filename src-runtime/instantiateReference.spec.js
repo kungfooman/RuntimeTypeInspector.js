@@ -35,14 +35,12 @@ function testStableNodeReturnsSameInstance() {
 // An unknown name instantiates nothing: the caller sees undefined and can
 // report `unchecked` instead of validating against a phantom type.
 function testMissingTypedefReturnsUndefined() {
-  return instantiateReference(
-    {
-      type: 'reference',
-      name: 'UnregisteredBox',
-      args: ['number'],
-    },
-    warn,
-  ) === undefined;
+  const missing = {
+    type: 'reference',
+    name: 'UnregisteredBox',
+    args: ['number'],
+  };
+  return instantiateReference(missing, warn) === undefined;
 }
 // Without template parameters or arguments there is nothing to substitute:
 // the registry object itself comes back by identity, uncloned.
@@ -54,14 +52,12 @@ function testNoArgsReturnsRegistryEntry() {
     },
   });
   try {
-    return instantiateReference(
-      {
-        type: 'reference',
-        name: 'PlainBox',
-        args: [],
-      },
-      warn,
-    ) === typedefs.PlainBox;
+    const node = {
+      type: 'reference',
+      name: 'PlainBox',
+      args: [],
+    };
+    return instantiateReference(node, warn) === typedefs.PlainBox;
   } finally {
     dropTypedef('PlainBox');
   }

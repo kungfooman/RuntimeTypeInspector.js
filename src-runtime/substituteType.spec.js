@@ -336,13 +336,14 @@ function testSharingAndDefault() {
   if (out === tree || out.properties.b !== shared || out.properties.a !== '"a"') {
     return false;
   }
-  if (JSON.stringify(tree) !== JSON.stringify({
+  const pristine = {
     type: 'object',
     properties: {
       a: 'K',
       b: shared,
     },
-  })) {
+  };
+  if (JSON.stringify(tree) !== JSON.stringify(pristine)) {
     return false;
   }
   let warned = 0;

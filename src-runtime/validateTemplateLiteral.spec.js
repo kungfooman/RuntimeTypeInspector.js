@@ -169,11 +169,12 @@ function test7() {
 function test8() {
   // expandType: transpiler produces the structured templateLiteral representation
   const noSubst = expandType('`id`');
-  if (JSON.stringify(noSubst) !== JSON.stringify({
+  const plain = {
     type: 'templateLiteral',
     quasis: ['id'],
     types: [],
-  })) {
+  };
+  if (JSON.stringify(noSubst) !== JSON.stringify(plain)) {
     return false;
   }
   const withSpans = expandType('`\${A | B}_\${C}`'); // eslint-disable-line no-template-curly-in-string

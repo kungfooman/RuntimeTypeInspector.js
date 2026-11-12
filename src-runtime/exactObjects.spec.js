@@ -20,20 +20,14 @@ function withExact(exact, fn) {
 function testOnByDefault() {
   const prev = options.exactObjects;
   options.exactObjects = true;
+  const value = {
+    a: 1,
+    extra: true,
+  };
+  const expect = expandType('{a: number}');
   let ret;
   try {
-    ret = validateType(
-      {
-        a: 1,
-        extra: true,
-      },
-      expandType('{a: number}'),
-      'loc',
-      'name',
-      true,
-      warn,
-      0,
-    ) === false;
+    ret = validateType(value, expect, 'loc', 'name', true, warn, 0) === false;
   } finally {
     options.exactObjects = prev;
   }
@@ -57,21 +51,13 @@ function testOffWhenDisabled() {
   );
 }
 function testExcessFailsWhenExact() {
-  return withExact(
-    true,
-    () => validateType(
-      {
-        a: 1,
-        extra: true,
-      },
-      expandType('{a: number}'),
-      'loc',
-      'name',
-      true,
-      warn,
-      0,
-    ) === false,
-  );
+  const value = {
+    a: 1,
+    extra: true,
+  };
+  const expect = expandType('{a: number}');
+  const check = () => validateType(value, expect, 'loc', 'name', true, warn, 0) === false;
+  return withExact(true, check);
 }
 function testExactPassesClean() {
   return withExact(
@@ -90,23 +76,15 @@ function testExactPassesClean() {
   );
 }
 function testNestedExcessFails() {
-  return withExact(
-    true,
-    () => validateType(
-      {
-        sub: {
-          a: 1,
-          extra: 2,
-        },
-      },
-      expandType('{sub: {a: number}}'),
-      'loc',
-      'name',
-      true,
-      warn,
-      0,
-    ) === false,
-  );
+  const value = {
+    sub: {
+      a: 1,
+      extra: 2,
+    },
+  };
+  const expect = expandType('{sub: {a: number}}');
+  const check = () => validateType(value, expect, 'loc', 'name', true, warn, 0) === false;
+  return withExact(true, check);
 }
 function testUnionPicksCleanMember() {
   // Excess in one member must not poison the other: `{a}` still matches.

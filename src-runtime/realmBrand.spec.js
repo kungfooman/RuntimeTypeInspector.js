@@ -13,10 +13,11 @@ function testForeignArrayPasses() {
 }
 // A length-carrying impostor is not an array in any realm.
 function testArrayImpostorRejected() {
-  return isArrayValue({
+  const impostor = {
     length: 4,
     0: 1,
-  }) === false && isArrayValue('nope') === false;
+  };
+  return isArrayValue(impostor) === false && isArrayValue('nope') === false;
 }
 // Foreign maps and sets pass the brand check while instanceof fails.
 function testForeignMapSetPass() {
@@ -53,13 +54,14 @@ function testMapSetImpostorRejected() {
 function testPromiseBrandCrossRealm() {
   const foreign = vm.runInNewContext('Promise.resolve(1)');
   class PlainSub extends Promise {}
+  const thenable = {
+    then() {},
+  };
   return (
     isPromiseValue(foreign) === true &&
     isPromiseValue(Promise.resolve(1)) === true &&
     isPromiseValue(new PlainSub((resolve) => resolve(1))) === true &&
-    isPromiseValue({
-      then() {},
-    }) === false
+    isPromiseValue(thenable) === false
   );
 }
 export const tests = [

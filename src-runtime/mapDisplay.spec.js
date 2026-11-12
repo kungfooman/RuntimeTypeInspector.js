@@ -80,10 +80,11 @@ function testEmptySet() {
   return describeValueType(new Set()) === 'Set<never>';
 }
 function testPlainValuesUnaffected() {
+  const plain = {
+    a: 1,
+  };
   return (
-    describeValueType({
-      a: 1,
-    }) === '{a: 1}' &&
+    describeValueType(plain) === '{a: 1}' &&
     describeValueType([1, 2]) === '[1, 2]' &&
     describeValueType('x') === '"x"'
   );
@@ -124,9 +125,10 @@ function testSnipMapPretty() {
     snip(new Set([1])) === 'Set<number>';
 }
 function testSnipPlainUnaffected() {
-  return snip({
+  const plain = {
     a: 1,
-  }) === '{"a":1}' && snip('x') === '"x"';
+  };
+  return snip(plain) === '{"a":1}' && snip('x') === '"x"';
 }
 function testDiffMapPinpointsEntry() {
   const {mapExpect, bad} = apiKeyMismatch();
@@ -242,12 +244,13 @@ function testFormatComparePlainUnaffected() {
   return actualPretty.includes('"a"');
 }
 function testPrettyValueShapes() {
+  const plain = {
+    a: 1,
+  };
   return (
     prettyValue(new Map()) === 'Map(0) {}' &&
     prettyValue(new Set()) === 'Set(0) {}' &&
-    prettyValue({
-      a: 1,
-    }) === undefined &&
+    prettyValue(plain) === undefined &&
     prettyValue(new Set(['a', 'b'])) === 'Set(2) {\n  "a"\n  "b"\n}'
   );
 }

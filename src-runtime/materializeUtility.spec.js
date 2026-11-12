@@ -53,11 +53,12 @@ function testUnresolvableYieldsUndefined() {
 // We want: missing args to yield undefined, because a malformed utility
 // reference carries no base or key list to materialize from.
 function testMissingArgsYieldsUndefined() {
-  return materializeUtility({
+  const empty = {
     type: 'reference',
     name: 'Pick',
     args: [],
-  }, silent, 0) === undefined;
+  };
+  return materializeUtility(empty, silent, 0) === undefined;
 }
 const tests = [
   testPickKeepsNamed,

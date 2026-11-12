@@ -1,15 +1,17 @@
 import {noneUnchecked} from './noneUnchecked.js';
 function testCleanPasses() {
   // Messages naming real types pass.
-  return noneUnchecked([{
+  const clean = [{
     strings: ['Expected number'],
-  }]) === true;
+  }];
+  return noneUnchecked(clean) === true;
 }
 function testUncheckedFails() {
   // A degraded `unchecked` detail fails, wherever it sits in the strings.
-  return noneUnchecked([{
+  const degraded = [{
     strings: ['ok', 'unchecked type'],
-  }]) === false;
+  }];
+  return noneUnchecked(degraded) === false;
 }
 function testEmptyPasses() {
   // Nothing posted means nothing degraded.

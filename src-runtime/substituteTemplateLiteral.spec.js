@@ -8,12 +8,13 @@ function testTemplateLiteralTypes() {
     quasis: ['a', 'b'],
     types: ['K'],
   };
-  return JSON.stringify(substituteTemplateLiteral(input, 'K', '"x"', noop)) ===
-    JSON.stringify({
-      type: 'templateLiteral',
-      quasis: ['a', 'b'],
-      types: ['"x"'],
-    });
+  const actual = JSON.stringify(substituteTemplateLiteral(input, 'K', '"x"', noop));
+  const expected = JSON.stringify({
+    type: 'templateLiteral',
+    quasis: ['a', 'b'],
+    types: ['"x"'],
+  });
+  return actual === expected;
 }
 // We want: a template literal with no matching key is returned by identity,
 // so unchanged subtrees keep their identity for downstream memos.
@@ -33,12 +34,13 @@ function testTemplateLiteralMultiple() {
     quasis: ['a', 'b', 'c'],
     types: ['K', 'K'],
   };
-  return JSON.stringify(substituteTemplateLiteral(input, 'K', '"x"', noop)) ===
-    JSON.stringify({
-      type: 'templateLiteral',
-      quasis: ['a', 'b', 'c'],
-      types: ['"x"', '"x"'],
-    });
+  const actual = JSON.stringify(substituteTemplateLiteral(input, 'K', '"x"', noop));
+  const expected = JSON.stringify({
+    type: 'templateLiteral',
+    quasis: ['a', 'b', 'c'],
+    types: ['"x"', '"x"'],
+  });
+  return actual === expected;
 }
 const tests = [
   testTemplateLiteralTypes,

@@ -95,10 +95,11 @@ function testValidatorsRecordTheirKind() {
   const recExpect = expandType('Record<string, number>');
   const setOk = validateType(new Set([1, 'x']), setExpect, 'V#kinds', 'v', true, warn, 0) === false;
   const arrOk = validateType([1, 'x'], arrExpect, 'V#kinds', 'v', true, warn, 0) === false;
-  const recOk = validateType({
+  const recValue = {
     a: 1,
     b: 'x',
-  }, recExpect, 'V#kinds', 'v', true, warn, 0) === false;
+  };
+  const recOk = validateType(recValue, recExpect, 'V#kinds', 'v', true, warn, 0) === false;
   recordCheck('V#kinds', 'v', 0);
   const [row] = getCheckStats();
   const ok = setOk && arrOk && recOk &&

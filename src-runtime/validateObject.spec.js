@@ -9,11 +9,13 @@ function shape(props) {
 }
 function testShapedPasses() {
   // Exact-shape objects pass.
-  return validateType({
+  const value = {
     a: 1,
-  }, shape({
+  };
+  const expect = shape({
     a: 'number',
-  }), 'loc', 'name', true, warn, 0) === true;
+  });
+  return validateType(value, expect, 'loc', 'name', true, warn, 0) === true;
 }
 function testShapedFails() {
   // Wrong member types fail with a pinned element message.
