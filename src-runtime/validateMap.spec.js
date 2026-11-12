@@ -1,7 +1,7 @@
 import {validateType} from './validateType.js';
 import {classes, registerClass} from './registerClass.js';
 import {registerTypedef} from './registerTypedef.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType     } from '../src-transpiler/expandType.js';
 const warn = () => undefined;
 class MapKeyBase {
   constructor() {

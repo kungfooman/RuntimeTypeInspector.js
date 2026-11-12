@@ -1,7 +1,7 @@
 import {typedefs, typedefTemplates} from "./registerTypedef.js";
 import {classes} from "./registerClass.js";
 import {validators, recurse} from "./validators.js";
-import {createTypeFromMapping} from "./createTypeFromMapping.js";
+import {createTypeFromMapping      } from "./createTypeFromMapping.js";
 import {createTypeFromIndexedAccess} from "./createTypeFromIndexedAccess.js";
 import {mergedClassShape, prototypeShape} from "./classShape.js";
 import {nominalClassOf} from "./nominalClassOf.js";
@@ -9,10 +9,10 @@ import {getTypeKeys, resolveUtilityShape} from "./getTypeKeys.js";
 import {instantiateReference} from "./instantiateReference.js";
 import {extendsCheck, resolveForExtends, stripLiteral} from "./evaluateCondition.js";
 import {evaluateCondition} from "./evaluateCondition.js";
-import {deepEqualType} from "./deepEqualType.js";
+import {deepEqualType    } from "./deepEqualType.js";
 import {atomStripOptional} from "./atomStripOptional.js";
-import {snapshotMatches} from "./snapshotMatches.js";
-import {isArrayValue} from "./isArrayValue.js";
+import {snapshotMatches  } from "./snapshotMatches.js";
+import {isArrayValue     } from "./isArrayValue.js";
 /**
  * Follows strings through typedefs (and materializes mappings) to object
  * shapes, distributing over unions like homomorphic mapped types do.

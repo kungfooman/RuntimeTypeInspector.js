@@ -1,12 +1,12 @@
-import {getTypeKeys} from './getTypeKeys.js';
-import {instantiateReference} from './instantiateReference.js';
-import {classes} from './registerClass.js';
-import {typedefs} from './registerTypedef.js';
-import {validators} from './validators.js';
-import {mergedClassShape} from './classShape.js';
+import {getTypeKeys          } from './getTypeKeys.js';
+import {instantiateReference } from './instantiateReference.js';
+import {classes              } from './registerClass.js';
+import {typedefs             } from './registerTypedef.js';
+import {validators           } from './validators.js';
+import {mergedClassShape     } from './classShape.js';
 import {createTypeFromMapping} from './createTypeFromMapping.js';
-import {materializeUtility} from './materializeUtility.js';
-import {resolveObject} from './getTypeKeys.js';
+import {materializeUtility   } from './materializeUtility.js';
+import {resolveObject        } from './getTypeKeys.js';
 /**
  * Resolves the object side of an indexed access to a property map.
  * Chases typedef names, instantiates generic references, materializes

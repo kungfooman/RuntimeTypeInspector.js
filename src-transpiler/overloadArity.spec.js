@@ -1,4 +1,4 @@
-import {parse} from '@babel/parser';
+import {parse        } from '@babel/parser';
 import {parserOptions} from './parserOptions.js';
 import {overloadArity} from './overloadArity.js';
 // An undocumented arrow needs no dummy parameters.

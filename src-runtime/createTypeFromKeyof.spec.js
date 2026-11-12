@@ -1,5 +1,5 @@
-import {createType} from './createType.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {createType     } from './createType.js';
+import {expandType     } from '../src-transpiler/expandType.js';
 import {registerTypedef} from './registerTypedef.js';
 function prepare() {
   /**

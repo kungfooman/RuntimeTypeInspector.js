@@ -1,5 +1,5 @@
 import {substituteType} from './substituteType.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType    } from '../src-transpiler/expandType.js';
 /**
  * Compares structurally (key order from construction is stable).
  * @param {*} actual - The substituted tree.

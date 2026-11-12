@@ -1,5 +1,5 @@
 import {collectCandidates} from './collectCandidates.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType       } from '../src-transpiler/expandType.js';
 /**
  * Collects keys in arrival order for compact assertions. The walker emits
  * every bare site (membership in `templates` is the caller's filter, applied

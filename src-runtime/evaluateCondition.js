@@ -1,9 +1,9 @@
-import {typedefs} from "./registerTypedef.js";
-import {classes} from "./registerClass.js";
+import {typedefs        } from "./registerTypedef.js";
+import {classes         } from "./registerClass.js";
 import {mergedClassShape} from "./classShape.js";
-import {getTypeKeys} from "./getTypeKeys.js";
-import {validators} from "./validators.js";
-import {deepEqualType} from "./deepEqualType.js";
+import {getTypeKeys     } from "./getTypeKeys.js";
+import {validators      } from "./validators.js";
+import {deepEqualType   } from "./deepEqualType.js";
 validators.evaluateCondition = evaluateCondition;
 validators.decideIfEquals = decideIfEquals;
 /**

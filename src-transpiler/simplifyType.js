@@ -1,6 +1,6 @@
-import {isExpandedObject} from './isExpandedObject.js';
+import {isExpandedObject    } from './isExpandedObject.js';
 import {isIndexSignatureNode} from './isIndexSignatureNode.js';
-import {mapValues} from './mapValues.js';
+import {mapValues           } from './mapValues.js';
 /** @import {ExpandedType} from './expandedType.js' */
 /**
  * Recursively clones and simplifies a type for emission into source code.

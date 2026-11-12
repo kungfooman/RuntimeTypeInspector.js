@@ -1,5 +1,5 @@
 import {registerTypedef} from './registerTypedef.js';
-import {resolveType} from './resolveType.js';
+import {resolveType    } from './resolveType.js';
 function prepare() {
   /**
    * @typedef {{a: 'aa', b: 'bb', c: 'cc'}} Obj

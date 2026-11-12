@@ -1,4 +1,4 @@
-import {isTagToken} from './isTagToken.js';
+import {isTagToken     } from './isTagToken.js';
 import {makeJSDocCursor} from './makeJSDocCursor.js';
 // Cursor on a non-tag token (here `eof`, the only token) never opens.
 function testCursorOffTagDeclines() {

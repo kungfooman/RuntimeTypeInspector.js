@@ -1,5 +1,5 @@
 import {validateType} from './validateType.js';
-import {validators} from './validators.js';
+import {validators  } from './validators.js';
 const warn = () => undefined;
 function shape(props) {
   return {type: 'object', properties: props};

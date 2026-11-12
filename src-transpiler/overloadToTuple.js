@@ -1,8 +1,8 @@
 import {parseJSDocDocument} from './jsdoc-parsing-depfree/parseJSDocDocument.js';
 import {tagRestElementType} from './jsdoc-parsing-depfree/tagRestElementType.js';
-import {isArrayNode} from './isArrayNode.js';
-import {isExpandedObject} from './isExpandedObject.js';
-import {expandTypeDepFree} from './expandTypeDepFree.js';
+import {isArrayNode       } from './isArrayNode.js';
+import {isExpandedObject  } from './isExpandedObject.js';
+import {expandTypeDepFree } from './expandTypeDepFree.js';
 /**
  * Converts an overload's positional parameter documentation into a tuple.
  * Rest detection reads the raw tag (`...` inside the braces) because the

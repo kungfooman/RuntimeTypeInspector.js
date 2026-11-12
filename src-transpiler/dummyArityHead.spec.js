@@ -1,4 +1,4 @@
-import {parse} from '@babel/parser';
+import {parse         } from '@babel/parser';
 import {dummyArityHead} from './dummyArityHead.js';
 // The wrapper head keeps dummy parameters before the stored rest carrier.
 function testHeadKeepsDummyOrder() {

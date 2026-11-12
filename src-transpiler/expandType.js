@@ -1,5 +1,5 @@
 import ts from 'typescript';
-import {isExpandedObject} from './isExpandedObject.js';
+import {isExpandedObject    } from './isExpandedObject.js';
 import {isIndexSignatureNode} from './isIndexSignatureNode.js';
 /** @import {ExpandedType, ExpandConditionNode, ExpandMappingNode} from './expandedType.js' */
 /** @import {ExpandParameterNode, ExpandTupleMemberNode} from './expandedType.js' */

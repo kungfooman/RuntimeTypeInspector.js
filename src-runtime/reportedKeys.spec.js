@@ -1,8 +1,8 @@
-import {inspectType} from './inspectType.js';
-import {breakpoints} from './inspectType.js';
+import {inspectType } from './inspectType.js';
+import {breakpoints } from './inspectType.js';
 import {reportedKeys} from './reportedKeys.js';
-import {options} from './options.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {options     } from './options.js';
+import {expandType  } from '../src-transpiler/expandType.js';
 /**
  * Collects every RTI error message posted for the checks run inside.
  * @param {Function} fn - The checks to run.

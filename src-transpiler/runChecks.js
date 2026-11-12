@@ -1,7 +1,7 @@
-import {parse} from '@babel/parser';
+import {parse        } from '@babel/parser';
 import {parserOptions} from './parserOptions.js';
-import {Asserter} from './Asserter.js';
-import {expandType} from './expandType.js';
+import {Asserter     } from './Asserter.js';
+import {expandType   } from './expandType.js';
 import * as runtime from '../src-runtime/index.js';
 /**
  * Transpiles `src` with the real pipeline (same as `test.js`), executes it

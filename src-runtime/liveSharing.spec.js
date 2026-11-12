@@ -1,14 +1,14 @@
 import vm from 'node:vm';
-import {registerClass} from './registerClass.js';
-import {registerTypedef} from './registerTypedef.js';
-import {validateType} from './validateType.js';
+import {registerClass    } from './registerClass.js';
+import {registerTypedef  } from './registerTypedef.js';
+import {validateType     } from './validateType.js';
 import {collectCandidates} from './collectCandidates.js';
-import {tagSnapshot} from './tagSnapshot.js';
-import {stringifyValue} from './stringifyValue.js';
-import {explainMismatch} from './explainMismatch.js';
+import {tagSnapshot      } from './tagSnapshot.js';
+import {stringifyValue   } from './stringifyValue.js';
+import {explainMismatch  } from './explainMismatch.js';
 import {describeValueType} from './describeValue.js';
-import {isPromiseValue} from './isPromiseValue.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {isPromiseValue   } from './isPromiseValue.js';
+import {expandType       } from '../src-transpiler/expandType.js';
 import {setOptions, options} from './options.js';
 import './validateType.js';
 class LiveBox {

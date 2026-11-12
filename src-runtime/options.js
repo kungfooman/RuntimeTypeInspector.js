@@ -75,8 +75,8 @@ const options = {
    */
   ...windowedOptions,
 };
-import {validators} from "./validators.js";
-import {validateMap} from "./validateMap.js";
+import {validators         } from "./validators.js";
+import {validateMap        } from "./validateMap.js";
 import {windowedValidateMap} from "./plugin-windowed/windowedValidateMap.js";
 /**
  * Patches RTI's runtime options from a consumer (engine bootstrap, app

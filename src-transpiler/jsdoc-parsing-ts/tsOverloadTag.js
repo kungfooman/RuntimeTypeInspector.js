@@ -1,8 +1,8 @@
-import {stripTsBraces} from './stripTsBraces.js';
-import {tsParamTag} from './tsParamTag.js';
-import {tsDottedChildren} from './tsDottedChildren.js';
+import {stripTsBraces     } from './stripTsBraces.js';
+import {tsParamTag        } from './tsParamTag.js';
+import {tsDottedChildren  } from './tsDottedChildren.js';
 import {balancedBraceInner} from './balancedBraceInner.js';
-import {recoverTildeTag} from './recoverTildeTag.js';
+import {recoverTildeTag   } from './recoverTildeTag.js';
 /**
  * Reads one TS `@overload` marker to the shared schema entry: TS emits
  * one `JSDocOverloadTag` per marker, each with its own signature, exactly

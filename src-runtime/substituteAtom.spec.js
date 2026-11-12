@@ -1,6 +1,6 @@
 import {substituteAtom} from './substituteAtom.js';
-import {deepEqualType} from './deepEqualType.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {deepEqualType } from './deepEqualType.js';
+import {expandType    } from '../src-transpiler/expandType.js';
 const noop = () => undefined;
 // We want: an optional annotated atom substitutes its inner type, because
 // optional template params must instantiate rather than warn unchecked.

@@ -1,6 +1,6 @@
-import {parse} from '@babel/parser';
+import {parse                     } from '@babel/parser';
 import {eraseIgnoredOverloadParams} from './eraseIgnoredOverloadParams.js';
-import {overloadToTuple} from './overloadToTuple.js';
+import {overloadToTuple           } from './overloadToTuple.js';
 // A suppressed identifier parameter erases to any, keeping its position.
 function testSuppressedIdentifierErases() {
   // input: {elements: [{type: 'tupleMember', name: 'value', elementType: 'number'}]}

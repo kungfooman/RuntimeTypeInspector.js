@@ -1,5 +1,5 @@
 import {tagRestElementType} from './tagRestElementType.js';
-import {deepEqualType} from '../../src-runtime/deepEqualType.js';
+import {deepEqualType     } from '../../src-runtime/deepEqualType.js';
 // The `...T[]` spelling turns variadic over the gathered element type.
 function testDocumentedRestUnwraps() {
   const actual = tagRestElementType({

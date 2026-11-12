@@ -1,5 +1,5 @@
-import {parse} from '@babel/parser';
-import {isExpandedObject} from './isExpandedObject.js';
+import {parse               } from '@babel/parser';
+import {isExpandedObject    } from './isExpandedObject.js';
 import {isIndexSignatureNode} from './isIndexSignatureNode.js';
 /** @import {ExpandedType, ExpandParameterNode, ExpandTupleMemberNode, ExpandMappingNode, ExpandIndexSignatureNode, ExpandObjectNode} from './expandedType.js' */
 /**

@@ -1,8 +1,8 @@
-import {freshWindow} from "./freshWindow.js";
-import {minTotalMs} from "./minTotalMs.js";
-import {windowCap} from "./windowCap.js";
+import {freshWindow   } from "./freshWindow.js";
+import {minTotalMs    } from "./minTotalMs.js";
+import {windowCap     } from "./windowCap.js";
 import {scanMapEntries} from "./scanMapEntries.js";
-import {isMapValue} from "../isMapValue.js";
+import {isMapValue    } from "../isMapValue.js";
 import {recordMapRide, recordMapScan, nowMs} from "../checkStats.js";
 import {options} from "../options.js";
 /**

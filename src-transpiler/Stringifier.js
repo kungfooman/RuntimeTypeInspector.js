@@ -1,4 +1,4 @@
-import {capitalize} from './capitalize.js';
+import {capitalize   } from './capitalize.js';
 import {trimEndSpaces} from './trimEndSpaces.js';
 /**
  * @typedef {import("@babel/types").Node} Node

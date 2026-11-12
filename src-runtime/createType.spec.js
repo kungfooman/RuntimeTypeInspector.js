@@ -1,4 +1,4 @@
-import {createType} from './createType.js';
+import {createType     } from './createType.js';
 import {registerTypedef} from './registerTypedef.js';
 function prepare() {
   /**

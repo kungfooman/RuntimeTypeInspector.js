@@ -1,6 +1,6 @@
 import {inspectTypeWithTemplates} from './inspectTypeWithTemplates.js';
-import {substituteType} from './substituteType.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {substituteType          } from './substituteType.js';
+import {expandType              } from '../src-transpiler/expandType.js';
 /**
  * Runs `fn` with `console.warn` stubbed, returning collected warnings.
  * `inspectTypeWithTemplates` wires `console.warn` into `substituteType`

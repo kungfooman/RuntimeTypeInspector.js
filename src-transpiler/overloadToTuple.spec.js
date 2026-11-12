@@ -1,5 +1,5 @@
 import {overloadToTuple} from './overloadToTuple.js';
-import {deepEqualType} from '../src-runtime/deepEqualType.js';
+import {deepEqualType  } from '../src-runtime/deepEqualType.js';
 // Optional names retain their position and permit omission.
 function testOptionalMember() {
   const actual = overloadToTuple('@param {number} [x]');

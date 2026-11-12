@@ -1,5 +1,5 @@
 import {typedefs} from "./registerTypedef.js";
-import {recurse} from "./validators.js";
+import {recurse } from "./validators.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {import('./validateType.js').TypeObject} expect - The supposed type information of said value.

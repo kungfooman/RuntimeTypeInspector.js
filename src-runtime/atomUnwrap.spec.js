@@ -1,6 +1,6 @@
-import {atomUnwrap} from './atomUnwrap.js';
+import {atomUnwrap   } from './atomUnwrap.js';
 import {deepEqualType} from './deepEqualType.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType   } from '../src-transpiler/expandType.js';
 // We want: a leaf atom plus an occurrence flag to unwrap to a flagged leaf,
 // because `@param {T} [a]` must validate `T` while allowing omission.
 function testUnwrapLeafKeepsFlag() {

@@ -1,6 +1,6 @@
-import {overloadToTuple} from './overloadToTuple.js';
-import {parseJSDocDocument} from './jsdoc-parsing-depfree/parseJSDocDocument.js';
-import {expandTypeDepFree} from './expandTypeDepFree.js';
+import {overloadToTuple           } from './overloadToTuple.js';
+import {parseJSDocDocument        } from './jsdoc-parsing-depfree/parseJSDocDocument.js';
+import {expandTypeDepFree         } from './expandTypeDepFree.js';
 import {eraseIgnoredOverloadParams} from './eraseIgnoredOverloadParams.js';
 /**
  * Builds runtime overload signatures for one documented function.

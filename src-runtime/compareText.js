@@ -1,4 +1,4 @@
-import {formatCompare} from './formatCompare.js';
+import {formatCompare  } from './formatCompare.js';
 import {explainMismatch} from './explainMismatch.js';
 /**
  * Renders a warning as plain text for the comparator Copy button: message,

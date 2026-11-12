@@ -1,5 +1,5 @@
 import {makeParamTag} from './makeParamTag.js';
-import {docParamTag} from './docParamTag.js';
+import {docParamTag } from './docParamTag.js';
 // A plain tag lowers to a bound flat row: validated name, brace text, no flags.
 function testPlainTagBindsFlat() {
   const row = docParamTag(makeParamTag('number', 'x'), 'number');

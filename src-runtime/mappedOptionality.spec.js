@@ -1,10 +1,10 @@
-import {registerTypedef} from './registerTypedef.js';
-import {expandType} from '../src-transpiler/expandType.js';
-import {createType} from './createType.js';
+import {registerTypedef            } from './registerTypedef.js';
+import {expandType                 } from '../src-transpiler/expandType.js';
+import {createType                 } from './createType.js';
 import {createTypeFromIndexedAccess} from './createTypeFromIndexedAccess.js';
-import {validateType} from './validateType.js';
-import {explainMismatch} from './explainMismatch.js';
-import {validators} from './validators.js';
+import {validateType               } from './validateType.js';
+import {explainMismatch            } from './explainMismatch.js';
+import {validators                 } from './validators.js';
 import {typedefs, typedefTemplates} from './registerTypedef.js';
 function clearTypedefs() {
   Object.keys(typedefs).forEach((_) => delete typedefs[_]);

@@ -1,4 +1,4 @@
-import {classes} from "./registerClass.js";
+import {classes    } from "./registerClass.js";
 import {snapshotTag} from "./snapshotTag.js";
 /**
  * Whether a value's snapshot tag names the expected class: exact match or

@@ -1,5 +1,5 @@
 import {isIndexSignatureNode} from './isIndexSignatureNode.js';
-import {expandType} from './expandType.js';
+import {expandType          } from './expandType.js';
 // We want: real signature nodes recognized, so pushes need no cast.
 function testSignatureNodePasses() {
   return (

@@ -1,12 +1,12 @@
-import {options} from "./options.js";
-import {validators} from "./validators.js";
-import {validateNumber} from "./validateNumber.js";
-import {validateString} from "./validateString.js";
-import {validateBoolean} from "./validateBoolean.js";
-import {customTypes} from "./customTypes.js";
-import {customValidations} from "./customValidations.js";
+import {options                      } from "./options.js";
+import {validators                   } from "./validators.js";
+import {validateNumber               } from "./validateNumber.js";
+import {validateString               } from "./validateString.js";
+import {validateBoolean              } from "./validateBoolean.js";
+import {customTypes                  } from "./customTypes.js";
+import {customValidations            } from "./customValidations.js";
 import {isFailingNumberDisallowingInf} from "./isFailingNumberDisallowingInf.js";
-import {isFailingNumberAllowingInf} from "./isFailingNumberAllowingInf.js";
+import {isFailingNumberAllowingInf   } from "./isFailingNumberAllowingInf.js";
 /**
  * Scans an array-like range for the first element a primitive check would
  * reject, without building per-element names or recursing: `number`

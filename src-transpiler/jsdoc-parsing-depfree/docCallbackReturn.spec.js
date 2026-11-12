@@ -1,9 +1,9 @@
-import {docReaderDepFree} from './docReaderDepFree.js';
-import {docReaderTS} from '../jsdoc-parsing-ts/docReaderTS.js';
+import {docReaderDepFree } from './docReaderDepFree.js';
+import {docReaderTS      } from '../jsdoc-parsing-ts/docReaderTS.js';
 import {expandTypeDepFree} from '../expandTypeDepFree.js';
-import {expandType} from '../expandType.js';
-import {validateType} from '../../src-runtime/validateType.js';
-import {deepEqualType} from '../../src-runtime/deepEqualType.js';
+import {expandType       } from '../expandType.js';
+import {validateType     } from '../../src-runtime/validateType.js';
+import {deepEqualType    } from '../../src-runtime/deepEqualType.js';
 const warn = () => undefined;
 const bare = '@callback HandleEventCallback\n@param {any} [arg1] - First argument.\n@returns {void}';
 // Both readers bind the trailing `@returns` the same way: the TS

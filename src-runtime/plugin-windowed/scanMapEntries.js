@@ -1,5 +1,5 @@
-import {recurse} from "../validators.js";
-import {formatMapKey} from "../formatMapKey.js";
+import {recurse      } from "../validators.js";
+import {formatMapKey } from "../formatMapKey.js";
 import {firstBadEntry} from "../firstBadEntry.js";
 /**
  * Scans every entry of a map and reports the verdict, writing nothing:

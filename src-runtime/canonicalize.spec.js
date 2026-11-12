@@ -1,6 +1,6 @@
-import {canonicalize} from './canonicalize.js';
+import {canonicalize } from './canonicalize.js';
 import {deepEqualType} from './deepEqualType.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType   } from '../src-transpiler/expandType.js';
 // We want: keys sorted and `false` flags plus explicit `undefined`
 // normalized away, so the output is stable for JSON comparison.
 function testSortsKeysAndDropsNoise() {

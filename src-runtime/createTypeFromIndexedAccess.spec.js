@@ -1,6 +1,6 @@
 import {createTypeFromIndexedAccess} from './createTypeFromIndexedAccess.js';
-import {deepEqualType} from './deepEqualType.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {deepEqualType              } from './deepEqualType.js';
+import {expandType                 } from '../src-transpiler/expandType.js';
 const silent = () => undefined;
 // We want: a single selected prop to come back directly with its flags,
 // because wrapping it would hide source optionality behind a required node.

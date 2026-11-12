@@ -1,11 +1,11 @@
-import {parseJSDocNodes} from './parseJSDocNodes.js';
-import {makeParamTag} from './makeParamTag.js';
-import {parseParamHead} from './parseParamHead.js';
-import {readUnbracedType} from './readUnbracedType.js';
+import {parseJSDocNodes      } from './parseJSDocNodes.js';
+import {makeParamTag         } from './makeParamTag.js';
+import {parseParamHead       } from './parseParamHead.js';
+import {readUnbracedType     } from './readUnbracedType.js';
 import {splitOverloadSections} from './splitOverloadSections.js';
-import {docParamTag} from './docParamTag.js';
-import {docTemplateNode} from './docTemplateNode.js';
-import {docOverloadSection} from './docOverloadSection.js';
+import {docParamTag          } from './docParamTag.js';
+import {docTemplateNode      } from './docTemplateNode.js';
+import {docOverloadSection   } from './docOverloadSection.js';
 /**
  * Lowers one JSDoc comment through the dependency-free reader to the
  * shared canonical document: the same `{templates, overloads, params,

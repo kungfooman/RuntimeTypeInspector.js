@@ -1,6 +1,6 @@
-import {docReaderDepFree} from '../jsdoc-parsing-depfree/docReaderDepFree.js';
-import {docReaderTS} from './docReaderTS.js';
-import {canonicalDocEqual} from '../jsdoc-parsing-depfree/canonicalDocCompare.js';
+import {docReaderDepFree  } from '../jsdoc-parsing-depfree/docReaderDepFree.js';
+import {docReaderTS       } from './docReaderTS.js';
+import {canonicalDocEqual } from '../jsdoc-parsing-depfree/canonicalDocCompare.js';
 import {canonicalDocCovers} from '../jsdoc-parsing-depfree/canonicalDocCompare.js';
 /**
  * Injectable doc-reader probe: runs over one bare comment at transpile

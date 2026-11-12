@@ -1,4 +1,4 @@
-import {parse} from '@babel/parser';
+import {parse       } from '@babel/parser';
 import {freshKeyName} from './freshKeyName.js';
 // A collision in the property source extends the key carrier name.
 function testKeyCollisionExtendsName() {

@@ -1,5 +1,5 @@
 import {markTypeofRequirements} from './markTypeofRequirements.js';
-import {requiredTypeofs} from './expandType.js';
+import {requiredTypeofs       } from './expandType.js';
 /**
  * Drops a mark the test added: the requirement map lives for the whole
  * process, so every mark here cleans up after itself.

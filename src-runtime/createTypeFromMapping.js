@@ -1,13 +1,13 @@
 import {substituteType} from "./substituteType.js";
-import {deepFreeze} from "./deepFreeze.js";
+import {deepFreeze    } from "./deepFreeze.js";
 import {versionedCache} from "./memoize.js";
-import {canonicalKey} from "./canonicalKey.js";
-import {getTypeKeys} from "./getTypeKeys.js";
+import {canonicalKey  } from "./canonicalKey.js";
+import {getTypeKeys   } from "./getTypeKeys.js";
 import {typedefs, typedefVersion} from "./registerTypedef.js";
 import {classVersion} from "./registerClass.js";
 import {evaluateCondition, extendsCheck, literalType} from "./evaluateCondition.js";
-import {resolveForExtends} from "./evaluateCondition.js";
-import {validators} from "./validators.js";
+import {resolveForExtends    } from "./evaluateCondition.js";
+import {validators           } from "./validators.js";
 import {applyQuestionModifier} from "./applyQuestionModifier.js";
 import {applyReadonlyModifier} from "./applyReadonlyModifier.js";
 validators.materializeMapping = createTypeFromMapping;

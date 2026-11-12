@@ -1,15 +1,15 @@
 import ts from 'typescript';
-import {parseJSDocNodes} from '../jsdoc-parsing-depfree/parseJSDocNodes.js';
-import {docTemplateNode} from '../jsdoc-parsing-depfree/docTemplateNode.js';
+import {parseJSDocNodes   } from '../jsdoc-parsing-depfree/parseJSDocNodes.js';
+import {docTemplateNode   } from '../jsdoc-parsing-depfree/docTemplateNode.js';
 import {balancedBraceInner} from './balancedBraceInner.js';
-import {parseParamHead} from '../jsdoc-parsing-depfree/parseParamHead.js';
-import {stripTsBraces} from './stripTsBraces.js';
-import {tsParamTag} from './tsParamTag.js';
-import {tsTemplateTag} from './tsTemplateTag.js';
-import {tsOverloadTag} from './tsOverloadTag.js';
-import {tsCallbackTag} from './tsCallbackTag.js';
-import {tsDottedChildren} from './tsDottedChildren.js';
-import {recoverTildeTag} from './recoverTildeTag.js';
+import {parseParamHead    } from '../jsdoc-parsing-depfree/parseParamHead.js';
+import {stripTsBraces     } from './stripTsBraces.js';
+import {tsParamTag        } from './tsParamTag.js';
+import {tsTemplateTag     } from './tsTemplateTag.js';
+import {tsOverloadTag     } from './tsOverloadTag.js';
+import {tsCallbackTag     } from './tsCallbackTag.js';
+import {tsDottedChildren  } from './tsDottedChildren.js';
+import {recoverTildeTag   } from './recoverTildeTag.js';
 /**
  * Lowers one JSDoc comment through the TypeScript compiler to the shared
  * canonical document: the same `{templates, overloads, params, returns,

@@ -1,9 +1,9 @@
 import {validateType} from './validateType.js';
 import {registerTypedef, typedefs} from './registerTypedef.js';
 import {registerClass} from './registerClass.js';
-import {expandType} from '../src-transpiler/expandType.js';
-import {getTypeKeys} from './getTypeKeys.js';
-import {createType} from './createType.js';
+import {expandType   } from '../src-transpiler/expandType.js';
+import {getTypeKeys  } from './getTypeKeys.js';
+import {createType   } from './createType.js';
 import {evaluateCondition, extendsCheck} from './evaluateCondition.js';
 const warn = () => undefined;
 /**

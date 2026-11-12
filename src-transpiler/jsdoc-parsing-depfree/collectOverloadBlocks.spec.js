@@ -1,4 +1,4 @@
-import {parse} from '@babel/parser';
+import {parse                } from '@babel/parser';
 import {collectOverloadBlocks} from './collectOverloadBlocks.js';
 // Stacked documentation on an exported declaration stays in source order.
 function testExportedFunctionBlocks() {

@@ -1,12 +1,12 @@
 import {variables} from "./registerVariable.js";
-import {stripKey} from "./stripKey.js";
+import {stripKey } from "./stripKey.js";
 import {typedefs, typedefTemplates} from "./registerTypedef.js";
 import {classes} from "./registerClass.js";
 import {mergedClassShape, prototypeShape} from "./classShape.js";
-import {substituteType} from "./substituteType.js";
+import {substituteType      } from "./substituteType.js";
 import {instantiateReference} from "./instantiateReference.js";
-import {validators} from "./validators.js";
-import {stringifyType} from "./stringifyType.js";
+import {validators          } from "./validators.js";
+import {stringifyType       } from "./stringifyType.js";
 /**
  * Key-resolution split, documented per #256 (consolidation pass deferred):
  * - `resolveKeys(target)` -> string[] names (for `keyof`-style reads; unions

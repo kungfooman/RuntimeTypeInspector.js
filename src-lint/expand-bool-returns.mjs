@@ -1,7 +1,6 @@
 import {readdirSync, readFileSync, statSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import * as espree from 'espree';
-
 function collectJsFiles(path, out) {
   let stat;
   try {
@@ -19,7 +18,6 @@ function collectJsFiles(path, out) {
     collectJsFiles(join(path, entry), out);
   }
 }
-
 function collect(node, out) {
   if (node === null || typeof node !== 'object') {
     return;
@@ -42,7 +40,6 @@ function collect(node, out) {
     }
   }
 }
-
 // Splits a same-operator chain: `a && b && c` becomes [a, b, c].
 function splitChain(argument, operator) {
   const parts = [];
@@ -57,13 +54,12 @@ function splitChain(argument, operator) {
   walk(argument);
   return parts;
 }
-
 // Only top-level `&&` (or top-level `||`) chains; mixed nesting is skipped.
 function chainOf(argument) {
   if (argument.type !== 'LogicalExpression') {
     return null;
   }
-  const operator = argument.operator;
+  const {operator} = argument;
   if (operator !== '&&' && operator !== '||') {
     return null;
   }
@@ -78,7 +74,6 @@ function chainOf(argument) {
   }
   return {operator, parts};
 }
-
 function expandFile(file) {
   const code = readFileSync(file, 'utf8');
   const ast = espree.parse(code, {
@@ -123,7 +118,6 @@ function expandFile(file) {
   writeFileSync(file, next);
   return hits.length;
 }
-
 const args = process.argv.slice(2).filter((arg) => !arg.startsWith('-'));
 const roots = args.length > 0 ? args : ['src-runtime', 'src-transpiler'];
 const files = [];

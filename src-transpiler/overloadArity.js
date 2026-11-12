@@ -1,4 +1,4 @@
-import {arrowArity} from './arrowArity.js';
+import {arrowArity           } from './arrowArity.js';
 import {collectOverloadBlocks} from './jsdoc-parsing-depfree/collectOverloadBlocks.js';
 import {splitOverloadSections} from './jsdoc-parsing-depfree/splitOverloadSections.js';
 /**

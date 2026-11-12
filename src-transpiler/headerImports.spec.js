@@ -1,7 +1,7 @@
-import {parse} from '@babel/parser';
+import {parse        } from '@babel/parser';
 import {parserOptions} from './parserOptions.js';
-import {Asserter} from './Asserter.js';
-import {expandType} from './expandType.js';
+import {Asserter     } from './Asserter.js';
+import {expandType   } from './expandType.js';
 const legacyHeader = "import {inspectIndexedAccess, inspectType, inspectTypeWithTemplates, youCanAddABreakpointHere, registerVariable, validateDivision, registerTypedef, registerClass, registerImportNamespaceSpecifier} from '@runtime-type-inspector/runtime';";
 /**
  * Transpiles one snippet with the header enabled.

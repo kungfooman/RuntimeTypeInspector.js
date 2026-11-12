@@ -1,7 +1,7 @@
 import {unionMembers} from "./unionMembers.js";
 import {widenLiteral} from "./widenLiteral.js";
 import {extendsCheck} from "./evaluateCondition.js";
-import {recurse} from "./validators.js";
+import {recurse     } from "./validators.js";
 /**
  * Merges one candidate into the call's bindings. The first candidate pins the
  * literal; a later distinct literal widens the pin to the first pin's base

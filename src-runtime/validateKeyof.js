@@ -1,5 +1,5 @@
-import {getTypeKeys} from "./getTypeKeys.js";
-import {typedefs} from "./registerTypedef.js";
+import {getTypeKeys          } from "./getTypeKeys.js";
+import {typedefs             } from "./registerTypedef.js";
 import {createTypeFromMapping} from "./createTypeFromMapping.js";
 /**
  * @typedef {object} Keyof

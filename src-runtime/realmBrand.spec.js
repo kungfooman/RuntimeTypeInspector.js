@@ -1,7 +1,7 @@
 import vm from 'node:vm';
-import {isArrayValue} from './isArrayValue.js';
-import {isMapValue} from './isMapValue.js';
-import {isSetValue} from './isSetValue.js';
+import {isArrayValue  } from './isArrayValue.js';
+import {isMapValue    } from './isMapValue.js';
+import {isSetValue    } from './isSetValue.js';
 import {isPromiseValue} from './isPromiseValue.js';
 // Foreign-realm containers must pass: the panel diffs values shared live
 // across iframe boundaries, where `instanceof` fails because each realm

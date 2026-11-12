@@ -1,7 +1,7 @@
 import {createTypeFromMapping} from './createTypeFromMapping.js';
 import {registerTypedef, typedefs, bumpTypedefVersion} from './registerTypedef.js';
 import {validateType} from './validateType.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType  } from '../src-transpiler/expandType.js';
 const warn = () => undefined;
 /**
  * Drops a typedef registration the test added.

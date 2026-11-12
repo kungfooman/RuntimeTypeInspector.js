@@ -1,6 +1,6 @@
-import {options} from './options.js';
+import {options     } from './options.js';
 import {validateType} from './validateType.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType  } from '../src-transpiler/expandType.js';
 const warn = () => undefined;
 /**
  * Runs a check with `exactObjects` forced to a value, restoring after.

@@ -1,6 +1,6 @@
-import {recurse} from "./validators.js";
+import {recurse      } from "./validators.js";
 import {firstBadIndex} from "./firstBadIndex.js";
-import {isArrayValue} from "./isArrayValue.js";
+import {isArrayValue } from "./isArrayValue.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.

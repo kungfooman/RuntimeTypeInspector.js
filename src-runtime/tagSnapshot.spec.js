@@ -1,6 +1,6 @@
-import {tagSnapshot} from './tagSnapshot.js';
+import {tagSnapshot  } from './tagSnapshot.js';
 import {registerClass} from './registerClass.js';
-import {inspectType} from './inspectType.js';
+import {inspectType  } from './inspectType.js';
 class TagSnapBase {}
 class TagSnapSub extends TagSnapBase {
   constructor() {

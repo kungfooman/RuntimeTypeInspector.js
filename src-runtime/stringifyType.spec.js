@@ -1,5 +1,5 @@
 import {stringifyType} from './stringifyType.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType   } from '../src-transpiler/expandType.js';
 // Objects with tuple props stringify in TS notation (issue 154).
 function testIssue154() {
   const t2 = {

@@ -1,5 +1,5 @@
 import {humanizeExpect} from './humanizeExpect.js';
-import {formatCompare} from './formatCompare.js';
+import {formatCompare } from './formatCompare.js';
 const tests = [
   () => humanizeExpect('K').summary === 'K' &&
     humanizeExpect('K').notes.join(' ').includes('unresolved generic'),

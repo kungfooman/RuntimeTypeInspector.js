@@ -1,6 +1,6 @@
-import {isTagToken} from './isTagToken.js';
-import {makeJSDocCursor} from './makeJSDocCursor.js';
-import {parseBraceType} from './parseBraceType.js';
+import {isTagToken      } from './isTagToken.js';
+import {makeJSDocCursor } from './makeJSDocCursor.js';
+import {parseBraceType  } from './parseBraceType.js';
 import {readUnbracedType} from './readUnbracedType.js';
 /**
  * Parses one JSDoc text into raw tag nodes in source order. A cursor owns

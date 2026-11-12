@@ -1,6 +1,6 @@
-import {stripTsBraces} from './stripTsBraces.js';
-import {makeParamTag} from '../jsdoc-parsing-depfree/makeParamTag.js';
-import {docParamTag} from '../jsdoc-parsing-depfree/docParamTag.js';
+import {stripTsBraces  } from './stripTsBraces.js';
+import {makeParamTag   } from '../jsdoc-parsing-depfree/makeParamTag.js';
+import {docParamTag    } from '../jsdoc-parsing-depfree/docParamTag.js';
 import {recoverTildeTag} from './recoverTildeTag.js';
 /**
  * Reads one TS parameter (flat tag or inside a signature) to the shared

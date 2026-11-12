@@ -1,5 +1,5 @@
 import {splitTemplateBindings} from './splitTemplateBindings.js';
-import {readTemplateBinding} from './readTemplateBinding.js';
+import {readTemplateBinding  } from './readTemplateBinding.js';
 /**
  * Lowers one template node to shared schema rows, one per binding: tsc
  * splits `@template O, P` into two type parameters (each a binding, each

@@ -1,6 +1,6 @@
 import {atomStripOptional} from './atomStripOptional.js';
-import {deepEqualType} from './deepEqualType.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {deepEqualType    } from './deepEqualType.js';
+import {expandType       } from '../src-transpiler/expandType.js';
 // We want: an optional atom to come back with `optional: false`, because
 // `NonNullable` must clear the occurrence flag while keeping the wrapper
 // the `resolveObjectArgs` loop dispatches on.

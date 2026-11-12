@@ -1,5 +1,5 @@
 import {isExpandedObject} from './isExpandedObject.js';
-import {expandType} from './expandType.js';
+import {expandType      } from './expandType.js';
 // We want: object nodes recognized, so flags can be written without casts.
 function testObjectNodePasses() {
   return isExpandedObject(expandType('{a: string}')) === true;

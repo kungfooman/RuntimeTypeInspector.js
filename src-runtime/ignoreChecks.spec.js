@@ -1,6 +1,6 @@
-import {inspectType} from './inspectType.js';
+import {inspectType  } from './inspectType.js';
 import {ignoredChecks} from './ignoredChecks.js';
-import {options} from './options.js';
+import {options      } from './options.js';
 import {getCheckStats, resetCheckStats} from './checkStats.js';
 /**
  * Captures the RTI error message posted for a check.

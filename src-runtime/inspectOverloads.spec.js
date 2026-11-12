@@ -1,5 +1,5 @@
 import {inspectOverloads} from './inspectOverloads.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType      } from '../src-transpiler/expandType.js';
 // A matching later overload accepts the entire argument list after a failed trial.
 function testLaterSignatureMatches() {
   const numbers = expandType('[number, number]');

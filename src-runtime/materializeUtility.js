@@ -1,7 +1,7 @@
-import {getTypeKeys} from './getTypeKeys.js';
+import {getTypeKeys         } from './getTypeKeys.js';
 import {instantiateReference} from './instantiateReference.js';
-import {stripKey} from './stripKey.js';
-import {resolveObjectSide} from './resolveObjectSide.js';
+import {stripKey            } from './stripKey.js';
+import {resolveObjectSide   } from './resolveObjectSide.js';
 /**
  * Materializes Pick/Omit/Partial to object shapes for indexed access.
  * Unresolvable bases or key lists yield undefined (callers fail closed).

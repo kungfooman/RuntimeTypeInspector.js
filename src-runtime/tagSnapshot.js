@@ -1,7 +1,7 @@
-import {classes} from "./registerClass.js";
+import {classes         } from "./registerClass.js";
 import {registeredNameOf} from "./registeredNameOf.js";
-import {isMapValue} from "./isMapValue.js";
-import {isSetValue} from "./isSetValue.js";
+import {isMapValue      } from "./isMapValue.js";
+import {isSetValue      } from "./isSetValue.js";
 /**
  * Whether a node needs a `$type` tag: a registered class instance, whose
  * nominal identity messaging would otherwise strip. Typed arrays and

@@ -1,5 +1,5 @@
 import {makeJSDocCursor} from './makeJSDocCursor.js';
-import {parseBraceType} from './parseBraceType.js';
+import {parseBraceType } from './parseBraceType.js';
 // A balanced type returns its inner text and the head offset after it.
 function testBalancedTypeReads() {
   const cursor = makeJSDocCursor('{number} x');

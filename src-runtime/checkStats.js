@@ -1,4 +1,4 @@
-import {options} from "./options.js";
+import {options          } from "./options.js";
 import {captureStackLines} from "./captureStack.js";
 /**
  * One hotspot row: per-parameter counters (keyed by loc plus argument

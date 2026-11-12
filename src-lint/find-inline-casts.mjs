@@ -1,7 +1,6 @@
 import {readdirSync, readFileSync, statSync} from 'node:fs';
 import {join} from 'node:path';
 import * as espree from 'espree';
-
 function collectJsFiles(path, out) {
   const stat = statSync(path);
   if (stat.isFile()) {
@@ -14,7 +13,6 @@ function collectJsFiles(path, out) {
     collectJsFiles(join(path, entry), out);
   }
 }
-
 function findInlineCasts(file, code) {
   const ast = espree.parse(code, {
     ecmaVersion: 2022,
@@ -36,7 +34,6 @@ function findInlineCasts(file, code) {
   }
   return found;
 }
-
 const targets = process.argv.slice(2);
 const roots = targets.length > 0 ? targets : ['src-runtime', 'src-transpiler'];
 const files = [];

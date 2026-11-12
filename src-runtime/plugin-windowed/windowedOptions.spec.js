@@ -1,5 +1,5 @@
 import {windowedOptions} from './windowedOptions.js';
-import {options} from '../options.js';
+import {options        } from '../options.js';
 function testWindowedOptionsDefaults() {
   // The plugin owns three keys with pedantic defaults: windowing off,
   // a 100ms spend budget, a 1024 check cap. Any drift here changes

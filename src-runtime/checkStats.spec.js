@@ -1,8 +1,8 @@
 import {options} from './options.js';
 import {recordCheck, recordMapRide, recordSkip, recordMapScan, recordSetScan, recordArrayScan, recordObjectScan, getCheckStats, resetCheckStats} from './checkStats.js';
 import {validateType} from './validateType.js';
-import {inspectType} from './inspectType.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {inspectType } from './inspectType.js';
+import {expandType  } from '../src-transpiler/expandType.js';
 /**
  * Untouched options as captured at import time, so tests can flip and
  * restore without turning suite ordering into part of the contract.

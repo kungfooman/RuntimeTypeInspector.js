@@ -1,5 +1,5 @@
-import {parse} from "@babel/parser";
-import {Stringifier} from "./Stringifier.js";
+import {parse        } from "@babel/parser";
+import {Stringifier  } from "./Stringifier.js";
 import {parserOptions} from "./parserOptions.js";
 /**
  * A roundtrip between code -> AST -> code to validate Stringifier.

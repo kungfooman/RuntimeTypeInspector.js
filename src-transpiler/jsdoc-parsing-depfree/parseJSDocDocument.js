@@ -1,11 +1,11 @@
-import {parseJSDocNodes} from "./parseJSDocNodes.js";
-import {parseParamHead} from "./parseParamHead.js";
-import {expandTypeDepFree} from "../expandTypeDepFree.js";
+import {parseJSDocNodes          } from "./parseJSDocNodes.js";
+import {parseParamHead           } from "./parseParamHead.js";
+import {expandTypeDepFree        } from "../expandTypeDepFree.js";
 import {extractNameAndOptionality} from "./extractNameAndOptionality.js";
-import {annotateOptional} from "../annotateOptional.js";
-import {makeParamTag} from "./makeParamTag.js";
-import {parseBareTemplate} from "./parseBareTemplate.js";
-import {foldParam} from "./foldParam.js";
+import {annotateOptional         } from "../annotateOptional.js";
+import {makeParamTag             } from "./makeParamTag.js";
+import {parseBareTemplate        } from "./parseBareTemplate.js";
+import {foldParam                } from "./foldParam.js";
 /** @import {ExpandedType} from './expandedType.js' */
 /** @import {ExpandType, ExpandTypeReturnType, ParamTag} from './parseJSDoc.js' */
 /**

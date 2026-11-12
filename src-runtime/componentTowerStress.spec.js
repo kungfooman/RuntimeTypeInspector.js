@@ -3,8 +3,8 @@ import {registerTypedef, typedefs} from './registerTypedef.js';
 import {registerClass, classes} from './registerClass.js';
 import {expandType} from '../src-transpiler/expandType.js';
 import {getTypeKeys, resolveObject} from './getTypeKeys.js';
-import {createType} from './createType.js';
-import {extendsCheck} from './evaluateCondition.js';
+import {createType           } from './createType.js';
+import {extendsCheck         } from './evaluateCondition.js';
 import {createTypeFromMapping} from './createTypeFromMapping.js';
 const warn = () => undefined;
 /**

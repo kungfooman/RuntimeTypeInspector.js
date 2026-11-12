@@ -1,6 +1,6 @@
-import {substituteType} from './substituteType.js';
-import {substituteArray} from './substituteArray.js';
-import {substituteRecord} from './substituteRecord.js';
+import {substituteType       } from './substituteType.js';
+import {substituteArray      } from './substituteArray.js';
+import {substituteRecord     } from './substituteRecord.js';
 import {substituteDescriptors} from './substituteDescriptors.js';
 import {substitutes, recurseSubstitute} from './substitutes.js';
 const noop = () => undefined;

@@ -1,7 +1,7 @@
 import '../validateType.js';
 import {options, setOptions} from '../options.js';
 import {validateMap} from '../validateMap.js';
-import {validators} from '../validators.js';
+import {validators } from '../validators.js';
 import {windowedValidateMap, mapCheckWindowRecord, resetMapCheckWindows} from './windowedValidateMap.js';
 import {recordCheck, recordMapScan, getCheckStats, resetCheckStats} from '../checkStats.js';
 /**

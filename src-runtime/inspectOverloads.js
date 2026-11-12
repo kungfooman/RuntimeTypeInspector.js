@@ -1,9 +1,9 @@
 import {collectCandidates} from './collectCandidates.js';
-import {inspectType} from './inspectType.js';
-import {mergeCandidate} from './mergeCandidate.js';
-import {options} from './options.js';
-import {substitutedFor} from './substitutedFor.js';
-import {recurse} from './validators.js';
+import {inspectType      } from './inspectType.js';
+import {mergeCandidate   } from './mergeCandidate.js';
+import {options          } from './options.js';
+import {substitutedFor   } from './substitutedFor.js';
+import {recurse          } from './validators.js';
 /**
  * Tries complete overload signatures with independent template bindings and
  * reports a single failure if none accepts the actual arguments.

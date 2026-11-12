@@ -1,10 +1,10 @@
 import vm from 'node:vm';
 import {registerClass, classes} from './registerClass.js';
 import {registerTypedef, typedefs, bumpTypedefVersion} from './registerTypedef.js';
-import {tagSnapshot} from './tagSnapshot.js';
-import {explainMismatch} from './explainMismatch.js';
+import {tagSnapshot      } from './tagSnapshot.js';
+import {explainMismatch  } from './explainMismatch.js';
 import {unwrapTransparent} from './unwrapTransparent.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType       } from '../src-transpiler/expandType.js';
 class RealmColor {
   constructor() {
     Object.assign(this, {r: 0.95, g: 0.96, b: 0.98, a: 1});

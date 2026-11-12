@@ -2,7 +2,7 @@ import {TypePanel, storedMapCheckWindowCap, storedMapCheckWindowMinTotalMs} from
 import {options} from './options.js';
 import {recordCheck, recordMapRide, recordSkip, recordMapScan, recordSetScan, recordArrayScan, recordObjectScan, getCheckStats, resetCheckStats} from './checkStats.js';
 import {reportedKeys} from './reportedKeys.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType  } from '../src-transpiler/expandType.js';
 import {collectFailPaths, explainMismatch} from './explainMismatch.js';
 import {buildTypeTree} from './typeTree.js';
 import {registerClass, classes} from './registerClass.js';

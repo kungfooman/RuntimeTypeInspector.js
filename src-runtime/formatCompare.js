@@ -1,6 +1,6 @@
-import {stringifyType} from './stringifyType.js';
+import {stringifyType } from './stringifyType.js';
 import {stringifyValue} from './stringifyValue.js';
-import {prettyValue} from './describeValue.js';
+import {prettyValue   } from './describeValue.js';
 /**
  * Pretty side-by-side texts for the comparator modal (issue #134 item 3).
  * Pure (no DOM) so it is unit-testable. Values with a dedicated display

@@ -1,7 +1,7 @@
-import {stripTsBraces} from './stripTsBraces.js';
-import {docTemplateNode} from '../jsdoc-parsing-depfree/docTemplateNode.js';
+import {stripTsBraces      } from './stripTsBraces.js';
+import {docTemplateNode    } from '../jsdoc-parsing-depfree/docTemplateNode.js';
 import {readTemplateBinding} from '../jsdoc-parsing-depfree/readTemplateBinding.js';
-import {recoverTildeTag} from './recoverTildeTag.js';
+import {recoverTildeTag    } from './recoverTildeTag.js';
 /**
  * Reads one TS `@template` tag to shared schema rows, one per binding:
  * tsc splits `@template O, P` into two type parameters (each carrying the

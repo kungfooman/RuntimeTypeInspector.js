@@ -1,5 +1,5 @@
 import {crossContextPostMessage} from './crossContextPostMessage.js';
-import {breakpoints} from './inspectType.js';
+import {breakpoints            } from './inspectType.js';
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.

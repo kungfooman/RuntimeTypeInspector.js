@@ -1,6 +1,6 @@
 import {resolveObjectSide} from './resolveObjectSide.js';
-import {deepEqualType} from './deepEqualType.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {deepEqualType    } from './deepEqualType.js';
+import {expandType       } from '../src-transpiler/expandType.js';
 const silent = () => undefined;
 // We want: plain object shapes to pass through, because indexed access
 // reads their properties directly.

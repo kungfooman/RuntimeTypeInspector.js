@@ -1,7 +1,7 @@
 import {classes, classVersion} from "./registerClass.js";
 import {typedefs, typedefVersion} from "./registerTypedef.js";
 import {registeredNameOf} from "./registeredNameOf.js";
-import {deepFreeze} from "./deepFreeze.js";
+import {deepFreeze      } from "./deepFreeze.js";
 // Prototype enumeration is the expensive bit: once per constructor for its
 // lifetime, never in a validation hot path. Harvested shapes (transpiled
 // classes) never touch this map.

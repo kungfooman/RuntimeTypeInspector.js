@@ -1,12 +1,12 @@
-import {mergedClassShape} from './classShape.js';
+import {mergedClassShape    } from './classShape.js';
 import {instantiateReference} from './instantiateReference.js';
 import {registerClass, classes, bumpClassVersion} from './registerClass.js';
 import {registerTypedef, typedefs, bumpTypedefVersion} from './registerTypedef.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType              } from '../src-transpiler/expandType.js';
 import {inspectTypeWithTemplates} from './inspectTypeWithTemplates.js';
-import {createTypeFromMapping} from './createTypeFromMapping.js';
-import {validateType} from './validateType.js';
-import {substitutedCache} from './substitutedFor.js';
+import {createTypeFromMapping   } from './createTypeFromMapping.js';
+import {validateType            } from './validateType.js';
+import {substitutedCache        } from './substitutedFor.js';
 const noop = () => undefined;
 function dropClass(name) {
   delete classes[name];

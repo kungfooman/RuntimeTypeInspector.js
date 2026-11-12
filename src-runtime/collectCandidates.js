@@ -1,5 +1,5 @@
 import {unwrapMember} from "./unwrapMember.js";
-import {literalOf} from "./literalOf.js";
+import {literalOf   } from "./literalOf.js";
 import {isArrayValue} from "./isArrayValue.js";
 /**
  * Collects template inference candidates by walking a runtime value alongside

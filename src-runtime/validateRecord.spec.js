@@ -1,6 +1,6 @@
-import {validateType} from './validateType.js';
+import {validateType   } from './validateType.js';
 import {registerTypedef} from './registerTypedef.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType     } from '../src-transpiler/expandType.js';
 const warn = () => undefined;
 function testStringRecordPasses() {
   // Exact string-keyed records pass.

@@ -1,5 +1,5 @@
 import {validateArrayLikeSparse} from './validateArrayLikeSparse.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType             } from '../src-transpiler/expandType.js';
 const warn = () => undefined;
 const numbers = () => expandType('Array<number>');
 const likeNumbers = () => expandType('ArrayLike<number>');

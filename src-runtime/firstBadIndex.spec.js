@@ -1,11 +1,11 @@
-import {firstBadIndex} from './firstBadIndex.js';
-import {validateArray} from './validateArray.js';
-import {validateArrayLike} from './validateArrayLike.js';
+import {firstBadIndex          } from './firstBadIndex.js';
+import {validateArray          } from './validateArray.js';
+import {validateArrayLike      } from './validateArrayLike.js';
 import {validateArrayLikeSparse} from './validateArrayLikeSparse.js';
-import {validators} from './validators.js';
-import {options} from './options.js';
-import {customTypes} from './customTypes.js';
-import {customValidations} from './customValidations.js';
+import {validators             } from './validators.js';
+import {options                } from './options.js';
+import {customTypes            } from './customTypes.js';
+import {customValidations      } from './customValidations.js';
 const arrayOf = (elementType) => ({type: 'array', elementType});
 const likeOf = (elementType) => ({type: 'reference', name: 'ArrayLike', args: [elementType]});
 function testExamplesVerbatim() {

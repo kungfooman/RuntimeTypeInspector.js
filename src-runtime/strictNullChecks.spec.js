@@ -1,4 +1,4 @@
-import {options} from './options.js';
+import {options     } from './options.js';
 import {validateType} from './validateType.js';
 const warn = () => undefined;
 /**

@@ -1,5 +1,5 @@
-import {parse} from '@babel/parser';
-import {parserOptions} from './parserOptions.js';
+import {parse               } from '@babel/parser';
+import {parserOptions       } from './parserOptions.js';
 import {inferTypeFromDefault} from './inferTypeFromDefault.js';
 /**
  * @param {string} code - A default value expression.

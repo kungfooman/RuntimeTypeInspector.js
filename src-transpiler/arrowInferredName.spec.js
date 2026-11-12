@@ -1,4 +1,4 @@
-import {parse} from '@babel/parser';
+import {parse            } from '@babel/parser';
 import {arrowInferredName} from './arrowInferredName.js';
 // A variable declaration supplies the arrow's inferred name.
 function testVariableName() {

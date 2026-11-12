@@ -1,5 +1,5 @@
 import {isParameterNode} from './isParameterNode.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType     } from '../src-transpiler/expandType.js';
 // We want: a tagged parameter node to pass, because index-signature params
 // print as `name: type` exactly when the discriminant says `parameter`.
 function testParameterNodeTrue() {

@@ -1,6 +1,6 @@
 import {materializeUtility} from './materializeUtility.js';
-import {deepEqualType} from './deepEqualType.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {deepEqualType     } from './deepEqualType.js';
+import {expandType        } from '../src-transpiler/expandType.js';
 const silent = () => undefined;
 // We want: Pick to keep only the named props, because indexed access over
 // `Pick<T, K>` reads the picked shape.

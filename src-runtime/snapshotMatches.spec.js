@@ -1,6 +1,6 @@
 import {snapshotMatches} from './snapshotMatches.js';
-import {validateType} from './validateType.js';
-import {registerClass} from './registerClass.js';
+import {validateType   } from './validateType.js';
+import {registerClass  } from './registerClass.js';
 class Widget {}
 class SpecialWidget extends Widget {}
 class Gadget {}

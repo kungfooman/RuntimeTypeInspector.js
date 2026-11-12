@@ -1,6 +1,6 @@
 import {validateType} from './validateType.js';
-import {expandType} from '../src-transpiler/expandType.js';
-import {classes} from './registerClass.js';
+import {expandType  } from '../src-transpiler/expandType.js';
+import {classes     } from './registerClass.js';
 const silent = () => undefined;
 function testKeyofGlobal() {
   // `keyof` over a platform constructor reflects instance keys: a real

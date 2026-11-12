@@ -2,8 +2,8 @@ import {firstBadEntry} from './firstBadEntry.js';
 import {registerClass, classes} from './registerClass.js';
 import {validators} from './validators.js';
 import './validateType.js';
-import {options} from './options.js';
-import {customTypes} from './customTypes.js';
+import {options          } from './options.js';
+import {customTypes      } from './customTypes.js';
 import {customValidations} from './customValidations.js';
 class ScanBox {
   constructor(x) {

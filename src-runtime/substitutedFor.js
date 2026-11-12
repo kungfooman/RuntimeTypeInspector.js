@@ -1,5 +1,5 @@
 import {substituteType} from "./substituteType.js";
-import {deepFreeze} from "./deepFreeze.js";
+import {deepFreeze    } from "./deepFreeze.js";
 /**
  * Substituted expect trees by call site plus template bindings. The expect
  * tree is static per site (inline literal from the transpiler); bindings

@@ -1,4 +1,4 @@
-import {parseJSDoc} from './parseJSDoc.js';
+import {parseJSDoc        } from './parseJSDoc.js';
 import {parseJSDocDocument} from './parseJSDocDocument.js';
 // One scan feeds every node at once: the same comment yields params,
 // templates, and the setter together, so `@overload` sections never see

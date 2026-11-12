@@ -1,6 +1,6 @@
-import {parse} from '@babel/parser';
-import {Stringifier} from './Stringifier.js';
-import {nodeChildren} from './nodeChildren.js';
+import {parse             } from '@babel/parser';
+import {Stringifier       } from './Stringifier.js';
+import {nodeChildren      } from './nodeChildren.js';
 import {nodeIsFunctionLike} from './nodeIsFunctionLike.js';
 /** @typedef {import('@babel/types').Node} Node */
 /**

@@ -1,5 +1,5 @@
 import '../validateType.js';
-import {validators} from '../validators.js';
+import {validators   } from '../validators.js';
 import {validateArray} from '../validateArray.js';
 import {installWalkTimers, resetWalkTimers, wrapWithWalkTimer} from './installWalkTimers.js';
 import {recordArrayScan, getCheckStats, resetCheckStats} from '../checkStats.js';

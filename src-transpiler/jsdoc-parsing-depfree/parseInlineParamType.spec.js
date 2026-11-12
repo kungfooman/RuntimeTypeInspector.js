@@ -1,4 +1,4 @@
-import {expandTypeDepFree} from '../expandTypeDepFree.js';
+import {expandTypeDepFree   } from '../expandTypeDepFree.js';
 import {parseInlineParamType} from './parseInlineParamType.js';
 function testExtractsSimpleType() {
   const comments = [{value: '* @type {number} '}];

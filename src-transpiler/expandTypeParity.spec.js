@@ -1,8 +1,8 @@
-import {expandType} from './expandType.js';
+import {expandType       } from './expandType.js';
 import {expandTypeBabelTS} from './expandTypeBabelTS.js';
 import {expandTypeDepFree} from './expandTypeDepFree.js';
-import {validateType} from '../src-runtime/validateType.js';
-import {deepEqualType} from '../src-runtime/deepEqualType.js';
+import {validateType     } from '../src-runtime/validateType.js';
+import {deepEqualType    } from '../src-runtime/deepEqualType.js';
 const warn = () => undefined;
 function assertParity(type) {
   const fromTS = expandType(type);

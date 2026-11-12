@@ -1,7 +1,7 @@
-import {parse} from '@babel/parser';
+import {parse        } from '@babel/parser';
 import {parserOptions} from './parserOptions.js';
-import {Asserter} from './Asserter.js';
-import {expandType} from './expandType.js';
+import {Asserter     } from './Asserter.js';
+import {expandType   } from './expandType.js';
 /**
  * @param {string} src - Source code with one documented function to convert.
  * @returns {string} Converted code.

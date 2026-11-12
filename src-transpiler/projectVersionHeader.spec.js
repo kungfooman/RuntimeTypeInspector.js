@@ -1,5 +1,5 @@
 import {addTypeChecks} from './addTypeChecks.js';
-import {expandType} from './expandType.js';
+import {expandType   } from './expandType.js';
 const SRC = '/** @param {number} a - A. */\nfunction f(a) {\n}\nf(1);\n';
 const tests = [
   // The version is funneled into the header when the plugin option is set.

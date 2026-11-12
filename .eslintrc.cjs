@@ -343,7 +343,11 @@ module.exports = {
         }
       }
     ],
-    "object-curly-spacing": ["error", "never"],
+    // Brace spacing is node-scoped in src-lint/align-imports.mjs --check:
+    // ImportDeclaration lines carry run padding, ObjectExpression and
+    // ObjectPattern pairs must have no inner padding. The core rule
+    // cannot exempt by AST node, so it stays off and the gate owns both.
+    "object-curly-spacing": "off",
     "object-property-newline": [
       "error", {
         "allowAllPropertiesOnSameLine": true

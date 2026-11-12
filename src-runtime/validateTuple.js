@@ -1,7 +1,7 @@
-import {recurse} from "./validators.js";
-import {isArrayValue} from "./isArrayValue.js";
-import {tupleEffective} from "./tupleEffective.js";
-import {tupleOptional} from "./tupleOptional.js";
+import {recurse            } from "./validators.js";
+import {isArrayValue       } from "./isArrayValue.js";
+import {tupleEffective     } from "./tupleEffective.js";
+import {tupleOptional      } from "./tupleOptional.js";
 import {expandTupleElements} from "./expandTupleElements.js";
 /**
  * @param {*} value - The actual value that we need to validate.

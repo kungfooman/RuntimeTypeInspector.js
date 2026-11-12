@@ -1,5 +1,5 @@
-import {parse} from '@babel/parser';
-import {Asserter} from './Asserter.js';
+import {parse        } from '@babel/parser';
+import {Asserter     } from './Asserter.js';
 import {parserOptions} from './parserOptions.js';
 /**
  * Simple facade which does all the processing. Processes the input

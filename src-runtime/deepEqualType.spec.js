@@ -1,5 +1,5 @@
 import {deepEqualType} from './deepEqualType.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType   } from '../src-transpiler/expandType.js';
 // We want: key order to never matter, so parser refactors that reorder
 // node fields cannot produce false parity failures.
 function testKeyOrderInsensitive() {

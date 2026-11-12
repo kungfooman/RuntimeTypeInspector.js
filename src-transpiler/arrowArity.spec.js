@@ -1,4 +1,4 @@
-import {parse} from '@babel/parser';
+import {parse     } from '@babel/parser';
 import {arrowArity} from './arrowArity.js';
 // Destructured parameters count, but a default ends the function length.
 function testDestructuringBeforeDefault() {

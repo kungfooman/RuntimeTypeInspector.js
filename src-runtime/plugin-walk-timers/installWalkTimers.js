@@ -1,5 +1,5 @@
 import {validators} from "../validators.js";
-import {options} from "../options.js";
+import {options   } from "../options.js";
 import {recordArrayScan, recordSetScan, recordObjectScan} from "../checkStats.js";
 import {timeWalk} from "./timeWalk.js";
 /**

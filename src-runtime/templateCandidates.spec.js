@@ -1,5 +1,5 @@
 import {resolveTemplateLiteralCandidates} from './resolveTemplateLiteralCandidates.js';
-import {resolveTemplateLiteralValues} from './resolveTemplateLiteralValues.js';
+import {resolveTemplateLiteralValues    } from './resolveTemplateLiteralValues.js';
 import {templateCandidates, recurseCandidates} from './templateCandidates.js';
 const noop = () => undefined;
 function testTablePopulated() {

@@ -1,6 +1,6 @@
 import {crossContextPostMessage} from './crossContextPostMessage.js';
-import {breakpoints} from './inspectType.js';
-import {options} from './options.js';
+import {breakpoints            } from './inspectType.js';
+import {options                } from './options.js';
 /**
  * Reports an invalid array-index access to the RTI UI.
  * @param {*} value - The accessed object.

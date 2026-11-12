@@ -1,7 +1,7 @@
 import {substituteType} from "./substituteType.js";
 import {typedefs, typedefTemplates, typedefVersion} from "./registerTypedef.js";
 import {classVersion} from "./registerClass.js";
-import {deepFreeze} from "./deepFreeze.js";
+import {deepFreeze  } from "./deepFreeze.js";
 import {canonicalKey} from "./canonicalKey.js";
 // Instantiated generic typedefs by name plus canonical arguments: e.g.
 // `ComponentOptions<"element">` depends only on its argument, not on the

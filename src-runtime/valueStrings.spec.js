@@ -1,5 +1,5 @@
-import {inspectType} from './inspectType.js';
-import {options} from './options.js';
+import {inspectType    } from './inspectType.js';
+import {options        } from './options.js';
 import {captureMessages} from '../src-unittest/index.js';
 function testUnclonableStaysStructured() {
   // Issue #134 item 8: class instances with methods (functions) are not

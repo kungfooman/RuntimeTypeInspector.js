@@ -1,6 +1,6 @@
-import {recurse} from "./validators.js";
-import {options} from "./options.js";
-import {isObject} from "./isObject.js";
+import {recurse            } from "./validators.js";
+import {options            } from "./options.js";
+import {isObject           } from "./isObject.js";
 import {matchIndexSignature} from "./matchIndexSignature.js";
 /**
  * @param {*} value - The actual value that we need to validate.

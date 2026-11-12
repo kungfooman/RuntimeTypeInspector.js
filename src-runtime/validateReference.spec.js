@@ -1,8 +1,8 @@
-import {validateType} from './validateType.js';
-import {validators} from './validators.js';
+import {validateType  } from './validateType.js';
+import {validators    } from './validators.js';
 import {substituteType} from './substituteType.js';
 import {registerTypedef, typedefs, bumpTypedefVersion} from './registerTypedef.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType       } from '../src-transpiler/expandType.js';
 import {expandTypeDepFree} from '../src-transpiler/expandTypeDepFree.js';
 const warn = () => undefined;
 /**

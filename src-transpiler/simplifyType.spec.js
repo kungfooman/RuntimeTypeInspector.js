@@ -1,4 +1,4 @@
-import {simplifyType} from './simplifyType.js';
+import {simplifyType        } from './simplifyType.js';
 import {simplifyTypeToSource} from './simplifyTypeToSource.js';
 function assertSimplify(label, input, expected) {
   const actual = simplifyTypeToSource(input);

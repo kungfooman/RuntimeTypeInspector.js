@@ -1,7 +1,7 @@
-import {parse} from '@babel/parser';
-import {parserOptions} from './parserOptions.js';
-import {Asserter} from './Asserter.js';
-import {expandType} from './expandType.js';
+import {parse            } from '@babel/parser';
+import {parserOptions    } from './parserOptions.js';
+import {Asserter         } from './Asserter.js';
+import {expandType       } from './expandType.js';
 import {expandTypeDepFree} from './expandTypeDepFree.js';
 /**
  * Transpiles one snippet without the runtime header.

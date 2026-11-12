@@ -1,14 +1,14 @@
-import {validators} from "./validators.js";
-import {classes} from "./registerClass.js";
-import {validateReference} from "./validateReference.js";
-import {validateNumber} from "./validateNumber.js";
-import {validateString} from "./validateString.js";
-import {validateBoolean} from "./validateBoolean.js";
-import {customTypes} from "./customTypes.js";
-import {customValidations} from "./customValidations.js";
-import {options} from "./options.js";
+import {validators                   } from "./validators.js";
+import {classes                      } from "./registerClass.js";
+import {validateReference            } from "./validateReference.js";
+import {validateNumber               } from "./validateNumber.js";
+import {validateString               } from "./validateString.js";
+import {validateBoolean              } from "./validateBoolean.js";
+import {customTypes                  } from "./customTypes.js";
+import {customValidations            } from "./customValidations.js";
+import {options                      } from "./options.js";
 import {isFailingNumberDisallowingInf} from "./isFailingNumberDisallowingInf.js";
-import {isFailingNumberAllowingInf} from "./isFailingNumberAllowingInf.js";
+import {isFailingNumberAllowingInf   } from "./isFailingNumberAllowingInf.js";
 /**
  * Names sharing space between utility types and registered classes: the
  * reference validator resolves them through its utility `case` branches

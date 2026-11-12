@@ -1,8 +1,8 @@
 import {describeValueType, prettyValue} from './describeValue.js';
-import {formatCompare} from './formatCompare.js';
-import {snip} from './explainMismatch.js';
+import {formatCompare } from './formatCompare.js';
+import {snip          } from './explainMismatch.js';
 import {stringifyValue} from './stringifyValue.js';
-import {inspectType} from './inspectType.js';
+import {inspectType   } from './inspectType.js';
 import {captureMessages, dump, warningFor} from '../src-unittest/index.js';
 function testDescribeTypedArrays() {
   return (

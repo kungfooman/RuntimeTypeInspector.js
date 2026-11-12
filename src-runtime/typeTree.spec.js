@@ -1,9 +1,9 @@
 import {expandType} from '../src-transpiler/expandType.js';
 import {registerTypedef, typedefs, typedefTemplates} from './registerTypedef.js';
 import {registerClass, classes} from './registerClass.js';
-import {options} from './options.js';
+import {options      } from './options.js';
 import {buildTypeTree} from './typeTree.js';
-import {suggestKey} from './suggestKey.js';
+import {suggestKey   } from './suggestKey.js';
 function reset() {
   Object.keys(typedefs).forEach((_) => delete typedefs[_]);
   Object.keys(typedefTemplates).forEach((_) => delete typedefTemplates[_]);

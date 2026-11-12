@@ -1,4 +1,4 @@
-import {docReaderTS} from './docReaderTS.js';
+import {docReaderTS } from './docReaderTS.js';
 import {canonicalize} from '../../src-runtime/canonicalize.js';
 // A flat comment lowers to one params row with an empty return.
 function testFlatCommentLowersRow() {

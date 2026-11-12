@@ -1,4 +1,4 @@
-import {options} from './options.js';
+import {options                   } from './options.js';
 import {validateDivisionAddWarning} from './validateDivisionAddWarning.js';
 /**
  * @param {number} lhs - The left hand side.

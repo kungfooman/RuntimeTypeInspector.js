@@ -1,8 +1,8 @@
 import {inspectTypeWithTemplates} from './inspectTypeWithTemplates.js';
-import {substitutedCache} from './substitutedFor.js';
-import {substituteType} from './substituteType.js';
-import {createTypeFromMapping} from './createTypeFromMapping.js';
-import {mergedClassShape} from './classShape.js';
+import {substitutedCache        } from './substitutedFor.js';
+import {substituteType          } from './substituteType.js';
+import {createTypeFromMapping   } from './createTypeFromMapping.js';
+import {mergedClassShape        } from './classShape.js';
 import {registerTypedef, typedefs} from './registerTypedef.js';
 import {registerClass, classes} from './registerClass.js';
 import {expandType} from '../src-transpiler/expandType.js';

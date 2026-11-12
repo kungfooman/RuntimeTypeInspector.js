@@ -1,13 +1,13 @@
-import {options} from "./options.js";
-import {copyText} from "./copyText.js";
+import {options        } from "./options.js";
+import {copyText       } from "./copyText.js";
 import {DisplayAnything} from './DisplayAnything.js';
 import {Tr, Td, Button, Details, Summary, Pre, Div, Span} from './jsx.js';
 import {humanizeExpect} from './humanizeExpect.js';
-import {stringifyType} from './stringifyType.js';
-import {previewValue} from './previewValue.js';
+import {stringifyType } from './stringifyType.js';
+import {previewValue  } from './previewValue.js';
 import {describeValueType, prettyValue} from './describeValue.js';
 import {formatMapKey} from './formatMapKey.js';
-import {snapshotTag} from './snapshotTag.js';
+import {snapshotTag } from './snapshotTag.js';
 /** Max `Map`/`Set`/typed-array entries rendered into the Value column (issue #267). */
 const MAX_CELL_ENTRIES = 20;
 /** Max characters per key/value one-line preview in the Value column. */

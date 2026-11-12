@@ -1,8 +1,8 @@
-import {parse} from '@babel/parser';
-import {parserOptions} from './parserOptions.js';
-import {Asserter} from './Asserter.js';
+import {parse            } from '@babel/parser';
+import {parserOptions    } from './parserOptions.js';
+import {Asserter         } from './Asserter.js';
 import {expandTypeDepFree} from './expandTypeDepFree.js';
-import {docReaderBoth} from './jsdoc-parsing-ts/docReaderBoth.js';
+import {docReaderBoth    } from './jsdoc-parsing-ts/docReaderBoth.js';
 /**
  * Transpiles one function through a fresh Asserter, recording every
  * comment the injected docReader saw.

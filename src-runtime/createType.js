@@ -1,7 +1,7 @@
-import {resolveType} from "./resolveType.js";
+import {resolveType                } from "./resolveType.js";
 import {createTypeFromIndexedAccess} from "./createTypeFromIndexedAccess.js";
-import {createTypeFromKeyof} from "./createTypeFromKeyof.js";
-import {createTypeFromMapping} from "./createTypeFromMapping.js";
+import {createTypeFromKeyof        } from "./createTypeFromKeyof.js";
+import {createTypeFromMapping      } from "./createTypeFromMapping.js";
 /**
  * @param {string|import('./validateType.js').Type} expect - The supposed type information of said value.
  * @param {console["warn"]} warn - Function to warn with.

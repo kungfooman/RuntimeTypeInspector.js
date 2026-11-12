@@ -1,6 +1,6 @@
-import {recurse} from "./validators.js";
-import {options} from "./options.js";
-import {classes} from "./registerClass.js";
+import {recurse      } from "./validators.js";
+import {options      } from "./options.js";
+import {classes      } from "./registerClass.js";
 import {resolveObject} from "./getTypeKeys.js";
 /**
  * @param {*} value - The actual value that we need to validate.

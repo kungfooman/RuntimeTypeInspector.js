@@ -1,5 +1,5 @@
-import {classMatches} from './classMatches.js';
-import {snapshotTag} from './snapshotTag.js';
+import {classMatches     } from './classMatches.js';
+import {snapshotTag      } from './snapshotTag.js';
 import {unwrapTransparent} from './unwrapTransparent.js';
 /**
  * Nominal match for the method check: a tagged snapshot that names the

@@ -1,5 +1,5 @@
 import {validateType} from './validateType.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType  } from '../src-transpiler/expandType.js';
 const warn = () => undefined;
 function testPromiseNumberValid() {
   // User snippet:

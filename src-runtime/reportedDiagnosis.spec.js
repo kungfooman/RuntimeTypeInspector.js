@@ -1,12 +1,12 @@
-import {inspectType} from './inspectType.js';
+import {inspectType    } from './inspectType.js';
 import {explainMismatch} from './explainMismatch.js';
-import {compareText} from './compareText.js';
-import {registerClass} from './registerClass.js';
+import {compareText    } from './compareText.js';
+import {registerClass  } from './registerClass.js';
 import {registerTypedef} from './registerTypedef.js';
-import {classes} from './registerClass.js';
+import {classes        } from './registerClass.js';
 import {typedefs, bumpTypedefVersion} from './registerTypedef.js';
 import {options, setOptions} from './options.js';
-import {validators} from './validators.js';
+import {validators   } from './validators.js';
 import {validateArray} from './validateArray.js';
 class ReportWidget {
   constructor() {

@@ -1,9 +1,9 @@
-import {inspectType} from './inspectType.js';
-import {validateType} from './validateType.js';
-import {customChecks} from './customChecks.js';
-import {recurse} from './validators.js';
+import {inspectType            } from './inspectType.js';
+import {validateType           } from './validateType.js';
+import {customChecks           } from './customChecks.js';
+import {recurse                } from './validators.js';
 import {validateArrayLikeSparse} from './validateArrayLikeSparse.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType             } from '../src-transpiler/expandType.js';
 /**
  * Captures the RTI error message posted for a check.
  * @param {Function} fn - The check to run.

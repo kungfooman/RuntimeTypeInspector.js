@@ -1,8 +1,8 @@
 import {validateType} from './validateType.js';
 import {registerTypedef, typedefs} from './registerTypedef.js';
-import {registerClass} from './registerClass.js';
-import {expandType} from '../src-transpiler/expandType.js';
-import {createType} from './createType.js';
+import {registerClass           } from './registerClass.js';
+import {expandType              } from '../src-transpiler/expandType.js';
+import {createType              } from './createType.js';
 import {inspectTypeWithTemplates} from './inspectTypeWithTemplates.js';
 const warn = () => undefined;
 /**

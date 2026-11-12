@@ -1,5 +1,5 @@
 import {readFileSync} from 'fs';
-import {RTI_INFO} from './version.js';
+import {RTI_INFO    } from './version.js';
 /**
  * Commit/subject are stamped by `node sync-version.js` during
  * `npm run build:publish`, `null` from unstamped source.

@@ -1,4 +1,4 @@
-import {typedefs} from "./registerTypedef.js";
+import {typedefs                    } from "./registerTypedef.js";
 import {resolveTemplateLiteralValues} from "./resolveTemplateLiteralValues.js";
 import {templateCandidates, recurseCandidates} from "./templateCandidates.js";
 /**

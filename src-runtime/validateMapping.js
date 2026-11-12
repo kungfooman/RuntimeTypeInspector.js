@@ -1,5 +1,5 @@
 import {createTypeFromMapping} from "./createTypeFromMapping.js";
-import {recurse} from "./validators.js";
+import {recurse              } from "./validators.js";
 /**
  * @typedef {object} Mapping
  * @property {import('./validateType.js').Type} iterable - The iterable.

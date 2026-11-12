@@ -1,7 +1,7 @@
 import {parseJSDocDocument} from './parseJSDocDocument.js';
-import {parseParamHead} from './parseParamHead.js';
-import {makeParamTag} from './makeParamTag.js';
-import {docParamTag} from './docParamTag.js';
+import {parseParamHead    } from './parseParamHead.js';
+import {makeParamTag      } from './makeParamTag.js';
+import {docParamTag       } from './docParamTag.js';
 /**
  * Lowers one overload section to the shared schema entry: each section's
  * params (names, brackets, brace text) and return type agree.

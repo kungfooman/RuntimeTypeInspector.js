@@ -1,9 +1,9 @@
 import {collectCandidates} from "./collectCandidates.js";
-import {inspectType} from "./inspectType.js";
-import {mergeCandidate} from "./mergeCandidate.js";
-import {options} from "./options.js";
-import {substitutedFor} from "./substitutedFor.js";
-import {recurse} from "./validators.js";
+import {inspectType      } from "./inspectType.js";
+import {mergeCandidate   } from "./mergeCandidate.js";
+import {options          } from "./options.js";
+import {substitutedFor   } from "./substitutedFor.js";
+import {recurse          } from "./validators.js";
 /**
  * Per-call inference state, keyed by the per-invocation templates dict (fresh
  * object per call, so entries die with it). `pinned` records keys this call
