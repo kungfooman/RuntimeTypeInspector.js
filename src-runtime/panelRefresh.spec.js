@@ -8,8 +8,12 @@ function stubWarning() {
 function testFirstHitSetsAll() {
   const warnObj = stubWarning();
   refreshWarning(warnObj, {value: 'x', expect: 'string[]', msg: 'm1', strings: ['s1']});
-  return warnObj.value === 'x' && warnObj.expect === 'string[]' &&
-    warnObj.msg === 'm1' && warnObj.detailStrings.join() === 's1';
+  return (
+    warnObj.value === 'x' &&
+    warnObj.expect === 'string[]' &&
+    warnObj.msg === 'm1' &&
+    warnObj.detailStrings.join() === 's1'
+  );
 }
 function testSecondHitRefreshesExpect() {
   // Regression: rows are keyed by loc-name across calls, so a second call
@@ -46,8 +50,12 @@ function testSecondHitRefreshesExpect() {
       strings: ['s2'],
     },
   );
-  return warnObj.value.join() === 'Error 1' && warnObj.expect.checkType === false &&
-    warnObj.msg === 'm2' && warnObj.detailStrings.join() === 's2';
+  return (
+    warnObj.value.join() === 'Error 1' &&
+    warnObj.expect.checkType === false &&
+    warnObj.msg === 'm2' &&
+    warnObj.detailStrings.join() === 's2'
+  );
 }
 function testStringsCopied() {
   const warnObj = stubWarning();

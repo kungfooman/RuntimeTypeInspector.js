@@ -74,7 +74,11 @@ function withTypeofTargets(check) {
 function testExpandsToTypeof() {
   // The transpiler must emit a typeof node (not a plain reference).
   const expect = expandType('typeof TypeofBase');
-  return expect && expect.type === 'typeof' && expect.argument === 'TypeofBase';
+  return (
+    expect &&
+    expect.type === 'typeof' &&
+    expect.argument === 'TypeofBase'
+  );
 }
 function testIdentityPasses() {
   // `typeof Base` accepts Base itself.
@@ -150,7 +154,11 @@ function testUnrelatedClassFails() {
       (...args) => warnings.push(args[0]),
       0,
     );
-    return ret === false && warnings.length > 0 && !warnings.includes('unchecked');
+    return (
+      ret === false &&
+      warnings.length > 0 &&
+      !warnings.includes('unchecked')
+    );
   });
 }
 function testInstanceFails() {
@@ -327,18 +335,19 @@ function testTypeofConstStringIsLiteral() {
   // `const MOTION = 'free'`: `typeof MOTION` is `'free'` — exact match only.
   return withTypeofTargets(() => {
     registerVariable('typeofConstMotion', 'free', 'const');
-    return validateType(
-      'free',
-      {
-        type: 'typeof',
-        argument: 'typeofConstMotion',
-      },
-      'loc',
-      'name',
-      true,
-      warn,
-      0,
-    ) === true &&
+    return (
+      validateType(
+        'free',
+        {
+          type: 'typeof',
+          argument: 'typeofConstMotion',
+        },
+        'loc',
+        'name',
+        true,
+        warn,
+        0,
+      ) === true &&
       validateType(
         'limited',
         {
@@ -362,7 +371,8 @@ function testTypeofConstStringIsLiteral() {
         true,
         warn,
         0,
-      ) === false;
+      ) === false
+    );
   });
 }
 function testTypeofConstNumberIsLiteral() {
@@ -429,18 +439,19 @@ function testTypeofValueObject() {
   // `typeof someObj`: same-constructor objects (incl. subclasses) pass.
   return withTypeofTargets(() => {
     registerVariable('typeofOptions', new TypeofChild());
-    return validateType(
-      new TypeofChild(),
-      {
-        type: 'typeof',
-        argument: 'typeofOptions',
-      },
-      'loc',
-      'name',
-      true,
-      warn,
-      0,
-    ) === true &&
+    return (
+      validateType(
+        new TypeofChild(),
+        {
+          type: 'typeof',
+          argument: 'typeofOptions',
+        },
+        'loc',
+        'name',
+        true,
+        warn,
+        0,
+      ) === true &&
       validateType(
         new TypeofGrandChild(),
         {
@@ -464,7 +475,8 @@ function testTypeofValueObject() {
         true,
         warn,
         0,
-      ) === false;
+      ) === false
+    );
   });
 }
 function testTypeofValueConstructor() {

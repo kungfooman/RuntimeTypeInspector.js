@@ -2,7 +2,11 @@ import {makeParamTag} from './makeParamTag.js';
 // The head keeps only its first token: defaults and prose fall away.
 function testHeadKeepsFirstToken() {
   const tag = makeParamTag('number[]', '[values] trailing words here');
-  return tag.name === 'values' && tag.optional === true && tag.invalidRest === false;
+  return (
+    tag.name === 'values' &&
+    tag.optional === true &&
+    tag.invalidRest === false
+  );
 }
 // A leading `...` flags the misplaced-rest spelling for callers to drop.
 function testLeadingDotsFlagInvalid() {

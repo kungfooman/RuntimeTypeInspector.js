@@ -2,7 +2,11 @@ import {balancedBraceInner} from './balancedBraceInner.js';
 // A simple brace group reads whole with its end index.
 function testSimpleGroupReadsWhole() {
   const actual = balancedBraceInner('@param {Array<X~Y>} x');
-  return actual !== null && actual.text === 'Array<X~Y>' && actual.end === 19;
+  return (
+    actual !== null &&
+    actual.text === 'Array<X~Y>' &&
+    actual.end === 19
+  );
 }
 // Nested braces depth-count: the outer group reads whole.
 function testNestedGroupReadsWhole() {

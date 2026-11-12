@@ -27,8 +27,12 @@ function testOwnRuntimeImportOmitted() {
   // binding once and the helper stays usable.
   const out = convert("import {registerTypedef} from '@runtime-type-inspector/runtime';\n/** @param {number} x - The value. */\nfunction takeIt(x) {\n return x;\n}");
   const header = headerLine(out);
-  return header !== undefined && !header.includes('registerTypedef') && header.includes('inspectType') &&
-    out.includes("import {registerTypedef} from '@runtime-type-inspector/runtime';");
+  return (
+    header !== undefined &&
+    !header.includes('registerTypedef') &&
+    header.includes('inspectType') &&
+    out.includes("import {registerTypedef} from '@runtime-type-inspector/runtime';")
+  );
 }
 function testUnrelatedFileHeaderUnchanged() {
   // Files without own runtime imports get the exact legacy header.

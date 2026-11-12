@@ -288,7 +288,11 @@ class WATConverter extends Stringifier {
       return false;
     }
     const [decl] = stmt.declarations;
-    return !!decl && decl.id.type === 'Identifier' && !!this.arrays[decl.id.name];
+    return (
+      !!decl &&
+      decl.id.type === 'Identifier' &&
+      !!this.arrays[decl.id.name]
+    );
   }
   /**
    * Serializes the f32 values of an array into raw little-endian bytes for a data segment.

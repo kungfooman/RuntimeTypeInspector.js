@@ -7,8 +7,13 @@ function testStripCopiesRegistryAlias() {
   registerTypedef('OptionalBox', {type: 'object', properties: {v: 'number'}, optional: true});
   try {
     const stripped = applyQuestionModifier('OptionalBox', '-');
-    return stripped !== typedefs.OptionalBox && typeof stripped === 'object' && stripped !== null &&
-      !('optional' in stripped) && typedefs.OptionalBox.optional === true;
+    return (
+      stripped !== typedefs.OptionalBox &&
+      typeof stripped === 'object' &&
+      stripped !== null &&
+      !('optional' in stripped) &&
+      typedefs.OptionalBox.optional === true
+    );
   } finally {
     delete typedefs.OptionalBox;
     bumpTypedefVersion();

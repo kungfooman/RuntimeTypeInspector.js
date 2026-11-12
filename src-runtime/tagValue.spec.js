@@ -5,23 +5,35 @@ function testNullSplitFromObjects() {
 }
 function testPrimitivesByTypeof() {
   // Primitives tag by `typeof`: no walks, no constructor lookups.
-  return tagValue(undefined) === 'undefined' && tagValue(true) === 'boolean' &&
-    tagValue(1) === 'number' && tagValue('x') === 'string' &&
-    tagValue(1n) === 'bigint' && tagValue(Symbol('s')) === 'symbol';
+  return (
+    tagValue(undefined) === 'undefined' &&
+    tagValue(true) === 'boolean' &&
+    tagValue(1) === 'number' &&
+    tagValue('x') === 'string' &&
+    tagValue(1n) === 'bigint' &&
+    tagValue(Symbol('s')) === 'symbol'
+  );
 }
 function testObjectsByConstructor() {
   // Objects tag by constructor name: arrays, builtins and classes split,
   // prototype-less objects fall back to plain `'object'`.
   class Box {}
-  return tagValue([]) === 'Array' && tagValue(new Map()) === 'Map' &&
-    tagValue(new Uint8Array(1)) === 'Uint8Array' && tagValue(new Box()) === 'Box' &&
-    tagValue(Object.create(null)) === 'object';
+  return (
+    tagValue([]) === 'Array' &&
+    tagValue(new Map()) === 'Map' &&
+    tagValue(new Uint8Array(1)) === 'Uint8Array' &&
+    tagValue(new Box()) === 'Box' &&
+    tagValue(Object.create(null)) === 'object'
+  );
 }
 function testFunctionsTagByConstructor() {
   // Functions tag by constructor: sync and async split into distinct modes,
   // while every spelling of each stays put.
-  return tagValue(() => {}) === 'Function' && tagValue(function named() {}) === 'Function' &&
-    tagValue(async () => {}) === 'AsyncFunction';
+  return (
+    tagValue(() => {}) === 'Function' &&
+    tagValue(function named() {}) === 'Function' &&
+    tagValue(async () => {}) === 'AsyncFunction'
+  );
 }
 function testExoticFallsBack() {
   // Revoked proxies throw on any touch (even `Array.isArray`): they fall

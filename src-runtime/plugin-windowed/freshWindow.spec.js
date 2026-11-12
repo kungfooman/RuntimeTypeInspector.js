@@ -4,7 +4,12 @@ function testFreshRecordShape() {
   // -1 never matches a real size) and locks out rides until real scan
   // time accumulates (spend starts at 0).
   const record = freshWindow();
-  return record.sinceLast === 0 && record.window === 1 && record.lastSize === -1 && record.spentMs === 0;
+  return (
+    record.sinceLast === 0 &&
+    record.window === 1 &&
+    record.lastSize === -1 &&
+    record.spentMs === 0
+  );
 }
 function testFreshRecordsAreIndependent() {
   // Each call returns its own object: mutating one record must not leak

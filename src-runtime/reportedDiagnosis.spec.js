@@ -228,7 +228,11 @@ function testOptionDriftShowsInLocalDiff() {
     setOptions(prev);
   }
   const rows = rendered.match(/^- \[/gm) || [];
-  return rows.length === 2 && rendered.includes('a[1]') && rendered.includes('reportNameFive.b');
+  return (
+    rows.length === 2 &&
+    rendered.includes('a[1]') &&
+    rendered.includes('reportNameFive.b')
+  );
 }
 function testValidatorDriftShowsInLocalDiff() {
   // Documented drift, pinned openly: a panel realm whose validator table

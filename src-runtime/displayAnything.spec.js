@@ -28,21 +28,33 @@ function testRenderLeaf() {
     const num = dump(renderTree(5).el) === '5';
     const str = dump(renderTree('x').el) === '"x"';
     const nul = dump(renderTree(null).el) === 'null';
-    return num && str && nul;
+    return (
+      num &&
+      str &&
+      nul
+    );
   });
 }
 function testRenderPlainObject() {
   return withFake(() => {
     const text = dump(renderTree({a: 1}).el);
-    return text.includes('Object') && text.includes('{1}') &&
-      text.includes('a') && text.includes('1');
+    return (
+      text.includes('Object') &&
+      text.includes('{1}') &&
+      text.includes('a') &&
+      text.includes('1')
+    );
   });
 }
 function testRenderArray() {
   return withFake(() => {
     const text = dump(renderTree(['a', 1]).el);
-    return text.includes('array') && text.includes('[2]') &&
-      text.includes('a') && text.includes('1');
+    return (
+      text.includes('array') &&
+      text.includes('[2]') &&
+      text.includes('a') &&
+      text.includes('1')
+    );
   });
 }
 function testDepthCap() {
@@ -51,8 +63,11 @@ function testDepthCap() {
     const {root} = renderTree({a: {b: {c: 1}}});
     const [child] = root.children;
     const [grandchild] = child.children;
-    return child.detailsEl !== null && grandchild.children.length === 0 &&
-      dump(child.el).includes('b');
+    return (
+      child.detailsEl !== null &&
+      grandchild.children.length === 0 &&
+      dump(child.el).includes('b')
+    );
   });
 }
 function testCaretExpandCollapse() {
@@ -88,9 +103,15 @@ function testRefillPreservesOpen() {
     root.refill({a: 2, sub: {x: 2, y: 3}});
     const after = root.children.find((child) => child.key === 'sub');
     const text = dump(el);
-    return root.el === el && after.detailsEl === sub.detailsEl &&
-      after.detailsEl.open === true && text.includes('a') &&
-      text.includes('2') && text.includes('y') && text.includes('3');
+    return (
+      root.el === el &&
+      after.detailsEl === sub.detailsEl &&
+      after.detailsEl.open === true &&
+      text.includes('a') &&
+      text.includes('2') &&
+      text.includes('y') &&
+      text.includes('3')
+    );
   });
 }
 function testRefillRemovesKeys() {
@@ -98,8 +119,12 @@ function testRefillRemovesKeys() {
     const {root, el} = renderTree({a: 1, b: 2});
     root.refill({b: 3, c: 4});
     const text = dump(el);
-    return root.children.map((child) => child.key).join() === 'b,c' &&
-      text.includes('3') && text.includes('4') && !text.includes('1');
+    return (
+      root.children.map((child) => child.key).join() === 'b,c' &&
+      text.includes('3') &&
+      text.includes('4') &&
+      !text.includes('1')
+    );
   });
 }
 function testRefillShapeChange() {
@@ -121,8 +146,12 @@ function testRefillShapeChange() {
     root.refill({a: 9, keep: {z: 0}});
     const back = root.children.find((child) => child.key === 'a');
     const backKeep = root.children.find((child) => child.key === 'keep');
-    return back.detailsEl === null && dump(back.el).includes('9') &&
-      backKeep.detailsEl === keep.detailsEl && backKeep.detailsEl.open === true;
+    return (
+      back.detailsEl === null &&
+      dump(back.el).includes('9') &&
+      backKeep.detailsEl === keep.detailsEl &&
+      backKeep.detailsEl.open === true
+    );
   });
 }
 function testClassInstance() {
@@ -132,7 +161,11 @@ function testClassInstance() {
     }
     const vec = Object.assign(new Vec(), {x: 1});
     const text = dump(renderTree(vec).el);
-    return text.includes('Vec') && text.includes('x') && text.includes('1');
+    return (
+      text.includes('Vec') &&
+      text.includes('x') &&
+      text.includes('1')
+    );
   });
 }
 function testThrowingGetter() {
@@ -183,7 +216,11 @@ function testForInPinned() {
     const obj = Object.create({inherited: 7});
     obj.own = 1;
     const text = dump(renderTree(obj).el);
-    return text.includes('inherited') && text.includes('7') && text.includes('own');
+    return (
+      text.includes('inherited') &&
+      text.includes('7') &&
+      text.includes('own')
+    );
   });
 }
 function testNullProto() {
@@ -202,8 +239,11 @@ function testWarningValueRefillKeepsNode() {
     const [first] = warn.td_value.children;
     warn.value = {sub: {x: 2}};
     const text = dump(warn.td_value);
-    return warn.td_value.children[0] === first && text.includes('2') &&
-      !text.includes('[object Object]');
+    return (
+      warn.td_value.children[0] === first &&
+      text.includes('2') &&
+      !text.includes('[object Object]')
+    );
   } finally {
     restore();
   }
@@ -216,8 +256,12 @@ function testWarningExpectRefillKeepsTree() {
     tree.open = true;
     warn.expect = {a: 2, b: 3};
     const text = dump(warn.td_expect);
-    return warn.td_expect.children[1] === tree && tree.open === true &&
-      text.includes('2') && text.includes('b');
+    return (
+      warn.td_expect.children[1] === tree &&
+      tree.open === true &&
+      text.includes('2') &&
+      text.includes('b')
+    );
   } finally {
     restore();
   }
@@ -277,9 +321,14 @@ function testSnapshotTreeSkipsEnvelope() {
     };
     const {root, el} = renderTree(snapshot);
     const text = dump(el);
-    return text.includes('FakeWindow') && text.includes('{3}') &&
-      text.includes('FakeLocation') && !text.includes('$type') &&
-      !text.includes('[object Object]') && root.children.length === 3;
+    return (
+      text.includes('FakeWindow') &&
+      text.includes('{3}') &&
+      text.includes('FakeLocation') &&
+      !text.includes('$type') &&
+      !text.includes('[object Object]') &&
+      root.children.length === 3
+    );
   });
 }
 function testSnapshotEmptyRendersTag() {
@@ -318,8 +367,11 @@ function testDroppedKeysLeaveMarker() {
       const text = dump(warn.td_value);
       const [tree] = warn.td_value.children;
       const [details] = tree.children;
-      return text.includes('...(+5 more)') && !text.includes('k24') &&
-        details.children.length === 22;
+      return (
+        text.includes('...(+5 more)') &&
+        !text.includes('k24') &&
+        details.children.length === 22
+      );
     } finally {
       restore();
     }
@@ -365,8 +417,11 @@ function testMarkerFollowsRefill() {
       warn.value = wideObject(30);
       const text = dump(warn.td_value);
       const markers = text.split('...(+').length - 1;
-      return text.includes('...(+10 more)') && !text.includes('...(+5 more)') &&
-        markers === 1;
+      return (
+        text.includes('...(+10 more)') &&
+        !text.includes('...(+5 more)') &&
+        markers === 1
+      );
     } finally {
       restore();
     }
@@ -377,10 +432,15 @@ function testBatchMarkerCounts() {
     const {root, el} = renderTree(wideObject(25));
     const {markerEl, detailsEl} = root;
     const text = dump(el);
-    return root.children.length === 20 && markerEl !== null &&
-      markerEl.dataset.shown === '20' && markerEl.dataset.total === '25' &&
-      detailsEl.dataset.limit === '20' && text.includes('...(+5 more)') &&
-      !text.includes('k24');
+    return (
+      root.children.length === 20 &&
+      markerEl !== null &&
+      markerEl.dataset.shown === '20' &&
+      markerEl.dataset.total === '25' &&
+      detailsEl.dataset.limit === '20' &&
+      text.includes('...(+5 more)') &&
+      !text.includes('k24')
+    );
   });
 }
 function testShowMoreLoadsBatch() {
@@ -388,9 +448,13 @@ function testShowMoreLoadsBatch() {
     const {root, el} = renderTree(wideObject(25));
     root.markerEl.onclick();
     const text = dump(el);
-    return root.children.length === 25 && root.markerEl === null &&
-      root.detailsEl.dataset.limit === '40' && text.includes('k24') &&
-      !text.includes('...(+');
+    return (
+      root.children.length === 25 &&
+      root.markerEl === null &&
+      root.detailsEl.dataset.limit === '40' &&
+      text.includes('k24') &&
+      !text.includes('...(+')
+    );
   });
 }
 function testShowMoreKeepsOpenRows() {
@@ -405,7 +469,11 @@ function testShowMoreKeepsOpenRows() {
     first.detailsEl.open = true;
     root.markerEl.onclick();
     const [kept] = root.children;
-    return kept === first && kept.detailsEl.open === true && root.children.length === 25;
+    return (
+      kept === first &&
+      kept.detailsEl.open === true &&
+      root.children.length === 25
+    );
   });
 }
 function testBatchLimitPersistsAcrossRefill() {
@@ -428,8 +496,11 @@ function testNestedBatching() {
       return false;
     }
     nested.markerEl.onclick();
-    return nested.children.length === 25 && nested.markerEl === null &&
-      dump(el).includes('k24');
+    return (
+      nested.children.length === 25 &&
+      nested.markerEl === null &&
+      dump(el).includes('k24')
+    );
   });
 }
 function testBarrelExportsDisplayAnything() {

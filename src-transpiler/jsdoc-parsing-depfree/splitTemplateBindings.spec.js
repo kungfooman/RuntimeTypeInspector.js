@@ -2,7 +2,11 @@ import {splitTemplateBindings} from './splitTemplateBindings.js';
 // A comma-separated list binds one row per name; trailing prose falls away.
 function testCommaListBindsEachName() {
   const actual = splitTemplateBindings('O, P The obj and props types');
-  return actual.length === 2 && actual[0] === 'O' && actual[1] === 'P';
+  return (
+    actual.length === 2 &&
+    actual[0] === 'O' &&
+    actual[1] === 'P'
+  );
 }
 // A comma inside a bracketed default never splits the binding.
 function testBracketedDefaultKeepsInnerComma() {

@@ -31,8 +31,13 @@ function testFirstFailurePostsFull() {
   // A first-seen key carries the whole diagnostic payload for the panel row.
   try {
     const posted = capturePosts(() => inspectType(['a'], expandType('Array<number>'), 'repeatA', 'x'));
-    return posted.length === 1 && posted[0].key === 'repeatA-x' && posted[0].repeat !== true &&
-      typeof posted[0].valueToString === 'string' && Array.isArray(posted[0].strings);
+    return (
+      posted.length === 1 &&
+      posted[0].key === 'repeatA-x' &&
+      posted[0].repeat !== true &&
+      typeof posted[0].valueToString === 'string' &&
+      Array.isArray(posted[0].strings)
+    );
   } finally {
     reportedKeys.clear();
   }
@@ -49,9 +54,15 @@ function testRepeatPostsKeyOnly() {
       return false;
     }
     const [, repeat] = posted;
-    return repeat.repeat === true && repeat.key === 'repeatB-x' &&
-      !('value' in repeat) && !('valueToString' in repeat) && !('strings' in repeat) &&
-      !('extras' in repeat) && !('expect' in repeat);
+    return (
+      repeat.repeat === true &&
+      repeat.key === 'repeatB-x' &&
+      !('value' in repeat) &&
+      !('valueToString' in repeat) &&
+      !('strings' in repeat) &&
+      !('extras' in repeat) &&
+      !('expect' in repeat)
+    );
   } finally {
     reportedKeys.clear();
   }
@@ -69,8 +80,13 @@ function testRepeatStillValidates() {
       second = inspectType(['b'], expandType('Array<number>'), 'repeatC', 'x');
       third = inspectType([1], expandType('Array<number>'), 'repeatC', 'x');
     });
-    return first === false && second === false && third === true &&
-      posted.length === 2 && options.count === before + 2;
+    return (
+      first === false &&
+      second === false &&
+      third === true &&
+      posted.length === 2 &&
+      options.count === before + 2
+    );
   } finally {
     reportedKeys.clear();
   }
@@ -99,7 +115,11 @@ function testNeverDedups() {
       inspectType(['a'], expandType('Array<number>'), 'repeatE', 'x');
       inspectType(['b'], expandType('Array<number>'), 'repeatE', 'x');
     });
-    return posted.length === 2 && posted[0].repeat !== true && posted[1].repeat === true;
+    return (
+      posted.length === 2 &&
+      posted[0].repeat !== true &&
+      posted[1].repeat === true
+    );
   } finally {
     options.mode = prevMode;
     reportedKeys.clear();
@@ -134,9 +154,14 @@ function testDistinctArgsEachReportFull() {
       return false;
     }
     const [a, b, c] = posted;
-    return a.repeat !== true && a.name === 'first' &&
-      b.repeat !== true && b.name === 'second' &&
-      c.repeat === true && c.key === 'takeTwo-first';
+    return (
+      a.repeat !== true &&
+      a.name === 'first' &&
+      b.repeat !== true &&
+      b.name === 'second' &&
+      c.repeat === true &&
+      c.key === 'takeTwo-first'
+    );
   } finally {
     reportedKeys.clear();
   }
@@ -156,8 +181,13 @@ function testModeChangeRepostsFull() {
       return false;
     }
     const [a, b, c, d] = posted;
-    return a.repeat !== true && b.repeat !== true && c.repeat !== true &&
-      d.repeat === true && d.key === 'takeModes-v';
+    return (
+      a.repeat !== true &&
+      b.repeat !== true &&
+      c.repeat !== true &&
+      d.repeat === true &&
+      d.key === 'takeModes-v'
+    );
   } finally {
     reportedKeys.clear();
   }
@@ -187,7 +217,11 @@ function testRepeatSkipsStack() {
       inspectType(['a'], expandType('Array<number>'), 'repeatNoStack', 'x');
       inspectType(['b'], expandType('Array<number>'), 'repeatNoStack', 'x');
     });
-    return posted.length === 2 && Array.isArray(posted[0].stack) && !('stack' in posted[1]);
+    return (
+      posted.length === 2 &&
+      Array.isArray(posted[0].stack) &&
+      !('stack' in posted[1])
+    );
   } finally {
     reportedKeys.clear();
   }

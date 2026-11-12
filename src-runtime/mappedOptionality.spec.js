@@ -36,11 +36,15 @@ function testSingleUnwrapKeepsFlags() {
   // Single-member indexed access returns the member itself, flags intact.
   prepare();
   const created = createTypeFromIndexedAccess(expandType('Merged["pos"]'), warn);
-  return created && created.type === 'union' && created.optional === true &&
+  return (
+    created &&
+    created.type === 'union' &&
+    created.optional === true &&
     JSON.stringify(created.members) === JSON.stringify(['string', {
       type: 'array',
       elementType: 'number',
-    }]);
+    }])
+  );
 }
 function testMultiStaysUnion() {
   // Multi-key select stays a union wrapper like before.
@@ -53,7 +57,11 @@ function testMultiStaysUnion() {
     },
     warn,
   );
-  return created && created.type === 'union' && created.optional === false;
+  return (
+    created &&
+    created.type === 'union' &&
+    created.optional === false
+  );
 }
 function testUnresolvableStaysUndefined() {
   // Unknown bases still fail closed without throwing.
@@ -65,8 +73,13 @@ function testMaterializedKeepsOptional() {
   prepare();
   const mapped = createType(expandType('{[P in keyof Merged]: Merged[P]}'), warn);
   const props = mapped && mapped.properties;
-  return !!props && props.count && props.count.optional === true &&
-    props.pos && props.pos.optional === true;
+  return (
+    !!props &&
+    props.count &&
+    props.count.optional === true &&
+    props.pos &&
+    props.pos.optional === true
+  );
 }
 function testMaterializedKeepsRequired() {
   // Same chain without Partial stays required, while the optional override
@@ -74,7 +87,11 @@ function testMaterializedKeepsRequired() {
   prepare();
   const mapped = createType(expandType('{[P in keyof Strict]: Strict[P]}'), warn);
   const props = mapped && mapped.properties;
-  return !!props && !props.count.optional && props.pos.optional === true;
+  return (
+    !!props &&
+    !props.count.optional &&
+    props.pos.optional === true
+  );
 }
 function testAbsentOptionalsPass() {
   // Partial data validates and explains clean: no false missing findings.
@@ -102,9 +119,11 @@ function testPresentUnionsPass() {
   // Override unions validate through the materialized map, both members.
   prepare();
   const mapped = createType(expandType('{[P in keyof Merged]: Merged[P]}'), warn);
-  return validateType({pos: [1, 2]}, mapped, 'loc', 'name', true, warn, 0) === true &&
+  return (
+    validateType({pos: [1, 2]}, mapped, 'loc', 'name', true, warn, 0) === true &&
     validateType({pos: 'x', count: 1}, mapped, 'loc', 'name', true, warn, 0) === true &&
-    validateType({pos: true}, mapped, 'loc', 'name', true, warn, 0) === false;
+    validateType({pos: true}, mapped, 'loc', 'name', true, warn, 0) === false
+  );
 }
 function testTableFallback() {
   // Without the table entry the eager probe stays out: props stay lazy.
@@ -114,7 +133,11 @@ function testTableFallback() {
     delete validators.createTypeFromIndexedAccess;
     const mapped = createType(expandType('{[P in keyof Merged]: Merged[P]}'), warn);
     const props = mapped && mapped.properties;
-    return !!props && props.count && props.count.type === 'indexedAccess';
+    return (
+      !!props &&
+      props.count &&
+      props.count.type === 'indexedAccess'
+    );
   } finally {
     validators.createTypeFromIndexedAccess = prev;
   }

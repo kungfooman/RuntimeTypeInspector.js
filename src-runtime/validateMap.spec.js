@@ -62,8 +62,11 @@ function testNumberKeysRejectStrings() {
     },
     0,
   );
-  return ret === false && warnings.some((_) => typeof _ === 'string' && _.includes('Map key')) &&
-    infos.some((info) => info && info.expect === 'number' && info.value === '1');
+  return (
+    ret === false &&
+    warnings.some((_) => typeof _ === 'string' && _.includes('Map key')) &&
+    infos.some((info) => info && info.expect === 'number' && info.value === '1')
+  );
 }
 function testClassKeysPass() {
   // Class-keyed maps accept instances, subclasses included.
@@ -107,10 +110,12 @@ function testTypedefKeysValidate() {
 function testLiteralKeyValidates() {
   // Literal keys match exactly, including numeric ones (map keys are real
   // values, so no canonical-string detour is needed).
-  return validateType(new Map([['a', 1]]), expandType('Map<"a", number>'), 'loc', 'name', true, warn, 0) === true &&
+  return (
+    validateType(new Map([['a', 1]]), expandType('Map<"a", number>'), 'loc', 'name', true, warn, 0) === true &&
     validateType(new Map([['b', 1]]), expandType('Map<"a", number>'), 'loc', 'name', true, warn, 0) === false &&
     validateType(new Map([[1, 'x']]), expandType('Map<1 | 2, string>'), 'loc', 'name', true, warn, 0) === true &&
-    validateType(new Map([[3, 'x']]), expandType('Map<1 | 2, string>'), 'loc', 'name', true, warn, 0) === false;
+    validateType(new Map([[3, 'x']]), expandType('Map<1 | 2, string>'), 'loc', 'name', true, warn, 0) === false
+  );
 }
 const tests = [
   testStringKeysStillWork,

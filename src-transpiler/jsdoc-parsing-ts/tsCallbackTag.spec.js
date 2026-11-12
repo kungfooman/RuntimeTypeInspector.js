@@ -13,7 +13,11 @@ function testCallbackNestsRows() {
     },
   };
   const actual = tsCallbackTag(tag);
-  return actual.name === 'SwapFunction' && actual.params.length === 1 && actual.params[0].name === 'newState';
+  return (
+    actual.name === 'SwapFunction' &&
+    actual.params.length === 1 &&
+    actual.params[0].name === 'newState'
+  );
 }
 // A signature return is visible on the tag's typeExpression as its own
 // nested row shape; the helper only lowers params (the return binds at
@@ -33,6 +37,10 @@ function testCallbackIgnoresSignatureReturn() {
     },
   };
   const actual = tsCallbackTag(tag);
-  return actual.name === 'HandleEventCallback' && actual.params.length === 1 && actual.params[0].name === 'arg1';
+  return (
+    actual.name === 'HandleEventCallback' &&
+    actual.params.length === 1 &&
+    actual.params[0].name === 'arg1'
+  );
 }
 export const tests = [testCallbackNestsRows, testCallbackIgnoresSignatureReturn];

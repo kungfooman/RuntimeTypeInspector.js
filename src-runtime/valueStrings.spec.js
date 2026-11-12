@@ -30,15 +30,22 @@ function testUnclonableStaysStructured() {
     return false;
   }
   const [msg] = msgs;
-  return typeof msg.value === 'object' && msg.value.type === 'sphere' &&
-    msg.valueToString !== '[object Object]' && msg.valueToString.includes('sphere');
+  return (
+    typeof msg.value === 'object' &&
+    msg.value.type === 'sphere' &&
+    msg.valueToString !== '[object Object]' &&
+    msg.valueToString.includes('sphere')
+  );
 }
 function testPreviewNeverBareObject() {
   const msgs = captureMessages(() => {
     inspectType({a: 1}, 'number', 'loc', 'preview');
   });
-  return msgs.length === 1 && msgs[0].valueToString !== '[object Object]' &&
-    msgs[0].valueToString.includes('"a"');
+  return (
+    msgs.length === 1 &&
+    msgs[0].valueToString !== '[object Object]' &&
+    msgs[0].valueToString.includes('"a"')
+  );
 }
 function testExtrasSnapshotted() {
   const prev = options.exactObjects;
@@ -63,7 +70,11 @@ function testExtrasSnapshotted() {
     return false;
   }
   const extra = msgs[0].extras.find((_) => _ && typeof _ === 'object' && 'value' in _);
-  return !!extra && typeof extra.value === 'object' && extra.value.a === 1;
+  return (
+    !!extra &&
+    typeof extra.value === 'object' &&
+    extra.value.a === 1
+  );
 }
 const tests = [
   testUnclonableStaysStructured,

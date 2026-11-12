@@ -54,7 +54,12 @@ function testFallbackCopiesSync() {
   const {restore, areas, body} = installFallbackDom({execResult: true});
   try {
     const result = copyText('hello');
-    return result === true && areas.length === 1 && areas[0].value === 'hello' && body.children.length === 0;
+    return (
+      result === true &&
+      areas.length === 1 &&
+      areas[0].value === 'hello' &&
+      body.children.length === 0
+    );
   } finally {
     restore();
   }

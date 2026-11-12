@@ -37,7 +37,11 @@ function testPathFailsClosed() {
 function testBracketNameReadsTokens() {
   const cursor = makeJSDocCursor('[kwargs={}] rest');
   const {name, optional, next} = parseBracketName(cursor);
-  return name === 'kwargs' && optional === true && next === 6;
+  return (
+    name === 'kwargs' &&
+    optional === true &&
+    next === 6
+  );
 }
 // Dotted bracket names keep their path and default: `[options.level=3]`
 // binds `options.level` as optional.
@@ -51,14 +55,22 @@ function testBracketNameKeepsPath() {
 function testBracketNameKeepsStray() {
   const cursor = makeJSDocCursor('[a-b] x');
   const {name, optional, next} = parseBracketName(cursor);
-  return optional === true && next === 5 && parseNamePath(name).valid === false;
+  return (
+    optional === true &&
+    next === 5 &&
+    parseNamePath(name).valid === false
+  );
 }
 // An unclosed bracket consumes nothing: the caller sees the opener and
 // falls back to the bare-head path.
 function testBracketNameFailsOpen() {
   const cursor = makeJSDocCursor('[unclosed rest');
   const {name, optional, next} = parseBracketName(cursor);
-  return name === '' && optional === false && next === 0;
+  return (
+    name === '' &&
+    optional === false &&
+    next === 0
+  );
 }
 export const tests = [
   testPathSplitsDots,

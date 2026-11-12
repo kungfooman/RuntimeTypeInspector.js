@@ -6,7 +6,11 @@ function testBareIsAll() {
 function testScopedIsSet() {
   // Listed names skip only those checks.
   const ignored = ignoredParamsIn('@ignoreRTI vertices');
-  return ignored instanceof Set && ignored.has('vertices') && ignored.size === 1;
+  return (
+    ignored instanceof Set &&
+    ignored.has('vertices') &&
+    ignored.size === 1
+  );
 }
 function testQuotedIsAll() {
   // Markdown quoting is formatting, not a parameter name.

@@ -70,7 +70,11 @@ function testAnonymousClassDeclarator() {
 function testAnonymousClassBare() {
   // Without a direct binding there is no owner, so the bare name survives.
   const out = convert(`export default class {\n${doc1}test(a) {\nreturn a;\n}\n};`);
-  return out.includes(`'test', 'a'`) && !out.includes('#test') && !out.includes('.test');
+  return (
+    out.includes(`'test', 'a'`) &&
+    !out.includes('#test') &&
+    !out.includes('.test')
+  );
 }
 function testPrototypeAssignHash() {
   // `Object.assign(X.prototype, ...)` members are instance members of X.
@@ -115,7 +119,11 @@ function testNamedNestedClass() {
 function testThisAssignmentBare() {
   // `this.o = {...}` has no lexical owner, so the bare key survives.
   const out = convert(`class C { constructor() { this.o = { ${doc1}m(a) { return a; } }; } }`);
-  return out.includes(`'m', 'a'`) && !out.includes('.m') && !out.includes('#m');
+  return (
+    out.includes(`'m', 'a'`) &&
+    !out.includes('.m') &&
+    !out.includes('#m')
+  );
 }
 function testApostropheKeyQuoted() {
   // Keys with single quotes escape as `\'`, never raw.

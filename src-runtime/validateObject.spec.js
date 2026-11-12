@@ -17,10 +17,12 @@ function testShapedFails() {
 function testBareAcceptsAllNonNullish() {
   // Bare `{}`/`object` accepts every non-nullish value, like TS.
   const bare = {type: 'object'};
-  return validateType(1, bare, 'loc', 'name', true, warn, 0) === true &&
+  return (
+    validateType(1, bare, 'loc', 'name', true, warn, 0) === true &&
     validateType('x', bare, 'loc', 'name', true, warn, 0) === true &&
     validateType({}, bare, 'loc', 'name', true, warn, 0) === true &&
-    validateType([], bare, 'loc', 'name', true, warn, 0) === true;
+    validateType([], bare, 'loc', 'name', true, warn, 0) === true
+  );
 }
 function testBareNullishFailsWithDiagnostic() {
   // Nullish values fail with the object diagnostic, not silently.
@@ -28,8 +30,12 @@ function testBareNullishFailsWithDiagnostic() {
   const bare = {type: 'object'};
   const retNull = validateType(null, bare, 'loc', 'name', true, (...args) => warnings.push(args[0]), 0);
   const retUndef = validateType(undefined, bare, 'loc', 'name', true, (...args) => warnings.push(args[0]), 0);
-  return retNull === false && retUndef === false && warnings.length === 2 &&
-    warnings.every((_) => typeof _ === 'string' && _.includes('not an object'));
+  return (
+    retNull === false &&
+    retUndef === false &&
+    warnings.length === 2 &&
+    warnings.every((_) => typeof _ === 'string' && _.includes('not an object'))
+  );
 }
 function testStaleDirectCallFailsLoud() {
   // A bare properties bag means a stale direct call under the old

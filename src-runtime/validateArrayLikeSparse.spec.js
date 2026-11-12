@@ -23,7 +23,8 @@ function testHolesSkipped() {
   // object-shaped ArrayLikes with holes all pass.
   const grown = [1];
   grown.length = 3;
-  return validateArrayLikeSparse(grown, numbers(), 'loc', 'name', true, warn, 0) === true &&
+  return (
+    validateArrayLikeSparse(grown, numbers(), 'loc', 'name', true, warn, 0) === true &&
     validateArrayLikeSparse(new Array(3), numbers(), 'loc', 'name', true, warn, 0) === true &&
     validateArrayLikeSparse(
       {
@@ -36,7 +37,8 @@ function testHolesSkipped() {
       true,
       warn,
       0,
-    ) === true;
+    ) === true
+  );
 }
 function testElementTypeGeneric() {
   // Any element type works: holey string arrays pass, mixed fail.
@@ -47,10 +49,12 @@ function testElementTypeGeneric() {
 }
 function testBadShapesFail() {
   // Non-containers, bad lengths and non-container expects fail closed.
-  return validateArrayLikeSparse(null, numbers(), 'loc', 'name', true, warn, 0) === false &&
+  return (
+    validateArrayLikeSparse(null, numbers(), 'loc', 'name', true, warn, 0) === false &&
     validateArrayLikeSparse(42, likeNumbers(), 'loc', 'name', true, warn, 0) === false &&
     validateArrayLikeSparse([1], 'number', 'loc', 'name', true, warn, 0) === false &&
-    validateArrayLikeSparse([1], {type: 'array'}, 'loc', 'name', true, warn, 0) === false;
+    validateArrayLikeSparse([1], {type: 'array'}, 'loc', 'name', true, warn, 0) === false
+  );
 }
 function testBareArrayLikeIsShapeOnly() {
   // Bare `ArrayLike` (no args) checks shape only, like the strict branch.

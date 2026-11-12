@@ -15,11 +15,19 @@ function keysOf(value, expect) {
 }
 // Bare occurrences yield the value's literal.
 function testBareCollects() {
-  return keysOf('x', 'T') === 'T="\\"x\\""' && keysOf(1, 'T') === 'T=1' && keysOf(true, 'T') === 'T=true';
+  return (
+    keysOf('x', 'T') === 'T="\\"x\\""' &&
+    keysOf(1, 'T') === 'T=1' &&
+    keysOf(true, 'T') === 'T=true'
+  );
 }
 // Non-literals yield nothing.
 function testNonLiteralsCollectNothing() {
-  return keysOf({a: 1}, 'T') === '' && keysOf(null, 'T') === '' && keysOf(undefined, 'T') === '';
+  return (
+    keysOf({a: 1}, 'T') === '' &&
+    keysOf(null, 'T') === '' &&
+    keysOf(undefined, 'T') === ''
+  );
 }
 // Quoted literals and primitive expects are not inference sites; other bare
 // names are emitted raw (membership in `templates` is the caller's filter).

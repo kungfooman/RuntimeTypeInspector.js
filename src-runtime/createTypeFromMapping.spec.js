@@ -18,7 +18,11 @@ function testFreshNodesShareMaterialization() {
   const freshNode = () => expandType('{[K in "a"|"b"]: number}');
   const a = createTypeFromMapping(freshNode(), warn);
   const b = createTypeFromMapping(freshNode(), warn);
-  return a === b && a.properties.a === 'number' && a.properties.b === 'number';
+  return (
+    a === b &&
+    a.properties.a === 'number' &&
+    a.properties.b === 'number'
+  );
 }
 // A stable node (registry typedef or substituted tree) takes the identity
 // path and returns the very same materialization on every call.
@@ -38,7 +42,12 @@ function testMaterializationFrozen() {
   } catch {
     loud = true;
   }
-  return Object.isFrozen(mat) && Object.isFrozen(mat.properties) && loud && mat.properties.x === 'number';
+  return (
+    Object.isFrozen(mat) &&
+    Object.isFrozen(mat.properties) &&
+    loud &&
+    mat.properties.x === 'number'
+  );
 }
 // Re-registering the mapped source bumps the registry version: equal
 // mapping content must recompute its keys against the new registry instead
@@ -55,10 +64,12 @@ function testRegistryUpdateInvalidates() {
     const before = createTypeFromMapping(freshNode(), warn);
     registerTypedef('MapSource', {type: 'object', properties: {a: 'number', b: 'boolean'}});
     const after = createTypeFromMapping(freshNode(), warn);
-    return before !== after &&
+    return (
+      before !== after &&
       before.properties.b === undefined &&
       after.properties.a === '"a"' &&
-      after.properties.b === '"b"';
+      after.properties.b === '"b"'
+    );
   } finally {
     dropTypedef('MapSource');
   }

@@ -34,7 +34,12 @@ function testMergedShapeSharesIdentity() {
   try {
     const first = mergedClassShape('MergeChild');
     const second = mergedClassShape('MergeChild');
-    return first === second && Object.isFrozen(first) && 'base' in first.properties && 'sub' in first.properties;
+    return (
+      first === second &&
+      Object.isFrozen(first) &&
+      'base' in first.properties &&
+      'sub' in first.properties
+    );
   } finally {
     dropClass('MergeBase');
     dropClass('MergeChild');
@@ -50,7 +55,11 @@ function testMergedShapeReflectsTypedefChange() {
     const before = mergedClassShape('HarvestedBox');
     registerTypedef('HarvestedBox', {type: 'object', properties: {a: 'number', b: 'string'}});
     const after = mergedClassShape('HarvestedBox');
-    return before !== after && !('b' in before.properties) && 'b' in after.properties;
+    return (
+      before !== after &&
+      !('b' in before.properties) &&
+      'b' in after.properties
+    );
   } finally {
     dropClass('HarvestedBox');
     dropTypedef('HarvestedBox');
@@ -87,7 +96,13 @@ function testReferenceSharesIdentityPerArgs() {
       },
       noop,
     );
-    return first === second && Object.isFrozen(first) && first !== other && first.properties.value === '"a"' && other.properties.value === '"b"';
+    return (
+      first === second &&
+      Object.isFrozen(first) &&
+      first !== other &&
+      first.properties.value === '"a"' &&
+      other.properties.value === '"b"'
+    );
   } finally {
     if (prev === undefined) {
       delete typedefs.ArgumentsBox;
@@ -120,7 +135,11 @@ function testReferenceReflectsReregistration() {
       },
       noop,
     );
-    return before !== after && !('w' in before.properties) && 'w' in after.properties;
+    return (
+      before !== after &&
+      !('w' in before.properties) &&
+      'w' in after.properties
+    );
   } finally {
     if (prev === undefined) {
       delete typedefs.ReregisteredBox;
@@ -229,7 +248,12 @@ function testReferenceKeepsNegZeroDistinct() {
       noop,
     );
     const pos = instantiateReference({type: 'reference', name: 'NegativeZeroBox', args: [0]}, noop);
-    return neg !== pos && Object.is(neg.properties.v, -0) && Object.is(pos.properties.v, 0) && !Object.is(pos.properties.v, -0);
+    return (
+      neg !== pos &&
+      Object.is(neg.properties.v, -0) &&
+      Object.is(pos.properties.v, 0) &&
+      !Object.is(pos.properties.v, -0)
+    );
   } finally {
     if (prev === undefined) {
       delete typedefs.NegativeZeroBox;
@@ -365,7 +389,12 @@ function testFrozenSharedTupleMaterializes() {
     const desugared = flat !== shared && flat.elements.length === 2 && flat.elements[0] === 'number' && flat.elements[1] === 'string';
     const ok = validateType({a: [1, 'x'], b: [2, 'y']}, mat, 'loc', 'name', true, noop, 0);
     const bad = validateType({a: [1, 2, 'x']}, mat, 'loc', 'name', true, noop, 0) === false;
-    return untouched && desugared && ok && bad;
+    return (
+      untouched &&
+      desugared &&
+      ok &&
+      bad
+    );
   } finally {
     dropTypedef('SharedTupleBox');
   }

@@ -12,7 +12,11 @@ function testSignatureLowersParamsAndReturn() {
     },
   };
   const actual = tsOverloadTag(tag);
-  return actual.params.length === 1 && actual.params[0].name === 'text' && actual.returns === 'string';
+  return (
+    actual.params.length === 1 &&
+    actual.params[0].name === 'text' &&
+    actual.returns === 'string'
+  );
 }
 // A signature without a return lowers an empty return, not undefined.
 function testMissingReturnLowersEmpty() {
@@ -27,7 +31,11 @@ function testMissingReturnLowersEmpty() {
     },
   };
   const actual = tsOverloadTag(tag);
-  return actual.params.length === 1 && actual.params[0].bracketed === true && actual.returns === '';
+  return (
+    actual.params.length === 1 &&
+    actual.params[0].bracketed === true &&
+    actual.returns === ''
+  );
 }
 // A container row absorbs its dotted children as type text inside the
 // signature (the playcanvas `script/component.js` `args` shape), so the

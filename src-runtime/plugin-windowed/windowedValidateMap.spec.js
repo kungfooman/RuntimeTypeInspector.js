@@ -107,9 +107,16 @@ function testRepeatsSkipUntilWindowHits() {
   const third = check(map, expect); // sinceLast 2 >= 2: due, scan 2: window 4
   const thirdRecord = snap(mapCheckWindowRecord(map));
   const fourth = check(map, expect); // sinceLast 1 < 4: inside window again
-  return second.good === true && secondRecord.window === 2 && secondRecord.sinceLast === 1 &&
-    third.good === true && thirdRecord.window === 4 && thirdRecord.sinceLast === 0 &&
-    fourth.good === true && snap(mapCheckWindowRecord(map)).window === 4;
+  return (
+    second.good === true &&
+    secondRecord.window === 2 &&
+    secondRecord.sinceLast === 1 &&
+    third.good === true &&
+    thirdRecord.window === 4 &&
+    thirdRecord.sinceLast === 0 &&
+    fourth.good === true &&
+    snap(mapCheckWindowRecord(map)).window === 4
+  );
 }
 function testDoublingStaysBoundedByCap() {
   setOptions({windowedChecks: true});
@@ -126,7 +133,11 @@ function testDoublingStaysBoundedByCap() {
     check(map, expect);
   }
   const stillCapped = snap(mapCheckWindowRecord(map));
-  return capped.window === 1024 && stillCapped.window === 1024 && capped.window === stillCapped.window;
+  return (
+    capped.window === 1024 &&
+    stillCapped.window === 1024 &&
+    capped.window === stillCapped.window
+  );
 }
 function testSizeChangeRestartsWindow() {
   setOptions({windowedChecks: true});
@@ -156,9 +167,12 @@ function testDirtyMapsRescanEveryTime() {
   const expect = {type: 'map', key: 'number', val: 'string'};
   const first = check(map, expect);
   const second = check(map, expect);
-  return first.good === false && second.good === false &&
+  return (
+    first.good === false &&
+    second.good === false &&
     first.infos.some((info) => info && info.expect === 'string' && info.value === 3) &&
-    second.infos.some((info) => info && info.expect === 'string' && info.value === 3);
+    second.infos.some((info) => info && info.expect === 'string' && info.value === 3)
+  );
 }
 function testContentDriftCaughtWithinWindow() {
   setOptions({windowedChecks: true});
@@ -396,7 +410,15 @@ function testSetOptionsPatchesAndRejectsUnknown() {
       return true;
     }
   })();
-  return patched && restored && patchedMin && restoredMin && minWrongTypeThrew && unknownThrew && wrongTypeThrew;
+  return (
+    patched &&
+    restored &&
+    patchedMin &&
+    restoredMin &&
+    minWrongTypeThrew &&
+    unknownThrew &&
+    wrongTypeThrew
+  );
 }
 function testMapCheckWindowCapIsOptionAndLiveEditable() {
   // The doubling cap is not a magic constant: a small cap stops growth
@@ -513,7 +535,12 @@ function testRecordCheckLedgerUsesScanLedgerSeparately() {
   recordCheck('Ledger#x', 'v', 2);
   recordMapScan('Ledger#x', 'v', 20);
   const row = getCheckStats().find(_ => _.loc === 'Ledger#x v');
-  return row !== undefined && row.checks === 1 && row.scans === 1 && row.rides === 0;
+  return (
+    row !== undefined &&
+    row.checks === 1 &&
+    row.scans === 1 &&
+    row.rides === 0
+  );
 }
 function testSpendGateShipsAtHundredMs() {
   // The spend gate must be on out of the box: a shipped 0 would mean

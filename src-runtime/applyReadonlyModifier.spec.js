@@ -7,8 +7,13 @@ function testStripCopiesRegistryAlias() {
   registerTypedef('ReadonlyBox', {type: 'object', properties: {v: 'number'}, readonly: true});
   try {
     const stripped = applyReadonlyModifier('ReadonlyBox', '-');
-    return stripped !== typedefs.ReadonlyBox && typeof stripped === 'object' && stripped !== null &&
-      !('readonly' in stripped) && typedefs.ReadonlyBox.readonly === true;
+    return (
+      stripped !== typedefs.ReadonlyBox &&
+      typeof stripped === 'object' &&
+      stripped !== null &&
+      !('readonly' in stripped) &&
+      typedefs.ReadonlyBox.readonly === true
+    );
   } finally {
     delete typedefs.ReadonlyBox;
     bumpTypedefVersion();

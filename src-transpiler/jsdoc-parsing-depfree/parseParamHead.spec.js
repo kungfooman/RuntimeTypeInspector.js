@@ -2,7 +2,11 @@ import {parseParamHead} from './parseParamHead.js';
 // A bracketed head with a default strips to the name and marks optional.
 function testHeadStripsDefault() {
   const {name, optional, valid} = parseParamHead('[kwargs={}] rest');
-  return name === 'kwargs' && optional === true && valid === true;
+  return (
+    name === 'kwargs' &&
+    optional === true &&
+    valid === true
+  );
 }
 // A dotted path scans into segments.
 function testHeadScansPath() {

@@ -259,7 +259,11 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
     case 'new':
       return typeof value === 'function';
     case 'ObjectConstructor':
-      return value !== null && value !== undefined && typeof value.constructor === 'function';
+      return (
+        value !== null &&
+        value !== undefined &&
+        typeof value.constructor === 'function'
+      );
     case 'IArguments':
       return validators.validateIArguments(value, expect, loc, name, critical, warn, depth + 1);
     case 'ArrayBufferView':

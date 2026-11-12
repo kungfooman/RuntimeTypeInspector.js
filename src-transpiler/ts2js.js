@@ -315,7 +315,11 @@ function hasTypedParams(node) {
     if (param.type === 'TSParameterProperty') {
       param = param.parameter;
     }
-    return param.typeAnnotation || param.left?.typeAnnotation || param.argument?.typeAnnotation;
+    return (
+      param.typeAnnotation ||
+      param.left?.typeAnnotation ||
+      param.argument?.typeAnnotation
+    );
   });
 }
 /**
@@ -368,12 +372,14 @@ function injectParameterProperties(node) {
         return false;
       }
       const expr = stmt.expression;
-      return expr.type === 'AssignmentExpression' &&
+      return (
+        expr.type === 'AssignmentExpression' &&
         expr.operator === '=' &&
         expr.left.type === 'MemberExpression' &&
         expr.left.object.type === 'ThisExpression' &&
         expr.left.property.type === 'Identifier' &&
-        expr.left.property.name === name;
+        expr.left.property.name === name
+      );
     });
     if (alreadyAssigned) {
       continue;

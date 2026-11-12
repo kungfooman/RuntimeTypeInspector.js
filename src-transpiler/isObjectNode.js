@@ -14,6 +14,10 @@
  * @returns {node is ExpandObjectNode} Whether it is an object node.
  */
 function isObjectNode(node) {
-  return typeof node === 'object' && node !== null && node.type === 'object';
+  return (
+    typeof node === 'object' &&
+    node !== null &&
+    node.type === 'object'
+  );
 }
 export {isObjectNode};

@@ -4,7 +4,11 @@ import {parseBraceType} from './parseBraceType.js';
 function testBalancedTypeReads() {
   const cursor = makeJSDocCursor('{number} x');
   const {typeRaw, balanced, headStart} = parseBraceType(cursor);
-  return typeRaw === 'number' && balanced === true && cursor.src.slice(headStart).trim() === 'x';
+  return (
+    typeRaw === 'number' &&
+    balanced === true &&
+    cursor.src.slice(headStart).trim() === 'x'
+  );
 }
 // The cursor advances past the closer; trivia between the closer and the
 // head is the head reader's to skip, not the brace reader's.
@@ -32,7 +36,11 @@ function testUnbalancedRunsToEnd() {
 function testUnbalancedRecoversHead() {
   const cursor = makeJSDocCursor('{number a');
   const {typeRaw, balanced, headStart} = parseBraceType(cursor);
-  return typeRaw === 'number' && balanced === false && cursor.src.slice(headStart).trim() === 'a';
+  return (
+    typeRaw === 'number' &&
+    balanced === false &&
+    cursor.src.slice(headStart).trim() === 'a'
+  );
 }
 export const tests = [
   testBalancedTypeReads,

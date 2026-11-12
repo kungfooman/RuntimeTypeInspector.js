@@ -169,9 +169,14 @@ function testUnwrapTransparent() {
   const partial = unwrapTransparent(expandType('Partial<RealmColor>'));
   const plain = unwrapTransparent(expandType('{a: number}'));
   const empty = unwrapTransparent({type: 'reference', name: 'Readonly', args: []});
-  return readonlyColor === 'RealmColor' && nested === 'RealmColor' &&
+  return (
+    readonlyColor === 'RealmColor' &&
+    nested === 'RealmColor' &&
     bare === 'RealmColor' &&
-    partial === undefined && plain === undefined && empty === undefined;
+    partial === undefined &&
+    plain === undefined &&
+    empty === undefined
+  );
 }
 export const tests = [
   testUnwrapTransparent,

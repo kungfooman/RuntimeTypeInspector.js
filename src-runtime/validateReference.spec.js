@@ -313,7 +313,11 @@ function testGenericBranchFreshNodesValidate() {
     const okFirst = validateType({v: 1}, freshNode(), 'loc', 'name', true, warn, 0);
     const okSecond = validateType({v: 1}, freshNode(), 'loc', 'name', true, warn, 0);
     const badSecond = validateType({v: 'x'}, freshNode(), 'loc', 'name', true, warn, 0);
-    return okFirst === true && okSecond === true && badSecond === false;
+    return (
+      okFirst === true &&
+      okSecond === true &&
+      badSecond === false
+    );
   } finally {
     delete typedefs.FreshBox;
     bumpTypedefVersion();
@@ -329,7 +333,11 @@ function testGenericBranchRegistryUpdateSeen() {
     registerTypedef('UpdatedBox', {type: 'object', properties: {v: 'string'}}, ['T']);
     const nowInvalid = validateType({v: 1}, expandType('UpdatedBox<number>'), 'loc', 'name', true, warn, 0);
     const nowValid = validateType({v: 'x'}, expandType('UpdatedBox<number>'), 'loc', 'name', true, warn, 0);
-    return before === true && nowInvalid === false && nowValid === true;
+    return (
+      before === true &&
+      nowInvalid === false &&
+      nowValid === true
+    );
   } finally {
     delete typedefs.UpdatedBox;
     bumpTypedefVersion();

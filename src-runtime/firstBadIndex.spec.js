@@ -10,25 +10,31 @@ const arrayOf = (elementType) => ({type: 'array', elementType});
 const likeOf = (elementType) => ({type: 'reference', name: 'ArrayLike', args: [elementType]});
 function testExamplesVerbatim() {
   // The documented examples hold exactly.
-  return firstBadIndex([1, 'x', 3], 3, 'number') === 1 &&
+  return (
+    firstBadIndex([1, 'x', 3], 3, 'number') === 1 &&
     firstBadIndex([1, 2, 3], 3, 'number') === -1 &&
-    firstBadIndex([1, 2, 3], 3, 'Date') === 0;
+    firstBadIndex([1, 2, 3], 3, 'Date') === 0
+  );
 }
 function testStringBoolean() {
   // `string`/`boolean` scan by `typeof` like their validators.
-  return firstBadIndex(['a', 1, 'c'], 3, 'string') === 1 &&
+  return (
+    firstBadIndex(['a', 1, 'c'], 3, 'string') === 1 &&
     firstBadIndex([true, false], 2, 'boolean') === -1 &&
-    firstBadIndex([true, 0], 2, 'boolean') === 1;
+    firstBadIndex([true, 0], 2, 'boolean') === 1
+  );
 }
 function testNaNInfinityHole() {
   // `NaN`, `Infinity` and holes are suspects, matching `validateNumber`
   // plus the hole-strict element read.
   const holey = [1, 2, 3];
   holey.length = 5;
-  return firstBadIndex([1, NaN, 3], 3, 'number') === 1 &&
+  return (
+    firstBadIndex([1, NaN, 3], 3, 'number') === 1 &&
     firstBadIndex([1, 2, Infinity], 3, 'number') === 2 &&
     firstBadIndex(holey, 5, 'number') === 3 &&
-    firstBadIndex([undefined], 1, 'number') === 0;
+    firstBadIndex([undefined], 1, 'number') === 0
+  );
 }
 function testInfinityOptOut() {
   // `options.checkInfinity === false` clears `Infinity`, like the validator.
@@ -42,10 +48,12 @@ function testInfinityOptOut() {
 }
 function testEmptyAndUnknown() {
   // Empty ranges are clean; non-primitives scan nothing (full loop runs).
-  return firstBadIndex([], 0, 'number') === -1 &&
+  return (
+    firstBadIndex([], 0, 'number') === -1 &&
     firstBadIndex([1], 1, {type: 'object'}) === 0 &&
     firstBadIndex([1], 1, undefined) === 0 &&
-    firstBadIndex([1], 1, '"a"') === 0;
+    firstBadIndex([1], 1, '"a"') === 0
+  );
 }
 function testValidArraysPassSilently() {
   // The fast path changes nothing observable: valid arrays pass with zero warns.

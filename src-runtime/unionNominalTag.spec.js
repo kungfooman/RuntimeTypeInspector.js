@@ -74,7 +74,13 @@ function testNonMatchesDecline() {
       }],
     ) === false;
     const empty = unionNominalTag({r: 1, $type: 'TagBox'}, []) === false;
-    return plain && stranger && shaped && opaque && empty;
+    return (
+      plain &&
+      stranger &&
+      shaped &&
+      opaque &&
+      empty
+    );
   } finally {
     unprepare();
   }

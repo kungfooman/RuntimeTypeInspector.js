@@ -68,7 +68,11 @@ function testCustomStillFlagsStrings() {
   customChecks.set('takeFloatStrings.data', holesSkipped);
   try {
     const posted = capturePost(() => inspectType([1, 'x'], expandType('Array<number>'), 'takeFloatStrings', 'data'));
-    return posted !== undefined && posted.loc === 'takeFloatStrings' && posted.name === 'data';
+    return (
+      posted !== undefined &&
+      posted.loc === 'takeFloatStrings' &&
+      posted.name === 'data'
+    );
   } finally {
     customChecks.delete('takeFloatStrings.data');
   }
@@ -88,7 +92,11 @@ function testUnlistedUsesCore() {
   const sparse = [];
   sparse.length = 3;
   const posted = capturePost(() => inspectType(sparse, expandType('Array<number>'), 'takeFloatCore', 'data'));
-  return posted !== undefined && posted.loc === 'takeFloatCore' && posted.name === 'data';
+  return (
+    posted !== undefined &&
+    posted.loc === 'takeFloatCore' &&
+    posted.name === 'data'
+  );
 }
 function testBareValidatorRegistersDirectly() {
   // Uniform contracts compose without adapters: the shipped sparse

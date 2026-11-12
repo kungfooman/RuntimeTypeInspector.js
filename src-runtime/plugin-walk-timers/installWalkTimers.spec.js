@@ -16,7 +16,11 @@ function testWrapDelegatesVerdict() {
   try {
     const good = validators[key]([1, 2], {elementType: 'number'}, 'T#x', 'items', true, warn, 0);
     const bad = validators[key]([1, 'a'], {elementType: 'number'}, 'T#x', 'items', true, warn, 0);
-    return good === true && bad === false && messages.some((_) => _.includes('wrong type'));
+    return (
+      good === true &&
+      bad === false &&
+      messages.some((_) => _.includes('wrong type'))
+    );
   } finally {
     delete validators[key];
   }
@@ -37,7 +41,12 @@ function testInstallTimesTableButNotDirectImport() {
     resetCheckStats();
     const direct = validateArray([1, 'a'], {elementType: 'number'}, 'T#x', 'items', true, () => {}, 0);
     const pure = getCheckStats().length === 0;
-    return tabled === false && direct === false && timed && pure;
+    return (
+      tabled === false &&
+      direct === false &&
+      timed &&
+      pure
+    );
   } finally {
     options.checkStats = virginCheckStats;
   }
@@ -63,7 +72,11 @@ function testDisabledTimerCostsOneBit() {
   try {
     const clean = validators[key]([1, 2], {elementType: 'number'}, 'T#x', 'items', true, () => {}, 0);
     const dirty = validators[key]([1, 'a'], {elementType: 'number'}, 'T#x', 'items', true, () => {}, 0);
-    return clean === true && dirty === false && getCheckStats().length === 0;
+    return (
+      clean === true &&
+      dirty === false &&
+      getCheckStats().length === 0
+    );
   } finally {
     resetWalkTimers();
     installWalkTimers();
@@ -92,7 +105,11 @@ function testEnableAfterSkippedInstallWiresTable() {
         const timed = tabled === false && rows.length === 1 && rows[0].arrayWalks === 1;
         resetCheckStats();
         const direct = validateArray([1, 'a'], {elementType: 'number'}, 'T#x', 'items', true, () => {}, 0);
-        return timed && direct === false && getCheckStats().length === 0;
+        return (
+          timed &&
+          direct === false &&
+          getCheckStats().length === 0
+        );
       } finally {
         if (!wasTimed) {
           validators[key] = core;

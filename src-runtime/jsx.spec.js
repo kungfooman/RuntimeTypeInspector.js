@@ -54,8 +54,13 @@ const tests = [
     try {
       const Div = genJsx('div');
       const el = Div({className: 'a', dataset: {topping: 'Pepperoni'}, 'data-crust': 'thin'}, 'hi');
-      return el.tagname === 'div' && el.className === 'a' && el.dataset.topping === 'Pepperoni' &&
-        el.attributes['data-crust'] === 'thin' && el.children.length === 1;
+      return (
+        el.tagname === 'div' &&
+        el.className === 'a' &&
+        el.dataset.topping === 'Pepperoni' &&
+        el.attributes['data-crust'] === 'thin' &&
+        el.children.length === 1
+      );
     } finally {
       restore();
     }

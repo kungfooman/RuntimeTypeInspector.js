@@ -12,15 +12,23 @@ function testMissingKey() {
   const expect = expandType('{fov: number, clearColor: Array<number>}');
   const {findings, stub} = explainMismatch({fov: 60}, expect, 'options');
   const missing = findings.find((_) => _.kind === 'missing');
-  return !!missing && missing.path === 'options.clearColor' &&
-    missing.fix.includes('clearColor') && stub.includes('clearColor');
+  return (
+    !!missing &&
+    missing.path === 'options.clearColor' &&
+    missing.fix.includes('clearColor') &&
+    stub.includes('clearColor')
+  );
 }
 function testWrongNestedType() {
   reset();
   const expect = expandType('{clearColor: Array<number>}');
   const {findings} = explainMismatch({clearColor: 'red'}, expect, 'options');
-  return findings.length === 1 && findings[0].path === 'options.clearColor' &&
-    findings[0].kind === 'wrong' && findings[0].fix.includes('options.clearColor');
+  return (
+    findings.length === 1 &&
+    findings[0].path === 'options.clearColor' &&
+    findings[0].kind === 'wrong' &&
+    findings[0].fix.includes('options.clearColor')
+  );
 }
 function testGenericReferenceResolves() {
   reset();
@@ -52,9 +60,13 @@ function testSharedMaterializationNeverMutated() {
     } catch {
       loud = true;
     }
-    return first === second && Object.isFrozen(first) && loud &&
+    return (
+      first === second &&
+      Object.isFrozen(first) &&
+      loud &&
       first.properties.content === 'number' &&
-      JSON.stringify(typedefs.SharedBox) === before;
+      JSON.stringify(typedefs.SharedBox) === before
+    );
   } finally {
     delete typedefs.SharedBox;
   }
@@ -64,8 +76,11 @@ function testUnionClosestMatch() {
   const expect = expandType('"a" | {fov: number, clearColor: Array<number>}');
   const {findings} = explainMismatch({fov: 60}, expect, 'options');
   const union = findings.find((_) => _.kind === 'union');
-  return !!union && union.detail.includes('closest') &&
-    union.children.some((_) => _.path === 'options.clearColor' && _.kind === 'missing');
+  return (
+    !!union &&
+    union.detail.includes('closest') &&
+    union.children.some((_) => _.path === 'options.clearColor' && _.kind === 'missing')
+  );
 }
 function testExtraKey() {
   reset();
@@ -83,8 +98,11 @@ function testIndexedAccessResolvesConcretely() {
   registerTypedef('EntityShape', expandType('{camera: {fov: number}}'));
   const expect = expandType('EntityShape["camera"]');
   const {findings} = explainMismatch({fov: 'x'}, expect, 'data');
-  return findings.length === 1 && findings[0].path === 'data.fov' &&
-    findings[0].expected === 'number';
+  return (
+    findings.length === 1 &&
+    findings[0].path === 'data.fov' &&
+    findings[0].expected === 'number'
+  );
 }
 function testPartialRelaxesRequired() {
   reset();
@@ -127,7 +145,11 @@ function testPresentValuesLoseOptionalWrapper() {
     'patch',
   );
   const wrong = findings.find((_) => _.path === 'patch.status');
-  return findings.length === 1 && !!wrong && !wrong.expected.includes('undefined');
+  return (
+    findings.length === 1 &&
+    !!wrong &&
+    !wrong.expected.includes('undefined')
+  );
 }
 function testOmitExcessNamesRemoval() {
   // The user's Omit case: a deliberately removed key must say so, never
@@ -140,9 +162,15 @@ function testOmitExcessNamesRemoval() {
     'payload',
   );
   const extra = findings.find((_) => _.path === 'payload.id');
-  return findings.length === 1 && !!extra && extra.kind === 'extra' &&
-    extra.detail.includes('deliberately removed by') && extra.detail.includes('Omit') &&
-    extra.fix === 'Remove `payload.id`.' && !extra.detail.includes('spelling');
+  return (
+    findings.length === 1 &&
+    !!extra &&
+    extra.kind === 'extra' &&
+    extra.detail.includes('deliberately removed by') &&
+    extra.detail.includes('Omit') &&
+    extra.fix === 'Remove `payload.id`.' &&
+    !extra.detail.includes('spelling')
+  );
 }
 function testPickExcessNamesSelection() {
   reset();
@@ -153,9 +181,13 @@ function testPickExcessNamesSelection() {
     'user',
   );
   const extra = findings.find((_) => _.path === 'user.id');
-  return findings.length === 1 && !!extra &&
-    extra.detail.includes('not selected by') && extra.detail.includes('Pick') &&
-    extra.fix === 'Remove `user.id`.';
+  return (
+    findings.length === 1 &&
+    !!extra &&
+    extra.detail.includes('not selected by') &&
+    extra.detail.includes('Pick') &&
+    extra.fix === 'Remove `user.id`.'
+  );
 }
 function testPlainExcessStillSuspectsTypo() {
   reset();
@@ -180,8 +212,12 @@ function testExtrasInformationalWhenLenient() {
       'options',
     );
     const extra = findings.find((_) => _.path === 'options.fovv');
-    return !!extra && extra.info === true && !extra.fix &&
-      extra.detail.includes('informational');
+    return (
+      !!extra &&
+      extra.info === true &&
+      !extra.fix &&
+      extra.detail.includes('informational')
+    );
   } finally {
     options.exactObjects = prev;
   }
@@ -202,16 +238,24 @@ function testCollectFailPaths() {
       children: [{path: 'c', kind: 'wrong', children: [{path: "c.get('k')", kind: 'wrong'}]}],
     },
   ]);
-  return paths.has('a') && paths.has('c') && paths.has("c.get('k')") &&
-    !paths.has('b') && paths.size === 3;
+  return (
+    paths.has('a') &&
+    paths.has('c') &&
+    paths.has("c.get('k')") &&
+    !paths.has('b') &&
+    paths.size === 3
+  );
 }
 /**
  * Empty and absent findings collect to nothing, never throw.
  * @returns {boolean} True when degenerate inputs stay empty.
  */
 function testCollectFailPathsEmpty() {
-  return collectFailPaths([]).size === 0 && collectFailPaths(null).size === 0 &&
-    collectFailPaths(undefined).size === 0;
+  return (
+    collectFailPaths([]).size === 0 &&
+    collectFailPaths(null).size === 0 &&
+    collectFailPaths(undefined).size === 0
+  );
 }
 /**
  * End to end: the entry pinpoint of a `Map` mismatch is collected.
@@ -244,9 +288,14 @@ function testSetMemberUnionAdmitsShape() {
     return false;
   }
   const [finding] = findings;
-  return finding.kind === 'union' && finding.path === 'items[1]' &&
-    finding.expected === 'string | number' && finding.actual === 'true' &&
-    finding.container === 'Set<string | number>' && finding.children.length === 1;
+  return (
+    finding.kind === 'union' &&
+    finding.path === 'items[1]' &&
+    finding.expected === 'string | number' &&
+    finding.actual === 'true' &&
+    finding.container === 'Set<string | number>' &&
+    finding.children.length === 1
+  );
 }
 /**
  * A bad `Map` entry value carries its matched container, same as sets.
@@ -263,9 +312,14 @@ function testMapEntryUnionAdmitsShape() {
     return false;
   }
   const [finding] = findings;
-  return finding.kind === 'union' && finding.path === "config.get('apiKey')" &&
-    finding.expected === 'string | number' && finding.actual === 'null' &&
-    finding.container === 'Map<string, string | number>' && finding.children.length === 1;
+  return (
+    finding.kind === 'union' &&
+    finding.path === "config.get('apiKey')" &&
+    finding.expected === 'string | number' &&
+    finding.actual === 'null' &&
+    finding.container === 'Map<string, string | number>' &&
+    finding.children.length === 1
+  );
 }
 /**
  * Plain property unions carry no container: only collection members admit
@@ -283,15 +337,24 @@ function testPropertyUnionNamesSubject() {
     return false;
   }
   const [finding] = findings;
-  return finding.kind === 'union' && finding.path === 'options.color' &&
-    finding.expected === 'string | number' && finding.actual === 'true' &&
-    finding.container === undefined && finding.children.length === 1;
+  return (
+    finding.kind === 'union' &&
+    finding.path === 'options.color' &&
+    finding.expected === 'string | number' &&
+    finding.actual === 'true' &&
+    finding.container === undefined &&
+    finding.children.length === 1
+  );
 }
 function testArrayBadElementPinpoints() {
   // A bad element blames its index, not the whole array.
   reset();
   const {findings} = explainMismatch([1, 'x', 3], {type: 'array', elementType: 'number'}, 'v');
-  return findings.length === 1 && findings[0].path === 'v[1]' && findings[0].kind === 'wrong';
+  return (
+    findings.length === 1 &&
+    findings[0].path === 'v[1]' &&
+    findings[0].kind === 'wrong'
+  );
 }
 function testArrayValidEmpty() {
   // Valid arrays (direct and through unions) explain clean.
@@ -305,7 +368,11 @@ function testArrayNonArray() {
   // Non-arrays blame the whole value, like map/set branches do.
   reset();
   const {findings} = explainMismatch('nope', {type: 'array', elementType: 'number'}, 'v');
-  return findings.length === 1 && findings[0].path === 'v' && findings[0].kind === 'wrong';
+  return (
+    findings.length === 1 &&
+    findings[0].path === 'v' &&
+    findings[0].kind === 'wrong'
+  );
 }
 function testArrayHolesPinpointed() {
   // Holes read as undefined and pinpoint, matching strict validation.
@@ -313,7 +380,11 @@ function testArrayHolesPinpointed() {
   const grown = [1, 2, 3];
   grown.length = 5;
   const {findings} = explainMismatch(grown, {type: 'array', elementType: 'number'}, 'v');
-  return findings.length === 2 && findings[0].path === 'v[3]' && findings[1].path === 'v[4]';
+  return (
+    findings.length === 2 &&
+    findings[0].path === 'v[3]' &&
+    findings[1].path === 'v[4]'
+  );
 }
 function testArrayBudgetFallback() {
   // Past the entry budget, one generic finding names the array (map/set parity).
@@ -321,19 +392,31 @@ function testArrayBudgetFallback() {
   const big = new Array(25).fill(1);
   big[24] = 'x';
   const {findings} = explainMismatch(big, {type: 'array', elementType: 'number'}, 'v');
-  return findings.length === 1 && findings[0].path === 'v' && findings[0].kind === 'wrong';
+  return (
+    findings.length === 1 &&
+    findings[0].path === 'v' &&
+    findings[0].kind === 'wrong'
+  );
 }
 function testTupleBadMemberPinpoints() {
   // A bad tuple member blames its position.
   reset();
   const {findings} = explainMismatch([1, 2], expandType('[number, string]'), 'v');
-  return findings.length === 1 && findings[0].path === 'v[1]' && findings[0].kind === 'wrong';
+  return (
+    findings.length === 1 &&
+    findings[0].path === 'v[1]' &&
+    findings[0].kind === 'wrong'
+  );
 }
 function testTupleLengthMismatch() {
   // Short tuples blame the whole value with a length detail, like validation.
   reset();
   const {findings} = explainMismatch([1], expandType('[number, string]'), 'v');
-  return findings.length === 1 && findings[0].path === 'v' && findings[0].kind === 'wrong';
+  return (
+    findings.length === 1 &&
+    findings[0].path === 'v' &&
+    findings[0].kind === 'wrong'
+  );
 }
 function testTupleOptionalTail() {
   // A missing optional tail is fine; a present-but-wrong one pinpoints.
@@ -360,15 +443,22 @@ function testTupleRestVariadic() {
     }],
   };
   const {findings: bad} = explainMismatch(['a', 'b'], rest, 'v');
-  return explainMismatch([1, 'a', 'b'], rest, 'v').findings.length === 0 &&
-    bad.length === 1 && bad[0].path === 'v[0]' &&
-    explainMismatch([1], multi, 'v').findings.length === 1;
+  return (
+    explainMismatch([1, 'a', 'b'], rest, 'v').findings.length === 0 &&
+    bad.length === 1 &&
+    bad[0].path === 'v[0]' &&
+    explainMismatch([1], multi, 'v').findings.length === 1
+  );
 }
 function testTupleNonArray() {
   // Non-arrays blame the whole value.
   reset();
   const {findings} = explainMismatch('nope', expandType('[number]'), 'v');
-  return findings.length === 1 && findings[0].path === 'v' && findings[0].kind === 'wrong';
+  return (
+    findings.length === 1 &&
+    findings[0].path === 'v' &&
+    findings[0].kind === 'wrong'
+  );
 }
 class SnapWidget {
   constructor() {
@@ -391,13 +481,21 @@ function testUntaggedStaysStrictOnMethods() {
   // Without a tag there is no transport story: missing methods still report.
   prepareSnap();
   const {findings} = explainMismatch({w: 1}, 'SnapWidget', 'v');
-  return findings.length === 1 && findings[0].kind === 'missing' && findings[0].path === 'v.run';
+  return (
+    findings.length === 1 &&
+    findings[0].kind === 'missing' &&
+    findings[0].path === 'v.run'
+  );
 }
 function testMismatchedTagStaysStrict() {
   // A tag naming another class does not excuse anything.
   prepareSnap();
   const {findings} = explainMismatch({$type: 'Nope', w: 1}, 'SnapWidget', 'v');
-  return findings.length === 1 && findings[0].kind === 'missing' && findings[0].path === 'v.run';
+  return (
+    findings.length === 1 &&
+    findings[0].kind === 'missing' &&
+    findings[0].path === 'v.run'
+  );
 }
 function testSubclassTagMatches() {
   // Registered subclasses match nominally through the tag.
@@ -410,7 +508,11 @@ function testTaggedDataStillChecked() {
   // The tag excuses methods, not data: wrong data still pinpoints.
   prepareSnap();
   const {findings} = explainMismatch({$type: 'SnapWidget', w: 'x'}, 'SnapWidget', 'v');
-  return findings.length === 1 && findings[0].kind === 'wrong' && findings[0].path === 'v.w';
+  return (
+    findings.length === 1 &&
+    findings[0].kind === 'wrong' &&
+    findings[0].path === 'v.w'
+  );
 }
 function testDollarTypeNeverExcess() {
   // The envelope tag is metadata: present data excess still reports, `$type` never does.

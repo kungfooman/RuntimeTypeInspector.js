@@ -751,7 +751,11 @@ function testActualBranchHeaders() {
       'v',
       new Set(),
     );
-    return !!snap && textOf(snap).includes('Uint8Array(2)') && !textOf(snap).includes('$type');
+    return (
+      !!snap &&
+      textOf(snap).includes('Uint8Array(2)') &&
+      !textOf(snap).includes('$type')
+    );
   });
 }
 /**
@@ -794,8 +798,12 @@ function testTypeTreeSetRootWarns() {
     const box = panel.renderTypeNode(tree, 0);
     const [details] = box.children;
     const [mark] = details?.children[0]?.children ?? [];
-    return mark?.textContent.includes('⚠') && mark?.className.includes('rti-warn') &&
-      findAllByClass(box, 'rti-warn').length === 1 && details?.open === true;
+    return (
+      mark?.textContent.includes('⚠') &&
+      mark?.className.includes('rti-warn') &&
+      findAllByClass(box, 'rti-warn').length === 1 &&
+      details?.open === true
+    );
   });
 }
 /**
@@ -856,9 +864,12 @@ function testMinimizeRestoreTaskbar() {
     }
     panel.restoreCompare(key);
     const [entry] = panel.taskbarWins.children;
-    return !win.minimized && win.el.style.display === '' &&
+    return (
+      !win.minimized &&
+      win.el.style.display === '' &&
       panel.taskbarWins.children.length === 1 &&
-      entry.className.includes('rti-taskbar-active');
+      entry.className.includes('rti-taskbar-active')
+    );
   });
 }
 function testTaskbarActiveFollowsFront() {
@@ -882,8 +893,11 @@ function testCloseDestroys() {
   return withPanel((panel) => {
     panel.openComparator(stubWarn('L1', 'a'));
     panel.closeCompare('L1-a');
-    return panel.compareWins.size === 0 && panel.compareFocus.length === 0 &&
-      panel.taskbarWins.children.length === 0;
+    return (
+      panel.compareWins.size === 0 &&
+      panel.compareFocus.length === 0 &&
+      panel.taskbarWins.children.length === 0
+    );
   });
 }
 function testEscClosesTopmost() {
@@ -913,8 +927,11 @@ function testSingletonNoStacking() {
     }
     // Re-evaluation hands back the same panel, refreshed — never a twin.
     const again = new TypePanel();
-    return again === panel && panel.compareWins.size === 0 &&
-      panel.div.style.display !== 'none';
+    return (
+      again === panel &&
+      panel.compareWins.size === 0 &&
+      panel.div.style.display !== 'none'
+    );
   });
 }
 function testStaleInstanceIgnoresEvents() {
@@ -1012,9 +1029,11 @@ function testOutsideClickClearsAll() {
     const titles = (key) => panel.compareWins.get(key).titlebar.classList;
     const bright = panel.taskbarWins.children
       .filter((_) => _.className.includes('rti-taskbar-active'));
-    return titles('L1-a').contains('rti-inactive') === true &&
+    return (
+      titles('L1-a').contains('rti-inactive') === true &&
       panel.titlebar.classList.contains('rti-inactive') === true &&
-      bright.length === 0;
+      bright.length === 0
+    );
   });
 }
 function testPanelClickFrontsOverCompares() {
@@ -1030,10 +1049,12 @@ function testPanelClickFrontsOverCompares() {
     globalThis.document.fire('mousedown', {target: panel.toolbar});
     const panelZ = Number(divAll.style.zIndex);
     const titles = (key) => panel.compareWins.get(key).titlebar.classList;
-    return panelZ > winZ &&
+    return (
+      panelZ > winZ &&
       Number(panel.taskbar.style.zIndex) > panelZ &&
       panel.titlebar.classList.contains('rti-inactive') === false &&
-      titles('L1-a').contains('rti-inactive') === true;
+      titles('L1-a').contains('rti-inactive') === true
+    );
   });
 }
 function testActiveTitleFollowsClick() {
@@ -1215,7 +1236,12 @@ function testViewportShrinkRevivesWindows() {
     const panelTopOk = TypePanel.divAll.style.top === '572px';
     const winLeftOk = win.el.style.left === '736px';
     const winTopOk = win.el.style.top === '572px';
-    return panelLeftOk && panelTopOk && winLeftOk && winTopOk;
+    return (
+      panelLeftOk &&
+      panelTopOk &&
+      winLeftOk &&
+      winTopOk
+    );
   });
 }
 /**
@@ -1277,7 +1303,11 @@ function testPanelStartCenter() {
       const centered = style.left === '480px' && style.top === '290px';
       const unanchored = style.right === 'auto' && style.bottom === 'auto';
       const synced = options.panelPosition === 'center' && fresh.selectPosition.value === 'center';
-      return centered && unanchored && synced;
+      return (
+        centered &&
+        unanchored &&
+        synced
+      );
     } finally {
       options.panelPosition = prev;
     }
@@ -1307,7 +1337,11 @@ function testPanelPositionMenu() {
       panel.selectPosition.onchange();
       const fallback = TypePanel.divAll.style.bottom === '0px';
       const corner = TypePanel.divAll.style.right === '0px';
-      return fallback && corner && options.panelPosition === 'bottom-right';
+      return (
+        fallback &&
+        corner &&
+        options.panelPosition === 'bottom-right'
+      );
     } finally {
       options.panelPosition = prev;
     }
@@ -1442,7 +1476,11 @@ function testClearResetsErrorCount() {
       const again = new TypePanel();
       const zeroed = options.count === 0 && panel.spanErrors.innerText === 'Type validation errors: 0';
       const badge = panel.taskbarRti.textContent === 'RTI' && panel.titleText.textContent === 'Runtime Type Inspector';
-      return again === panel && zeroed && badge;
+      return (
+        again === panel &&
+        zeroed &&
+        badge
+      );
     } finally {
       options.count = prev;
     }
@@ -1468,8 +1506,12 @@ function testCompareActualShowsTree() {
       },
     );
     const snapText = textOf(snap);
-    return snap.className.includes('rti-line') && snapText.includes('FakeWindow') &&
-      snapText.includes('FakeLocation') && !snapText.includes('$type');
+    return (
+      snap.className.includes('rti-line') &&
+      snapText.includes('FakeWindow') &&
+      snapText.includes('FakeLocation') &&
+      !snapText.includes('$type')
+    );
   });
 }
 function testCompareActualBatches() {
@@ -1488,7 +1530,11 @@ function testCompareActualBatches() {
     }
     marker.onclick();
     const text = textOf(node);
-    return text.includes('k24') && !text.includes('...(+') && findByClass(node, 'rti-more') === null;
+    return (
+      text.includes('k24') &&
+      !text.includes('...(+') &&
+      findByClass(node, 'rti-more') === null
+    );
   });
 }
 function testRepeatBumpsHitsWithoutLogChurn() {
@@ -1517,7 +1563,11 @@ function testRepeatBumpsHitsWithoutLogChurn() {
         data: {type: 'rti', destination: 'ui', action: 'addError', key: 'L2-b', repeat: true},
       });
       const warnObj = panel.warnings['L2-b'];
-      return !!warnObj && warnObj.hits === 2 && panel.eventLog.length === 1;
+      return (
+        !!warnObj &&
+        warnObj.hits === 2 &&
+        panel.eventLog.length === 1
+      );
     } finally {
       options.mode = prevMode;
     }
@@ -1625,7 +1675,12 @@ function testDuplicateDeliveryWarnsOnce() {
         globalThis.window.fire('message', event);
       });
       const warnObj = panel.warnings['L9-dup'];
-      return warns.length === 1 && !!warnObj && warnObj.hits === 2 && panel.eventLog.length === 2;
+      return (
+        warns.length === 1 &&
+        !!warnObj &&
+        warnObj.hits === 2 &&
+        panel.eventLog.length === 2
+      );
     } finally {
       options.mode = prevMode;
     }
@@ -1665,8 +1720,11 @@ function testTransmittedStackPreferred() {
           stack,
         },
       });
-      return panel.eventLog.length === 1 && panel.eventLog[0].stack !== undefined &&
-        JSON.stringify(panel.eventLog[0].stack) === JSON.stringify(stack);
+      return (
+        panel.eventLog.length === 1 &&
+        panel.eventLog[0].stack !== undefined &&
+        JSON.stringify(panel.eventLog[0].stack) === JSON.stringify(stack)
+      );
     } finally {
       options.mode = prevMode;
     }
@@ -1719,8 +1777,12 @@ function testDeadPopoutReattachesOnReopen() {
     globalThis.document.body.removeChild(TypePanel.divAll);
     deadBody.append(TypePanel.divAll);
     const revived = new TypePanel();
-    return revived === panel && TypePanel.divAll.parent === globalThis.document.body &&
-      panel.popoutWin === null && panel.buttonPopout.textContent === '⧉';
+    return (
+      revived === panel &&
+      TypePanel.divAll.parent === globalThis.document.body &&
+      panel.popoutWin === null &&
+      panel.buttonPopout.textContent === '⧉'
+    );
   });
 }
 /**
@@ -1982,8 +2044,11 @@ function testPopoutOpensBlankWindow() {
     const stub = popupStub(body);
     globalThis.window.open = stub.open;
     panel.popout();
-    return stub.opened[0]?.[1] === '_blank' && TypePanel.divAll.parent === body &&
-      panel.buttonPopout.textContent === '🗗';
+    return (
+      stub.opened[0]?.[1] === '_blank' &&
+      TypePanel.divAll.parent === body &&
+      panel.buttonPopout.textContent === '🗗'
+    );
   });
 }
 /**
@@ -2069,9 +2134,11 @@ function testWindowedCheckboxWiresOptionStorageAndWorker() {
       options.mode = prevMode;
       panel.inputWindowed.checked = true;
       panel.inputWindowed.onchange();
-      return options.windowedChecks === true &&
+      return (
+        options.windowedChecks === true &&
         localStorage.getItem('rti-windowed-checks') === 'true' &&
-        sink.messages.some(_ => _.action === 'windowedChecks' && _.value === true && _.destination === 'worker');
+        sink.messages.some(_ => _.action === 'windowedChecks' && _.value === true && _.destination === 'worker')
+      );
     } finally {
       options.windowedChecks = prevWindowed;
     }
@@ -2105,7 +2172,11 @@ function testWindowCapInputClampsAndForwards() {
       panel.inputWindowCap.value = '-5';
       panel.inputWindowCap.onchange();
       const noNegative = options.mapCheckWindowCap === 256;
-      return applied && kept && noNegative;
+      return (
+        applied &&
+        kept &&
+        noNegative
+      );
     } finally {
       options.mapCheckWindowCap = prevCap;
     }
@@ -2159,7 +2230,13 @@ function testWindowMinTotalInputClampsAndForwards() {
       panel.inputWindowMinTotal.value = '-3';
       panel.inputWindowMinTotal.onchange();
       const noNegative = options.mapCheckWindowMinTotalMs === 250;
-      return applied && zeroOk && baseline && kept && noNegative;
+      return (
+        applied &&
+        zeroOk &&
+        baseline &&
+        kept &&
+        noNegative
+      );
     } finally {
       options.mapCheckWindowMinTotalMs = prevMin;
       localStorage.removeItem('rti-window-min-total-ms');
@@ -2191,7 +2268,13 @@ function testStoredTweakSurvivesReloadStaleHealsCodeWins() {
       options.mapCheckWindowCap = 4096;
       const capCodeWins = storedMapCheckWindowCap() === 4096;
       options.mapCheckWindowCap = prevCap;
-      return keptTweak && healedLegacy && codeWins && capKept && capCodeWins;
+      return (
+        keptTweak &&
+        healedLegacy &&
+        codeWins &&
+        capKept &&
+        capCodeWins
+      );
     } finally {
       options.mapCheckWindowMinTotalMs = prevMin;
       localStorage.removeItem('rti-window-min-total-ms');
@@ -2219,7 +2302,11 @@ function testStateButtonsAreShortVerbsWithReset() {
       .flatMap((_) => _.children)
       .filter((_) => _.tag === 'button')
       .map((_) => _.textContent);
-    return labels.includes('Load') && labels.includes('Save') && labels.includes('RESET');
+    return (
+      labels.includes('Load') &&
+      labels.includes('Save') &&
+      labels.includes('RESET')
+    );
   });
 }
 function testCheckStatsCheckboxWiresOptionStorageAndWorker() {
@@ -2238,9 +2325,11 @@ function testCheckStatsCheckboxWiresOptionStorageAndWorker() {
       options.mode = prevMode;
       panel.inputCheckStats.checked = false;
       panel.inputCheckStats.onchange();
-      return options.checkStats === false &&
+      return (
+        options.checkStats === false &&
         localStorage.getItem('rti-check-stats') === 'false' &&
-        sink.messages.some(_ => _.action === 'checkStats' && _.value === false && _.destination === 'worker');
+        sink.messages.some(_ => _.action === 'checkStats' && _.value === false && _.destination === 'worker')
+      );
     } finally {
       options.checkStats = prevStats;
     }
@@ -2255,9 +2344,11 @@ function testCheckStatsTableRendersHotspotsSorted() {
       recordMapScan('Bbb#scan-light', 'v', 1);
       panel.updateCheckStats();
       const rows = panel.checksTable.children.slice(1);
-      return rows.length === 3 &&
+      return (
+        rows.length === 3 &&
         textOf(rows[0]).includes('Aaa#scan-heavy') &&
-        textOf(rows[2]).includes('Zzz#checks');
+        textOf(rows[2]).includes('Zzz#checks')
+      );
     } finally {
       resetCheckStats();
     }
@@ -2309,10 +2400,12 @@ function testLogMetaCarriesWindowSettings() {
       options.mapCheckWindowMinTotalMs = 250;
       options.checkStats = false;
       const meta = panel.getLogMeta();
-      return meta.settings.windowedChecks === true &&
+      return (
+        meta.settings.windowedChecks === true &&
         meta.settings.mapCheckWindowCap === 256 &&
         meta.settings.mapCheckWindowMinTotalMs === 250 &&
-        meta.settings.checkStats === false;
+        meta.settings.checkStats === false
+      );
     } finally {
       options.windowedChecks = prevWindowed;
       options.mapCheckWindowCap = prevCap;
@@ -2325,10 +2418,12 @@ function testStatsWinHiddenByDefault() {
   // The stats window is a separate box, hidden until the Stats button
   // opens it, and it never sits inside the panel body.
   return withPanel((panel) => {
-    return panel.statsWin !== null &&
+    return (
+      panel.statsWin !== null &&
       panel.statsWinHidden === true &&
       panel.statsWin.style.display === 'none' &&
-      panel.body.children.length === 1;
+      panel.body.children.length === 1
+    );
   });
 }
 /**
@@ -2380,7 +2475,11 @@ function testStatsWinOpensPopulatesAndCloses() {
       const populated = rows.length === 1 && textOf(rows[0]).includes('W#x');
       panel.hideStatsWin();
       const hidden = panel.statsWin.style.display === 'none' && panel.statsWinHidden === true;
-      return shown && populated && hidden;
+      return (
+        shown &&
+        populated &&
+        hidden
+      );
     } finally {
       resetCheckStats();
     }
@@ -2415,7 +2514,13 @@ function testStatsButtonShowsSkippedCount() {
       resetCheckStats();
       panel.updateCheckStats();
       const cleared = panel.buttonStats.textContent === 'Stats';
-      return plain && ridesOnly && both && suppressedOnly && cleared;
+      return (
+        plain &&
+        ridesOnly &&
+        both &&
+        suppressedOnly &&
+        cleared
+      );
     } finally {
       resetCheckStats();
     }
@@ -2442,8 +2547,12 @@ function testStatsLocCellIsButtonWithTitle() {
       panel.updateCheckStats();
       const [cell] = panel.checksTable.children[1].children;
       const [btn] = cell.children;
-      return btn.tag === 'button' && btn.textContent === 'get v' &&
-        btn.title.startsWith('get v') && btn.title.length > 'get v'.length;
+      return (
+        btn.tag === 'button' &&
+        btn.textContent === 'get v' &&
+        btn.title.startsWith('get v') &&
+        btn.title.length > 'get v'.length
+      );
     } finally {
       resetCheckStats();
     }
@@ -2473,11 +2582,13 @@ function testStatsTableShowsSkippedPercent() {
       // No map activity at all: dash.
       recordCheck('Flat#x', 'v', 1);
       panel.updateCheckStats();
-      return statsCell(panel, 'Skp#m', 'skipPct') === '75.0%' &&
+      return (
+        statsCell(panel, 'Skp#m', 'skipPct') === '75.0%' &&
         statsCell(panel, 'Flat#x', 'skipPct') === '—' &&
         statsCell(panel, 'Skp#m', 'skipped') === '3' &&
         statsCell(panel, 'Skp#m', 'suppressed') === '1' &&
-        statsCell(panel, 'Skp#s', 'suppressed') === '1';
+        statsCell(panel, 'Skp#s', 'suppressed') === '1'
+      );
     } finally {
       options.windowedChecks = prevWindowed;
       resetCheckStats();
@@ -2496,9 +2607,11 @@ function testStatsTableFormatsCompactTimes() {
       recordMapScan('Fmt#mid', 'v', 2.345);        // ms -> "2.35ms"
       recordMapScan('Fmt#big', 'v', 42.6);         // ms -> "42.6ms"
       panel.updateCheckStats();
-      return statsCell(panel, 'Fmt#tiny', 'scanMs') === '0.4µs' &&
+      return (
+        statsCell(panel, 'Fmt#tiny', 'scanMs') === '0.4µs' &&
         statsCell(panel, 'Fmt#mid', 'scanMs') === '2.35ms' &&
-        statsCell(panel, 'Fmt#big', 'scanMs') === '42.6ms';
+        statsCell(panel, 'Fmt#big', 'scanMs') === '42.6ms'
+      );
     } finally {
       resetCheckStats();
     }
@@ -2514,11 +2627,13 @@ function testNeverRanTimeCellsShowDash() {
       recordCheck('Chk#only', 'v', 1);
       recordMapScan('Scn#only', 'v', 2);
       panel.updateCheckStats();
-      return statsCell(panel, 'Chk#only', 'scanMs') === '—' &&
+      return (
+        statsCell(panel, 'Chk#only', 'scanMs') === '—' &&
         statsCell(panel, 'Chk#only', 'maxScanMs') === '—' &&
         statsCell(panel, 'Scn#only', 'checkMs') === '—' &&
         statsCell(panel, 'Scn#only', 'maxCheckMs') === '—' &&
-        statsCell(panel, 'Scn#only', 'scanMs') === '2.00ms';
+        statsCell(panel, 'Scn#only', 'scanMs') === '2.00ms'
+      );
     } finally {
       resetCheckStats();
     }
@@ -2537,11 +2652,13 @@ function testKindColumnNamesWalkKind() {
       recordObjectScan('Kind#object', 'v', 5);
       recordMapScan('Kind#map', 'v', 6);
       panel.updateCheckStats();
-      return statsCell(panel, 'Kind#plain', 'kind') === '—' &&
+      return (
+        statsCell(panel, 'Kind#plain', 'kind') === '—' &&
         statsCell(panel, 'Kind#set', 'kind') === 'set' &&
         statsCell(panel, 'Kind#array', 'kind') === 'array' &&
         statsCell(panel, 'Kind#object', 'kind') === 'object' &&
-        statsCell(panel, 'Kind#map', 'kind') === 'map';
+        statsCell(panel, 'Kind#map', 'kind') === 'map'
+      );
     } finally {
       resetCheckStats();
     }
@@ -2557,12 +2674,14 @@ function testWalkColumnsUnifyContainerTime() {
       recordSetScan('Kind#set', 'v', 3);
       recordMapScan('Kind#map', 'v', 50);
       panel.updateCheckStats();
-      return statsCell(panel, 'Kind#set', 'scans') === '1' &&
+      return (
+        statsCell(panel, 'Kind#set', 'scans') === '1' &&
         statsCell(panel, 'Kind#set', 'scanMs') === '3.00ms' &&
         statsCell(panel, 'Kind#set', 'maxScanMs') === '3.00ms' &&
         statsCell(panel, 'Kind#map', 'scans') === '1' &&
         statsCell(panel, 'Kind#map', 'scanMs') === '50.0ms' &&
-        statsCell(panel, 'Kind#map', 'maxScanMs') === '50.0ms';
+        statsCell(panel, 'Kind#map', 'maxScanMs') === '50.0ms'
+      );
     } finally {
       resetCheckStats();
     }
@@ -2685,7 +2804,13 @@ function testStatsHeadersSortOnClick() {
       clickHead(panel, 'loc');
       const flipped = textOf(panel.checksTable.children[1]).includes('Zzz#checks') &&
         headText(panel, 'loc').includes('▼');
-      return firstByScan && scanArrow && byLoc && locArrow && flipped;
+      return (
+        firstByScan &&
+        scanArrow &&
+        byLoc &&
+        locArrow &&
+        flipped
+      );
     } finally {
       resetCheckStats();
       panel.checksSort = {id: 'scanMs', desc: true};
@@ -2781,9 +2906,13 @@ function testStatsHeaderCellsCarryTooltips() {
       for (let i = 0; i < header.children.length; i++) {
         ids.push(header.children[i].dataset.sort);
       }
-      return header.children.length === ids.length &&
+      return (
+        header.children.length === ids.length &&
         Array.prototype.every.call(header.children, _ => typeof _.title === 'string' && _.title.length > 0) &&
-        new Set(ids).size === ids.length && ids.includes('scanMs') && ids.includes('loc');
+        new Set(ids).size === ids.length &&
+        ids.includes('scanMs') &&
+        ids.includes('loc')
+      );
     } finally {
       resetCheckStats();
     }
@@ -2813,7 +2942,12 @@ function testStatsLocClickShowsCallStack() {
         panel.checksTable.children[2].className === 'rti-checks-loc-detail';
       panel.buttonResetCheckStats.onclick();
       const reset = panel.checksTable.children.length === 1;
-      return shown && toggled && kept && reset;
+      return (
+        shown &&
+        toggled &&
+        kept &&
+        reset
+      );
     } finally {
       resetCheckStats();
     }

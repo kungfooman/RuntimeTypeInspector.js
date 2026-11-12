@@ -14,7 +14,11 @@ function testPlainTagBindsFlat() {
 // A bracketed name marks the row bracketed while the bind name strips the brackets.
 function testBracketedTagMarksBracketed() {
   const row = docParamTag(makeParamTag('number', '[opt=1] rest'), 'number');
-  return row.name === 'opt' && row.bracketed === true && row.dropped === false;
+  return (
+    row.name === 'opt' &&
+    row.bracketed === true &&
+    row.dropped === false
+  );
 }
 // A misplaced rest marker binds nothing: the row carries the raw head as
 // diagnostics and drops, matching tsc which rejects the spelling.

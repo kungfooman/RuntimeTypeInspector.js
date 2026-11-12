@@ -40,7 +40,11 @@ function testLexDecidesOpens() {
   const furniture = lexJSDoc('* @param {number} x').find((token) => token.kind === 'tag');
   const prose = lexJSDoc('* call foo(@param bar)').find((token) => token.kind === 'tag');
   const [, overload] = lexJSDoc('@overload @param {number} v').filter((token) => token.kind === 'tag');
-  return furniture.opens === true && prose.opens === false && overload.opens === true;
+  return (
+    furniture.opens === true &&
+    prose.opens === false &&
+    overload.opens === true
+  );
 }
 // Trivia rides the stream: spaces and stars are tokens the parser skips
 // positionally, so adjacency stays decidable without re-slicing source.

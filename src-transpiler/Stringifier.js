@@ -250,9 +250,11 @@ class Stringifier {
   }
   get needSpaces() {
     const t = this.parentType;
-    return t !== "ForStatement" &&
-           t !== "ForInStatement" &&
-           t !== "ForOfStatement";
+    return (
+      t !== "ForStatement" &&
+      t !== "ForInStatement" &&
+      t !== "ForOfStatement"
+    );
   }
   /**
    * @param {Node[]} arr - Array of nodes to convert.

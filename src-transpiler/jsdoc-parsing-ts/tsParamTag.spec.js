@@ -7,7 +7,12 @@ function testPlainRowReadsThrough() {
     typeExpression: {getText: () => '{number}'},
   };
   const actual = tsParamTag(tag);
-  return actual.name === 'x' && actual.bracketed === false && actual.type === 'number' && actual.dropped === false;
+  return (
+    actual.name === 'x' &&
+    actual.bracketed === false &&
+    actual.type === 'number' &&
+    actual.dropped === false
+  );
 }
 // A leading `...` name is the TS1003/TS8032 rejection: same verdict as
 // the depfree invalidRest decline, carried as the `dropped` flag.
@@ -57,6 +62,10 @@ function testTildeBracketedHeadRecoversFlag() {
     typeExpression: {getText: () => '{Array<X'},
   };
   const actual = tsParamTag(tag);
-  return actual.name === 'hits' && actual.bracketed === true && actual.dropped === false;
+  return (
+    actual.name === 'hits' &&
+    actual.bracketed === true &&
+    actual.dropped === false
+  );
 }
 export const tests = [testPlainRowReadsThrough, testMisplacedRestDrops, testEmptyNameDrops, testTildeTypeRecoversRawRow, testTildeBracketedHeadRecoversFlag];

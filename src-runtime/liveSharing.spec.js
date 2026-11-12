@@ -85,8 +85,12 @@ function testForeignMapsValidate() {
   const goodForeignMap = validateType(foreignMap, mapExpect, 'loc', 'name', true, silent, 0);
   const goodLocalSet = validateType(new Set([1, 2]), setExpect, 'loc', 'name', true, silent, 0);
   const goodForeignSet = validateType(foreignSet, setExpect, 'loc', 'name', true, silent, 0);
-  return goodLocalMap === true && goodForeignMap === true &&
-    goodLocalSet === true && goodForeignSet === true;
+  return (
+    goodLocalMap === true &&
+    goodForeignMap === true &&
+    goodLocalSet === true &&
+    goodForeignSet === true
+  );
 }
 // Foreign promises are promises (brand, not constructor); thenables are
 // not promises in any realm. Awaiting behavior is unobservable either way.
@@ -96,8 +100,12 @@ function testForeignPromisePassesThenableFails() {
   const promiseExpect = expandType('Promise<number>');
   const goodForeign = validateType(foreignPromise, promiseExpect, 'loc', 'name', true, silent, 0);
   const badThenable = validateType(thenable, promiseExpect, 'loc', 'name', true, silent, 0);
-  return isPromiseValue(foreignPromise) === true && isPromiseValue(thenable) === false &&
-    goodForeign === true && badThenable === false;
+  return (
+    isPromiseValue(foreignPromise) === true &&
+    isPromiseValue(thenable) === false &&
+    goodForeign === true &&
+    badThenable === false
+  );
 }
 // A genuine foreign iterable passes the Iterable branch; a plain object
 // fails it in both realms. The foreign generator function exercises the
@@ -119,8 +127,11 @@ function testForeignArrayCandidates() {
   const arrayOfT = expandType('Array<T>');
   const outLocal = collectCandidates([1, 2], arrayOfT);
   const outForeign = collectCandidates(vm.runInNewContext('[1, 2]'), arrayOfT);
-  return outLocal.length === 2 && outForeign.length === 2 &&
-    outForeign.every((candidate) => candidate.key === 'T');
+  return (
+    outLocal.length === 2 &&
+    outForeign.length === 2 &&
+    outForeign.every((candidate) => candidate.key === 'T')
+  );
 }
 // Instances nested in foreign maps keep their tags through traversal:
 // the map itself is a container (no tag), the instance inside is tagged.
@@ -138,17 +149,24 @@ function testForeignMapStringified() {
     ["a", 1],
   ])`;
   const snap = stringifyValue({m: vm.runInNewContext(src)});
-  return snap.m.$type === 'Map' && Array.isArray(snap.m.entries) && snap.m.entries.length === 1 &&
-    snap.m.entries[0][0] === 'a' && snap.m.entries[0][1] === 1;
+  return (
+    snap.m.$type === 'Map' &&
+    Array.isArray(snap.m.entries) &&
+    snap.m.entries.length === 1 &&
+    snap.m.entries[0][0] === 'a' &&
+    snap.m.entries[0][1] === 1
+  );
 }
 // Mistyped foreign values still fail everywhere: data mismatch, wrong
 // prop type, and missing required key each fail in both realms.
 function testForeignMistypedStillFails() {
   prepareLiveTower();
   const boxExpect = expandType('{w: number}');
-  return checkBothFail(() => [1, 'x'], expandType('number[]')) &&
+  return (
+    checkBothFail(() => [1, 'x'], expandType('number[]')) &&
     checkBothFail(() => ({w: 'x'}), boxExpect) &&
-    checkBothFail(() => ({x: 0}), expandType('{x: number, y: number}'));
+    checkBothFail(() => ({x: 0}), expandType('{x: number, y: number}'))
+  );
 }
 // A foreign tagged snapshot with the wrong tag fails nominal checks:
 // tag trust is exact-match only, never fuzzy.
@@ -215,7 +233,11 @@ function testDeepForeignNestingPinpoints() {
   badForeign.rows.push(badMap);
   const badVerdict = validateType(badForeign, rowsExpect, 'loc', 'name', true, silent, 0);
   const {findings} = explainMismatch(badForeign, rowsExpect, 'data');
-  return badVerdict === true && findings.length === 1 && findings[0].path === "data.rows[0].get('a').w";
+  return (
+    badVerdict === true &&
+    findings.length === 1 &&
+    findings[0].path === "data.rows[0].get('a').w"
+  );
 }
 // A genuinely mistyped PLAIN value still reports exactly its path: no
 // nominal trust applies without an instance or tag, so the structural
@@ -233,7 +255,11 @@ function testDeepForeignPlainPinpoints() {
   const badForeign = vm.runInNewContext(src);
   const badVerdict = validateType(badForeign, rowsExpect, 'loc', 'name', true, silent, 0);
   const {findings} = explainMismatch(badForeign, rowsExpect, 'data');
-  return badVerdict === false && findings.length === 1 && findings[0].path === "data.rows[0].get('a').w";
+  return (
+    badVerdict === false &&
+    findings.length === 1 &&
+    findings[0].path === "data.rows[0].get('a').w"
+  );
 }
 // Frozen foreign arrays validate like frozen local ones; sparse arrays
 // fail identically in both realms (holes are not valid elements).
@@ -248,7 +274,11 @@ a`;
   const badSparseForeign = validateType(sparseForeign, arrayExpect, 'loc', 'name', true, silent, 0);
   const sparseLocal = [1, 2, ...new Array(2)];
   const badSparseLocal = validateType(sparseLocal, arrayExpect, 'loc', 'name', true, silent, 0);
-  return goodFrozen === true && badSparseForeign === false && badSparseLocal === false;
+  return (
+    goodFrozen === true &&
+    badSparseForeign === false &&
+    badSparseLocal === false
+  );
 }
 // Array-like foreign objects validate by shape: a length-carrier with
 // numeric indices and no Array brand still satisfies ArrayLike.
@@ -319,8 +349,13 @@ function testForeignArraySkipsObjectBranch() {
 // element pairs with its positional template, like locals do.
 function testForeignTupleCandidates() {
   const out = collectCandidates(vm.runInNewContext('[1, "a"]'), expandType('[T, U]'));
-  return out.length === 2 && out[0].key === 'T' && out[0].literal === 1 &&
-    out[1].key === 'U' && out[1].literal === '"a"';
+  return (
+    out.length === 2 &&
+    out[0].key === 'T' &&
+    out[0].literal === 1 &&
+    out[1].key === 'U' &&
+    out[1].literal === '"a"'
+  );
 }
 // IArguments accepts foreign arguments-likes: iterator protocol plus
 // integer length plus callee, like tsc's contract. The `typeof` iterator

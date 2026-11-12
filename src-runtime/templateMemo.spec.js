@@ -15,8 +15,12 @@ function testMemoStableAcrossRepeats() {
     const first = inspectTypeWithTemplates('a', 'T', 'memoSite', 'v', templates());
     const sizeAfterFirst = substitutedCache.size;
     const second = inspectTypeWithTemplates('b', 'T', 'memoSite', 'v', templates());
-    return first === true && second === true && sizeAfterFirst >= 1 &&
-      substitutedCache.size === sizeAfterFirst;
+    return (
+      first === true &&
+      second === true &&
+      sizeAfterFirst >= 1 &&
+      substitutedCache.size === sizeAfterFirst
+    );
   } finally {
     substitutedCache.clear();
   }
@@ -31,7 +35,12 @@ function testBindingsDistinguishEntries() {
     const sizeAfterA = substitutedCache.size;
     const b = inspectTypeWithTemplates('b', expect, 'memoPins', 'v', {K: '"b"'});
     const c = inspectTypeWithTemplates('c', expect, 'memoPins', 'v', {K: '"a"'});
-    return a === true && b === true && c === false && substitutedCache.size === sizeAfterA + 1;
+    return (
+      a === true &&
+      b === true &&
+      c === false &&
+      substitutedCache.size === sizeAfterA + 1
+    );
   } finally {
     substitutedCache.clear();
   }
@@ -47,7 +56,11 @@ function testMappingReflectsReregistration() {
     const before = JSON.stringify(createTypeFromMapping(node, () => {}));
     registerTypedef('Box', {type: 'object', properties: {w: 'number', h: 'number'}});
     const after = JSON.stringify(createTypeFromMapping(node, () => {}));
-    return before.includes('"w"') && !before.includes('"h"') && after.includes('"h"');
+    return (
+      before.includes('"w"') &&
+      !before.includes('"h"') &&
+      after.includes('"h"')
+    );
   } finally {
     if (prev === undefined) {
       delete typedefs.Box;
@@ -71,7 +84,12 @@ function testClassShapeReflectsReregistration() {
     const before = Object.keys(mergedClassShape('Alpha').properties);
     registerClass(A2);
     const after = Object.keys(mergedClassShape('Alpha').properties);
-    return before.includes('a') && !before.includes('b') && after.includes('b') && !after.includes('a');
+    return (
+      before.includes('a') &&
+      !before.includes('b') &&
+      after.includes('b') &&
+      !after.includes('a')
+    );
   } finally {
     if (prev === undefined) {
       delete classes.Alpha;
@@ -89,9 +107,16 @@ function testNegZeroDistinctFromZero() {
     const first = inspectTypeWithTemplates(-0, 'T', 'memoZero', 'v', templates);
     const second = inspectTypeWithTemplates(0, 'T', 'memoZero', 'v', templates);
     const pinned = templates.T;
-    return first === true && second === true && pinned && typeof pinned === 'object' &&
-      pinned.type === 'union' && pinned.members.length === 2 &&
-      pinned.members.some((_) => Object.is(_, -0)) && pinned.members.some((_) => Object.is(_, 0) && !Object.is(_, -0));
+    return (
+      first === true &&
+      second === true &&
+      pinned &&
+      typeof pinned === 'object' &&
+      pinned.type === 'union' &&
+      pinned.members.length === 2 &&
+      pinned.members.some((_) => Object.is(_, -0)) &&
+      pinned.members.some((_) => Object.is(_, 0) && !Object.is(_, -0))
+    );
   } finally {
     substitutedCache.clear();
   }
@@ -102,8 +127,12 @@ function testReplaceNeverMutates() {
   const input = {type: 'object', properties: {a: 'K', b: {type: 'array', elementType: 'number'}}};
   const before = JSON.stringify(input);
   const out = substituteType(input, 'K', '"x"', () => {});
-  return JSON.stringify(input) === before && out !== input &&
-    out.properties.b === input.properties.b && out.properties.a === '"x"';
+  return (
+    JSON.stringify(input) === before &&
+    out !== input &&
+    out.properties.b === input.properties.b &&
+    out.properties.a === '"x"'
+  );
 }
 const tests = [
   testReplaceNeverMutates,

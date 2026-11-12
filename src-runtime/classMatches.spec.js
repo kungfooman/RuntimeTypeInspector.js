@@ -24,7 +24,13 @@ function testExactAndSubclassMatch() {
     const stranger = classMatches('MatchOther', 'MatchBase') === false;
     const unknown = classMatches('MatchBase', 'NeverHeard') === false;
     const untagged = classMatches(undefined, 'MatchBase') === false;
-    return exact && sub && stranger && unknown && untagged;
+    return (
+      exact &&
+      sub &&
+      stranger &&
+      unknown &&
+      untagged
+    );
   } finally {
     unprepare();
   }

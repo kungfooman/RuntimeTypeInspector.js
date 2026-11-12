@@ -71,7 +71,11 @@ function testInstanceFrozen() {
     } catch {
       loud = true;
     }
-    return Object.isFrozen(inst) && loud && inst.properties.v === 'number';
+    return (
+      Object.isFrozen(inst) &&
+      loud &&
+      inst.properties.v === 'number'
+    );
   } finally {
     dropTypedef('FrozenBox');
   }
@@ -97,8 +101,12 @@ function testArgFillMatchesTypeScript() {
       },
       warn,
     );
-    return missing.properties.a === 'number' && missing.properties.b === 'any' &&
-      extra.properties.a === 'number' && extra.properties.b === 'string';
+    return (
+      missing.properties.a === 'number' &&
+      missing.properties.b === 'any' &&
+      extra.properties.a === 'number' &&
+      extra.properties.b === 'string'
+    );
   } finally {
     dropTypedef('TwoParamBox');
   }
@@ -112,7 +120,11 @@ function testUnserializableArgsSkipCache() {
     const fn = () => {};
     const a = instantiateReference({type: 'reference', name: 'FunctionBox', args: [fn]}, warn);
     const b = instantiateReference({type: 'reference', name: 'FunctionBox', args: [fn]}, warn);
-    return a !== b && a.properties.v === fn && b.properties.v === fn;
+    return (
+      a !== b &&
+      a.properties.v === fn &&
+      b.properties.v === fn
+    );
   } finally {
     dropTypedef('FunctionBox');
   }

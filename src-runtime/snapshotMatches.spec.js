@@ -39,9 +39,11 @@ function testStrangerSnapshotFails() {
 // there is no nominal claim to check.
 function testUntaggedFails() {
   prepare();
-  return snapshotMatches({w: 1}, 'Widget') === false &&
+  return (
+    snapshotMatches({w: 1}, 'Widget') === false &&
     snapshotMatches(null, 'Widget') === false &&
-    snapshotMatches('Widget', 'Widget') === false;
+    snapshotMatches('Widget', 'Widget') === false
+  );
 }
 // We want: an unknown expected class to fail closed, because a missing
 // registry entry decides nothing.

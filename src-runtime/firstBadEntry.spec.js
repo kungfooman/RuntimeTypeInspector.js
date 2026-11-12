@@ -39,10 +39,12 @@ function testExamplesVerbatim() {
 }
 function testPrimitiveKeysAndValues() {
   // The three primitive aliases mirror their validators per entry.
-  return firstBadEntry(new Map([[1, 'a'], ['x', 'b']]), 'number', 'string') === 1 &&
+  return (
+    firstBadEntry(new Map([[1, 'a'], ['x', 'b']]), 'number', 'string') === 1 &&
     firstBadEntry(new Map([[1, 'a'], [2, 3]]), 'number', 'string') === 1 &&
     firstBadEntry(new Map([['a', true], ['b', false]]), 'string', 'boolean') === -1 &&
-    firstBadEntry(new Map([['a', true], ['b', 0]]), 'string', 'boolean') === 1;
+    firstBadEntry(new Map([['a', true], ['b', 0]]), 'string', 'boolean') === 1
+  );
 }
 function testCleanRegisteredClassVal() {
   // A map of registered-class instances scans clean in one pass.
@@ -73,10 +75,12 @@ function testAliasInstanceofMirror() {
 function testNaNInfinityNullAreSuspects() {
   // Everything `validateNumber` would reject (NaN, Infinity, null) stops
   // the scan at the entry position, never past it.
-  return firstBadEntry(new Map([[1, 2], [2, NaN]]), undefined, 'number') === 1 &&
+  return (
+    firstBadEntry(new Map([[1, 2], [2, NaN]]), undefined, 'number') === 1 &&
     firstBadEntry(new Map([[1, 2], [2, Infinity]]), undefined, 'number') === 1 &&
     firstBadEntry(new Map([[1, 2], [2, null]]), undefined, 'number') === 1 &&
-    firstBadEntry(new Map([[1, 2], [2, '3']]), undefined, 'number') === 1;
+    firstBadEntry(new Map([[1, 2], [2, '3']]), undefined, 'number') === 1
+  );
 }
 function testInfinityOptOut() {
   // `options.checkInfinity === false` clears `Infinity`, like the validator.
@@ -141,7 +145,8 @@ function testUtilityNameCollisionBailsOut() {
   registerClass(Awaited);
   try {
     const ref = (name, args) => ({type: 'reference', name, args});
-    return firstBadEntry(new Map([['a', new ReadonlyMap()]]), 'string', ref('ReadonlyMap', ['string', 'number'])) === -2 &&
+    return (
+      firstBadEntry(new Map([['a', new ReadonlyMap()]]), 'string', ref('ReadonlyMap', ['string', 'number'])) === -2 &&
       firstBadEntry(new Map([[1, new ArrayLike()]]), 'number', ref('ArrayLike', ['number'])) === -2 &&
       firstBadEntry(
         new Map([[1, new Awaited()]]),
@@ -153,7 +158,8 @@ function testUtilityNameCollisionBailsOut() {
             elementType: 'number',
           }],
         ),
-      ) === -2;
+      ) === -2
+    );
   } finally {
     delete classes.ReadonlyMap;
     delete classes.ArrayLike;
@@ -162,7 +168,8 @@ function testUtilityNameCollisionBailsOut() {
 }
 function testComplexValBailsOut() {
   // Object nodes, unions and unknown names are full-loop territory.
-  return firstBadEntry(new Map([[1, {x: 1}]]), 'number', {type: 'object'}) === -2 &&
+  return (
+    firstBadEntry(new Map([[1, {x: 1}]]), 'number', {type: 'object'}) === -2 &&
     firstBadEntry(
       new Map([[1, 'a']]),
       'number',
@@ -171,7 +178,8 @@ function testComplexValBailsOut() {
         members: ['number', 'string'],
       },
     ) === -2 &&
-    firstBadEntry(new Map([[1, 'a']]), 'number', 'NeverHeardOfIt') === -2;
+    firstBadEntry(new Map([[1, 'a']]), 'number', 'NeverHeardOfIt') === -2
+  );
 }
 function testComplexKeyBailsOut() {
   // Keys outside the specializer shapes keep the full loop; registered
@@ -222,9 +230,11 @@ function testEmptyMapScansClean() {
 function testMixedKeyValFailure() {
   // When key and value both specialize, first offender wins: key offender
   // at entry 1 vs string value at entry 0, plus a key-only offender.
-  return firstBadEntry(new Map([[NaN, 'b'], [2, 7]]), 'number', 'number') === 0 &&
+  return (
+    firstBadEntry(new Map([[NaN, 'b'], [2, 7]]), 'number', 'number') === 0 &&
     firstBadEntry(new Map([[1, 'b'], [2, 7]]), 'number', 'string') === 1 &&
-    firstBadEntry(new Map([[1, 1], [NaN, 2]]), 'number', 'number') === 1;
+    firstBadEntry(new Map([[1, 1], [NaN, 2]]), 'number', 'number') === 1
+  );
 }
 const tests = [
   testExamplesVerbatim,

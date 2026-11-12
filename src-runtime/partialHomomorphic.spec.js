@@ -33,10 +33,20 @@ function prepare() {
 function testExpandKeepsDeepPartial() {
   // The gizmo shape survives transpilation as an optional mapping over Partial indexed access.
   const node = expandType('{ [K in keyof PhTheme]?: Partial<PhTheme[K]> }');
-  return !!node && node.type === 'mapping' && node.element === 'K' &&
-    node.question === '?' && node.iterable && node.iterable.type === 'keyof' &&
-    node.result && node.result.type === 'reference' && node.result.name === 'Partial' &&
-    Array.isArray(node.result.args) && node.result.args[0] && node.result.args[0].type === 'indexedAccess';
+  return (
+    !!node &&
+    node.type === 'mapping' &&
+    node.element === 'K' &&
+    node.question === '?' &&
+    node.iterable &&
+    node.iterable.type === 'keyof' &&
+    node.result &&
+    node.result.type === 'reference' &&
+    node.result.name === 'Partial' &&
+    Array.isArray(node.result.args) &&
+    node.result.args[0] &&
+    node.result.args[0].type === 'indexedAccess'
+  );
 }
 function testPartialNumberPassthrough() {
   // Partial over a primitive is the primitive itself, so numbers pass and objects fail like tsc.

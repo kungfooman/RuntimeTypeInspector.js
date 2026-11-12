@@ -12,6 +12,7 @@
     "lint": "eslint --ext .js,.mjs,.cjs src-transpiler src-runtime && npm run lint:inline-casts",
     "lint:fix": "eslint --ext .js,.mjs,.cjs src-transpiler src-runtime --fix",
     "lint:inline-casts": "node find-inline-casts.mjs",
+    "expand-bool-returns": "node expand-bool-returns.mjs",
     "break-hanging": "node break-hanging-calls.mjs",
     "watch": "rollup -c -w",
     "test": "npm run test:update && node test.js && node test_runtime.js && node test/jsdoc-expect/run.mjs && node test/jsdoc-annotation/run.js && node test/ts2js.mjs && node test/wat-converter.mjs && npm run test:parity && npm run test:parity-tags",

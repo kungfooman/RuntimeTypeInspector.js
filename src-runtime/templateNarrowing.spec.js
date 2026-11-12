@@ -47,7 +47,11 @@ function testOptionalBareInstantiates() {
   const parsed = expandType('{a?: T}');
   const input = parsed.properties.a;
   const {ret, warnings} = captureWarns(() => inspectTypeWithTemplates('x', input, 'f', 'a', templates));
-  return ret === true && warnings.length === 0 && templates.T === '"x"';
+  return (
+    ret === true &&
+    warnings.length === 0 &&
+    templates.T === '"x"'
+  );
 }
 // Omitted optional bare params pass without poisoning the template.
 function testOptionalBareOmitted() {
@@ -55,7 +59,11 @@ function testOptionalBareOmitted() {
   const parsed = expandType('{a?: T}');
   const input = parsed.properties.a;
   const {ret, warnings} = captureWarns(() => inspectTypeWithTemplates(undefined, input, 'f', 'a', templates));
-  return ret === true && warnings.length === 0 && templates.T === 'any';
+  return (
+    ret === true &&
+    warnings.length === 0 &&
+    templates.T === 'any'
+  );
 }
 // Optional non-template params stay silent when an unrelated template exists.
 function testOptionalUnrelatedSilent() {
@@ -67,7 +75,11 @@ function testOptionalUnrelatedSilent() {
   const inputBox = parsedBox.properties.a;
   const out = substituteType(inputString, 'T', 'any', noisy);
   const out2 = substituteType(inputBox, 'T', 'any', noisy);
-  return warns === 0 && out.atomType === 'string' && out2.atomType === 'MyBox';
+  return (
+    warns === 0 &&
+    out.atomType === 'string' &&
+    out2.atomType === 'MyBox'
+  );
 }
 // `typeof X` is a value position: never rewritten, never warns.
 function testTypeofSilent() {
@@ -149,7 +161,11 @@ function testNestedAfterBareWidens() {
     'opts',
     templates,
   ));
-  return second.ret && second.warnings.length === 0 && templates.K === 'string';
+  return (
+    second.ret &&
+    second.warnings.length === 0 &&
+    templates.K === 'string'
+  );
 }
 // Literal-union constraints union instead of widening: `hD('a', 'b')` with
 // `@template {"a"|"b"} K` pins `"a"|"b"`, matching tsc.

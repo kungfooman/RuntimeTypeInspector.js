@@ -56,8 +56,13 @@ function testOnRecordsWalkRow() {
     recordCheck('T#x', 'paid', 0);
     const rows = getCheckStats();
     const row = rows.length === 1 ? rows[0] : undefined;
-    return verdict === true && row !== undefined && row.loc === 'T#x paid' && row.arrayWalks === 1 &&
-      row.checkMs > 0;
+    return (
+      verdict === true &&
+      row !== undefined &&
+      row.loc === 'T#x paid' &&
+      row.arrayWalks === 1 &&
+      row.checkMs > 0
+    );
   } finally {
     options.checkStats = virginCheckStats;
   }

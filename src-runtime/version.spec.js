@@ -10,8 +10,11 @@ function validInfo() {
     return false;
   }
   const field = (_) => _ === null || typeof _ === 'string';
-  return typeof RTI_INFO.version === 'string' &&
-    field(RTI_INFO.commit) && field(RTI_INFO.subject);
+  return (
+    typeof RTI_INFO.version === 'string' &&
+    field(RTI_INFO.commit) &&
+    field(RTI_INFO.subject)
+  );
 }
 const tests = [
   // `sync-version.js` mirrors package.json into version.js — never hand-edit.
