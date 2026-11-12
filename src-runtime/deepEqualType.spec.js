@@ -4,22 +4,42 @@ import {expandType   } from '../src-transpiler/expandType.js';
 // node fields cannot produce false parity failures.
 function testKeyOrderInsensitive() {
   return (
-    deepEqualType({b: 1, a: 2}, {a: 2, b: 1}) === true &&
-    deepEqualType({a: 2, b: 1}, {b: 1, a: 3}) === false
+    deepEqualType({
+      b: 1,
+      a: 2,
+    }, {
+      a: 2,
+      b: 1,
+    }) === true &&
+    deepEqualType({
+      a: 2,
+      b: 1,
+    }, {
+      b: 1,
+      a: 3,
+    }) === false
   );
 }
 // We want: Explicit undefined and `false` optionality/readonly flags to
 // compare equal to absent, since both mean the same in RTI semantics.
 function testUndefinedAndFalseFlagsDropped() {
   return (
-    deepEqualType({a: 1, b: undefined}, {a: 1}) === true &&
+    deepEqualType({
+      a: 1,
+      b: undefined,
+    }, {
+      a: 1,
+    }) === true &&
     deepEqualType(
       {
         type: 'atom',
         atomType: 'string',
         optional: false,
       },
-      {type: 'atom', atomType: 'string'},
+      {
+        type: 'atom',
+        atomType: 'string',
+      },
     ) === true &&
     deepEqualType(
       {
@@ -27,7 +47,10 @@ function testUndefinedAndFalseFlagsDropped() {
         atomType: 'string',
         readonly: false,
       },
-      {type: 'atom', atomType: 'string'},
+      {
+        type: 'atom',
+        atomType: 'string',
+      },
     ) === true &&
     deepEqualType(
       {
@@ -35,7 +58,10 @@ function testUndefinedAndFalseFlagsDropped() {
         atomType: 'string',
         optional: true,
       },
-      {type: 'atom', atomType: 'string'},
+      {
+        type: 'atom',
+        atomType: 'string',
+      },
     ) === false
   );
 }
@@ -66,7 +92,11 @@ function testPrimitivesByValue() {
 function testTrueFlagDistinctFromFalse() {
   return (
     deepEqualType(
-      {type: 'atom', atomType: 'string', optional: true},
+      {
+        type: 'atom',
+        atomType: 'string',
+        optional: true,
+      },
       {
         type: 'atom',
         atomType: 'string',
@@ -74,7 +104,11 @@ function testTrueFlagDistinctFromFalse() {
       },
     ) === false &&
     deepEqualType(
-      {type: 'atom', atomType: 'string', readonly: true},
+      {
+        type: 'atom',
+        atomType: 'string',
+        readonly: true,
+      },
       {
         type: 'atom',
         atomType: 'string',
@@ -96,8 +130,14 @@ function testArrayOrderSignificant() {
 // nullable union member never collapses into an absent key.
 function testNullDistinctFromMissing() {
   return (
-    deepEqualType({a: null}, {}) === false &&
-    deepEqualType({a: null}, {a: null}) === true
+    deepEqualType({
+      a: null,
+    }, {}) === false &&
+    deepEqualType({
+      a: null,
+    }, {
+      a: null,
+    }) === true
   );
 }
 // We want: genuinely different node kinds to compare unequal, so the

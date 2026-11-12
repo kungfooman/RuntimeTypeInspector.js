@@ -5,7 +5,9 @@ function testExportedFunctionBlocks() {
   const src = `/** @overload */
     /** @param {number} x */
     export function f(x) { return x; }`;
-  const ast = parse(src, {sourceType: 'module'});
+  const ast = parse(src, {
+    sourceType: 'module',
+  });
   const [wrapper] = ast.program.body;
   const fn = wrapper.declaration;
   const blocks = collectOverloadBlocks(fn, [ast.program, wrapper, fn]);

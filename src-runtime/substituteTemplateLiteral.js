@@ -12,6 +12,9 @@ import {substitutes} from "./substitutes.js";
  */
 function substituteTemplateLiteral(type, search, replace, warn) {
   const types = substitutes.substituteList(type.types, search, replace, warn);
-  return types === type.types ? type : {...type, types};
+  return types === type.types ? type : {
+    ...type,
+    types,
+  };
 }
 export {substituteTemplateLiteral};

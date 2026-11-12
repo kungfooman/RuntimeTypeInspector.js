@@ -10,7 +10,11 @@ function shapeFor(src) {
   const warnings = [];
   const origWarn = console.warn;
   console.warn = (...args) => warnings.push(args);
-  const asserter = new Asserter({expandType, addHeader: false, filename: 'test.js'});
+  const asserter = new Asserter({
+    expandType,
+    addHeader: false,
+    filename: 'test.js',
+  });
   const out = asserter.getHeader() + asserter.toSource(parse(src, parserOptions));
   console.warn = origWarn;
   return {out, warnings};

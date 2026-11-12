@@ -90,7 +90,10 @@ function flattenRest(type) {
           flat.push(...flattenRest(ann).elements);
         } else if (ann) {
           const flatAnn = flattenRest(ann);
-          flat.push(flatAnn === ann ? el : {...el, annotation: flatAnn});
+          flat.push(flatAnn === ann ? el : {
+            ...el,
+            annotation: flatAnn,
+          });
           if (flatAnn !== ann) {
             changed = true;
           }
@@ -105,7 +108,10 @@ function flattenRest(type) {
         }
       }
     }
-    return changed ? {...type, elements: flat} : type;
+    return changed ? {
+      ...type,
+      elements: flat,
+    } : type;
   } else if (type.type === 'object' && type.properties) {
     let changed = false;
     const properties = {};
@@ -116,7 +122,10 @@ function flattenRest(type) {
         changed = true;
       }
     }
-    return changed ? {...type, properties} : type;
+    return changed ? {
+      ...type,
+      properties,
+    } : type;
   } else if (type.type === 'union' && Array.isArray(type.members)) {
     let changed = false;
     const members = type.members.map((member) => {
@@ -126,7 +135,10 @@ function flattenRest(type) {
       }
       return next;
     });
-    return changed ? {...type, members} : type;
+    return changed ? {
+      ...type,
+      members,
+    } : type;
   } else if (type.type === 'intersection' && Array.isArray(type.members)) {
     let changed = false;
     const members = type.members.map((member) => {
@@ -136,13 +148,22 @@ function flattenRest(type) {
       }
       return next;
     });
-    return changed ? {...type, members} : type;
+    return changed ? {
+      ...type,
+      members,
+    } : type;
   } else if (type.type === 'array' && type.elementType) {
     const next = flattenRest(type.elementType);
-    return next === type.elementType ? type : {...type, elementType: next};
+    return next === type.elementType ? type : {
+      ...type,
+      elementType: next,
+    };
   } else if (type.type === 'rest' && type.annotation) {
     const next = flattenRest(type.annotation);
-    return next === type.annotation ? type : {...type, annotation: next};
+    return next === type.annotation ? type : {
+      ...type,
+      annotation: next,
+    };
   }
   return type;
 }
@@ -264,6 +285,10 @@ function instantiateMapping(expect, warn) {
     }
     properties[propKey] = propType;
   }
-  return {type: 'object', properties, optional: false};
+  return {
+    type: 'object',
+    properties,
+    optional: false,
+  };
 }
 export {createTypeFromMapping};

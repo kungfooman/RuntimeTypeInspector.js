@@ -63,15 +63,25 @@ function renderMapValue(map) {
   try {
     entries = [...map.entries()];
   } catch {
-    return Div({textContent: shortPreview(map)});
+    return Div({
+      textContent: shortPreview(map),
+    });
   }
   const shown = entries.slice(0, MAX_CELL_ENTRIES);
-  const box = Details({open: true}, Summary({textContent: `Map(${map.size})`}));
+  const box = Details({
+    open: true,
+  }, Summary({
+    textContent: `Map(${map.size})`,
+  }));
   for (const [key, val] of shown) {
-    box.append(Div({textContent: `${shortPreview(key)} => ${shortPreview(val)}`}));
+    box.append(Div({
+      textContent: `${shortPreview(key)} => ${shortPreview(val)}`,
+    }));
   }
   if (entries.length > shown.length) {
-    box.append(Div({textContent: `...(+${entries.length - shown.length} more)`}));
+    box.append(Div({
+      textContent: `...(+${entries.length - shown.length} more)`,
+    }));
   }
   return box;
 }
@@ -85,15 +95,25 @@ function renderSetValue(set) {
   try {
     items = [...set.values()];
   } catch {
-    return Div({textContent: shortPreview(set)});
+    return Div({
+      textContent: shortPreview(set),
+    });
   }
   const shown = items.slice(0, MAX_CELL_ENTRIES);
-  const box = Details({open: true}, Summary({textContent: `Set(${set.size})`}));
+  const box = Details({
+    open: true,
+  }, Summary({
+    textContent: `Set(${set.size})`,
+  }));
   for (const item of shown) {
-    box.append(Div({textContent: shortPreview(item)}));
+    box.append(Div({
+      textContent: shortPreview(item),
+    }));
   }
   if (items.length > shown.length) {
-    box.append(Div({textContent: `...(+${items.length - shown.length} more)`}));
+    box.append(Div({
+      textContent: `...(+${items.length - shown.length} more)`,
+    }));
   }
   return box;
 }
@@ -117,25 +137,39 @@ function renderTypedArrayValue(array) {
   try {
     len = array.length;
   } catch {
-    return Div({textContent: shortPreview(array)});
+    return Div({
+      textContent: shortPreview(array),
+    });
   }
   if (typeof len !== 'number') {
-    return Div({textContent: shortPreview(array)});
+    return Div({
+      textContent: shortPreview(array),
+    });
   }
-  const box = Details({open: true}, Summary({textContent: `${tag}(${len})`}));
+  const box = Details({
+    open: true,
+  }, Summary({
+    textContent: `${tag}(${len})`,
+  }));
   const shown = Math.min(len, MAX_CELL_ENTRIES);
   for (let i = 0; i < shown; i++) {
     let item;
     try {
       item = array[i];
     } catch {
-      box.append(Div({textContent: `${i}: [Unreadable]`}));
+      box.append(Div({
+        textContent: `${i}: [Unreadable]`,
+      }));
       continue;
     }
-    box.append(Div({textContent: `${i}: ${shortPreview(item)}`}));
+    box.append(Div({
+      textContent: `${i}: ${shortPreview(item)}`,
+    }));
   }
   if (len > shown) {
-    box.append(Div({textContent: `...(+${len - shown} more)`}));
+    box.append(Div({
+      textContent: `...(+${len - shown} more)`,
+    }));
   }
   return box;
 }
@@ -265,7 +299,9 @@ function renderActualValue(value, rootPath, failPaths) {
   try {
     const root = String(rootPath || 'value');
     const fails = failPaths instanceof Set ? failPaths : new Set();
-    const wrap = Div({className: 'rti-line'});
+    const wrap = Div({
+      className: 'rti-line',
+    });
     wrap.append(buildActualContent(value, root, 0, [], fails, true));
     return wrap;
   } catch {
@@ -372,14 +408,22 @@ function actualLeafClass(value) {
  * @returns {HTMLDivElement} The row.
  */
 function actualRow(label, sep, content, failed) {
-  const row = Div({className: failed ? 'rti-fail-hit' : undefined});
+  const row = Div({
+    className: failed ? 'rti-fail-hit' : undefined,
+  });
   if (label === null) {
     row.append(content);
     return row;
   }
   row.append(
-    Span({className: 'rti-key', textContent: label}),
-    Span({className: 'rti-separator', textContent: sep}),
+    Span({
+      className: 'rti-key',
+      textContent: label,
+    }),
+    Span({
+      className: 'rti-separator',
+      textContent: sep,
+    }),
     content,
   );
   return row;
@@ -413,7 +457,10 @@ function renderActualBatch(details, items, failPaths, depth, ancestors) {
   };
   const marker = Div({
     className: 'rti-more',
-    dataset: {shown: String(shown), total: String(items.length)},
+    dataset: {
+      shown: String(shown),
+      total: String(items.length),
+    },
     title: 'Show more rows',
   });
   /**
@@ -489,7 +536,9 @@ function buildActualBranch(header, items, path, depth, ancestors, failPaths) {
       open: depth === 0 || actualCovers(path, failPaths) ? true : undefined,
       className: failed ? 'rti-fail-hit' : undefined,
     },
-    Summary({textContent: header}),
+    Summary({
+      textContent: header,
+    }),
   );
   renderActualBatch(details, items, failPaths, depth + 1, ancestors);
   return details;
@@ -529,7 +578,9 @@ function actualSeqItems(value) {
       return [...value.values()];
     }
     if (Array.isArray(value) || isTypedArray(value)) {
-      return Array.from({length: value.length}, (_, i) => actualSafeRead(value, i));
+      return Array.from({
+        length: value.length,
+      }, (_, i) => actualSafeRead(value, i));
     }
   } catch {
     return null;
@@ -553,12 +604,18 @@ function actualSeqItems(value) {
  */
 function valueSize(value, fallback) {
   if (typeof value?.size === 'number') {
-    return {size: value.size};
+    return {
+      size: value.size,
+    };
   }
   if (typeof value?.length === 'number') {
-    return {size: value.length};
+    return {
+      size: value.length,
+    };
   }
-  return {size: fallback};
+  return {
+    size: fallback,
+  };
 }
 /**
  * Own enumerable keys minus the snapshot envelope tag, or null when the
@@ -628,7 +685,10 @@ function buildActualContent(value, path, depth, ancestors, failPaths, markSelf =
   try {
     if (value !== null && typeof value === 'object') {
       if (ancestors.includes(value)) {
-        return Span({className: failed ? 'rti-fail-hit' : undefined, textContent: '[Circular]'});
+        return Span({
+          className: failed ? 'rti-fail-hit' : undefined,
+          textContent: '[Circular]',
+        });
       }
       if (depth >= MAX_ACTUAL_RECURSE) {
         return leaf();
@@ -739,7 +799,9 @@ function buildActualContent(value, path, depth, ancestors, failPaths, markSelf =
     }
     return leaf();
   } catch {
-    return Span({textContent: shortPreview(value)});
+    return Span({
+      textContent: shortPreview(value),
+    });
   }
 }
 /**
@@ -761,7 +823,9 @@ function renderCellValue(value) {
     return renderTypedArrayValue(value);
   }
   if (isPreviewLeaf(value)) {
-    return Div({textContent: shortPreview(value)});
+    return Div({
+      textContent: shortPreview(value),
+    });
   }
   return new DisplayAnything(withCollectionPreviews(value)).render();
 }
@@ -843,11 +907,22 @@ class Warning {
     this.td_hide = Td({}, this.button_hideInput);
     this.td_dbg = Td({}, this.button_dbgInput);
     this.td_count = Td({});
-    this.td_location = Td({textContent: loc});
-    this.td_name = Td({textContent: name});
-    this.td_expect = Td({className: 'expect'});
-    this.td_value = Td({className: 'value'});
-    this.td_desc = Td({className: 'desc', innerText: msg});
+    this.td_location = Td({
+      textContent: loc,
+    });
+    this.td_name = Td({
+      textContent: name,
+    });
+    this.td_expect = Td({
+      className: 'expect',
+    });
+    this.td_value = Td({
+      className: 'value',
+    });
+    this.td_desc = Td({
+      className: 'desc',
+      innerText: msg,
+    });
     this.td_inspect = Td({}, this.button_inspect, this.button_copy);
     const row = [this.td_hide, this.td_dbg, this.td_count, this.td_location, this.td_name];
     const tail = [this.td_expect, this.td_value, this.td_desc, this.td_inspect];
@@ -972,7 +1047,9 @@ class Warning {
     try {
       node = renderCellValue(_);
     } catch {
-      node = Div({textContent: shortPreview(_)});
+      node = Div({
+        textContent: shortPreview(_),
+      });
     }
     this.td_value.append(node);
   }
@@ -1001,7 +1078,12 @@ class Warning {
         this._expectNode.refill(_);
         this._expectNotes.innerHTML = '';
         for (const note of notes) {
-          this._expectNotes.append(Div({style: {fontSize: '11px', color: '#555'}}, note));
+          this._expectNotes.append(Div({
+            style: {
+              fontSize: '11px',
+              color: '#555',
+            },
+          }, note));
         }
         return;
       } catch {
@@ -1017,16 +1099,30 @@ class Warning {
       this._expectNode = display;
     } catch {
       this._expectNode = null;
-      rendered = Div({textContent: pretty});
+      rendered = Div({
+        textContent: pretty,
+      });
     }
-    this._expectSummary = Div({title: summary, textContent: summary});
-    this._expectPretty = Pre({textContent: pretty});
+    this._expectSummary = Div({
+      title: summary,
+      textContent: summary,
+    });
+    this._expectPretty = Pre({
+      textContent: pretty,
+    });
     this._expectNotes = Div({});
-    const noteStyle = {fontSize: '11px', color: '#555'};
+    const noteStyle = {
+      fontSize: '11px',
+      color: '#555',
+    };
     for (const note of notes) {
-      this._expectNotes.append(Div({style: noteStyle}, note));
+      this._expectNotes.append(Div({
+        style: noteStyle,
+      }, note));
     }
-    const fullType = Summary({textContent: 'full type'});
+    const fullType = Summary({
+      textContent: 'full type',
+    });
     const parts = [this._expectPretty, rendered, this._expectNotes];
     this._expectDetails = Details({}, fullType, ...parts);
     this.td_expect.append(

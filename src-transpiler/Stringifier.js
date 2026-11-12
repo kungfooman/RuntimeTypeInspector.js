@@ -315,7 +315,17 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   ClassMethod(node) {
-    const {static: static_, key, computed, kind, id, generator, async, params, body} = node;
+    const {
+      static: static_,
+      key,
+      computed,
+      kind,
+      id,
+      generator,
+      async,
+      params,
+      body,
+    } = node;
     let out = this.spaces;
     if (generator) {
       out += '*';
@@ -390,7 +400,16 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   ClassPrivateMethod(node) {
-    const {static: static_, key, kind, id, generator, async, params, body} = node;
+    const {
+      static: static_,
+      key,
+      kind,
+      id,
+      generator,
+      async,
+      params,
+      body,
+    } = node;
     let out = this.spaces;
     if (generator) {
       out += '*';
@@ -452,7 +471,11 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   ClassPrivateProperty(node) {
-    const {static: static_, key, value} = node;
+    const {
+      static: static_,
+      key,
+      value,
+    } = node;
     let out = this.spaces;
     if (static_) {
       out += 'static ';
@@ -739,7 +762,11 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   CallExpression(node) {
-    const {callee, arguments: args, extra} = node;
+    const {
+      callee,
+      arguments: args,
+      extra,
+    } = node;
     let out = this.toSource(callee);
     out += "(";
     out += this.mapToSource(args).join(', ');
@@ -860,7 +887,10 @@ class Stringifier {
    */
   VariableDeclaration(node) {
     const {declarations, kind} = node;
-    const {needSpaces, spaces: indent} = this;
+    const {
+      needSpaces,
+      spaces: indent,
+    } = this;
     let spaces = '';
     let semicolon = '';
     if (needSpaces) {
@@ -939,7 +969,10 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   NewExpression(node) {
-    const {callee, arguments: args_} = node;
+    const {
+      callee,
+      arguments: args_,
+    } = node;
     const c = this.toSource(callee);
     const args = this.mapToSource(args_).join(', ');
     return `new ${c}(${args})`;
@@ -1305,7 +1338,12 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   ForOfStatement(node) {
-    const {await: await_, left, right, body} = node;
+    const {
+      await: await_,
+      left,
+      right,
+      body,
+    } = node;
     const {spaces} = this;
     const l = this.toSource(left);
     const r = this.toSource(right);
@@ -1491,7 +1529,11 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   OptionalCallExpression(node) {
-    const {callee, optional, arguments: args} = node;
+    const {
+      callee,
+      optional,
+      arguments: args,
+    } = node;
     const a = this.toSource(callee);
     const b = this.mapToSource(args);
     if (optional) {

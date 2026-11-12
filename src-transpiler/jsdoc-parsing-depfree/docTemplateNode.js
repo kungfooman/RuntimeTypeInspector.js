@@ -22,8 +22,15 @@ import {readTemplateBinding  } from './readTemplateBinding.js';
 function docTemplateNode(node) {
   const rows = [];
   for (const binding of splitTemplateBindings(node.headRaw)) {
-    const {name, default: def} = readTemplateBinding(binding);
-    rows.push({name, constraint: node.typeRaw, default: def});
+    const {
+      name,
+      default: def,
+    } = readTemplateBinding(binding);
+    rows.push({
+      name,
+      constraint: node.typeRaw,
+      default: def,
+    });
   }
   return rows;
 }

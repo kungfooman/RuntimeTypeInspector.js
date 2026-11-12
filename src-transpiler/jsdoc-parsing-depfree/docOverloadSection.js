@@ -25,7 +25,10 @@ function docOverloadSection(section) {
   // entry absorbs the whole piece (errors included) exactly as tsc
   // parses it. The gate tolerates ` * ` leaders like the split gate.
   if (/^[\s*]*@template\b/.test(section)) {
-    return {params: [], returns: ''};
+    return {
+      params: [],
+      returns: '',
+    };
   }
   const sectionDoc = parseJSDocDocument(section);
   const params = (sectionDoc.tags ?? []).map((tag) => {

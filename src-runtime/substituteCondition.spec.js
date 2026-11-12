@@ -38,7 +38,10 @@ function testConditionNested() {
     type: 'condition',
     checkType: 'K',
     extendsType: 'string',
-    trueType: {type: 'array', elementType: 'K'},
+    trueType: {
+      type: 'array',
+      elementType: 'K',
+    },
     falseType: 'boolean',
   };
   return JSON.stringify(substituteCondition(input, 'K', '"a"', noop)) ===
@@ -46,7 +49,10 @@ function testConditionNested() {
       type: 'condition',
       checkType: '"a"',
       extendsType: 'string',
-      trueType: {type: 'array', elementType: '"a"'},
+      trueType: {
+        type: 'array',
+        elementType: '"a"',
+      },
       falseType: 'boolean',
     });
 }

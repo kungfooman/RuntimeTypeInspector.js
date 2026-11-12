@@ -21,8 +21,12 @@
 function atomUnwrap(expect) {
   const inner = expect.atomType;
   const innerIsObject = inner !== null && typeof inner === 'object' && !Array.isArray(inner);
-  const base = innerIsObject ? inner : {type: inner};
-  const out = {...base};
+  const base = innerIsObject ? inner : {
+    type: inner,
+  };
+  const out = {
+    ...base,
+  };
   if (expect.optional || (innerIsObject && inner.optional)) {
     out.optional = true;
   }

@@ -55,10 +55,18 @@ function testIssue241ArrayLikeInvalid() {
 }
 function testArrayLikeObject() {
   const expect = expandType('ArrayLike<number>');
-  if (!validateType({length: 2, 0: 1, 1: 2}, expect, 'loc', 'name', true, warn, 0)) {
+  if (!validateType({
+    length: 2,
+    0: 1,
+    1: 2,
+  }, expect, 'loc', 'name', true, warn, 0)) {
     return false;
   }
-  if (validateType({length: 2, 0: 1, 1: 'x'}, expect, 'loc', 'name', true, warn, 0)) {
+  if (validateType({
+    length: 2,
+    0: 1,
+    1: 'x',
+  }, expect, 'loc', 'name', true, warn, 0)) {
     return false;
   }
   return true;
@@ -74,13 +82,22 @@ function testArrayLikeRejectsBadShapes() {
   if (validateType(42, expect, 'loc', 'name', true, warn, 0)) {
     return false;
   }
-  if (validateType({0: 1, 1: 2}, expect, 'loc', 'name', true, warn, 0)) {
+  if (validateType({
+    0: 1,
+    1: 2,
+  }, expect, 'loc', 'name', true, warn, 0)) {
     return false;
   }
-  if (validateType({length: -1, 0: 1}, expect, 'loc', 'name', true, warn, 0)) {
+  if (validateType({
+    length: -1,
+    0: 1,
+  }, expect, 'loc', 'name', true, warn, 0)) {
     return false;
   }
-  if (validateType({length: 1.5, 0: 1}, expect, 'loc', 'name', true, warn, 0)) {
+  if (validateType({
+    length: 1.5,
+    0: 1,
+  }, expect, 'loc', 'name', true, warn, 0)) {
     return false;
   }
   return true;
@@ -94,7 +111,10 @@ function testReadonlyArray() {
     return false;
   }
   // Array-like objects are not arrays, so ReadonlyArray must reject them.
-  if (validateType({length: 1, 0: 1}, expect, 'loc', 'name', true, warn, 0)) {
+  if (validateType({
+    length: 1,
+    0: 1,
+  }, expect, 'loc', 'name', true, warn, 0)) {
     return false;
   }
   return true;
@@ -156,10 +176,16 @@ function testArrayLikeBareAndAliases() {
   }
   // DOM list aliases behave like ArrayLike.
   const nodeListOf = expandType('NodeListOf<number>');
-  if (!validateType({length: 1, 0: 1}, nodeListOf, 'loc', 'name', true, warn, 0)) {
+  if (!validateType({
+    length: 1,
+    0: 1,
+  }, nodeListOf, 'loc', 'name', true, warn, 0)) {
     return false;
   }
-  if (validateType({length: 1, 0: '1'}, nodeListOf, 'loc', 'name', true, warn, 0)) {
+  if (validateType({
+    length: 1,
+    0: '1',
+  }, nodeListOf, 'loc', 'name', true, warn, 0)) {
     return false;
   }
   return true;
@@ -260,7 +286,10 @@ function testArrayLikeHolesFail() {
   // Holes read as `undefined`, not numbers: missing indices fail, and so
   // does the text-element shape (length-extended plain array, all holes).
   const expect = expandType('ArrayLike<number>');
-  if (validateType({length: 2, 0: 1}, expect, 'loc', 'name', true, warn, 0)) {
+  if (validateType({
+    length: 2,
+    0: 1,
+  }, expect, 'loc', 'name', true, warn, 0)) {
     return false;
   }
   const positions = [];
@@ -307,12 +336,23 @@ function testGenericBranchFreshNodesValidate() {
   // Non-templated call sites emit a fresh reference node per call: two
   // structurally-equal nodes must validate identically, and the content-keyed
   // instantiation cache must not change which values pass or fail.
-  registerTypedef('FreshBox', {type: 'object', properties: {v: 'T'}}, ['T']);
+  registerTypedef('FreshBox', {
+    type: 'object',
+    properties: {
+      v: 'T',
+    },
+  }, ['T']);
   try {
     const freshNode = () => expandType('FreshBox<number>');
-    const okFirst = validateType({v: 1}, freshNode(), 'loc', 'name', true, warn, 0);
-    const okSecond = validateType({v: 1}, freshNode(), 'loc', 'name', true, warn, 0);
-    const badSecond = validateType({v: 'x'}, freshNode(), 'loc', 'name', true, warn, 0);
+    const okFirst = validateType({
+      v: 1,
+    }, freshNode(), 'loc', 'name', true, warn, 0);
+    const okSecond = validateType({
+      v: 1,
+    }, freshNode(), 'loc', 'name', true, warn, 0);
+    const badSecond = validateType({
+      v: 'x',
+    }, freshNode(), 'loc', 'name', true, warn, 0);
     return (
       okFirst === true &&
       okSecond === true &&
@@ -327,12 +367,28 @@ function testGenericBranchRegistryUpdateSeen() {
   // Re-registering the generic body bumps the registry version: a fresh
   // node with equal content re-instantiates against the new body, so a
   // registry update is never masked by a stale cached instance.
-  registerTypedef('UpdatedBox', {type: 'object', properties: {v: 'T'}}, ['T']);
+  registerTypedef('UpdatedBox', {
+    type: 'object',
+    properties: {
+      v: 'T',
+    },
+  }, ['T']);
   try {
-    const before = validateType({v: 1}, expandType('UpdatedBox<number>'), 'loc', 'name', true, warn, 0);
-    registerTypedef('UpdatedBox', {type: 'object', properties: {v: 'string'}}, ['T']);
-    const nowInvalid = validateType({v: 1}, expandType('UpdatedBox<number>'), 'loc', 'name', true, warn, 0);
-    const nowValid = validateType({v: 'x'}, expandType('UpdatedBox<number>'), 'loc', 'name', true, warn, 0);
+    const before = validateType({
+      v: 1,
+    }, expandType('UpdatedBox<number>'), 'loc', 'name', true, warn, 0);
+    registerTypedef('UpdatedBox', {
+      type: 'object',
+      properties: {
+        v: 'string',
+      },
+    }, ['T']);
+    const nowInvalid = validateType({
+      v: 1,
+    }, expandType('UpdatedBox<number>'), 'loc', 'name', true, warn, 0);
+    const nowValid = validateType({
+      v: 'x',
+    }, expandType('UpdatedBox<number>'), 'loc', 'name', true, warn, 0);
     return (
       before === true &&
       nowInvalid === false &&

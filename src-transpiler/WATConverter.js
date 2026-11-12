@@ -1,20 +1,86 @@
 import {Stringifier} from './Stringifier.js';
 /** @typedef {import("@babel/types").Node} Node */
-const CONST_TYPE = {f32: 'f32.const', f64: 'f64.const', i32: 'i32.const', i64: 'i64.const'};
-const NEG_OP = {f32: 'f32.neg', f64: 'f64.neg'};
-const EQZ_OP = {f32: 'f32.eqz', f64: 'f64.eqz', i32: 'i32.eqz', i64: 'i64.eqz'};
-const NE_OP = {f32: 'f32.ne', f64: 'f64.ne', i32: 'i32.ne', i64: 'i64.ne'};
+const CONST_TYPE = {
+  f32: 'f32.const',
+  f64: 'f64.const',
+  i32: 'i32.const',
+  i64: 'i64.const',
+};
+const NEG_OP = {
+  f32: 'f32.neg',
+  f64: 'f64.neg',
+};
+const EQZ_OP = {
+  f32: 'f32.eqz',
+  f64: 'f64.eqz',
+  i32: 'i32.eqz',
+  i64: 'i64.eqz',
+};
+const NE_OP = {
+  f32: 'f32.ne',
+  f64: 'f64.ne',
+  i32: 'i32.ne',
+  i64: 'i64.ne',
+};
 const ARITH_OP = {
-  f32: {add: 'f32.add', sub: 'f32.sub', mul: 'f32.mul', div: 'f32.div'},
-  f64: {add: 'f64.add', sub: 'f64.sub', mul: 'f64.mul', div: 'f64.div'},
-  i32: {add: 'i32.add', sub: 'i32.sub', mul: 'i32.mul', div: 'i32.div_s'},
-  i64: {add: 'i64.add', sub: 'i64.sub', mul: 'i64.mul', div: 'i64.div_s'},
+  f32: {
+    add: 'f32.add',
+    sub: 'f32.sub',
+    mul: 'f32.mul',
+    div: 'f32.div',
+  },
+  f64: {
+    add: 'f64.add',
+    sub: 'f64.sub',
+    mul: 'f64.mul',
+    div: 'f64.div',
+  },
+  i32: {
+    add: 'i32.add',
+    sub: 'i32.sub',
+    mul: 'i32.mul',
+    div: 'i32.div_s',
+  },
+  i64: {
+    add: 'i64.add',
+    sub: 'i64.sub',
+    mul: 'i64.mul',
+    div: 'i64.div_s',
+  },
 };
 const CMP_OP = {
-  f32: {lt: 'f32.lt', gt: 'f32.gt', le: 'f32.le', ge: 'f32.ge', eq: 'f32.eq', ne: 'f32.ne'},
-  f64: {lt: 'f64.lt', gt: 'f64.gt', le: 'f64.le', ge: 'f64.ge', eq: 'f64.eq', ne: 'f64.ne'},
-  i32: {lt: 'i32.lt_s', gt: 'i32.gt_s', le: 'i32.le_s', ge: 'i32.ge_s', eq: 'i32.eq', ne: 'i32.ne'},
-  i64: {lt: 'i64.lt_s', gt: 'i64.gt_s', le: 'i64.le_s', ge: 'i64.ge_s', eq: 'i64.eq', ne: 'i64.ne'},
+  f32: {
+    lt: 'f32.lt',
+    gt: 'f32.gt',
+    le: 'f32.le',
+    ge: 'f32.ge',
+    eq: 'f32.eq',
+    ne: 'f32.ne',
+  },
+  f64: {
+    lt: 'f64.lt',
+    gt: 'f64.gt',
+    le: 'f64.le',
+    ge: 'f64.ge',
+    eq: 'f64.eq',
+    ne: 'f64.ne',
+  },
+  i32: {
+    lt: 'i32.lt_s',
+    gt: 'i32.gt_s',
+    le: 'i32.le_s',
+    ge: 'i32.ge_s',
+    eq: 'i32.eq',
+    ne: 'i32.ne',
+  },
+  i64: {
+    lt: 'i64.lt_s',
+    gt: 'i64.gt_s',
+    le: 'i64.le_s',
+    ge: 'i64.ge_s',
+    eq: 'i64.eq',
+    ne: 'i64.ne',
+  },
 };
 const MATH_OP = {
   f32: {
@@ -258,7 +324,11 @@ class WATConverter extends Stringifier {
       }
       if (init.type === 'ArrayExpression') {
         const values = init.elements.map(e => (e?.type === 'NumericLiteral' ? e.value : 0.0));
-        this.arrays[decl.id.name] = {offset, values, isObject: false};
+        this.arrays[decl.id.name] = {
+          offset,
+          values,
+          isObject: false,
+        };
         offset += values.length * 4;
       } else if (init.type === 'ObjectExpression') {
         /** @type {Map<string, number>} */
@@ -273,7 +343,12 @@ class WATConverter extends Stringifier {
           keys.set(prop.key.name, i);
           values.push(prop.value.value);
         });
-        this.arrays[decl.id.name] = {offset, values, isObject: true, keys};
+        this.arrays[decl.id.name] = {
+          offset,
+          values,
+          isObject: true,
+          keys,
+        };
         offset += values.length * 4;
       }
     });
@@ -328,7 +403,13 @@ class WATConverter extends Stringifier {
    */
   registerClass(node) {
     const {id, body} = node;
-    const cls = {fields: [], offsets: {}, defaults: {}, methods: new Set(), size: 0};
+    const cls = {
+      fields: [],
+      offsets: {},
+      defaults: {},
+      methods: new Set(),
+      size: 0,
+    };
     body.body.forEach(member => {
       if (member.static) {
         return;
@@ -532,7 +613,9 @@ class WATConverter extends Stringifier {
     localNames.forEach(localName => {
       out += `${this.spaces}(local $${localName} ${t})\n`;
     });
-    this.parents.push({type: 'BlockStatement'});
+    this.parents.push({
+      type: 'BlockStatement',
+    });
     out += `${this.spaces}(block $exit (result ${t})\n`;
     this.numSpaces++;
     out += body.body.map(statement => this.toSource(statement)).join('');
@@ -969,7 +1052,12 @@ class WATConverter extends Stringifier {
       })[operator];
       opCode = CMP_OP[t][opName];
     } else {
-      const opName = ({'+': 'add', '-': 'sub', '*': 'mul', '/': 'div'})[operator];
+      const opName = ({
+        '+': 'add',
+        '-': 'sub',
+        '*': 'mul',
+        '/': 'div',
+      })[operator];
       if (!opName) {
         return `${spaces}(${CONST_TYPE[t]} 0.0) ;; Unsupported operator: ${operator}\n`;
       }
@@ -1496,7 +1584,10 @@ class WATConverter extends Stringifier {
    * @returns {string} WAT representation of the node.
    */
   CallExpression(node) {
-    const {callee, arguments: args} = node;
+    const {
+      callee,
+      arguments: args,
+    } = node;
     const {spaces} = this;
     if (callee.type === 'MemberExpression') {
       const {property} = callee;
@@ -1544,7 +1635,10 @@ class WATConverter extends Stringifier {
    * @returns {string} WAT representation of the node.
    */
   NewExpression(node) {
-    const {callee, arguments: args} = node;
+    const {
+      callee,
+      arguments: args,
+    } = node;
     const {spaces} = this;
     if (!this.classes[callee.name]) {
       return `${spaces}(f32.const 0.0) ;; Unsupported new ${callee.name}\n`;

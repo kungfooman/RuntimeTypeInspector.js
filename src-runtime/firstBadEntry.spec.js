@@ -33,7 +33,9 @@ function withScanClasses(check) {
 }
 function testExamplesVerbatim() {
   // The documented examples hold exactly.
-  return withScanClasses(() => firstBadEntry(new Map([[1, {x: 1}]]), 'number', 'Other') === -2 &&
+  return withScanClasses(() => firstBadEntry(new Map([[1, {
+    x: 1,
+  }]]), 'number', 'Other') === -2 &&
     firstBadEntry(new Map([[1, new ScanBox()]]), 'number', 'ScanBox') === -1 &&
     firstBadEntry(new Map([[1, new ScanBox()], [2, new ScanOther()]]), 'number', 'ScanBox') === 1);
 }
@@ -144,7 +146,11 @@ function testUtilityNameCollisionBailsOut() {
   registerClass(ArrayLike);
   registerClass(Awaited);
   try {
-    const ref = (name, args) => ({type: 'reference', name, args});
+    const ref = (name, args) => ({
+      type: 'reference',
+      name,
+      args,
+    });
     return (
       firstBadEntry(new Map([['a', new ReadonlyMap()]]), 'string', ref('ReadonlyMap', ['string', 'number'])) === -2 &&
       firstBadEntry(new Map([[1, new ArrayLike()]]), 'number', ref('ArrayLike', ['number'])) === -2 &&
@@ -169,7 +175,11 @@ function testUtilityNameCollisionBailsOut() {
 function testComplexValBailsOut() {
   // Object nodes, unions and unknown names are full-loop territory.
   return (
-    firstBadEntry(new Map([[1, {x: 1}]]), 'number', {type: 'object'}) === -2 &&
+    firstBadEntry(new Map([[1, {
+      x: 1,
+    }]]), 'number', {
+      type: 'object',
+    }) === -2 &&
     firstBadEntry(
       new Map([[1, 'a']]),
       'number',
@@ -185,7 +195,9 @@ function testComplexKeyBailsOut() {
   // Keys outside the specializer shapes keep the full loop; registered
   // class keys mirror the class scan exactly like values do.
   return withScanClasses(() => firstBadEntry(new Map([[new ScanBox(1), 'a']]), 'ScanNeverHeardOfIt', 'string') === -2 &&
-    firstBadEntry(new Map([[new ScanBox(1), 'a']]), {type: 'object'}, 'string') === -2 &&
+    firstBadEntry(new Map([[new ScanBox(1), 'a']]), {
+      type: 'object',
+    }, 'string') === -2 &&
     firstBadEntry(new Map([[new ScanBox(1), 'a']]), 'ScanBox', 'string') === -1);
 }
 function testUserlandOverrideComposition() {

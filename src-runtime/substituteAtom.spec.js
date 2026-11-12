@@ -8,7 +8,11 @@ function testAtomOptional() {
   const parsed = expandType('{a?: K}');
   const input = parsed.properties.a;
   const substituted = substituteAtom(input, 'K', '"a"', noop);
-  const expected = {type: 'atom', atomType: '"a"', optional: true};
+  const expected = {
+    type: 'atom',
+    atomType: '"a"',
+    optional: true,
+  };
   return deepEqualType(substituted, expected);
 }
 // We want: a readonly annotated atom substitutes its inner type, because
@@ -17,7 +21,11 @@ function testAtomReadonly() {
   const parsed = expandType('{readonly a: K}');
   const input = parsed.properties.a;
   const substituted = substituteAtom(input, 'K', '"a"', noop);
-  const expected = {type: 'atom', atomType: '"a"', readonly: true};
+  const expected = {
+    type: 'atom',
+    atomType: '"a"',
+    readonly: true,
+  };
   return deepEqualType(substituted, expected);
 }
 // We want: an atom whose inner type does not match the search is returned by
@@ -34,9 +42,17 @@ function testAtomUnchanged() {
 function testAtomExtraKeys() {
   const parsed = expandType('{a?: K}');
   const base = parsed.properties.a;
-  const input = {...base, extra: 1};
+  const input = {
+    ...base,
+    extra: 1,
+  };
   const substituted = substituteAtom(input, 'K', '"a"', noop);
-  const expected = {type: 'atom', atomType: '"a"', extra: 1, optional: true};
+  const expected = {
+    type: 'atom',
+    atomType: '"a"',
+    extra: 1,
+    optional: true,
+  };
   return deepEqualType(substituted, expected);
 }
 // We want: a tree replacement keeps its own shape with the occurrence
@@ -45,8 +61,13 @@ function testAtomExtraKeys() {
 function testAtomTreeSplice() {
   const parsed = expandType('{a?: K}');
   const input = parsed.properties.a;
-  const substituted = substituteAtom(input, 'K', {type: 'string'}, noop);
-  const expected = {type: 'string', optional: true};
+  const substituted = substituteAtom(input, 'K', {
+    type: 'string',
+  }, noop);
+  const expected = {
+    type: 'string',
+    optional: true,
+  };
   return deepEqualType(substituted, expected);
 }
 // We want: the atom's readonly flag to survive a tree replacement, just like
@@ -54,8 +75,13 @@ function testAtomTreeSplice() {
 function testAtomTreeReadonly() {
   const parsed = expandType('{readonly a: K}');
   const input = parsed.properties.a;
-  const substituted = substituteAtom(input, 'K', {type: 'string'}, noop);
-  const expected = {type: 'string', readonly: true};
+  const substituted = substituteAtom(input, 'K', {
+    type: 'string',
+  }, noop);
+  const expected = {
+    type: 'string',
+    readonly: true,
+  };
   return deepEqualType(substituted, expected);
 }
 // We want: an already-optional tree to stay optional without an atom flag,
@@ -65,9 +91,18 @@ function testAtomTreeReadonly() {
 function testAtomTreeKeepsInnerOptional() {
   const parsed = expandType('{a?: K}');
   const flagged = parsed.properties.a;
-  const {optional, ...bare} = flagged;
-  const substituted = substituteAtom(bare, 'K', {type: 'string', optional: true}, noop);
-  const expected = {type: 'string', optional: true};
+  const {
+    optional,
+    ...bare
+  } = flagged;
+  const substituted = substituteAtom(bare, 'K', {
+    type: 'string',
+    optional: true,
+  }, noop);
+  const expected = {
+    type: 'string',
+    optional: true,
+  };
   return deepEqualType(substituted, expected);
 }
 const tests = [

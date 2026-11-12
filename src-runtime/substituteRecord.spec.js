@@ -3,13 +3,22 @@ const noop = () => undefined;
 // We want: every value of a record substitutes independently, because each
 // value is a separate type position.
 function testRecordValues() {
-  return JSON.stringify(substituteRecord({a: 'K', b: 'number'}, 'K', '"a"', noop)) ===
-    JSON.stringify({a: '"a"', b: 'number'});
+  return JSON.stringify(substituteRecord({
+    a: 'K',
+    b: 'number',
+  }, 'K', '"a"', noop)) ===
+    JSON.stringify({
+      a: '"a"',
+      b: 'number',
+    });
 }
 // We want: a record with no matching key is returned by identity, so
 // unchanged subtrees keep their identity for downstream memos.
 function testRecordUnchanged() {
-  const input = {a: 'number', b: 'string'};
+  const input = {
+    a: 'number',
+    b: 'string',
+  };
   return substituteRecord(input, 'K', '"a"', noop) === input;
 }
 // We want: nested record values substitute recursively, because a value
@@ -17,13 +26,21 @@ function testRecordUnchanged() {
 function testRecordNested() {
   return JSON.stringify(substituteRecord(
     {
-      a: {type: 'array', elementType: 'K'},
+      a: {
+        type: 'array',
+        elementType: 'K',
+      },
     },
     'K',
     '"a"',
     noop,
   )) ===
-    JSON.stringify({a: {type: 'array', elementType: '"a"'}});
+    JSON.stringify({
+      a: {
+        type: 'array',
+        elementType: '"a"',
+      },
+    });
 }
 // We want: an empty record returns an empty record, because there is
 // nothing to substitute.

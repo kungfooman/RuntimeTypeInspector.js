@@ -144,18 +144,39 @@ function testGenericMappedInstantiation() {
   // The machinery `ComponentOptions<K>` needs: template substitution must
   // flow through `mapping` and `indexedAccess` (local stand-in, not engine code).
   prepare();
-  registerTypedef('Box', {type: 'object', properties: {a: '"x"', b: 1}});
-  const templates = {T: 'Box'};
+  registerTypedef('Box', {
+    type: 'object',
+    properties: {
+      a: '"x"',
+      b: 1,
+    },
+  });
+  const templates = {
+    T: 'Box',
+  };
   const mapping = () => ({
     type: 'mapping',
-    iterable: {type: 'keyof', argument: 'T'},
+    iterable: {
+      type: 'keyof',
+      argument: 'T',
+    },
     element: 'K',
-    result: {type: 'indexedAccess', index: 'K', object: 'T'},
+    result: {
+      type: 'indexedAccess',
+      index: 'K',
+      object: 'T',
+    },
   });
-  if (!inspectTypeWithTemplates({a: 'x', b: 1}, mapping(), 'loc', 'name', templates)) {
+  if (!inspectTypeWithTemplates({
+    a: 'x',
+    b: 1,
+  }, mapping(), 'loc', 'name', templates)) {
     return false;
   }
-  if (inspectTypeWithTemplates({a: 'y', b: 1}, mapping(), 'loc', 'name', templates)) {
+  if (inspectTypeWithTemplates({
+    a: 'y',
+    b: 1,
+  }, mapping(), 'loc', 'name', templates)) {
     return false;
   }
   return true;
@@ -190,8 +211,19 @@ function testModifierParsing() {
 // -? and +? strip and force optionality without mutating the typedef.
 function testQuestionModifiers() {
   prepare();
-  registerTypedef('O', {type: 'object', properties: {v: 'number'}, optional: true});
-  registerTypedef('R', {type: 'object', properties: {v: 'number'}});
+  registerTypedef('O', {
+    type: 'object',
+    properties: {
+      v: 'number',
+    },
+    optional: true,
+  });
+  registerTypedef('R', {
+    type: 'object',
+    properties: {
+      v: 'number',
+    },
+  });
   const plain = createType(expandType('{ [K in "x"]: O }'), warn);
   if (plain.properties.x !== 'O') {
     return false;

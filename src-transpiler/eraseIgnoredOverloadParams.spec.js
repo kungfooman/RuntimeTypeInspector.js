@@ -20,7 +20,9 @@ function testMissingMemberSkips() {
   // overloadToTuple('@param {string} other') also builds an empty tuple here:
   // parseJSDoc yields no member matching this fnNode's param, so the eraser
   // finds nothing to erase, same as the hand-built empty tuple below.
-  const tuple = {elements: []};
+  const tuple = {
+    elements: [],
+  };
   const ast = parse('function f(value) { return value; }');
   const [fnNode] = ast.program.body;
   const ignored = new Set(['value']);

@@ -10,7 +10,12 @@ import {expandTypeDepFree} from './expandTypeDepFree.js';
  * @returns {string} Converted code.
  */
 function convert(src, options) {
-  const asserter = new Asserter({expandType, addHeader: false, filename: 'test.js', ...options});
+  const asserter = new Asserter({
+    expandType,
+    addHeader: false,
+    filename: 'test.js',
+    ...options,
+  });
   return asserter.toSource(parse(src, parserOptions));
 }
 function testNewConstraintExpandsWithTsExpander() {
@@ -28,7 +33,9 @@ function testUnionConstraintExpands() {
 function testDepFreeParsesNewConstraint() {
   // The dependency-free expander parses construct signatures into type
   // trees, so template constraints validate instead of passing through.
-  const out = convert('/** @template {new (...args: any[]) => any} T */\nclass Pool {\n /**\n  * @param {T} constructorFunc - The constructor.\n  */\n constructor(constructorFunc) {\n  this._c = constructorFunc;\n }\n}', {expandType: expandTypeDepFree});
+  const out = convert('/** @template {new (...args: any[]) => any} T */\nclass Pool {\n /**\n  * @param {T} constructorFunc - The constructor.\n  */\n constructor(constructorFunc) {\n  this._c = constructorFunc;\n }\n}', {
+    expandType: expandTypeDepFree,
+  });
   return out.includes('"type": "new"') && !out.includes('"T": "new (...args: any[]) => any"');
 }
 function testBareTemplateStaysAny() {

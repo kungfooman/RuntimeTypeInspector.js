@@ -123,7 +123,10 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
     return true;
   }
   if (!(expect instanceof Object)) {
-    expect = {type: expect, optional: false};
+    expect = {
+      type: expect,
+      optional: false,
+    };
   }
   // Tagged annotated atoms (`{type: 'atom', atomType: T}`) unwrap to the
   // inner type with the occurrence flags merged in: a tree replacement

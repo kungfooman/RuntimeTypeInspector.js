@@ -43,6 +43,10 @@ function createTypeFromIndexedAccess(expect, warn) {
     // `readonly`) survive instead of hiding behind a required wrapper.
     return members[0];
   }
-  return {type: 'union', members, optional: false};
+  return {
+    type: 'union',
+    members,
+    optional: false,
+  };
 }
 export {createTypeFromIndexedAccess};

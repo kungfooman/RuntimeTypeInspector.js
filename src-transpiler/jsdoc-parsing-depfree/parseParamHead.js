@@ -23,16 +23,31 @@ function parseParamHead(headRaw) {
   // head word for the caller's invalidRest flag instead of scanning it.
   const trimmed = headRaw.trim();
   if (trimmed.startsWith('...')) {
-    return {name: trimmed.split(/\s+/)[0] ?? '', optional: false, segments: [], valid: true};
+    return {
+      name: trimmed.split(/\s+/)[0] ?? '',
+      optional: false,
+      segments: [],
+      valid: true,
+    };
   }
   const cursor = makeJSDocCursor(trimmed);
   const bracketed = parseBracketName(cursor);
   if (cursor.tokens[cursor.index].kind === 'lbracket' || bracketed.next !== cursor.index) {
     const {segments, valid} = parseNamePath(bracketed.name);
     if (valid === false) {
-      return {name: '', optional: true, segments: [], valid: false};
+      return {
+        name: '',
+        optional: true,
+        segments: [],
+        valid: false,
+      };
     }
-    return {name: bracketed.name, optional: true, segments, valid: true};
+    return {
+      name: bracketed.name,
+      optional: true,
+      segments,
+      valid: true,
+    };
   }
   // Bare head: the token run up to the first stop (space, newline, tag
   // mention, comment end). Words, dots, and bracket groups join; anything
@@ -42,7 +57,12 @@ function parseParamHead(headRaw) {
   // `*`, matching tsc's empty name.
   let i = cursor.index;
   if (cursor.tokens[i].kind === 'stars') {
-    return {name: '', optional: false, segments: [], valid: false};
+    return {
+      name: '',
+      optional: false,
+      segments: [],
+      valid: false,
+    };
   }
   let run = '';
   while (i < cursor.tokens.length) {
@@ -59,8 +79,18 @@ function parseParamHead(headRaw) {
   const head = run.split('=')[0].trim();
   const {segments, valid} = parseNamePath(head);
   if (valid === false) {
-    return {name: '', optional: false, segments: [], valid: false};
+    return {
+      name: '',
+      optional: false,
+      segments: [],
+      valid: false,
+    };
   }
-  return {name: head, optional: false, segments, valid: true};
+  return {
+    name: head,
+    optional: false,
+    segments,
+    valid: true,
+  };
 }
 export {parseParamHead};

@@ -62,17 +62,36 @@ function testOverridesOf() {
     'Overrides',
     {
       type: 'object',
-      properties: {a: {type: 'object', properties: {x: 'number'}}},
+      properties: {
+        a: {
+          type: 'object',
+          properties: {
+            x: 'number',
+          },
+        },
+      },
     },
   );
   const expect = () => expandType('K extends keyof Overrides ? Overrides[K] : {}');
-  if (!inspectTypeWithTemplates({x: 1}, expect(), 'loc', 'name', {K: '"a"'})) {
+  if (!inspectTypeWithTemplates({
+    x: 1,
+  }, expect(), 'loc', 'name', {
+    K: '"a"',
+  })) {
     return false;
   }
-  if (!inspectTypeWithTemplates({anything: 1}, expect(), 'loc', 'name', {K: '"b"'})) {
+  if (!inspectTypeWithTemplates({
+    anything: 1,
+  }, expect(), 'loc', 'name', {
+    K: '"b"',
+  })) {
     return false;
   }
-  if (inspectTypeWithTemplates({x: 'nope'}, expect(), 'loc', 'name', {K: '"a"'})) {
+  if (inspectTypeWithTemplates({
+    x: 'nope',
+  }, expect(), 'loc', 'name', {
+    K: '"a"',
+  })) {
     return false;
   }
   return true;
@@ -125,11 +144,17 @@ function testIntersectionTarget() {
  */
 function testIntersectionTargetSkipsUndecidable() {
   clearTypedefs();
-  const decided = {type: 'intersection', members: ['Foo', '"b"']};
+  const decided = {
+    type: 'intersection',
+    members: ['Foo', '"b"'],
+  };
   if (evaluateCondition('"a"', decided, warn) !== false) {
     return false;
   }
-  const open = {type: 'intersection', members: ['Foo', 'Bar']};
+  const open = {
+    type: 'intersection',
+    members: ['Foo', 'Bar'],
+  };
   if (evaluateCondition('"a"', open, warn) !== undefined) {
     return false;
   }
@@ -152,7 +177,13 @@ function testIntersectionCheck() {
  */
 function testKeyofTarget() {
   clearTypedefs();
-  registerTypedef('Box', {type: 'object', properties: {a: 'number', b: 'string'}});
+  registerTypedef('Box', {
+    type: 'object',
+    properties: {
+      a: 'number',
+      b: 'string',
+    },
+  });
   if (evaluateCondition('"a"', expandType('keyof Box'), warn) !== true) {
     return false;
   }
@@ -179,7 +210,11 @@ function testComponentNameCondition() {
     'CondEntity',
     {
       type: 'object',
-      properties: {render: 'CondRender', light: 'CondLight', name: 'string'},
+      properties: {
+        render: 'CondRender',
+        light: 'CondLight',
+        name: 'string',
+      },
     },
   );
   registerTypedef('CondMap', expandType('{[K in keyof CondEntity as NonNullable<CondEntity[K]> extends CondComponent ? K : never]: NonNullable<CondEntity[K]>}'));
@@ -212,8 +247,17 @@ function testComponentNameCondition() {
  */
 function testMissingIndexedAccessKeyFailsClosed() {
   clearTypedefs();
-  registerTypedef('MissBox', {type: 'object', properties: {kept: 'number'}});
-  const check = {type: 'indexedAccess', object: 'MissBox', index: '"nope"'};
+  registerTypedef('MissBox', {
+    type: 'object',
+    properties: {
+      kept: 'number',
+    },
+  });
+  const check = {
+    type: 'indexedAccess',
+    object: 'MissBox',
+    index: '"nope"',
+  };
   const resolved = resolveForExtends(check, warn);
   if (resolved !== undefined) {
     return false;
@@ -241,14 +285,20 @@ function testMissingIndexedAccessKeyFailsClosed() {
 function testBareRuntimeClassIndexedAccess() {
   clearTypedefs();
   class BareProbe {}
-  Object.defineProperty(BareProbe, 'name', {value: 'BareRuntimeProbe'});
+  Object.defineProperty(BareProbe, 'name', {
+    value: 'BareRuntimeProbe',
+  });
   BareProbe.prototype.probeMethod = function () {};
   registerClass(BareProbe);
   try {
     if ('BareRuntimeProbe' in typedefs) {
       return false;
     }
-    const check = {type: 'indexedAccess', object: 'BareRuntimeProbe', index: '"probeMethod"'};
+    const check = {
+      type: 'indexedAccess',
+      object: 'BareRuntimeProbe',
+      index: '"probeMethod"',
+    };
     if (resolveForExtends(check, warn) !== 'Function') {
       return false;
     }

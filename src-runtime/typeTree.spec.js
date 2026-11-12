@@ -50,7 +50,11 @@ function testDidYouMean() {
 }
 function testAliasClimb() {
   prepareMap();
-  const tree = buildTypeTree('ComponentMap', {camera: {fov: 1}}, 'ComponentMap');
+  const tree = buildTypeTree('ComponentMap', {
+    camera: {
+      fov: 1,
+    },
+  }, 'ComponentMap');
   if (tree.kind !== 'alias' || !tree.children?.length) {
     return false;
   }
@@ -87,7 +91,9 @@ function testUnlimitedDepth() {
 }
 function testConditionDescends() {
   reset();
-  const tree = buildTypeTree(expandType('"camera" extends "camera" | "other" ? {fov: number} : string'), {fov: 'x'}, 'data');
+  const tree = buildTypeTree(expandType('"camera" extends "camera" | "other" ? {fov: number} : string'), {
+    fov: 'x',
+  }, 'data');
   if (tree.kind !== 'condition' || !tree.children?.length) {
     return false;
   }
@@ -125,7 +131,9 @@ function testTransparentWrapperUnwraps() {
 function testIndexedAccessDirect() {
   reset();
   registerTypedef('EntityShape', expandType('{camera: {fov: number}}'));
-  const tree = buildTypeTree(expandType('EntityShape["camera"]'), {fov: 60}, 'camera');
+  const tree = buildTypeTree(expandType('EntityShape["camera"]'), {
+    fov: 60,
+  }, 'camera');
   return (
     tree.kind === 'indexedAccess' &&
     tree.passes === true &&
@@ -149,7 +157,9 @@ function testPartialExpands() {
 function testPickExpands() {
   reset();
   registerTypedef('Box', expandType('{a: number, b: string}'));
-  const tree = buildTypeTree(expandType('Pick<Box, "a">'), {a: 1}, 'p');
+  const tree = buildTypeTree(expandType('Pick<Box, "a">'), {
+    a: 1,
+  }, 'p');
   const [shape] = tree.children ?? [];
   return (
     tree.kind === 'reference' &&
@@ -343,7 +353,9 @@ function testSetRootStaysRedWhenNotASet() {
  */
 function testObjectRootAdmitsShape() {
   reset();
-  const bad = buildTypeTree(expandType('{fov: number}'), {fov: 'x'}, 'options', undefined, 'options');
+  const bad = buildTypeTree(expandType('{fov: number}'), {
+    fov: 'x',
+  }, 'options', undefined, 'options');
   const arr = buildTypeTree(expandType('{fov: number}'), [1], 'options', undefined, 'options');
   return (
     bad.kind === 'object' &&

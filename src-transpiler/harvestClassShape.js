@@ -47,7 +47,10 @@ function tagType(comment, tag, expandType) {
     if (!content || !content.trim()) {
       return;
     }
-    return {type: expandType(content.trim()), raw: content.trim()};
+    return {
+      type: expandType(content.trim()),
+      raw: content.trim(),
+    };
   } catch {
     // Unparseable annotation: fail open, harvest continues.
   }
@@ -122,11 +125,17 @@ function entryToType(entry) {
   if (t && typeof t === 'object') {
     return {
       ...t,
-      ...(entry.readonly ? {readonly: true} : {}),
-      ...(entry.optional ? {optional: true} : {}),
+      ...(entry.readonly ? {
+        readonly: true,
+      } : {}),
+      ...(entry.optional ? {
+        optional: true,
+      } : {}),
     };
   }
-  const out = {type: t};
+  const out = {
+    type: t,
+  };
   if (entry.readonly) {
     out.readonly = true;
   }
@@ -189,7 +198,10 @@ function recordThisAssign(left, right, comment, conditional, ctx) {
  */
 function recordObjectAssign(node, conditional, ctx) {
   const {fields, expandType, warn, className} = ctx;
-  const {callee, arguments: args} = node;
+  const {
+    callee,
+    arguments: args,
+  } = node;
   if (!callee || callee.type !== 'MemberExpression' || callee.computed) {
     return false;
   }
@@ -358,13 +370,25 @@ function setterType(set, expandType) {
   const paramName = setterParamName(set.params[0]);
   const {params} = parseJSDocDocument(setComment ?? '', expandType);
   if (paramName && params && params[paramName] !== undefined) {
-    return {type: params[paramName], raw: undefined, jsdoc: true};
+    return {
+      type: params[paramName],
+      raw: undefined,
+      jsdoc: true,
+    };
   }
   const tagged = tagType(setComment, '@type', expandType);
   if (tagged) {
-    return {type: tagged.type, raw: tagged.raw, jsdoc: true};
+    return {
+      type: tagged.type,
+      raw: tagged.raw,
+      jsdoc: true,
+    };
   }
-  return {type: 'any', raw: undefined, jsdoc: false};
+  return {
+    type: 'any',
+    raw: undefined,
+    jsdoc: false,
+  };
 }
 /**
  * Harvests the instance shape of a class: field declarations (JSDoc wins,
@@ -383,7 +407,14 @@ function harvestClassShape(node, {expandType, warn}) {
     return;
   }
   const className = id.name;
-  const ctx = {fields: {}, gets: {}, sets: {}, expandType, warn, className};
+  const ctx = {
+    fields: {},
+    gets: {},
+    sets: {},
+    expandType,
+    warn,
+    className,
+  };
   let ctor = null;
   for (const el of node.body.body) {
     if (el.type === 'ClassPrivateProperty' || el.type === 'ClassPrivateMethod') {
@@ -419,7 +450,11 @@ function harvestClassShape(node, {expandType, warn}) {
       if (el.kind === 'constructor') {
         ctor = el;
       } else if (el.kind === 'method') {
-        ctx.fields[name] = ctx.fields[name] ?? {type: 'Function', rank: FIELD_INFER, jsdoc: false};
+        ctx.fields[name] = ctx.fields[name] ?? {
+          type: 'Function',
+          rank: FIELD_INFER,
+          jsdoc: false,
+        };
       } else if (el.kind === 'get') {
         ctx.gets[name] = el;
       } else if (el.kind === 'set') {
@@ -467,6 +502,12 @@ function harvestClassShape(node, {expandType, warn}) {
   if (!Object.keys(properties).length) {
     return;
   }
-  return {name: className, shape: {type: 'object', properties}};
+  return {
+    name: className,
+    shape: {
+      type: 'object',
+      properties,
+    },
+  };
 }
 export {harvestClassShape};

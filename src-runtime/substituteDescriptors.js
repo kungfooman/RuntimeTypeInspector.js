@@ -25,7 +25,10 @@ function substituteDescriptors(parameters, search, replace, warn) {
         if (out === parameters) {
           out = parameters.slice();
         }
-        out[i] = {...parameter, paramType: next};
+        out[i] = {
+          ...parameter,
+          paramType: next,
+        };
       }
     }
   }

@@ -741,7 +741,9 @@ function createChecksTable() {
   if (typeof document === 'undefined') {
     return null;
   }
-  return Table({className: 'rti-checks-table'}, Tr({}));
+  return Table({
+    className: 'rti-checks-table',
+  }, Tr({}));
 }
 /**
  * Columns to render right now: everything, minus the two windowing
@@ -1157,17 +1159,39 @@ class TypePanel {
       },
     });
     this.spanErrors = Span({});
-    this.span = Span({innerText: 'Report mode:'});
-    this.spanStrict = Span({innerText: ' Strict null checks'});
-    this.spanInfinity = Span({innerText: ' Check Infinity'});
-    this.spanExact = Span({innerText: ' Exact objects'});
-    this.spanWindowed = Span({innerText: ' Windowed checks'});
-    this.spanWindowCap = Span({innerText: ' Window cap'});
-    this.spanWindowMinTotal = Span({innerText: ' Min scan time (ms)'});
-    this.spanCheckStats = Span({innerText: ' Collect check stats'});
-    this.option_spam = Option({text: 'spam'});
-    this.option_once = Option({text: 'once'});
-    this.option_never = Option({text: 'never'});
+    this.span = Span({
+      innerText: 'Report mode:',
+    });
+    this.spanStrict = Span({
+      innerText: ' Strict null checks',
+    });
+    this.spanInfinity = Span({
+      innerText: ' Check Infinity',
+    });
+    this.spanExact = Span({
+      innerText: ' Exact objects',
+    });
+    this.spanWindowed = Span({
+      innerText: ' Windowed checks',
+    });
+    this.spanWindowCap = Span({
+      innerText: ' Window cap',
+    });
+    this.spanWindowMinTotal = Span({
+      innerText: ' Min scan time (ms)',
+    });
+    this.spanCheckStats = Span({
+      innerText: ' Collect check stats',
+    });
+    this.option_spam = Option({
+      text: 'spam',
+    });
+    this.option_once = Option({
+      text: 'once',
+    });
+    this.option_never = Option({
+      text: 'never',
+    });
     this.select = Select(
       {
         onchange: () => {
@@ -1181,33 +1205,85 @@ class TypePanel {
       this.option_once,
       this.option_never,
     );
-    this.spanPosition = Span({innerText: ' Panel start:'});
-    this.option_pos_bottom_right = Option({text: 'bottom-right'});
-    this.option_pos_bottom_left = Option({text: 'bottom-left'});
-    this.option_pos_top_right = Option({text: 'top-right'});
-    this.option_pos_top_left = Option({text: 'top-left'});
-    this.option_pos_center = Option({text: 'center'});
+    this.spanPosition = Span({
+      innerText: ' Panel start:',
+    });
+    this.option_pos_bottom_right = Option({
+      text: 'bottom-right',
+    });
+    this.option_pos_bottom_left = Option({
+      text: 'bottom-left',
+    });
+    this.option_pos_top_right = Option({
+      text: 'top-right',
+    });
+    this.option_pos_top_left = Option({
+      text: 'top-left',
+    });
+    this.option_pos_center = Option({
+      text: 'center',
+    });
     this.selectPosition = Select(
-      {onchange: () => this.applyChosenPosition()},
+      {
+        onchange: () => this.applyChosenPosition(),
+      },
       this.option_pos_bottom_right,
       this.option_pos_bottom_left,
       this.option_pos_top_right,
       this.option_pos_top_left,
       this.option_pos_center,
     );
-    this.buttonHide = Button({textContent: '_', title: 'Hide', onclick: () => this.hide()});
-    this.buttonLoadState = Button({textContent: 'Load', title: 'Load warning states from the #typepanel URL hash', onclick: () => this.loadState()});
-    this.buttonSaveState = Button({textContent: 'Save', title: 'Save warning states into the #typepanel URL hash', onclick: () => this.saveState()});
-    this.buttonResetStorage = Button({textContent: 'RESET', title: 'Forget every stored panel setting (all rti-* keys) for a fresh test', onclick: () => this.resetStorage()});
-    this.buttonClear = Button({textContent: 'Clear', onclick: () => this.clear()});
-    this.buttonDownloadLog = Button({textContent: 'Download log', onclick: () => this.downloadLog()});
-    this.buttonPopout = Button({textContent: '⧉', title: 'Pop out to own window', onclick: () => this.popout()});
-    this.buttonMaximize = Button({textContent: '□', title: 'Maximize', onclick: () => this.togglePanelMaximize()});
-    this.titleText = Span({className: 'rti-title', textContent: 'Runtime Type Inspector'});
+    this.buttonHide = Button({
+      textContent: '_',
+      title: 'Hide',
+      onclick: () => this.hide(),
+    });
+    this.buttonLoadState = Button({
+      textContent: 'Load',
+      title: 'Load warning states from the #typepanel URL hash',
+      onclick: () => this.loadState(),
+    });
+    this.buttonSaveState = Button({
+      textContent: 'Save',
+      title: 'Save warning states into the #typepanel URL hash',
+      onclick: () => this.saveState(),
+    });
+    this.buttonResetStorage = Button({
+      textContent: 'RESET',
+      title: 'Forget every stored panel setting (all rti-* keys) for a fresh test',
+      onclick: () => this.resetStorage(),
+    });
+    this.buttonClear = Button({
+      textContent: 'Clear',
+      onclick: () => this.clear(),
+    });
+    this.buttonDownloadLog = Button({
+      textContent: 'Download log',
+      onclick: () => this.downloadLog(),
+    });
+    this.buttonPopout = Button({
+      textContent: '⧉',
+      title: 'Pop out to own window',
+      onclick: () => this.popout(),
+    });
+    this.buttonMaximize = Button({
+      textContent: '□',
+      title: 'Maximize',
+      onclick: () => this.togglePanelMaximize(),
+    });
+    this.titleText = Span({
+      className: 'rti-title',
+      textContent: 'Runtime Type Inspector',
+    });
     this.titlebar = Div(
-      {className: 'rti-titlebar', title: 'Drag to move panel'},
+      {
+        className: 'rti-titlebar',
+        title: 'Drag to move panel',
+      },
       this.titleText,
-      Div({className: 'rti-caption'}, this.buttonHide, this.buttonMaximize, this.buttonPopout),
+      Div({
+        className: 'rti-caption',
+      }, this.buttonHide, this.buttonMaximize, this.buttonPopout),
     );
     // Chrome-style overflow menu: status + frequent actions stay visible,
     // rare configuration lives behind `⋮` and costs zero lines when closed.
@@ -1221,49 +1297,77 @@ class TypePanel {
       },
     });
     this.menu = Div(
-      {className: 'rti-menu', hidden: true, role: 'menu'},
+      {
+        className: 'rti-menu',
+        hidden: true,
+        role: 'menu',
+      },
       Div(
-        {className: 'rti-setting-row'},
+        {
+          className: 'rti-setting-row',
+        },
         Label({}, this.inputEnable, ' Enabled'),
       ),
       Div(
-        {className: 'rti-setting-row'},
+        {
+          className: 'rti-setting-row',
+        },
         Label({}, this.span, ' ', this.select),
       ),
       Div(
-        {className: 'rti-setting-row'},
+        {
+          className: 'rti-setting-row',
+        },
         Label({}, this.spanPosition, ' ', this.selectPosition),
       ),
       Div(
-        {className: 'rti-setting-row'},
+        {
+          className: 'rti-setting-row',
+        },
         Label({}, this.inputStrict, this.spanStrict),
       ),
       Div(
-        {className: 'rti-setting-row'},
+        {
+          className: 'rti-setting-row',
+        },
         Label({}, this.inputInfinity, this.spanInfinity),
       ),
       Div(
-        {className: 'rti-setting-row'},
+        {
+          className: 'rti-setting-row',
+        },
         Label({}, this.inputExact, this.spanExact),
       ),
       Div(
-        {className: 'rti-setting-row'},
+        {
+          className: 'rti-setting-row',
+        },
         Label({}, this.inputWindowed, this.spanWindowed),
       ),
       Div(
-        {className: 'rti-setting-row'},
+        {
+          className: 'rti-setting-row',
+        },
         Label({}, this.spanWindowCap, this.inputWindowCap),
       ),
       Div(
-        {className: 'rti-setting-row'},
-        Label({title: 'Scan time budget in ms a map must accumulate before checks may ride windows; 0 rides without any budget'}, this.spanWindowMinTotal, this.inputWindowMinTotal),
+        {
+          className: 'rti-setting-row',
+        },
+        Label({
+          title: 'Scan time budget in ms a map must accumulate before checks may ride windows; 0 rides without any budget',
+        }, this.spanWindowMinTotal, this.inputWindowMinTotal),
       ),
       Div(
-        {className: 'rti-setting-row'},
+        {
+          className: 'rti-setting-row',
+        },
         Label({}, this.inputCheckStats, this.spanCheckStats),
       ),
       Div(
-        {className: 'rti-setting-row'},
+        {
+          className: 'rti-setting-row',
+        },
         this.buttonLoadState,
         this.buttonSaveState,
         this.buttonResetStorage,
@@ -1278,9 +1382,15 @@ class TypePanel {
         }
       },
     );
-    this.buttonStats = Button({textContent: 'Stats', title: 'Check stats (hotspots)', onclick: () => this.toggleStatsWin()});
+    this.buttonStats = Button({
+      textContent: 'Stats',
+      title: 'Check stats (hotspots)',
+      onclick: () => this.toggleStatsWin(),
+    });
     this.toolbar = Div(
-      {className: 'rti-toolbar'},
+      {
+        className: 'rti-toolbar',
+      },
       this.spanErrors,
       this.buttonClear,
       this.buttonDownloadLog,
@@ -1288,7 +1398,9 @@ class TypePanel {
       this.menuButton,
       this.menu,
     );
-    this.body = Div({className: 'rti-body'});
+    this.body = Div({
+      className: 'rti-body',
+    });
     this.warnedTable = createTable();
     this.body.append(this.warnedTable);
     // Check stats section: the hotspot table under the warnings. Rows are
@@ -1303,24 +1415,37 @@ class TypePanel {
         this.updateCheckStats();
       },
     });
-    this.buttonRefreshCheckStats = Button({textContent: 'Refresh stats', title: 'Re-read the latest check statistics', onclick: () => this.updateCheckStats()});
+    this.buttonRefreshCheckStats = Button({
+      textContent: 'Refresh stats',
+      title: 'Re-read the latest check statistics',
+      onclick: () => this.updateCheckStats(),
+    });
     this.checksTable = createChecksTable();
     // Sort state of the stats table: which column, and which direction.
     // Starts on scan time descending, the hotspot view. By column id, so
     // hiding columns cannot misalign it.
-    this.checksSort = {id: 'scanMs', desc: true};
+    this.checksSort = {
+      id: 'scanMs',
+      desc: true,
+    };
     // Inline call stack: clicking a loc inserts a detail row right under
     // it, so the answer appears where the user looks instead of at the
     // bottom of the window. One open at a time, tracked by loc.
     this.checksDetailLoc = null;
     this.checksHead = Div(
-      {className: 'rti-checks-head'},
-      Span({innerText: 'Check stats (hotspots by scan cost)'}),
+      {
+        className: 'rti-checks-head',
+      },
+      Span({
+        innerText: 'Check stats (hotspots by scan cost)',
+      }),
       this.buttonRefreshCheckStats,
       this.buttonResetCheckStats,
     );
     this.checksWrap = Div(
-      {className: 'rti-checks'},
+      {
+        className: 'rti-checks',
+      },
       this.checksHead,
       this.checksTable,
     );
@@ -1329,10 +1454,19 @@ class TypePanel {
     // Mini taskbar (our stand-in for the missing OS taskbar): the panel is
     // just another entry, and every entry toggles — open minimizes,
     // minimized maximizes. The error count lives in the RTI title.
-    this.taskbarRti = Button({textContent: 'RTI', title: 'Focus RTI panel', onclick: () => this.togglePanel()});
+    this.taskbarRti = Button({
+      textContent: 'RTI',
+      title: 'Focus RTI panel',
+      onclick: () => this.togglePanel(),
+    });
     this.taskbarWins = Span({});
     this.taskbar = Div(
-      {className: 'rti-taskbar', style: {display: 'none'}},
+      {
+        className: 'rti-taskbar',
+        style: {
+          display: 'none',
+        },
+      },
       this.taskbarRti,
       this.taskbarWins,
     );
@@ -1352,7 +1486,13 @@ class TypePanel {
     } = this;
     TypePanel.divAll ??= Div({
       className: 'rti-all',
-      style: {position: 'fixed', bottom: '0px', right: '0px', zIndex: '10000', overflow: 'unset'},
+      style: {
+        position: 'fixed',
+        bottom: '0px',
+        right: '0px',
+        zIndex: '10000',
+        overflow: 'unset',
+      },
     });
     const {divAll} = TypePanel;
     niceDiv(div);
@@ -1372,7 +1512,10 @@ class TypePanel {
     select.onchange(); // set mode in options
     div.append(titlebar, toolbar, body);
     for (const dir of ['n', 'e', 's', 'w', 'ne', 'nw', 'se', 'sw']) {
-      const handle = Div({className: `rti-handle rti-handle-${dir}`, dataset: {dir}});
+      const handle = Div({
+        className: `rti-handle rti-handle-${dir}`,
+        dataset: {dir},
+      });
       div.append(handle);
       this.makeResizable(handle, dir, this.div, TypePanel.divAll, () => this.saveGeometry());
     }
@@ -1517,18 +1660,42 @@ class TypePanel {
     if (this.statsWin) {
       return;
     }
-    const btnMin = Button({textContent: '_', title: 'Hide to the Stats button', onclick: () => this.hideStatsWin()});
-    const btnMax = Button({textContent: '□', title: 'Maximize', onclick: () => this.toggleStatsMaximize()});
-    const closeBtn = Button({textContent: '×', title: 'Close', onclick: () => this.hideStatsWin()});
+    const btnMin = Button({
+      textContent: '_',
+      title: 'Hide to the Stats button',
+      onclick: () => this.hideStatsWin(),
+    });
+    const btnMax = Button({
+      textContent: '□',
+      title: 'Maximize',
+      onclick: () => this.toggleStatsMaximize(),
+    });
+    const closeBtn = Button({
+      textContent: '×',
+      title: 'Close',
+      onclick: () => this.hideStatsWin(),
+    });
     const titlebar = Div(
-      {className: 'rti-titlebar', title: 'Drag to move'},
-      Span({className: 'rti-title', textContent: 'Check stats'}),
-      Div({className: 'rti-caption'}, btnMin, btnMax, closeBtn),
+      {
+        className: 'rti-titlebar',
+        title: 'Drag to move',
+      },
+      Span({
+        className: 'rti-title',
+        textContent: 'Check stats',
+      }),
+      Div({
+        className: 'rti-caption',
+      }, btnMin, btnMax, closeBtn),
     );
     const el = Div(
-      {className: 'rti-stats-win'},
+      {
+        className: 'rti-stats-win',
+      },
       titlebar,
-      Div({className: 'rti-body'}, this.checksWrap),
+      Div({
+        className: 'rti-body',
+      }, this.checksWrap),
     );
     el.style.width = '620px';
     el.style.height = '380px';
@@ -1543,7 +1710,10 @@ class TypePanel {
       () => el.dataset?.maximized === 'true',
     );
     for (const dir of ['n', 'e', 's', 'w', 'ne', 'nw', 'se', 'sw']) {
-      const handle = Div({className: `rti-handle rti-handle-${dir}`, dataset: {dir}});
+      const handle = Div({
+        className: `rti-handle rti-handle-${dir}`,
+        dataset: {dir},
+      });
       el.append(handle);
       this.makeResizable(handle, dir, el, el, () => {});
     }
@@ -2134,7 +2304,9 @@ class TypePanel {
         flexDirection: 'column',
       },
     );
-    Object.assign(this.titlebar.style, {borderRadius: '0'});
+    Object.assign(this.titlebar.style, {
+      borderRadius: '0',
+    });
     Object.assign(
       this.body.style,
       {
@@ -2221,22 +2393,41 @@ class TypePanel {
    */
   renderFinding(finding) {
     const row = Div(
-      {className: `rti-finding rti-finding-${finding.kind}${finding.info ? ' rti-finding-info' : ''}`},
+      {
+        className: `rti-finding rti-finding-${finding.kind}${finding.info ? ' rti-finding-info' : ''}`,
+      },
       Div(
         {},
-        Span({className: 'rti-badge', textContent: finding.info ? `${finding.kind} · info` : finding.kind}),
-        Span({className: 'rti-path', textContent: finding.path}),
+        Span({
+          className: 'rti-badge',
+          textContent: finding.info ? `${finding.kind} · info` : finding.kind,
+        }),
+        Span({
+          className: 'rti-path',
+          textContent: finding.path,
+        }),
       ),
-      Div({textContent: finding.detail || ''}),
-      Div({textContent: `expected ${finding.expected}, got ${finding.actual}`}),
+      Div({
+        textContent: finding.detail || '',
+      }),
+      Div({
+        textContent: `expected ${finding.expected}, got ${finding.actual}`,
+      }),
     );
     if (finding.fix) {
-      row.append(Div({className: 'rti-fix', textContent: `→ ${finding.fix}`}));
+      row.append(Div({
+        className: 'rti-fix',
+        textContent: `→ ${finding.fix}`,
+      }));
     }
     if (finding.children?.length) {
       row.append(Details(
-        {open: finding.children.length <= 2},
-        Summary({textContent: `Closest match problems (${finding.children.length})`}),
+        {
+          open: finding.children.length <= 2,
+        },
+        Summary({
+          textContent: `Closest match problems (${finding.children.length})`,
+        }),
         ...finding.children.map((_) => this.renderFinding(_)),
       ));
     }
@@ -2258,50 +2449,99 @@ class TypePanel {
     const mark = node.passes === true ? '✓' : node.passes === 'shape' ? '⚠' : node.passes === false ? '✗' : '?';
     const markCls = node.passes === true ? 'rti-pass' : node.passes === 'shape' ? 'rti-warn' : node.passes === false ? 'rti-fail' : '';
     const head = Summary(
-      {title: node.full},
-      Span({className: markCls, textContent: `${mark} `}),
-      Span({className: 'rti-path', textContent: node.label}),
-      Span({className: 'rti-kind', textContent: node.kind}),
+      {
+        title: node.full,
+      },
+      Span({
+        className: markCls,
+        textContent: `${mark} `,
+      }),
+      Span({
+        className: 'rti-path',
+        textContent: node.label,
+      }),
+      Span({
+        className: 'rti-kind',
+        textContent: node.kind,
+      }),
     );
     if (node.optional === true) {
-      head.append(Span({className: 'rti-optional', textContent: 'optional'}));
+      head.append(Span({
+        className: 'rti-optional',
+        textContent: 'optional',
+      }));
     }
     if (node.entered === true) {
-      head.append(Span({className: 'rti-entered', textContent: 'entered'}));
+      head.append(Span({
+        className: 'rti-entered',
+        textContent: 'entered',
+      }));
     } else if (dimmed) {
-      head.append(Span({className: 'rti-skipped', textContent: 'not entered'}));
+      head.append(Span({
+        className: 'rti-skipped',
+        textContent: 'not entered',
+      }));
     }
-    const box = Div({className: dimmed ? 'rti-tree rti-dimmed' : 'rti-tree'});
-    const open = Details({open: depth < 2 || node.passes === false || node.passes === 'shape'}, head);
+    const box = Div({
+      className: dimmed ? 'rti-tree rti-dimmed' : 'rti-tree',
+    });
+    const open = Details({
+      open: depth < 2 || node.passes === false || node.passes === 'shape',
+    }, head);
     if (node.detail) {
-      open.append(Div({textContent: node.detail}));
+      open.append(Div({
+        textContent: node.detail,
+      }));
     }
     if (node.fix) {
-      open.append(Div({className: 'rti-fix', textContent: `→ ${node.fix}`}));
+      open.append(Div({
+        className: 'rti-fix',
+        textContent: `→ ${node.fix}`,
+      }));
     }
     if (node.keys) {
       const chips = Div(
         {},
-        Span({textContent: 'Allowed: '}),
-        ...node.keys.map((_) => Span({className: 'rti-chip', textContent: String(_)})),
+        Span({
+          textContent: 'Allowed: ',
+        }),
+        ...node.keys.map((_) => Span({
+          className: 'rti-chip',
+          textContent: String(_),
+        })),
       );
       if (node.moreKeys > 0) {
-        chips.append(Span({textContent: ` (+${node.moreKeys} more)`}));
+        chips.append(Span({
+          textContent: ` (+${node.moreKeys} more)`,
+        }));
       }
       if (node.valueInKeys === false) {
         chips.append(Div(
           {},
-          Span({className: 'rti-chip rti-chip-bad', textContent: JSON.stringify(node.value ?? null) ?? '?'}),
-          Span({textContent: ' is not among them.'}),
+          Span({
+            className: 'rti-chip rti-chip-bad',
+            textContent: JSON.stringify(node.value ?? null) ?? '?',
+          }),
+          Span({
+            textContent: ' is not among them.',
+          }),
         ));
         if (node.suggestion) {
-          chips.append(Div({className: 'rti-fix', textContent: `→ Did you mean \`${node.suggestion}\`?`}));
+          chips.append(Div({
+            className: 'rti-fix',
+            textContent: `→ Did you mean \`${node.suggestion}\`?`,
+          }));
         }
       } else if (node.valueInKeys === true) {
         chips.append(Div(
           {},
-          Span({className: 'rti-chip rti-chip-ok', textContent: JSON.stringify(node.value ?? null) ?? '?'}),
-          Span({textContent: ' is allowed here — another level fails.'}),
+          Span({
+            className: 'rti-chip rti-chip-ok',
+            textContent: JSON.stringify(node.value ?? null) ?? '?',
+          }),
+          Span({
+            textContent: ' is allowed here — another level fails.',
+          }),
         ));
       }
       open.append(chips);
@@ -2311,7 +2551,9 @@ class TypePanel {
       open.append(...node.children.map((_) => this.renderTypeNode(_, depth + 1, dimChild(_))));
     }
     if (node.truncated) {
-      open.append(Div({textContent: '(tree truncated: too deep/wide to expand fully)'}));
+      open.append(Div({
+        textContent: '(tree truncated: too deep/wide to expand fully)',
+      }));
     }
     box.append(open);
     return box;
@@ -2326,7 +2568,11 @@ class TypePanel {
    */
   buildCompareContent(warnObj) {
     const body = Div({});
-    const btnCopy = Button({textContent: 'Copy', title: 'Copy comparison to clipboard', onclick: () => this.copyCompare(warnObj, btnCopy)});
+    const btnCopy = Button({
+      textContent: 'Copy',
+      title: 'Copy comparison to clipboard',
+      onclick: () => this.copyCompare(warnObj, btnCopy),
+    });
     const {expectPretty, actualPretty} = formatCompare(warnObj.expect, warnObj.value);
     const Grid = genJsx('div');
     // Lazy on-click diagnosis: diffed here, in the rendering realm, only
@@ -2336,7 +2582,10 @@ class TypePanel {
     try {
       diagnosis = explainMismatch(warnObj.value, warnObj.expect, warnObj.name);
     } catch {
-      diagnosis = {findings: [], stub: ''};
+      diagnosis = {
+        findings: [],
+        stub: '',
+      };
     }
     let failPaths;
     try {
@@ -2363,7 +2612,9 @@ class TypePanel {
     if (diagnosis.findings.length) {
       body.append(...diagnosis.findings.map((_) => this.renderFinding(_)));
     } else {
-      body.append(Div({textContent: 'The value now passes (or the shape is opaque to the differ); see raw messages below.'}));
+      body.append(Div({
+        textContent: 'The value now passes (or the shape is opaque to the differ); see raw messages below.',
+      }));
     }
     if (diagnosis.stub) {
       body.append(
@@ -2384,7 +2635,9 @@ class TypePanel {
     }
     body.append(
       Grid(
-        {className: 'rti-compare'},
+        {
+          className: 'rti-compare',
+        },
         Div({}, H3({}, 'Expected'), Pre({}, expectPretty)),
         Div({}, H3({}, 'Actual'), actualNode),
       ),
@@ -2392,13 +2645,22 @@ class TypePanel {
     if (warnObj.detailStrings?.length) {
       body.append(Details(
         {},
-        Summary({textContent: `Raw validator messages (${warnObj.detailStrings.length})`}),
-        ...warnObj.detailStrings.map((_) => Div({textContent: _})),
+        Summary({
+          textContent: `Raw validator messages (${warnObj.detailStrings.length})`,
+        }),
+        ...warnObj.detailStrings.map((_) => Div({
+          textContent: _,
+        })),
       ));
     }
     body.append(
       Div(
-        {style: {fontSize: '12px', color: '#555'}},
+        {
+          style: {
+            fontSize: '12px',
+            color: '#555',
+          },
+        },
         `Hits: ${warnObj.hits} — fix the JSDoc/type or the value, then reload.`,
       ),
     );
@@ -2434,31 +2696,66 @@ class TypePanel {
     const hostDoc = TypePanel.divAll?.ownerDocument || document;
     const view = hostDoc.defaultView || window;
     const n = this.winSeq++ % 10;
-    const el = Div({className: 'rti-compare-win', dataset: {rtiWin: key}});
+    const el = Div({
+      className: 'rti-compare-win',
+      dataset: {
+        rtiWin: key,
+      },
+    });
     const left = Math.max(8, Math.round(view.innerWidth * 0.5 - 380 + n * 32));
     const top = Math.max(8, Math.round(view.innerHeight * 0.15 + n * 28));
     const pos = this.clampToViewport(el, left, top);
     el.style.left = `${pos.x}px`;
     el.style.top = `${pos.y}px`;
-    const title = Span({className: 'rti-title', textContent: `Compare: ${warnObj.loc} / ${warnObj.name}`});
-    const btnMin = Button({textContent: '_', title: 'Minimize to taskbar', onclick: () => this.minimizeCompare(key)});
-    const btnMax = Button({textContent: '□', title: 'Maximize', onclick: () => this.toggleCompareMaximize(key)});
-    const btnClose = Button({textContent: '×', title: 'Close', onclick: () => this.closeCompare(key)});
+    const title = Span({
+      className: 'rti-title',
+      textContent: `Compare: ${warnObj.loc} / ${warnObj.name}`,
+    });
+    const btnMin = Button({
+      textContent: '_',
+      title: 'Minimize to taskbar',
+      onclick: () => this.minimizeCompare(key),
+    });
+    const btnMax = Button({
+      textContent: '□',
+      title: 'Maximize',
+      onclick: () => this.toggleCompareMaximize(key),
+    });
+    const btnClose = Button({
+      textContent: '×',
+      title: 'Close',
+      onclick: () => this.closeCompare(key),
+    });
     const titlebar = Div(
-      {className: 'rti-titlebar', title: 'Drag to move window'},
+      {
+        className: 'rti-titlebar',
+        title: 'Drag to move window',
+      },
       title,
-      Div({className: 'rti-caption'}, btnMin, btnMax, btnClose),
+      Div({
+        className: 'rti-caption',
+      }, btnMin, btnMax, btnClose),
     );
-    el.append(titlebar, Div({className: 'rti-compare-body'}, this.buildCompareContent(warnObj)));
+    el.append(titlebar, Div({
+      className: 'rti-compare-body',
+    }, this.buildCompareContent(warnObj)));
     for (const dir of ['n', 'e', 's', 'w', 'ne', 'nw', 'se', 'sw']) {
-      const handle = Div({className: `rti-handle rti-handle-${dir}`, dataset: {dir}});
+      const handle = Div({
+        className: `rti-handle rti-handle-${dir}`,
+        dataset: {dir},
+      });
       el.append(handle);
       this.makeResizable(handle, dir, el, el, () => {});
     }
     // No per-element focus listener: document-capture (ensureFocus) fronts
     // the window even when a subtree grip stops mousedown propagation.
     hostDoc.body.append(el);
-    this.compareWins.set(key, {el, titlebar, btnMax, minimized: false});
+    this.compareWins.set(key, {
+      el,
+      titlebar,
+      btnMax,
+      minimized: false,
+    });
     this.makeDraggable(
       titlebar,
       el,
@@ -2912,10 +3209,15 @@ class TypePanel {
    * @returns {string} JSON log with `{meta, errors}`, e.g. for AI debugging context.
    */
   exportLog() {
-    return JSON.stringify({meta: this.getLogMeta(), errors: this.eventLog}, null, 2);
+    return JSON.stringify({
+      meta: this.getLogMeta(),
+      errors: this.eventLog,
+    }, null, 2);
   }
   downloadLog() {
-    const blob = new Blob([this.exportLog()], {type: 'application/json'});
+    const blob = new Blob([this.exportLog()], {
+      type: 'application/json',
+    });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
@@ -3077,7 +3379,10 @@ class TypePanel {
       row.remove();
     }
     const cols = visibleCheckCols();
-    const sort = this.checksSort ?? {id: 'scanMs', desc: true};
+    const sort = this.checksSort ?? {
+      id: 'scanMs',
+      desc: true,
+    };
     const sortCol = cols.find((col) => col.id === sort.id) ?? cols.find((col) => col.id === 'scanMs');
     const rows = getCheckStats().slice();
     rows.sort((a, b) => {
@@ -3103,12 +3408,24 @@ class TypePanel {
       for (const col of cols) {
         const active = this.checksSort?.id === col.id;
         const label = active ? `${col.head} ${this.checksSort.desc ? '▼' : '▲'}` : col.head;
-        const th = Th({textContent: label, title: col.title, dataset: {sort: col.id}});
+        const th = Th({
+          textContent: label,
+          title: col.title,
+          dataset: {
+            sort: col.id,
+          },
+        });
         th.onclick = () => {
           if (this.checksSort?.id === col.id) {
-            this.checksSort = {id: col.id, desc: !this.checksSort.desc};
+            this.checksSort = {
+              id: col.id,
+              desc: !this.checksSort.desc,
+            };
           } else {
-            this.checksSort = {id: col.id, desc: col.id !== 'loc'};
+            this.checksSort = {
+              id: col.id,
+              desc: col.id !== 'loc',
+            };
           }
           this.updateCheckStats();
         };
@@ -3155,7 +3472,9 @@ class TypePanel {
         }
         if (col.id === 'skipPct') {
           const total = row.rides + row.scans;
-          return Td({textContent: total === 0 ? '—' : ((row.rides / total) * 100).toFixed(1) + '%'});
+          return Td({
+            textContent: total === 0 ? '—' : ((row.rides / total) * 100).toFixed(1) + '%',
+          });
         }
         const v = col.get(row);
         if (typeof v === 'number' && col.id.endsWith('Ms')) {
@@ -3165,22 +3484,37 @@ class TypePanel {
           // Walk columns key off total walks, check columns off checks.
           const ran = col.id === 'checkMs' || col.id === 'maxCheckMs' ? row.checks > 0 : containerWalks(row) > 0;
           if (!ran) {
-            return Td({textContent: '—'});
+            return Td({
+              textContent: '—',
+            });
           }
           if (v <= 0) {
-            return Td({textContent: '0µs', title: timeTitle});
+            return Td({
+              textContent: '0µs',
+              title: timeTitle,
+            });
           }
-          return Td({textContent: fmtMs(v)});
+          return Td({
+            textContent: fmtMs(v),
+          });
         }
-        return Td({textContent: String(v)});
+        return Td({
+          textContent: String(v),
+        });
       });
       this.checksTable.append(Tr({}, ...cells));
       if (this.checksDetailLoc === row.loc) {
         this.checksTable.append(Tr(
-          {className: 'rti-checks-loc-detail'},
+          {
+            className: 'rti-checks-loc-detail',
+          },
           Td(
-            {colSpan: String(cols.length)},
-            Pre({textContent: `${row.loc}\n\n${row.stack || '(no call stack was captured for this loc)'}`}),
+            {
+              colSpan: String(cols.length),
+            },
+            Pre({
+              textContent: `${row.loc}\n\n${row.stack || '(no call stack was captured for this loc)'}`,
+            }),
           ),
         ));
       }
@@ -3294,7 +3628,12 @@ class TypePanel {
     warnObj.event = event;
     warnObj.hits++;
     warnObj.warn(msg, {expect, value, valueToString}, ...extras);
-    refreshWarning(warnObj, {value, expect, msg: detail || msg, strings});
+    refreshWarning(warnObj, {
+      value,
+      expect,
+      msg: detail || msg,
+      strings,
+    });
     this.updateCheckStats();
   }
   /**

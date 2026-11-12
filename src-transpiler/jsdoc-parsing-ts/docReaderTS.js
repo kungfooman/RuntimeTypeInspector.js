@@ -31,7 +31,13 @@ function docReaderTS(comment) {
   const source = ts.createSourceFile('docreader.ts', text, ts.ScriptTarget.Latest, true);
   const [fn] = source.statements;
   /** @type {import('../jsdoc-parsing-depfree/canonicalDoc.js').CanonicalDoc} */
-  const doc = {templates: [], overloads: [], params: [], returns: '', callbacks: []};
+  const doc = {
+    templates: [],
+    overloads: [],
+    params: [],
+    returns: '',
+    callbacks: [],
+  };
   for (const tag of ts.getJSDocTags(fn) ?? []) {
     if (tag.kind === ts.SyntaxKind.JSDocOverloadTag) {
       doc.overloads.push(tsOverloadTag(tag));
@@ -107,7 +113,11 @@ function docReaderTS(comment) {
         const tail = signature.parameters[index]?.getText?.() ?? '';
         const inner = '@param ' + tail.split('@param').slice(1).join('@param');
         const nested = tsDottedChildren(parameter.name, inner, 2);
-        rows.push({...parameter, type: '', merged: true}, ...nested);
+        rows.push({
+          ...parameter,
+          type: '',
+          merged: true,
+        }, ...nested);
       }
       callback.params = rows;
       if (signature.type && signature.type.typeExpression) {
@@ -164,7 +174,11 @@ function docReaderTS(comment) {
     if (param.type.includes('@param')) {
       const container = param.name;
       const atTag = segments.findIndex((segment) => atParam(segment, container));
-      out.push({...param, type: '', merged: true});
+      out.push({
+        ...param,
+        type: '',
+        merged: true,
+      });
       out.push(...tsDottedChildren(container, comment, atTag + 1));
       continue;
     }

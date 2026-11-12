@@ -17,12 +17,21 @@ function validateArrayLike(value, expect, loc, name, critical, warn, depth) {
   // call under the old contract — fail loudly instead of validating
   // everything against a defaulted `any`.
   if (!expect || expect.type !== 'reference') {
-    warn('unchecked', {value, type: 'arrayLike', loc, name, expect});
+    warn('unchecked', {
+      value,
+      type: 'arrayLike',
+      loc,
+      name,
+      expect,
+    });
     return false;
   }
   const elementType = Array.isArray(expect.args) ? (expect.args[0] ?? 'any') : 'any';
   if (value === null || value === undefined) {
-    warn(`Expected ArrayLike, got ${value}.`, {value, expect: elementType});
+    warn(`Expected ArrayLike, got ${value}.`, {
+      value,
+      expect: elementType,
+    });
     return false;
   }
   const valueType = typeof value;
@@ -47,7 +56,10 @@ function validateArrayLike(value, expect, loc, name, critical, warn, depth) {
     const nameIndex = `${name}[${i}]`;
     const ret = recurse(valueIndex, elementType, loc, nameIndex, critical, warn, depth + 1);
     if (!ret) {
-      const info = {expect: elementType, value: valueIndex};
+      const info = {
+        expect: elementType,
+        value: valueIndex,
+      };
       warn(`Element at index ${i} has a wrong type.`, info);
       return false;
     }

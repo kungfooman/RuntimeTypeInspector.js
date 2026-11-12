@@ -18,7 +18,13 @@ registerClass(TagSnapSub);
 registerClass(TagSnapWidget);
 function testPlainDataIdentity() {
   // No instances: the input posts untouched, no extra clone.
-  const data = {a: 1, list: [1, 2], nested: {b: 'x'}};
+  const data = {
+    a: 1,
+    list: [1, 2],
+    nested: {
+      b: 'x',
+    },
+  };
   return tagSnapshot(data) === data;
 }
 function testPrimitivesIdentity() {
@@ -41,7 +47,12 @@ function testInstanceTagged() {
 }
 function testNestedInstancesTagged() {
   // Instances nested in plain containers are found, containers stay plain.
-  const out = tagSnapshot({items: [new TagSnapWidget()], plain: {y: 2}});
+  const out = tagSnapshot({
+    items: [new TagSnapWidget()],
+    plain: {
+      y: 2,
+    },
+  });
   return (
     out !== null &&
     typeof out === 'object' &&

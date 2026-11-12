@@ -11,14 +11,21 @@ function prepare() {
     'Obj',
     {
       "type": "object",
-      "properties": {"a": "'aa'", "b": "\"bb\"", "c": "'cc'"},
+      "properties": {
+        "a": "'aa'",
+        "b": "\"bb\"",
+        "c": "'cc'",
+      },
     },
   );
   registerTypedef(
     'ObjValues',
     {
       "type": "indexedAccess",
-      "index": {"type": "keyof", "argument": "Obj"},
+      "index": {
+        "type": "keyof",
+        "argument": "Obj",
+      },
       "object": "Obj",
     },
   );

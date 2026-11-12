@@ -3,12 +3,18 @@ import {tsCallbackTag} from './tsCallbackTag.js';
 // as an entry with the same parameter shape, not as flat rows.
 function testCallbackNestsRows() {
   const tag = {
-    fullName: {getText: () => 'SwapFunction'},
+    fullName: {
+      getText: () => 'SwapFunction',
+    },
     typeExpression: {
       parameters: [{
-        name: {getText: () => 'newState'},
+        name: {
+          getText: () => 'newState',
+        },
         isBracketed: false,
-        typeExpression: {getText: () => '{Object}'},
+        typeExpression: {
+          getText: () => '{Object}',
+        },
       }],
     },
   };
@@ -26,14 +32,24 @@ function testCallbackNestsRows() {
 // params here and never throws on the extra node.
 function testCallbackIgnoresSignatureReturn() {
   const tag = {
-    fullName: {getText: () => 'HandleEventCallback'},
+    fullName: {
+      getText: () => 'HandleEventCallback',
+    },
     typeExpression: {
       parameters: [{
-        name: {getText: () => 'arg1'},
+        name: {
+          getText: () => 'arg1',
+        },
         isBracketed: true,
-        typeExpression: {getText: () => '{any}'},
+        typeExpression: {
+          getText: () => '{any}',
+        },
       }],
-      type: {typeExpression: {getText: () => '{void}'}},
+      type: {
+        typeExpression: {
+          getText: () => '{void}',
+        },
+      },
     },
   };
   const actual = tsCallbackTag(tag);

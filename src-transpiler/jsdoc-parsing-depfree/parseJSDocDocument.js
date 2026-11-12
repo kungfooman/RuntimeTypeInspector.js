@@ -48,7 +48,10 @@ function parseJSDocDocument(src, expandType = expandTypeDepFree) {
         console.warn(
           'parseJSDoc> Skipping @param, type is unrepresentable. ' +
             'Please check if your JSDoc is valid or open an issue about this!',
-          {src, match: brace},
+          {
+            src,
+            match: brace,
+          },
         );
         continue;
       }

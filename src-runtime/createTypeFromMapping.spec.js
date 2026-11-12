@@ -53,16 +53,30 @@ function testMaterializationFrozen() {
 // mapping content must recompute its keys against the new registry instead
 // of serving the stale materialization from before the update.
 function testRegistryUpdateInvalidates() {
-  registerTypedef('MapSource', {type: 'object', properties: {a: 'number'}});
+  registerTypedef('MapSource', {
+    type: 'object',
+    properties: {
+      a: 'number',
+    },
+  });
   try {
     const freshNode = () => ({
       type: 'mapping',
-      iterable: {type: 'keyof', argument: 'MapSource'},
+      iterable: {
+        type: 'keyof',
+        argument: 'MapSource',
+      },
       element: 'K',
       result: 'K',
     });
     const before = createTypeFromMapping(freshNode(), warn);
-    registerTypedef('MapSource', {type: 'object', properties: {a: 'number', b: 'boolean'}});
+    registerTypedef('MapSource', {
+      type: 'object',
+      properties: {
+        a: 'number',
+        b: 'boolean',
+      },
+    });
     const after = createTypeFromMapping(freshNode(), warn);
     return (
       before !== after &&
@@ -95,12 +109,26 @@ function testRegistryTypedefUntouched() {
     'RegistryMapping',
     {
       type: 'mapping',
-      iterable: {type: 'keyof', argument: {type: 'object', properties: {a: 'number'}}},
+      iterable: {
+        type: 'keyof',
+        argument: {
+          type: 'object',
+          properties: {
+            a: 'number',
+          },
+        },
+      },
       element: 'K',
       result: {
         type: 'tuple',
         elements: [
-          {type: 'rest', annotation: {type: 'tuple', elements: ['number', 'boolean']}},
+          {
+            type: 'rest',
+            annotation: {
+              type: 'tuple',
+              elements: ['number', 'boolean'],
+            },
+          },
           'string',
         ],
       },

@@ -1,7 +1,10 @@
 import {docTemplateNode} from './docTemplateNode.js';
 // A bare comma list reads as two rows with no constraint.
 function testCommaListBindsEachName() {
-  const actual = docTemplateNode({typeRaw: '', headRaw: 'O, P The obj and props types'});
+  const actual = docTemplateNode({
+    typeRaw: '',
+    headRaw: 'O, P The obj and props types',
+  });
   return (
     actual.length === 2 &&
     actual[0].name === 'O' &&
@@ -12,7 +15,10 @@ function testCommaListBindsEachName() {
 }
 // Each list member carries the braced constraint.
 function testCommaListCarriesConstraint() {
-  const actual = docTemplateNode({typeRaw: 'string', headRaw: 'O, P prose'});
+  const actual = docTemplateNode({
+    typeRaw: 'string',
+    headRaw: 'O, P prose',
+  });
   return (
     actual.length === 2 &&
     actual[0].constraint === 'string' &&
@@ -21,7 +27,10 @@ function testCommaListCarriesConstraint() {
 }
 // A bare template binds its name with the brace text as constraint.
 function testBareTemplateBindsName() {
-  const rows = docTemplateNode({typeRaw: 'string', headRaw: 'K'});
+  const rows = docTemplateNode({
+    typeRaw: 'string',
+    headRaw: 'K',
+  });
   return (
     rows.length === 1 &&
     rows[0].name === 'K' &&
@@ -31,7 +40,10 @@ function testBareTemplateBindsName() {
 }
 // A bracketed template splits the default off the binding name.
 function testBracketedTemplateSplitsDefault() {
-  const rows = docTemplateNode({typeRaw: 'string', headRaw: '[K=string]'});
+  const rows = docTemplateNode({
+    typeRaw: 'string',
+    headRaw: '[K=string]',
+  });
   return (
     rows.length === 1 &&
     rows[0].name === 'K' &&
@@ -41,7 +53,10 @@ function testBracketedTemplateSplitsDefault() {
 }
 // Only the first head token binds: trailing prose falls away.
 function testTemplateHeadKeepsFirstToken() {
-  const rows = docTemplateNode({typeRaw: '', headRaw: 'K trailing words'});
+  const rows = docTemplateNode({
+    typeRaw: '',
+    headRaw: 'K trailing words',
+  });
   return (
     rows.length === 1 &&
     rows[0].name === 'K' &&
@@ -51,7 +66,10 @@ function testTemplateHeadKeepsFirstToken() {
 }
 // A bracketed template without a default binds with an empty default.
 function testBracketedTemplateWithoutDefault() {
-  const rows = docTemplateNode({typeRaw: 'string', headRaw: '[K] trailing'});
+  const rows = docTemplateNode({
+    typeRaw: 'string',
+    headRaw: '[K] trailing',
+  });
   return (
     rows.length === 1 &&
     rows[0].name === 'K' &&

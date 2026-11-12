@@ -12,6 +12,9 @@ import {recurseSubstitute} from "./substitutes.js";
  */
 function substituteTupleMember(type, search, replace, warn) {
   const elementType = recurseSubstitute(type.elementType, search, replace, warn);
-  return elementType === type.elementType ? type : {...type, elementType};
+  return elementType === type.elementType ? type : {
+    ...type,
+    elementType,
+  };
 }
 export {substituteTupleMember};

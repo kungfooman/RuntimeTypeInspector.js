@@ -41,7 +41,13 @@ function tsDottedChildren(container, src, fromTag) {
     if (valid === false) {
       break;
     }
-    children.push({name, bracketed: optional, type: brace[1], dropped: false, merged: false});
+    children.push({
+      name,
+      bracketed: optional,
+      type: brace[1],
+      dropped: false,
+      merged: false,
+    });
   }
   return children;
 }

@@ -24,7 +24,10 @@ function testStrictByDefault() {
   if (validateType(undefined, 'number', 'loc', 'name', true, warn, 0)) {
     return false;
   }
-  if (validateType(null, {type: 'object', properties: {}}, 'loc', 'name', true, warn, 0)) {
+  if (validateType(null, {
+    type: 'object',
+    properties: {},
+  }, 'loc', 'name', true, warn, 0)) {
     return false;
   }
   return true;

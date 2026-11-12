@@ -79,6 +79,10 @@ function parseBraceType(cursor) {
   }
   const typeRaw = tail;
   cursor.index = tailEnd;
-  return {typeRaw, balanced, headStart: stop};
+  return {
+    typeRaw,
+    balanced,
+    headStart: stop,
+  };
 }
 export {parseBraceType};

@@ -2,7 +2,13 @@ import {expandTupleElements} from './expandTupleElements.js';
 // We want: the input array and its elements to come back untouched, so
 // shared registry tuples pass through expansion without being rewritten.
 function testLeavesInputAlone() {
-  const spread = {type: 'rest', annotation: {type: 'tuple', elements: ['number']}};
+  const spread = {
+    type: 'rest',
+    annotation: {
+      type: 'tuple',
+      elements: ['number'],
+    },
+  };
   const elements = ['string', spread];
   const {expanded, variadic, variadicPos, error} = expandTupleElements(elements);
   return (
@@ -22,7 +28,10 @@ function testLeavesInputAlone() {
 function testDesugaring() {
   const named = {
     type: 'tupleMember',
-    elementType: {type: 'array', elementType: 'string'},
+    elementType: {
+      type: 'array',
+      elementType: 'string',
+    },
     dotDot: true,
   };
   const {expanded, variadic, variadicPos, error} = expandTupleElements(['boolean', named]);
@@ -39,7 +48,13 @@ function testDesugaring() {
 // We want: two variadics to report an error instead of silently keeping one,
 // so validation can reject the ambiguous shape.
 function testMultipleVariadicsError() {
-  const rest = () => ({type: 'rest', annotation: {type: 'array', elementType: 'number'}});
+  const rest = () => ({
+    type: 'rest',
+    annotation: {
+      type: 'array',
+      elementType: 'number',
+    },
+  });
   const {error} = expandTupleElements([rest(), rest()]);
   return error === 'multiple-variadic';
 }

@@ -28,8 +28,14 @@ function overloadSignatures(overloads, fnNode, options = {}) {
     if (ignored instanceof Set) {
       eraseIgnoredOverloadParams(tuple, fnNode, ignored);
     }
-    const {templates: own} = parseJSDocDocument(section, parser);
-    const templates = {...preTemplates, ...scopeTemplates, ...own};
+    const {
+      templates: own,
+    } = parseJSDocDocument(section, parser);
+    const templates = {
+      ...preTemplates,
+      ...scopeTemplates,
+      ...own,
+    };
     return {tuple, templates};
   });
 }

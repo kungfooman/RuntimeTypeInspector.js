@@ -31,7 +31,10 @@ function shaderMap() {
  * @returns {{mapExpect: object, bad: Map}} Fixture.
  */
 function apiKeyMismatch() {
-  return {mapExpect: expandType('Map<string, string | number>'), bad: new Map([['apiKey', null]])};
+  return {
+    mapExpect: expandType('Map<string, string | number>'),
+    bad: new Map([['apiKey', null]]),
+  };
 }
 function testMapShowsInferredGenerics() {
   return describeValueType(new Map([['a', 1], ['b', 'x']])) === 'Map<string, number | string>';
@@ -45,7 +48,9 @@ function testEmptyMap() {
 }
 function testMapUnionBounded() {
   // 1000 distinct value types collapse to a capped union, not 1kb+ of text.
-  const big = new Map(Array.from({length: 1000}, (_, i) => [`k${i}`, BigInt(i)]));
+  const big = new Map(Array.from({
+    length: 1000,
+  }, (_, i) => [`k${i}`, BigInt(i)]));
   const text = describeValueType(big);
   return (
     text.length < 100 &&
@@ -61,7 +66,9 @@ function testSetShowsInferredGenerics() {
   return describeValueType(new Set([1, 'a'])) === 'Set<number | string>';
 }
 function testSetUnionBounded() {
-  const many = new Set(Array.from({length: 30}, (_, i) => ({i})));
+  const many = new Set(Array.from({
+    length: 30,
+  }, (_, i) => ({i})));
   const text = describeValueType(many);
   return (
     text.startsWith('Set<{i: 0}') &&
@@ -74,13 +81,17 @@ function testEmptySet() {
 }
 function testPlainValuesUnaffected() {
   return (
-    describeValueType({a: 1}) === '{a: 1}' &&
+    describeValueType({
+      a: 1,
+    }) === '{a: 1}' &&
     describeValueType([1, 2]) === '[1, 2]' &&
     describeValueType('x') === '"x"'
   );
 }
 function testNestedMapInObject() {
-  const text = describeValueType({m: new Map([['a', 1]])});
+  const text = describeValueType({
+    m: new Map([['a', 1]]),
+  });
   return text === '{m: Map<string, number>}';
 }
 function testFormatMapKey() {
@@ -113,7 +124,9 @@ function testSnipMapPretty() {
     snip(new Set([1])) === 'Set<number>';
 }
 function testSnipPlainUnaffected() {
-  return snip({a: 1}) === '{"a":1}' && snip('x') === '"x"';
+  return snip({
+    a: 1,
+  }) === '{"a":1}' && snip('x') === '"x"';
 }
 function testDiffMapPinpointsEntry() {
   const {mapExpect, bad} = apiKeyMismatch();
@@ -140,7 +153,9 @@ function testDiffMapPasses() {
 }
 function testDiffMapNotAMap() {
   const {mapExpect} = apiKeyMismatch();
-  const findings = diffValue({a: 1}, mapExpect, 'config', 0);
+  const findings = diffValue({
+    a: 1,
+  }, mapExpect, 'config', 0);
   return (
     findings.length === 1 &&
     findings[0].kind === 'wrong' &&
@@ -189,7 +204,9 @@ function testTypeTreeMap() {
 }
 function testTypeTreeMapNotAMap() {
   const {mapExpect} = apiKeyMismatch();
-  const tree = buildTypeTree(mapExpect, {a: 1}, 'config', undefined, 'config');
+  const tree = buildTypeTree(mapExpect, {
+    a: 1,
+  }, 'config', undefined, 'config');
   return (
     tree.kind === 'map' &&
     tree.passes === false &&
@@ -219,19 +236,25 @@ function testFormatComparePretty() {
   );
 }
 function testFormatComparePlainUnaffected() {
-  const {actualPretty} = formatCompare('number', {a: 1});
+  const {actualPretty} = formatCompare('number', {
+    a: 1,
+  });
   return actualPretty.includes('"a"');
 }
 function testPrettyValueShapes() {
   return (
     prettyValue(new Map()) === 'Map(0) {}' &&
     prettyValue(new Set()) === 'Set(0) {}' &&
-    prettyValue({a: 1}) === undefined &&
+    prettyValue({
+      a: 1,
+    }) === undefined &&
     prettyValue(new Set(['a', 'b'])) === 'Set(2) {\n  "a"\n  "b"\n}'
   );
 }
 function testPrettyValueBounded() {
-  const text = prettyValue(new Map(Array.from({length: 30}, (_, i) => [`k${i}`, i])));
+  const text = prettyValue(new Map(Array.from({
+    length: 30,
+  }, (_, i) => [`k${i}`, i])));
   return (
     text.includes('Map(30) {') &&
     text.includes('...(+10 more)') &&
@@ -255,7 +278,9 @@ function testWarningMapCell() {
   }
 }
 function testWarningMapCellBounded() {
-  const {warn, restore} = warningFor(new Map(Array.from({length: 30}, (_, i) => [`k${i}`, i])));
+  const {warn, restore} = warningFor(new Map(Array.from({
+    length: 30,
+  }, (_, i) => [`k${i}`, i])));
   try {
     const text = dump(warn.td_value);
     // 20 entry rows plus the summary plus the `...(+N more)` marker.
@@ -287,7 +312,9 @@ function testWarningSetCell() {
 }
 function testWarningNestedMap() {
   // A map nested in a plain object reads as generics, never `[object Map]`.
-  const {warn, restore} = warningFor({m: new Map([['a', 1]])});
+  const {warn, restore} = warningFor({
+    m: new Map([['a', 1]]),
+  });
   try {
     const text = dump(warn.td_value);
     return !text.includes('[object Map]') && text.includes('Map<string, number>');
@@ -296,7 +323,9 @@ function testWarningNestedMap() {
   }
 }
 function testWarningPlainUnaffected() {
-  const {warn, restore} = warningFor({a: 1});
+  const {warn, restore} = warningFor({
+    a: 1,
+  });
   try {
     const text = dump(warn.td_value);
     return (
@@ -315,7 +344,9 @@ function testWarningValueRefreshFollowsLatest() {
     if (!dump(warn.td_value).includes('Map(12)')) {
       return false;
     }
-    warn.value = {a: 1};
+    warn.value = {
+      a: 1,
+    };
     const text = dump(warn.td_value);
     return !text.includes('Map(12)') && text.includes('a');
   } finally {

@@ -20,6 +20,10 @@ function substituteIndexSignature(type, search, replace, warn) {
   if (indexType === type.indexType && indexParameters === type.indexParameters) {
     return type;
   }
-  return {...type, indexType, indexParameters};
+  return {
+    ...type,
+    indexType,
+    indexParameters,
+  };
 }
 export {substituteIndexSignature};

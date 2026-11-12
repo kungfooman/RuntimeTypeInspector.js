@@ -6,8 +6,15 @@ import {validators             } from './validators.js';
 import {options                } from './options.js';
 import {customTypes            } from './customTypes.js';
 import {customValidations      } from './customValidations.js';
-const arrayOf = (elementType) => ({type: 'array', elementType});
-const likeOf = (elementType) => ({type: 'reference', name: 'ArrayLike', args: [elementType]});
+const arrayOf = (elementType) => ({
+  type: 'array',
+  elementType,
+});
+const likeOf = (elementType) => ({
+  type: 'reference',
+  name: 'ArrayLike',
+  args: [elementType],
+});
 function testExamplesVerbatim() {
   // The documented examples hold exactly.
   return (
@@ -50,7 +57,9 @@ function testEmptyAndUnknown() {
   // Empty ranges are clean; non-primitives scan nothing (full loop runs).
   return (
     firstBadIndex([], 0, 'number') === -1 &&
-    firstBadIndex([1], 1, {type: 'object'}) === 0 &&
+    firstBadIndex([1], 1, {
+      type: 'object',
+    }) === 0 &&
     firstBadIndex([1], 1, undefined) === 0 &&
     firstBadIndex([1], 1, '"a"') === 0
   );
@@ -92,10 +101,26 @@ function testOverrideDisablesFastPath() {
 }
 function testNonPrimitiveDeepCheck() {
   // Unknown element types run the full loop from the start, nested included.
-  const shape = {type: 'array', elementType: {type: 'object', properties: {a: 'number'}}};
+  const shape = {
+    type: 'array',
+    elementType: {
+      type: 'object',
+      properties: {
+        a: 'number',
+      },
+    },
+  };
   const warn = () => undefined;
-  return validateArray([{a: 1}, {a: 2}], shape, 'loc', 'name', true, warn, 0) === true &&
-    validateArray([{a: 1}, {a: 'x'}], shape, 'loc', 'name', true, warn, 0) === false;
+  return validateArray([{
+    a: 1,
+  }, {
+    a: 2,
+  }], shape, 'loc', 'name', true, warn, 0) === true &&
+    validateArray([{
+      a: 1,
+    }, {
+      a: 'x',
+    }], shape, 'loc', 'name', true, warn, 0) === false;
 }
 function testSparseHolesPass() {
   // Sparse mode still skips holes: the scan suspects them, the `in` test clears them.

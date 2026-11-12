@@ -16,7 +16,13 @@ function validateObject(value, expect, loc, name, critical, warn, depth) {
   // Object nodes only: a bare properties bag means a stale direct call
   // under the old contract — fail loudly instead of misreading it.
   if (!expect || expect.type !== 'object') {
-    warn('unchecked', {value, type: 'object', loc, name, expect});
+    warn('unchecked', {
+      value,
+      type: 'object',
+      loc,
+      name,
+      expect,
+    });
     return false;
   }
   const {properties} = expect;
@@ -140,7 +146,10 @@ function validateObject(value, expect, loc, name, critical, warn, depth) {
     const nameKey = `${name}.${key}`;
     const ret = recurse(innerValue, innerType, loc, nameKey, critical, warn, depth + 1);
     if (!ret) {
-      const info = {expect: innerType, value: innerValue};
+      const info = {
+        expect: innerType,
+        value: innerValue,
+      };
       warn(`Element ${nameKey} has wrong type.`, info);
       return false;
     }

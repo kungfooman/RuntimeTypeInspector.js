@@ -23,7 +23,13 @@ import {docOverloadSection   } from './docOverloadSection.js';
  */
 function docReaderDepFree(comment) {
   /** @type {import('./canonicalDoc.js').CanonicalDoc} */
-  const doc = {templates: [], overloads: [], params: [], returns: '', callbacks: []};
+  const doc = {
+    templates: [],
+    overloads: [],
+    params: [],
+    returns: '',
+    callbacks: [],
+  };
   const sections = splitOverloadSections([comment]);
   if (sections.overloads.length > 0) {
     for (const node of parseJSDocNodes(comment)) {
@@ -52,7 +58,10 @@ function docReaderDepFree(comment) {
           }
         } else if (node.tag === '@callback') {
           const head = node.headRaw.startsWith('{') ? '' : (node.headRaw.split(/\s+/)[0] ?? '');
-          const entry = {name: head, params: []};
+          const entry = {
+            name: head,
+            params: [],
+          };
           doc.callbacks.push(entry);
           const isCallback = (row) => row.tag === '@callback' && row.headRaw === node.headRaw;
           const start = rows.findIndex(isCallback);
@@ -78,7 +87,10 @@ function docReaderDepFree(comment) {
       for (const node of rows) {
         if (node.tag === '@callback') {
           const head = node.headRaw.startsWith('{') ? '' : (node.headRaw.split(/\s+/)[0] ?? '');
-          const entry = {name: head, params: []};
+          const entry = {
+            name: head,
+            params: [],
+          };
           doc.callbacks.push(entry);
           const isCallback = (row) => row.tag === '@callback' && row.headRaw === node.headRaw;
           const start = rows.findIndex(isCallback);
@@ -132,7 +144,10 @@ function docReaderDepFree(comment) {
       // binding), so the entry stays unnamed instead of splitting the
       // first brace word as a name.
       const head = node.headRaw.startsWith('{') ? '' : (node.headRaw.split(/\s+/)[0] ?? '');
-      const entry = {name: head, params: []};
+      const entry = {
+        name: head,
+        params: [],
+      };
       doc.callbacks.push(entry);
       const rows = parseJSDocNodes(comment);
       const isCallback = (row) => row.tag === '@callback' && row.headRaw === node.headRaw;

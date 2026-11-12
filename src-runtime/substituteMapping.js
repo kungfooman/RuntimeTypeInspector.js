@@ -24,6 +24,11 @@ function substituteMapping(type, search, replace, warn) {
   if (iterable === type.iterable && result === type.result && nameType === type.nameType) {
     return type;
   }
-  return {...type, iterable, result, nameType};
+  return {
+    ...type,
+    iterable,
+    result,
+    nameType,
+  };
 }
 export {substituteMapping};

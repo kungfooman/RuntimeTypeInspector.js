@@ -53,7 +53,13 @@ const tests = [
     const restore = installFakeDom();
     try {
       const Div = genJsx('div');
-      const el = Div({className: 'a', dataset: {topping: 'Pepperoni'}, 'data-crust': 'thin'}, 'hi');
+      const el = Div({
+        className: 'a',
+        dataset: {
+          topping: 'Pepperoni',
+        },
+        'data-crust': 'thin',
+      }, 'hi');
       return (
         el.tagname === 'div' &&
         el.className === 'a' &&
@@ -70,7 +76,9 @@ const tests = [
     try {
       const Div = genJsx('div');
       const Button = genJsx('button');
-      const btn = Button({onclick: () => undefined}, 'x');
+      const btn = Button({
+        onclick: () => undefined,
+      }, 'x');
       const el = Div({}, btn, ['a', ['b']], null, undefined, false, 1);
       // btn + 'a' + 'b' + 1 => 4 children (nullish/false skipped)
       return el.children.length === 4 && el.children[0] === btn;
@@ -82,7 +90,12 @@ const tests = [
     const restore = installFakeDom();
     try {
       const Input = genJsx('input');
-      const el = Input({type: 'checkbox', style: {color: 'red'}});
+      const el = Input({
+        type: 'checkbox',
+        style: {
+          color: 'red',
+        },
+      });
       return el.type === 'checkbox' && el.style.color === 'red';
     } finally {
       restore();

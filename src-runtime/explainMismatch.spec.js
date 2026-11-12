@@ -10,7 +10,9 @@ function reset() {
 function testMissingKey() {
   reset();
   const expect = expandType('{fov: number, clearColor: Array<number>}');
-  const {findings, stub} = explainMismatch({fov: 60}, expect, 'options');
+  const {findings, stub} = explainMismatch({
+    fov: 60,
+  }, expect, 'options');
   const missing = findings.find((_) => _.kind === 'missing');
   return (
     !!missing &&
@@ -22,7 +24,9 @@ function testMissingKey() {
 function testWrongNestedType() {
   reset();
   const expect = expandType('{clearColor: Array<number>}');
-  const {findings} = explainMismatch({clearColor: 'red'}, expect, 'options');
+  const {findings} = explainMismatch({
+    clearColor: 'red',
+  }, expect, 'options');
   return (
     findings.length === 1 &&
     findings[0].path === 'options.clearColor' &&
@@ -32,16 +36,25 @@ function testWrongNestedType() {
 }
 function testGenericReferenceResolves() {
   reset();
-  registerTypedef('Box', {type: 'object', properties: {content: 'T'}}, ['T']);
+  registerTypedef('Box', {
+    type: 'object',
+    properties: {
+      content: 'T',
+    },
+  }, ['T']);
   const expect = expandType('Box<number>');
-  const {findings} = explainMismatch({content: 'x'}, expect, 'box');
+  const {findings} = explainMismatch({
+    content: 'x',
+  }, expect, 'box');
   if (findings.length !== 1 || findings[0].path !== 'box.content') {
     return false;
   }
   // And the materialized shape is concrete, not `T`.
   const mat = materializeExpect(expect);
   return mat?.properties?.content !== 'T' &&
-    explainMismatch({content: 1}, expect, 'box').findings.length === 0;
+    explainMismatch({
+      content: 1,
+    }, expect, 'box').findings.length === 0;
 }
 // Materializing shares instead of cloning: two equal generic references
 // resolve to the same frozen instance, the registry keeps its exact shape,
@@ -49,7 +62,12 @@ function testGenericReferenceResolves() {
 // diagnoses that read the same shared tree.
 function testSharedMaterializationNeverMutated() {
   reset();
-  registerTypedef('SharedBox', {type: 'object', properties: {content: 'T'}}, ['T']);
+  registerTypedef('SharedBox', {
+    type: 'object',
+    properties: {
+      content: 'T',
+    },
+  }, ['T']);
   try {
     const before = JSON.stringify(typedefs.SharedBox);
     const first = materializeExpect(expandType('SharedBox<number>'));
@@ -74,7 +92,9 @@ function testSharedMaterializationNeverMutated() {
 function testUnionClosestMatch() {
   reset();
   const expect = expandType('"a" | {fov: number, clearColor: Array<number>}');
-  const {findings} = explainMismatch({fov: 60}, expect, 'options');
+  const {findings} = explainMismatch({
+    fov: 60,
+  }, expect, 'options');
   const union = findings.find((_) => _.kind === 'union');
   return (
     !!union &&
@@ -85,19 +105,26 @@ function testUnionClosestMatch() {
 function testExtraKey() {
   reset();
   const expect = expandType('{fov: number}');
-  const {findings} = explainMismatch({fov: 60, fovv: 60}, expect, 'options');
+  const {findings} = explainMismatch({
+    fov: 60,
+    fovv: 60,
+  }, expect, 'options');
   return findings.some((_) => _.kind === 'extra' && _.path === 'options.fovv');
 }
 function testPassingValueHasNoFindings() {
   reset();
   const expect = expandType('{fov: number}');
-  return explainMismatch({fov: 60}, expect, 'options').findings.length === 0;
+  return explainMismatch({
+    fov: 60,
+  }, expect, 'options').findings.length === 0;
 }
 function testIndexedAccessResolvesConcretely() {
   reset();
   registerTypedef('EntityShape', expandType('{camera: {fov: number}}'));
   const expect = expandType('EntityShape["camera"]');
-  const {findings} = explainMismatch({fov: 'x'}, expect, 'data');
+  const {findings} = explainMismatch({
+    fov: 'x',
+  }, expect, 'data');
   return (
     findings.length === 1 &&
     findings[0].path === 'data.fov' &&
@@ -157,7 +184,11 @@ function testOmitExcessNamesRemoval() {
   reset();
   registerTypedef('Account', expandType('{id: string, email: string, role: string}'));
   const {findings} = explainMismatch(
-    {email: 'a', role: 'b', id: 1},
+    {
+      email: 'a',
+      role: 'b',
+      id: 1,
+    },
     expandType('Omit<Account, "id">'),
     'payload',
   );
@@ -176,7 +207,10 @@ function testPickExcessNamesSelection() {
   reset();
   registerTypedef('User', expandType('{id: number, name: string}'));
   const {findings} = explainMismatch(
-    {name: 'x', id: 1},
+    {
+      name: 'x',
+      id: 1,
+    },
     expandType('Pick<User, "name">'),
     'user',
   );
@@ -192,7 +226,10 @@ function testPickExcessNamesSelection() {
 function testPlainExcessStillSuspectsTypo() {
   reset();
   const {findings} = explainMismatch(
-    {fov: 60, fovv: 1},
+    {
+      fov: 60,
+      fovv: 1,
+    },
     expandType('{fov: number}'),
     'options',
   );
@@ -207,7 +244,10 @@ function testExtrasInformationalWhenLenient() {
   options.exactObjects = false;
   try {
     const {findings} = explainMismatch(
-      {fov: 60, fovv: 1},
+      {
+        fov: 60,
+        fovv: 1,
+      },
       expandType('{fov: number}'),
       'options',
     );
@@ -230,12 +270,26 @@ function testExtrasInformationalWhenLenient() {
  */
 function testCollectFailPaths() {
   const paths = collectFailPaths([
-    {path: 'a', kind: 'wrong'},
-    {path: 'b', kind: 'extra', info: true},
+    {
+      path: 'a',
+      kind: 'wrong',
+    },
+    {
+      path: 'b',
+      kind: 'extra',
+      info: true,
+    },
     {
       path: 'c',
       kind: 'union',
-      children: [{path: 'c', kind: 'wrong', children: [{path: "c.get('k')", kind: 'wrong'}]}],
+      children: [{
+        path: 'c',
+        kind: 'wrong',
+        children: [{
+          path: "c.get('k')",
+          kind: 'wrong',
+        }],
+      }],
     },
   ]);
   return (
@@ -329,7 +383,9 @@ function testMapEntryUnionAdmitsShape() {
 function testPropertyUnionNamesSubject() {
   reset();
   const {findings} = explainMismatch(
-    {color: true},
+    {
+      color: true,
+    },
     expandType('{color: string | number}'),
     'options',
   );
@@ -349,7 +405,10 @@ function testPropertyUnionNamesSubject() {
 function testArrayBadElementPinpoints() {
   // A bad element blames its index, not the whole array.
   reset();
-  const {findings} = explainMismatch([1, 'x', 3], {type: 'array', elementType: 'number'}, 'v');
+  const {findings} = explainMismatch([1, 'x', 3], {
+    type: 'array',
+    elementType: 'number',
+  }, 'v');
   return (
     findings.length === 1 &&
     findings[0].path === 'v[1]' &&
@@ -359,15 +418,24 @@ function testArrayBadElementPinpoints() {
 function testArrayValidEmpty() {
   // Valid arrays (direct and through unions) explain clean.
   reset();
-  const arr = {type: 'array', elementType: 'number'};
-  const union = {type: 'union', members: ['Nope', arr]};
+  const arr = {
+    type: 'array',
+    elementType: 'number',
+  };
+  const union = {
+    type: 'union',
+    members: ['Nope', arr],
+  };
   return explainMismatch([0, 0, 1, 1], arr, 'v').findings.length === 0 &&
     explainMismatch([0, 0, 1, 1], union, 'v').findings.length === 0;
 }
 function testArrayNonArray() {
   // Non-arrays blame the whole value, like map/set branches do.
   reset();
-  const {findings} = explainMismatch('nope', {type: 'array', elementType: 'number'}, 'v');
+  const {findings} = explainMismatch('nope', {
+    type: 'array',
+    elementType: 'number',
+  }, 'v');
   return (
     findings.length === 1 &&
     findings[0].path === 'v' &&
@@ -379,7 +447,10 @@ function testArrayHolesPinpointed() {
   reset();
   const grown = [1, 2, 3];
   grown.length = 5;
-  const {findings} = explainMismatch(grown, {type: 'array', elementType: 'number'}, 'v');
+  const {findings} = explainMismatch(grown, {
+    type: 'array',
+    elementType: 'number',
+  }, 'v');
   return (
     findings.length === 2 &&
     findings[0].path === 'v[3]' &&
@@ -391,7 +462,10 @@ function testArrayBudgetFallback() {
   reset();
   const big = new Array(25).fill(1);
   big[24] = 'x';
-  const {findings} = explainMismatch(big, {type: 'array', elementType: 'number'}, 'v');
+  const {findings} = explainMismatch(big, {
+    type: 'array',
+    elementType: 'number',
+  }, 'v');
   return (
     findings.length === 1 &&
     findings[0].path === 'v' &&
@@ -423,7 +497,11 @@ function testTupleOptionalTail() {
   reset();
   const optional = {
     type: 'tuple',
-    elements: ['number', {type: 'tupleMember', elementType: 'string', optional: true}],
+    elements: ['number', {
+      type: 'tupleMember',
+      elementType: 'string',
+      optional: true,
+    }],
   };
   return explainMismatch([1], optional, 'v').findings.length === 0 &&
     explainMismatch([1, 2], optional, 'v').findings.length === 1;
@@ -433,16 +511,33 @@ function testTupleRestVariadic() {
   reset();
   const rest = {
     type: 'tuple',
-    elements: ['number', {type: 'rest', annotation: {type: 'array', elementType: 'string'}}],
+    elements: ['number', {
+      type: 'rest',
+      annotation: {
+        type: 'array',
+        elementType: 'string',
+      },
+    }],
   };
   const multi = {
     type: 'tuple',
-    elements: [{type: 'rest', annotation: {type: 'array', elementType: 'string'}}, {
+    elements: [{
       type: 'rest',
-      annotation: {type: 'array', elementType: 'number'},
+      annotation: {
+        type: 'array',
+        elementType: 'string',
+      },
+    }, {
+      type: 'rest',
+      annotation: {
+        type: 'array',
+        elementType: 'number',
+      },
     }],
   };
-  const {findings: bad} = explainMismatch(['a', 'b'], rest, 'v');
+  const {
+    findings: bad,
+  } = explainMismatch(['a', 'b'], rest, 'v');
   return (
     explainMismatch([1, 'a', 'b'], rest, 'v').findings.length === 0 &&
     bad.length === 1 &&
@@ -469,18 +564,29 @@ class SnapSubWidget extends SnapWidget {}
 function prepareSnap() {
   reset();
   registerClass(SnapWidget);
-  registerTypedef('SnapWidget', {type: 'object', properties: {w: 'number', run: 'Function'}});
+  registerTypedef('SnapWidget', {
+    type: 'object',
+    properties: {
+      w: 'number',
+      run: 'Function',
+    },
+  });
 }
 function testTaggedSnapshotSkipsMethods() {
   // A tagged snapshot lost its methods in transit: absent methods are not defects.
   prepareSnap();
-  const {findings} = explainMismatch({$type: 'SnapWidget', w: 1}, 'SnapWidget', 'v');
+  const {findings} = explainMismatch({
+    $type: 'SnapWidget',
+    w: 1,
+  }, 'SnapWidget', 'v');
   return findings.length === 0;
 }
 function testUntaggedStaysStrictOnMethods() {
   // Without a tag there is no transport story: missing methods still report.
   prepareSnap();
-  const {findings} = explainMismatch({w: 1}, 'SnapWidget', 'v');
+  const {findings} = explainMismatch({
+    w: 1,
+  }, 'SnapWidget', 'v');
   return (
     findings.length === 1 &&
     findings[0].kind === 'missing' &&
@@ -490,7 +596,10 @@ function testUntaggedStaysStrictOnMethods() {
 function testMismatchedTagStaysStrict() {
   // A tag naming another class does not excuse anything.
   prepareSnap();
-  const {findings} = explainMismatch({$type: 'Nope', w: 1}, 'SnapWidget', 'v');
+  const {findings} = explainMismatch({
+    $type: 'Nope',
+    w: 1,
+  }, 'SnapWidget', 'v');
   return (
     findings.length === 1 &&
     findings[0].kind === 'missing' &&
@@ -501,13 +610,19 @@ function testSubclassTagMatches() {
   // Registered subclasses match nominally through the tag.
   prepareSnap();
   registerClass(SnapSubWidget);
-  const {findings} = explainMismatch({$type: 'SnapSubWidget', w: 1}, 'SnapWidget', 'v');
+  const {findings} = explainMismatch({
+    $type: 'SnapSubWidget',
+    w: 1,
+  }, 'SnapWidget', 'v');
   return findings.length === 0;
 }
 function testTaggedDataStillChecked() {
   // The tag excuses methods, not data: wrong data still pinpoints.
   prepareSnap();
-  const {findings} = explainMismatch({$type: 'SnapWidget', w: 'x'}, 'SnapWidget', 'v');
+  const {findings} = explainMismatch({
+    $type: 'SnapWidget',
+    w: 'x',
+  }, 'SnapWidget', 'v');
   return (
     findings.length === 1 &&
     findings[0].kind === 'wrong' &&
@@ -517,14 +632,21 @@ function testTaggedDataStillChecked() {
 function testDollarTypeNeverExcess() {
   // The envelope tag is metadata: present data excess still reports, `$type` never does.
   prepareSnap();
-  const {findings} = explainMismatch({$type: 'SnapWidget', w: 1, bogus: 2}, 'SnapWidget', 'v');
+  const {findings} = explainMismatch({
+    $type: 'SnapWidget',
+    w: 1,
+    bogus: 2,
+  }, 'SnapWidget', 'v');
   return findings.length === 1 && findings[0].path === 'v.bogus';
 }
 function testNominalTagShortCircuits() {
   // A tag naming an unresolvable class matches nominally instead of
   // failing closed: the class was proven at check time.
   prepareSnap();
-  const {findings} = explainMismatch({$type: 'Ghost', w: 'wrong'}, 'Ghost', 'v');
+  const {findings} = explainMismatch({
+    $type: 'Ghost',
+    w: 'wrong',
+  }, 'Ghost', 'v');
   return findings.length === 0;
 }
 const tests = [

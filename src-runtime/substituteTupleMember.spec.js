@@ -13,12 +13,20 @@ function testTupleMemberElement() {
     '"a"',
     noop,
   )) ===
-    JSON.stringify({type: 'tupleMember', elementType: '"a"', name: 'x'});
+    JSON.stringify({
+      type: 'tupleMember',
+      elementType: '"a"',
+      name: 'x',
+    });
 }
 // We want: a tuple member with no matching key is returned by identity, so
 // unchanged subtrees keep their identity for downstream memos.
 function testTupleMemberUnchanged() {
-  const input = {type: 'tupleMember', elementType: 'number', name: 'x'};
+  const input = {
+    type: 'tupleMember',
+    elementType: 'number',
+    name: 'x',
+  };
   return substituteTupleMember(input, 'K', '"a"', noop) === input;
 }
 // We want: nested tuple member elements substitute recursively, because
@@ -27,7 +35,10 @@ function testTupleMemberNested() {
   return JSON.stringify(substituteTupleMember(
     {
       type: 'tupleMember',
-      elementType: {type: 'array', elementType: 'K'},
+      elementType: {
+        type: 'array',
+        elementType: 'K',
+      },
       name: 'x',
     },
     'K',
@@ -36,7 +47,10 @@ function testTupleMemberNested() {
   )) ===
     JSON.stringify({
       type: 'tupleMember',
-      elementType: {type: 'array', elementType: '"a"'},
+      elementType: {
+        type: 'array',
+        elementType: '"a"',
+      },
       name: 'x',
     });
 }

@@ -20,7 +20,10 @@ function prepare() {
       properties: {
         pos: {
           type: 'union',
-          members: ['string', {type: 'array', elementType: 'number'}],
+          members: ['string', {
+            type: 'array',
+            elementType: 'number',
+          }],
           optional: true,
         },
       },
@@ -52,7 +55,10 @@ function testMultiStaysUnion() {
   const created = createTypeFromIndexedAccess(
     {
       type: 'indexedAccess',
-      index: {type: 'union', members: ['"count"', '"pos"']},
+      index: {
+        type: 'union',
+        members: ['"count"', '"pos"'],
+      },
       object: 'Merged',
     },
     warn,
@@ -120,9 +126,16 @@ function testPresentUnionsPass() {
   prepare();
   const mapped = createType(expandType('{[P in keyof Merged]: Merged[P]}'), warn);
   return (
-    validateType({pos: [1, 2]}, mapped, 'loc', 'name', true, warn, 0) === true &&
-    validateType({pos: 'x', count: 1}, mapped, 'loc', 'name', true, warn, 0) === true &&
-    validateType({pos: true}, mapped, 'loc', 'name', true, warn, 0) === false
+    validateType({
+      pos: [1, 2],
+    }, mapped, 'loc', 'name', true, warn, 0) === true &&
+    validateType({
+      pos: 'x',
+      count: 1,
+    }, mapped, 'loc', 'name', true, warn, 0) === true &&
+    validateType({
+      pos: true,
+    }, mapped, 'loc', 'name', true, warn, 0) === false
   );
 }
 function testTableFallback() {

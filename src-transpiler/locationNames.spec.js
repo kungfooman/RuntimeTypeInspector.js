@@ -7,7 +7,11 @@ import {expandType   } from './expandType.js';
  * @returns {string} Converted code.
  */
 function convert(src) {
-  const asserter = new Asserter({expandType, addHeader: false, filename: 'test.js'});
+  const asserter = new Asserter({
+    expandType,
+    addHeader: false,
+    filename: 'test.js',
+  });
   return asserter.toSource(parse(src, parserOptions));
 }
 const doc2 = '/** @param {number} s - S. @param {number} v - V. */\n';

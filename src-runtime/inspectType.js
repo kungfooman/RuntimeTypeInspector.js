@@ -185,7 +185,12 @@ function inspectType(value, expect, loc, name, critical = true) {
       // console.log("breakpoints", breakpoints);
       debugger;
       breakpoints.delete(key); // trigger only once to quickly get app running again
-      crossContextPostMessage({type: 'rti', action: 'deleteBreakpoint', destination: 'ui', key});
+      crossContextPostMessage({
+        type: 'rti',
+        action: 'deleteBreakpoint',
+        destination: 'ui',
+        key,
+      });
     }
     // Hot-loop repeat: the panel already holds this key's full report, so
     // rebuilding previews, probing clonability and reposting the value buys

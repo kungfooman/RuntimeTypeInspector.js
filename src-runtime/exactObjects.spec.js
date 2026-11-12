@@ -23,7 +23,10 @@ function testOnByDefault() {
   let ret;
   try {
     ret = validateType(
-      {a: 1, extra: true},
+      {
+        a: 1,
+        extra: true,
+      },
       expandType('{a: number}'),
       'loc',
       'name',
@@ -40,7 +43,10 @@ function testOffWhenDisabled() {
   return withExact(
     false,
     () => validateType(
-      {a: 1, extra: true},
+      {
+        a: 1,
+        extra: true,
+      },
       expandType('{a: number}'),
       'loc',
       'name',
@@ -54,7 +60,10 @@ function testExcessFailsWhenExact() {
   return withExact(
     true,
     () => validateType(
-      {a: 1, extra: true},
+      {
+        a: 1,
+        extra: true,
+      },
       expandType('{a: number}'),
       'loc',
       'name',
@@ -68,7 +77,9 @@ function testExactPassesClean() {
   return withExact(
     true,
     () => validateType(
-      {a: 1},
+      {
+        a: 1,
+      },
       expandType('{a: number}'),
       'loc',
       'name',
@@ -82,7 +93,12 @@ function testNestedExcessFails() {
   return withExact(
     true,
     () => validateType(
-      {sub: {a: 1, extra: 2}},
+      {
+        sub: {
+          a: 1,
+          extra: 2,
+        },
+      },
       expandType('{sub: {a: number}}'),
       'loc',
       'name',
@@ -97,7 +113,9 @@ function testUnionPicksCleanMember() {
   return withExact(
     true,
     () => validateType(
-      {a: 1},
+      {
+        a: 1,
+      },
       expandType('{a: number} | {b: string}'),
       'loc',
       'name',
@@ -132,7 +150,10 @@ function testProfilerHintStillIgnored() {
   return withExact(
     true,
     () => validateType(
-      {a: 1, profilerHint: 'x'},
+      {
+        a: 1,
+        profilerHint: 'x',
+      },
       expandType('{a: number}'),
       'loc',
       'name',

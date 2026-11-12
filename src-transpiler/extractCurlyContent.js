@@ -22,6 +22,9 @@ function extractCurlyContent(line) {
     }
   }
   const content = line.substring(firstCurly + 1, k);
-  return {content, nextIndex: k + 1};
+  return {
+    content,
+    nextIndex: k + 1,
+  };
 }
 export {extractCurlyContent};

@@ -14,8 +14,12 @@ function testWrapDelegatesVerdict() {
   validators[key] = validateArray;
   wrapWithWalkTimer(key, recordArrayScan);
   try {
-    const good = validators[key]([1, 2], {elementType: 'number'}, 'T#x', 'items', true, warn, 0);
-    const bad = validators[key]([1, 'a'], {elementType: 'number'}, 'T#x', 'items', true, warn, 0);
+    const good = validators[key]([1, 2], {
+      elementType: 'number',
+    }, 'T#x', 'items', true, warn, 0);
+    const bad = validators[key]([1, 'a'], {
+      elementType: 'number',
+    }, 'T#x', 'items', true, warn, 0);
     return (
       good === true &&
       bad === false &&
@@ -35,11 +39,15 @@ function testInstallTimesTableButNotDirectImport() {
   resetCheckStats();
   installWalkTimers();
   try {
-    const tabled = validators.validateArray([1, 'a'], {elementType: 'number'}, 'T#x', 'items', true, () => {}, 0);
+    const tabled = validators.validateArray([1, 'a'], {
+      elementType: 'number',
+    }, 'T#x', 'items', true, () => {}, 0);
     const rows = getCheckStats();
     const timed = rows.length === 1 && rows[0].loc === 'T#x items' && rows[0].arrayWalks === 1;
     resetCheckStats();
-    const direct = validateArray([1, 'a'], {elementType: 'number'}, 'T#x', 'items', true, () => {}, 0);
+    const direct = validateArray([1, 'a'], {
+      elementType: 'number',
+    }, 'T#x', 'items', true, () => {}, 0);
     const pure = getCheckStats().length === 0;
     return (
       tabled === false &&
@@ -70,8 +78,12 @@ function testDisabledTimerCostsOneBit() {
   validators[key] = validateArray;
   wrapWithWalkTimer(key, recordArrayScan);
   try {
-    const clean = validators[key]([1, 2], {elementType: 'number'}, 'T#x', 'items', true, () => {}, 0);
-    const dirty = validators[key]([1, 'a'], {elementType: 'number'}, 'T#x', 'items', true, () => {}, 0);
+    const clean = validators[key]([1, 2], {
+      elementType: 'number',
+    }, 'T#x', 'items', true, () => {}, 0);
+    const dirty = validators[key]([1, 'a'], {
+      elementType: 'number',
+    }, 'T#x', 'items', true, () => {}, 0);
     return (
       clean === true &&
       dirty === false &&
@@ -95,16 +107,22 @@ function testEnableAfterSkippedInstallWiresTable() {
   validators[key] = core;
   options.checkStats = false;
   resetCheckStats();
-  setOptions({checkStats: true});
+  setOptions({
+    checkStats: true,
+  });
   const waits = [10, 20, 40, 80];
   const poll = () => {
     if (validators[key].walkTimed === true || waits.length === 0) {
       try {
-        const tabled = validators[key]([1, 'a'], {elementType: 'number'}, 'T#x', 'items', true, () => {}, 0);
+        const tabled = validators[key]([1, 'a'], {
+          elementType: 'number',
+        }, 'T#x', 'items', true, () => {}, 0);
         const rows = getCheckStats();
         const timed = tabled === false && rows.length === 1 && rows[0].arrayWalks === 1;
         resetCheckStats();
-        const direct = validateArray([1, 'a'], {elementType: 'number'}, 'T#x', 'items', true, () => {}, 0);
+        const direct = validateArray([1, 'a'], {
+          elementType: 'number',
+        }, 'T#x', 'items', true, () => {}, 0);
         return (
           timed &&
           direct === false &&

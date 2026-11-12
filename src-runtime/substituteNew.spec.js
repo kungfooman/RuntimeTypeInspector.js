@@ -5,13 +5,21 @@ const noop = () => undefined;
 function testNewParamsAndRet() {
   const input = {
     type: 'new',
-    parameters: [{type: 'parameter', paramType: 'K', name: 'x'}],
+    parameters: [{
+      type: 'parameter',
+      paramType: 'K',
+      name: 'x',
+    }],
     ret: 'K',
   };
   return JSON.stringify(substituteNew(input, 'K', '"a"', noop)) ===
     JSON.stringify({
       type: 'new',
-      parameters: [{type: 'parameter', paramType: '"a"', name: 'x'}],
+      parameters: [{
+        type: 'parameter',
+        paramType: '"a"',
+        name: 'x',
+      }],
       ret: '"a"',
     });
 }
@@ -20,7 +28,11 @@ function testNewParamsAndRet() {
 function testNewUnchanged() {
   const input = {
     type: 'new',
-    parameters: [{type: 'parameter', paramType: 'number', name: 'x'}],
+    parameters: [{
+      type: 'parameter',
+      paramType: 'number',
+      name: 'x',
+    }],
     ret: 'boolean',
   };
   return substituteNew(input, 'K', '"a"', noop) === input;
@@ -28,9 +40,23 @@ function testNewUnchanged() {
 // We want: a new type without a return type substitutes only parameters,
 // because there is no ret field to touch.
 function testNewNoRet() {
-  const input = {type: 'new', parameters: [{type: 'parameter', paramType: 'K', name: 'x'}]};
+  const input = {
+    type: 'new',
+    parameters: [{
+      type: 'parameter',
+      paramType: 'K',
+      name: 'x',
+    }],
+  };
   return JSON.stringify(substituteNew(input, 'K', '"a"', noop)) ===
-    JSON.stringify({type: 'new', parameters: [{type: 'parameter', paramType: '"a"', name: 'x'}]});
+    JSON.stringify({
+      type: 'new',
+      parameters: [{
+        type: 'parameter',
+        paramType: '"a"',
+        name: 'x',
+      }],
+    });
 }
 const tests = [
   testNewParamsAndRet,

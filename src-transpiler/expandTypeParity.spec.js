@@ -231,10 +231,14 @@ function testBabelIndexSignatureValidates() {
   // End-to-end: Babel-parsed `{[n: number]: string}` validates canonical
   // numeric keys and rejects non-numeric ones, like the TS-parsed shape.
   const expect = expandTypeBabelTS('{[n: number]: string}');
-  if (!validateType({0: 'a'}, expect, 'test', 'a', true, warn, 0)) {
+  if (!validateType({
+    0: 'a',
+  }, expect, 'test', 'a', true, warn, 0)) {
     return false;
   }
-  if (validateType({a: 'x'}, expect, 'test', 'a', true, warn, 0)) {
+  if (validateType({
+    a: 'x',
+  }, expect, 'test', 'a', true, warn, 0)) {
     return false;
   }
   return true;
@@ -285,20 +289,58 @@ function testMissBecomesAnyParity() {
   // operand) is `any` itself, not a null-union.
   const exact = {
     '?': 'any',
-    'Array<?>': {type: 'array', elementType: 'any'},
-    'Promise<?>': {type: 'promise', elementType: 'any'},
-    'Set<?>': {type: 'set', elementType: 'any'},
-    'Map<?, number>': {type: 'map', key: 'any', val: 'number'},
-    'Record<?, number>': {type: 'record', key: 'any', val: 'number'},
-    'keyof ?': {type: 'keyof', argument: 'any'},
-    '{a: ?}': {type: 'object', properties: {a: 'any'}},
-    'string | ?': {type: 'union', members: ['string', 'any']},
+    'Array<?>': {
+      type: 'array',
+      elementType: 'any',
+    },
+    'Promise<?>': {
+      type: 'promise',
+      elementType: 'any',
+    },
+    'Set<?>': {
+      type: 'set',
+      elementType: 'any',
+    },
+    'Map<?, number>': {
+      type: 'map',
+      key: 'any',
+      val: 'number',
+    },
+    'Record<?, number>': {
+      type: 'record',
+      key: 'any',
+      val: 'number',
+    },
+    'keyof ?': {
+      type: 'keyof',
+      argument: 'any',
+    },
+    '{a: ?}': {
+      type: 'object',
+      properties: {
+        a: 'any',
+      },
+    },
+    'string | ?': {
+      type: 'union',
+      members: ['string', 'any'],
+    },
     '(a: ?) => string': {
       type: 'function',
-      parameters: [{type: 'parameter', paramType: 'any', name: 'a'}],
+      parameters: [{
+        type: 'parameter',
+        paramType: 'any',
+        name: 'a',
+      }],
       ret: 'string',
     },
-    'typeof ?': {type: 'union', members: [{type: 'typeof', argument: 'any'}, 'null']},
+    'typeof ?': {
+      type: 'union',
+      members: [{
+        type: 'typeof',
+        argument: 'any',
+      }, 'null'],
+    },
   };
   for (const [type, want] of Object.entries(exact)) {
     for (const got of [expandType(type), expandTypeDepFree(type)]) {

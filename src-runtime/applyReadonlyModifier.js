@@ -26,7 +26,9 @@ function applyReadonlyModifier(type, modifier) {
         }
       }
       if (current && typeof current === 'object' && current.readonly) {
-        const out = {...current};
+        const out = {
+          ...current,
+        };
         delete out.readonly;
         return out;
       }
@@ -36,7 +38,9 @@ function applyReadonlyModifier(type, modifier) {
       if (!('readonly' in type)) {
         return type;
       }
-      const out = {...type};
+      const out = {
+        ...type,
+      };
       delete out.readonly;
       return out;
     }
@@ -46,8 +50,14 @@ function applyReadonlyModifier(type, modifier) {
     if (type.readonly === true) {
       return type;
     }
-    return {...type, readonly: true};
+    return {
+      ...type,
+      readonly: true,
+    };
   }
-  return {type, readonly: true};
+  return {
+    type,
+    readonly: true,
+  };
 }
 export {applyReadonlyModifier};

@@ -45,7 +45,10 @@ function prepare() {
     'Entity',
     {
       type: 'object',
-      properties: {camera: 'CameraComponent', name: 'string'},
+      properties: {
+        camera: 'CameraComponent',
+        name: 'string',
+      },
     },
   );
 }
@@ -113,16 +116,26 @@ function testAsRemap() {
 // Partial makes every prop optional but still checks present ones.
 function testPartial() {
   prepare();
-  registerTypedef('Box', {type: 'object', properties: {a: 'number', b: 'string'}});
+  registerTypedef('Box', {
+    type: 'object',
+    properties: {
+      a: 'number',
+      b: 'string',
+    },
+  });
   const expect = expandType('Partial<Box>');
   // All props optional now: empty and partial pass, wrong types still fail.
   if (!validateType({}, expect, 'loc', 'name', true, warn, 0)) {
     return false;
   }
-  if (!validateType({a: 1}, expect, 'loc', 'name', true, warn, 0)) {
+  if (!validateType({
+    a: 1,
+  }, expect, 'loc', 'name', true, warn, 0)) {
     return false;
   }
-  if (validateType({a: 'x'}, expect, 'loc', 'name', true, warn, 0)) {
+  if (validateType({
+    a: 'x',
+  }, expect, 'loc', 'name', true, warn, 0)) {
     return false;
   }
   if (validateType(null, expect, 'loc', 'name', true, warn, 0)) {
@@ -133,12 +146,22 @@ function testPartial() {
 // Pick keeps only the named keys, still required.
 function testPick() {
   prepare();
-  registerTypedef('Box', {type: 'object', properties: {a: 'number', b: 'string'}});
+  registerTypedef('Box', {
+    type: 'object',
+    properties: {
+      a: 'number',
+      b: 'string',
+    },
+  });
   const expect = expandType('Pick<Box, "a">');
-  if (!validateType({a: 1}, expect, 'loc', 'name', true, warn, 0)) {
+  if (!validateType({
+    a: 1,
+  }, expect, 'loc', 'name', true, warn, 0)) {
     return false;
   }
-  if (validateType({a: 'x'}, expect, 'loc', 'name', true, warn, 0)) {
+  if (validateType({
+    a: 'x',
+  }, expect, 'loc', 'name', true, warn, 0)) {
     return false;
   }
   // Picked keys stay required.
@@ -150,12 +173,22 @@ function testPick() {
 // Omit drops the named keys and keeps the rest required.
 function testOmit() {
   prepare();
-  registerTypedef('Box', {type: 'object', properties: {a: 'number', b: 'string'}});
+  registerTypedef('Box', {
+    type: 'object',
+    properties: {
+      a: 'number',
+      b: 'string',
+    },
+  });
   const expect = expandType('Omit<Box, "a">');
-  if (!validateType({b: 'x'}, expect, 'loc', 'name', true, warn, 0)) {
+  if (!validateType({
+    b: 'x',
+  }, expect, 'loc', 'name', true, warn, 0)) {
     return false;
   }
-  if (validateType({b: 1}, expect, 'loc', 'name', true, warn, 0)) {
+  if (validateType({
+    b: 1,
+  }, expect, 'loc', 'name', true, warn, 0)) {
     return false;
   }
   // Remaining keys stay required.
@@ -230,11 +263,20 @@ function testGenericTypedefInstantiation() {
   // Generic references instantiate by substituting arguments for the
   // typedef's template parameters (harvested from `@template` lines).
   prepare();
-  registerTypedef('Box', {type: 'object', properties: {content: 'T'}}, ['T']);
-  if (!validateType({content: 1}, expandType('Box<number>'), 'loc', 'name', true, warn, 0)) {
+  registerTypedef('Box', {
+    type: 'object',
+    properties: {
+      content: 'T',
+    },
+  }, ['T']);
+  if (!validateType({
+    content: 1,
+  }, expandType('Box<number>'), 'loc', 'name', true, warn, 0)) {
     return false;
   }
-  if (validateType({content: 'x'}, expandType('Box<number>'), 'loc', 'name', true, warn, 0)) {
+  if (validateType({
+    content: 'x',
+  }, expandType('Box<number>'), 'loc', 'name', true, warn, 0)) {
     return false;
   }
   return true;
@@ -255,14 +297,22 @@ function prepareCameraTower() {
     'Color',
     {
       type: 'object',
-      properties: {r: 'number', g: 'number', b: 'number', a: 'number'},
+      properties: {
+        r: 'number',
+        g: 'number',
+        b: 'number',
+        a: 'number',
+      },
     },
   );
   registerTypedef(
     'CamComponent',
     {
       type: 'object',
-      properties: {clearColor: 'Color', fov: 'number'},
+      properties: {
+        clearColor: 'Color',
+        fov: 'number',
+      },
     },
   );
   registerTypedef(
@@ -270,9 +320,20 @@ function prepareCameraTower() {
     {
       type: 'object',
       properties: {
-        camera: {type: 'union', members: ['CamComponent', 'undefined'], readonly: true},
-        store: {type: 'record', key: 'string', val: 'Component'},
-        tags: {type: 'array', elementType: 'string'},
+        camera: {
+          type: 'union',
+          members: ['CamComponent', 'undefined'],
+          readonly: true,
+        },
+        store: {
+          type: 'record',
+          key: 'string',
+          val: 'Component',
+        },
+        tags: {
+          type: 'array',
+          elementType: 'string',
+        },
         name: 'string',
         addComponent: 'Function',
       },
@@ -291,10 +352,16 @@ function prepareCameraTower() {
         camera: {
           type: 'object',
           properties: {
-            calculateProjection: {type: 'Function', optional: true},
+            calculateProjection: {
+              type: 'Function',
+              optional: true,
+            },
             clearColor: {
               type: 'union',
-              members: ['Color', {type: 'array', elementType: 'number'}],
+              members: ['Color', {
+                type: 'array',
+                elementType: 'number',
+              }],
               optional: true,
             },
           },
@@ -338,10 +405,25 @@ function testNonNullableIndexedAccessKeys() {
 function testConcreteShapesDoNotExtendClass() {
   prepareCameraTower();
   const shapes = [
-    {type: 'record', key: 'string', val: 'Component'},
-    {type: 'array', elementType: 'string'},
-    {type: 'object', properties: {a: 'number'}},
-    {type: 'function', parameters: []},
+    {
+      type: 'record',
+      key: 'string',
+      val: 'Component',
+    },
+    {
+      type: 'array',
+      elementType: 'string',
+    },
+    {
+      type: 'object',
+      properties: {
+        a: 'number',
+      },
+    },
+    {
+      type: 'function',
+      parameters: [],
+    },
   ];
   for (const shape of shapes) {
     if (extendsCheck(shape, 'Component') !== false) {
@@ -383,16 +465,23 @@ function testComponentMapDropsComplexMembers() {
 function testNestedPartialPickValidates() {
   prepareCameraTower();
   const expect = expandType('CamOptionsOf<CamComponent>');
-  if (!validateType({clearColor: new Color(), fov: 1}, expect, 'loc', 'name', true, warn, 0)) {
+  if (!validateType({
+    clearColor: new Color(),
+    fov: 1,
+  }, expect, 'loc', 'name', true, warn, 0)) {
     return false;
   }
   if (!validateType({}, expect, 'loc', 'name', true, warn, 0)) {
     return false;
   }
-  if (validateType({clearColor: 'x'}, expect, 'loc', 'name', true, warn, 0)) {
+  if (validateType({
+    clearColor: 'x',
+  }, expect, 'loc', 'name', true, warn, 0)) {
     return false;
   }
-  if (validateType({fov: 'x'}, expect, 'loc', 'name', true, warn, 0)) {
+  if (validateType({
+    fov: 'x',
+  }, expect, 'loc', 'name', true, warn, 0)) {
     return false;
   }
   return true;
@@ -411,9 +500,16 @@ function testMergedTowerEndToEnd() {
   }
   const expect = expandType('CamOptions<"camera">');
   const passing = [
-    {clearColor: new Color()},
-    {clearColor: [0.5, 0.6, 0.9, 1], fov: 60},
-    {fov: 60},
+    {
+      clearColor: new Color(),
+    },
+    {
+      clearColor: [0.5, 0.6, 0.9, 1],
+      fov: 60,
+    },
+    {
+      fov: 60,
+    },
     {},
   ];
   for (const value of passing) {
@@ -422,9 +518,15 @@ function testMergedTowerEndToEnd() {
     }
   }
   const failing = [
-    {clearColor: 'x'},
-    {fov: 'x'},
-    {nope: 1},
+    {
+      clearColor: 'x',
+    },
+    {
+      fov: 'x',
+    },
+    {
+      nope: 1,
+    },
   ];
   for (const value of failing) {
     if (validateType(value, expect, 'loc', 'data', true, warn, 0)) {
@@ -444,7 +546,9 @@ function testMergedIntersectionWholeExcess() {
   prepareCameraTower();
   const expect = expandType('CamMerged<"camera">');
   const passing = [
-    {clearColor: [0.5, 0.6, 0.9, 1]},
+    {
+      clearColor: [0.5, 0.6, 0.9, 1],
+    },
     {
       clearColor: new Color(),
       calculateProjection: () => {},
@@ -455,7 +559,11 @@ function testMergedIntersectionWholeExcess() {
       return false;
     }
   }
-  const failing = [{nope: 1}, {clearColor: 'x'}];
+  const failing = [{
+    nope: 1,
+  }, {
+    clearColor: 'x',
+  }];
   for (const value of failing) {
     if (validateType(value, expect, 'loc', 'data', true, warn, 0)) {
       return false;

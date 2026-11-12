@@ -39,7 +39,11 @@ function tsOverloadTag(tag) {
     const tail = signature.parameters[index]?.getText?.() ?? '';
     const inner = '@param ' + tail.split('@param').slice(1).join('@param');
     const nested = tsDottedChildren(parameter.name, inner, 2);
-    params.push({...parameter, type: '', merged: true}, ...nested);
+    params.push({
+      ...parameter,
+      type: '',
+      merged: true,
+    }, ...nested);
   }
   let returns = '';
   if (signature.type && signature.type.typeExpression) {

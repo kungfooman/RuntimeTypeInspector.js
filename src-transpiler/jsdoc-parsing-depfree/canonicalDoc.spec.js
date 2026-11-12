@@ -4,16 +4,38 @@ import {canonicalDocRoundTrip} from './canonicalDocRoundTrip.js';
 // exactly this, so the round trip is pinned here, not per reader.
 function testRoundTripPreservesDocument() {
   const doc = {
-    templates: [{name: 'K', constraint: '', default: ''}],
+    templates: [{
+      name: 'K',
+      constraint: '',
+      default: '',
+    }],
     overloads: [{
-      params: [{name: 'x', bracketed: false, type: 'number', dropped: false, merged: false}],
+      params: [{
+        name: 'x',
+        bracketed: false,
+        type: 'number',
+        dropped: false,
+        merged: false,
+      }],
       returns: 'string',
     }],
-    params: [{name: 'options', bracketed: false, type: '', dropped: false, merged: true}],
+    params: [{
+      name: 'options',
+      bracketed: false,
+      type: '',
+      dropped: false,
+      merged: true,
+    }],
     returns: '',
     callbacks: [{
       name: 'Swap',
-      params: [{name: 'state', bracketed: false, type: 'Object', dropped: false, merged: false}],
+      params: [{
+        name: 'state',
+        bracketed: false,
+        type: 'Object',
+        dropped: false,
+        merged: false,
+      }],
     }],
   };
   return canonicalDocRoundTrip(doc);

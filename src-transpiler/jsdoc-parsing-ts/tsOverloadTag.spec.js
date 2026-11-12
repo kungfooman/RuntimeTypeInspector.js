@@ -4,11 +4,19 @@ function testSignatureLowersParamsAndReturn() {
   const tag = {
     typeExpression: {
       parameters: [{
-        name: {getText: () => 'text'},
+        name: {
+          getText: () => 'text',
+        },
         isBracketed: false,
-        typeExpression: {getText: () => '{string}'},
+        typeExpression: {
+          getText: () => '{string}',
+        },
       }],
-      type: {typeExpression: {getText: () => '{string}'}},
+      type: {
+        typeExpression: {
+          getText: () => '{string}',
+        },
+      },
     },
   };
   const actual = tsOverloadTag(tag);
@@ -23,9 +31,13 @@ function testMissingReturnLowersEmpty() {
   const tag = {
     typeExpression: {
       parameters: [{
-        name: {getText: () => 'x'},
+        name: {
+          getText: () => 'x',
+        },
         isBracketed: true,
-        typeExpression: {getText: () => '{number}'},
+        typeExpression: {
+          getText: () => '{number}',
+        },
       }],
       type: undefined,
     },
@@ -50,19 +62,31 @@ function testDottedContainerUnmerges() {
     typeExpression: {
       parameters: [
         {
-          name: {getText: () => 'type'},
+          name: {
+            getText: () => 'type',
+          },
           isBracketed: false,
-          typeExpression: {getText: () => '{new (...args: any[]) => T}'},
+          typeExpression: {
+            getText: () => '{new (...args: any[]) => T}',
+          },
           getText: () => '@param {new (...args: any[]) => T} type\n',
         },
         {
-          name: {getText: () => 'args'},
+          name: {
+            getText: () => 'args',
+          },
           isBracketed: true,
-          typeExpression: {getText: () => '@param {boolean} [args.enabled]\n'},
+          typeExpression: {
+            getText: () => '@param {boolean} [args.enabled]\n',
+          },
           getText: () => tail,
         },
       ],
-      type: {typeExpression: {getText: () => '{T|null}'}},
+      type: {
+        typeExpression: {
+          getText: () => '{T|null}',
+        },
+      },
     },
   };
   const actual = tsOverloadTag(tag);
@@ -83,9 +107,13 @@ function testSecondSectionKeepsOwnDottedRows() {
     typeExpression: {
       parameters: [
         {
-          name: {getText: () => 'args'},
+          name: {
+            getText: () => 'args',
+          },
           isBracketed: true,
-          typeExpression: {getText: () => '@param {string} [args.a]\n'},
+          typeExpression: {
+            getText: () => '@param {string} [args.a]\n',
+          },
           getText: () => '@param {object} [args]\n@param {string} [args.a]\n',
         },
       ],
@@ -96,9 +124,13 @@ function testSecondSectionKeepsOwnDottedRows() {
     typeExpression: {
       parameters: [
         {
-          name: {getText: () => 'args'},
+          name: {
+            getText: () => 'args',
+          },
           isBracketed: true,
-          typeExpression: {getText: () => '@param {number} [args.b]\n'},
+          typeExpression: {
+            getText: () => '@param {number} [args.b]\n',
+          },
           getText: () => '@param {object} [args]\n@param {number} [args.b]\n',
         },
       ],

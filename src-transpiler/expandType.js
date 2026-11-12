@@ -150,13 +150,18 @@ function toSourceTS(node) {
   // console.log({typeArguments, typeName, kind_, node});
   switch (node.kind) {
     case BigIntKeyword:
-      return {type: 'bigint'};
+      return {
+        type: 'bigint',
+      };
     case BigIntLiteral:
       if (!ts.isBigIntLiteral(node)) {
         throw Error("Impossible");
       }
       const literal = node.text.slice(0, -1); // Remove the "n"
-      return {type: 'bigint', literal};
+      return {
+        type: 'bigint',
+        literal,
+      };
     case ConditionalType:
       if (!ts.isConditionalTypeNode(node)) {
         throw Error("Impossible");
@@ -175,14 +180,24 @@ function toSourceTS(node) {
       ) {
         return undefined;
       }
-      return ({type: 'condition', checkType, extendsType, trueType, falseType});
+      return ({
+        type: 'condition',
+        checkType,
+        extendsType,
+        trueType,
+        falseType,
+      });
     case ConstructorType: {
       if (!ts.isConstructorTypeNode(node)) {
         throw Error("Impossible");
       }
       const parameters = node.parameters.map(toSourceTSOrAny);
       const ret = toSourceTS(node.type) ?? 'any';
-      return ({type: 'new', parameters, ret});
+      return ({
+        type: 'new',
+        parameters,
+        ret,
+      });
     }
     case FunctionType: {
       if (!ts.isFunctionTypeNode(node)) {
@@ -190,7 +205,11 @@ function toSourceTS(node) {
       }
       const parameters = node.parameters.map(toSourceTSOrAny);
       const ret = toSourceTS(node.type) ?? 'any';
-      return ({type: 'function', parameters, ret});
+      return ({
+        type: 'function',
+        parameters,
+        ret,
+      });
     }
     case JSDocFunctionType: {
       if (!ts.isJSDocFunctionType(node)) {
@@ -198,7 +217,11 @@ function toSourceTS(node) {
       }
       const parameters = node.parameters.map(toSourceTSOrAny);
       const ret = node.type ? toSourceTS(node.type) ?? 'any' : 'any';
-      return ({type: 'function', parameters, ret});
+      return ({
+        type: 'function',
+        parameters,
+        ret,
+      });
     }
     case IndexedAccessType:
       if (!ts.isIndexedAccessTypeNode(node)) {
@@ -208,13 +231,20 @@ function toSourceTS(node) {
       // `any` there too): the shape stays validatable, never corrupt.
       const index = toSourceTS(node.indexType) ?? 'any';
       const object = toSourceTS(node.objectType) ?? 'any';
-      return ({type: 'indexedAccess', index, object});
+      return ({
+        type: 'indexedAccess',
+        index,
+        object,
+      });
     case RestType:
       if (!ts.isRestTypeNode(node)) {
         throw Error("Impossible");
       }
       const annotation = toSourceTS(node.type) ?? 'any';
-      return ({type: 'rest', annotation});
+      return ({
+        type: 'rest',
+        annotation,
+      });
     case JSDocNullableType: {
       // Bare `?` (missing or empty operand) is just unknown: `any`,
       // matching tsc. A real operand wraps in a null-union as usual.
@@ -224,7 +254,10 @@ function toSourceTS(node) {
         return 'any';
       }
       const t = toSourceTSOrAny(node.type);
-      return ({type: 'union', members: [t, 'null']});
+      return ({
+        type: 'union',
+        members: [t, 'null'],
+      });
     }
     case MappedType: {
       if (!ts.isMappedTypeNode(node)) {
@@ -243,7 +276,12 @@ function toSourceTS(node) {
           return 'transpiler-error';
         }
         /** @type {ExpandMappingNode} */
-        const out = {type: 'mapping', iterable, element, result};
+        const out = {
+          type: 'mapping',
+          iterable,
+          element,
+          result,
+        };
         if (node.nameType) {
           // `as` key remapping, e.g. {[K in keyof T as K extends string ? K : never]: ...}
           out.nameType = toSourceTS(node.nameType) ?? 'any';
@@ -275,9 +313,16 @@ function toSourceTS(node) {
       const paramType = node.type ? toSourceTS(node.type) ?? 'any' : 'any';
       const name = toSourceTS(node.name) ?? 'arg';
       /** @type {ExpandParameterNode} */
-      const ret = {type: 'parameter', paramType, name};
+      const ret = {
+        type: 'parameter',
+        paramType,
+        name,
+      };
       if (node.dotDotDotToken) {
-        return ({type: 'array', elementType: ret});
+        return ({
+          type: 'array',
+          elementType: ret,
+        });
       }
       return ret;
     case TypeQuery:
@@ -289,14 +334,20 @@ function toSourceTS(node) {
       if (typeof argument === 'string' && !requiredTypeofs[argument]) {
         requiredTypeofs[argument] = 'missing';
       }
-      return ({type: 'typeof', argument});
+      return ({
+        type: 'typeof',
+        argument,
+      });
     case TypeOperator:
       if (!ts.isTypeOperatorNode(node)) {
         throw Error("Impossible");
       }
       if (node.operator === KeyOfKeyword) {
         const argument = toSourceTS(node.type) ?? 'any';
-        return ({type: 'keyof', argument});
+        return ({
+          type: 'keyof',
+          argument,
+        });
       }
       if (node.operator === ReadonlyKeyword) {
         // readonly erased at runtime, same shape as the inner type.
@@ -321,22 +372,42 @@ function toSourceTS(node) {
       ) {
         const key = toSourceTS(firstArg) ?? 'any';
         const val = toSourceTS(secondArg) ?? 'any';
-        return ({type: 'record', key, val});
+        return ({
+          type: 'record',
+          key,
+          val,
+        });
       } else if (typeName.text === 'Object' && (!typeArguments || typeArguments?.length === 0)) {
-        return {type: 'object', properties: {}};
+        return {
+          type: 'object',
+          properties: {},
+        };
       } else if (typeName.text === 'Map' && typeArguments?.length === 2) {
         const key = toSourceTS(typeArguments[0]) ?? 'any';
         const val = toSourceTS(typeArguments[1]) ?? 'any';
-        return ({type: 'map', key, val});
+        return ({
+          type: 'map',
+          key,
+          val,
+        });
       } else if (typeName.text === 'Array' && typeArguments?.length === 1) {
         const elementType = toSourceTS(typeArguments[0]) ?? 'any';
-        return ({type: 'array', elementType});
+        return ({
+          type: 'array',
+          elementType,
+        });
       } else if (typeName.text === 'Promise' && typeArguments?.length === 1) {
         const elementType = toSourceTS(typeArguments[0]) ?? 'any';
-        return ({type: 'promise', elementType});
+        return ({
+          type: 'promise',
+          elementType,
+        });
       } else if (typeName.text === 'Set' && typeArguments?.length === 1) {
         const elementType = toSourceTS(typeArguments[0]) ?? 'any';
-        return ({type: 'set', elementType});
+        return ({
+          type: 'set',
+          elementType,
+        });
       }
       if (!typeArguments) {
         // Empty names arise from degenerate `?` operands (e.g. `string | ?`
@@ -348,7 +419,11 @@ function toSourceTS(node) {
       // Qualified names (e.g. `some.name.space.Array<T>`) have no `.text`.
       const name = typeName.text ?? typeName.getText();
       const args = typeArguments.map(toSourceTSOrAny);
-      return ({type: 'reference', name, args});
+      return ({
+        type: 'reference',
+        name,
+        args,
+      });
     }
     case NamedTupleMember: {
       if (!ts.isNamedTupleMember(node)) {
@@ -364,7 +439,11 @@ function toSourceTS(node) {
       // Preserve label for docs: [a: string, b: number] -> keep name
       // Use tupleMember shape so stringify can round-trip
       /** @type {ExpandTupleMemberNode} */
-      const mem = {type: 'tupleMember', name: nName, elementType: nType};
+      const mem = {
+        type: 'tupleMember',
+        name: nName,
+        elementType: nType,
+      };
       if (opt) {
         mem.optional = true;
       }
@@ -378,7 +457,10 @@ function toSourceTS(node) {
         throw Error("Impossible");
       }
       const members = node.types.map(toSourceTSOrAny);
-      return ({type: 'intersection', members});
+      return ({
+        type: 'intersection',
+        members,
+      });
     }
     case TupleType:
       if (!ts.isTupleTypeNode(node)) {
@@ -395,12 +477,20 @@ function toSourceTS(node) {
         (el) => {
           if (ts.isOptionalTypeNode(el)) {
             const inner = toSourceTS(el.type) ?? 'any';
-            return {type: 'tupleMember', name: '', elementType: inner, optional: true};
+            return {
+              type: 'tupleMember',
+              name: '',
+              elementType: inner,
+              optional: true,
+            };
           }
           return toSourceTS(el) ?? 'any';
         },
       );
-      return ({type: 'tuple', elements});
+      return ({
+        type: 'tuple',
+        elements,
+      });
     case TemplateLiteralType: {
       if (!ts.isTemplateLiteralTypeNode(node)) {
         throw Error("Impossible");
@@ -416,17 +506,28 @@ function toSourceTS(node) {
         types.push(spanType);
         quasis.push(span.literal.text);
       }
-      return ({type: 'templateLiteral', quasis, types});
+      return ({
+        type: 'templateLiteral',
+        quasis,
+        types,
+      });
     }
     case NoSubstitutionTemplateLiteral:
       // A template literal type without interpolations, e.g. `id`
-      return {type: 'templateLiteral', quasis: [node.text], types: []};
+      return {
+        type: 'templateLiteral',
+        quasis: [node.text],
+        types: [],
+      };
     case UnionType:
       if (!ts.isUnionTypeNode(node)) {
         throw Error("Impossible");
       }
       const members = node.types.map(toSourceTSOrAny);
-      return ({type: 'union', members});
+      return ({
+        type: 'union',
+        members,
+      });
     case TypeLiteral: {
       if (!ts.isTypeLiteralNode(node)) {
         throw Error("Impossible");
@@ -457,7 +558,11 @@ function toSourceTS(node) {
             if (isExpandedObject(type)) {
               type.optional = true;
             } else {
-              type = {type: 'atom', atomType: type, optional: true};
+              type = {
+                type: 'atom',
+                atomType: type,
+                optional: true,
+              };
             }
           }
           if (Array.isArray(member.modifiers) && member.modifiers.some(isReadonlyKeyword)) {
@@ -465,7 +570,11 @@ function toSourceTS(node) {
             if (isExpandedObject(type)) {
               type.readonly = true;
             } else {
-              type = {type: 'atom', atomType: type, readonly: true};
+              type = {
+                type: 'atom',
+                atomType: type,
+                readonly: true,
+              };
             }
           }
           if (typeof name === 'string') {
@@ -479,7 +588,9 @@ function toSourceTS(node) {
         visit(member);
       }
       /** @type {ExpandObjectNode} */
-      const ret = {type: 'object'};
+      const ret = {
+        type: 'object',
+      };
       if (Object.keys(properties).length) {
         ret.properties = properties;
       }
@@ -502,7 +613,11 @@ function toSourceTS(node) {
       //   {readonly [n: number]: string, length: number}
       const indexType = toSourceTS(node.type) ?? 'any';
       const indexParameters = node.parameters.map(toSourceTSOrAny);
-      return ({type: 'indexSignature', indexType, indexParameters});
+      return ({
+        type: 'indexSignature',
+        indexType,
+        indexParameters,
+      });
     case Identifier:
       if (!ts.isIdentifier(node)) {
         throw Error("Impossible");
@@ -513,7 +628,10 @@ function toSourceTS(node) {
         throw Error("Impossible");
       }
       const elementType = toSourceTS(node.elementType) ?? 'any';
-      return ({type: 'array', elementType});
+      return ({
+        type: 'array',
+        elementType,
+      });
     }
     case LiteralType:
       if (!ts.isLiteralTypeNode(node)) {
@@ -542,7 +660,10 @@ function toSourceTS(node) {
     case NumericLiteral:
       return Number(node.getText());
     case ObjectKeyword:
-      return {type: 'object', properties: {}};
+      return {
+        type: 'object',
+        properties: {},
+      };
     case ParenthesizedType:
       if (!ts.isParenthesizedTypeNode(node)) {
         throw Error("Impossible");

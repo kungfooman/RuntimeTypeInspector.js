@@ -16,6 +16,9 @@ function substituteReference(type, search, replace, warn) {
     return type;
   }
   const next = substitutes.substituteList(args, search, replace, warn);
-  return next === args ? type : {...type, args: next};
+  return next === args ? type : {
+    ...type,
+    args: next,
+  };
 }
 export {substituteReference};

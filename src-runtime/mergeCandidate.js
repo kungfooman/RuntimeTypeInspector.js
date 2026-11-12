@@ -63,7 +63,10 @@ function mergeCandidate(templates, state, key, literal, value, loc, name, probin
     // values the constraint accepts, e.g. `hD('a', 'b')` passes like tsc.
     if (!probing || recurse(value, constraint, loc, name, true, warn, 0)) {
       members.push(literal);
-      templates[key] = members.length === 1 ? members[0] : {type: 'union', members};
+      templates[key] = members.length === 1 ? members[0] : {
+        type: 'union',
+        members,
+      };
     }
   }
   // Undecidable: keep the pin (fail-closed precision).

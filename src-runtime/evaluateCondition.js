@@ -131,7 +131,10 @@ function resolveForExtends(type, warn, depth = 0) {
       if (kept.length === 1) {
         return resolveForExtends(kept[0], warn, depth + 1);
       }
-      return {type: 'union', members: kept};
+      return {
+        type: 'union',
+        members: kept,
+      };
     }
     return inner;
   }

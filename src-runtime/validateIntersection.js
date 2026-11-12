@@ -39,7 +39,10 @@ function validateIntersection(value, expect, loc, name, critical, warn, depth) {
           for (const key of Object.keys(other.properties)) {
             if (!(key in shape.properties)) {
               const prop = other.properties[key];
-              extra[key] = prop && typeof prop === 'object' ? {...prop, optional: true} : {
+              extra[key] = prop && typeof prop === 'object' ? {
+                ...prop,
+                optional: true,
+              } : {
                 type: prop,
                 optional: true,
               };
@@ -49,7 +52,13 @@ function validateIntersection(value, expect, loc, name, critical, warn, depth) {
         if (!Object.keys(extra).length) {
           return shape;
         }
-        return {...shape, properties: {...shape.properties, ...extra}};
+        return {
+          ...shape,
+          properties: {
+            ...shape.properties,
+            ...extra,
+          },
+        };
       });
     }
   }

@@ -13,19 +13,31 @@ function testDescriptorsType() {
     '"a"',
     noop,
   )) ===
-    JSON.stringify([{type: 'parameter', paramType: '"a"', name: 'x'}]);
+    JSON.stringify([{
+      type: 'parameter',
+      paramType: '"a"',
+      name: 'x',
+    }]);
 }
 // We want: a descriptor list with no matching key is returned by identity,
 // so unchanged subtrees keep their identity for downstream memos.
 function testDescriptorsUnchanged() {
-  const input = [{type: 'parameter', paramType: 'number', name: 'x'}];
+  const input = [{
+    type: 'parameter',
+    paramType: 'number',
+    name: 'x',
+  }];
   return substituteDescriptors(input, 'K', '"a"', noop) === input;
 }
 // We want: multiple descriptors each substitute independently, because each
 // parameter is a separate type position.
 function testDescriptorsMultiple() {
   return JSON.stringify(substituteDescriptors(
-    [{type: 'parameter', paramType: 'K', name: 'a'}, {
+    [{
+      type: 'parameter',
+      paramType: 'K',
+      name: 'a',
+    }, {
       type: 'parameter',
       paramType: 'K',
       name: 'b',
@@ -34,7 +46,11 @@ function testDescriptorsMultiple() {
     '"a"',
     noop,
   )) ===
-    JSON.stringify([{type: 'parameter', paramType: '"a"', name: 'a'}, {
+    JSON.stringify([{
+      type: 'parameter',
+      paramType: '"a"',
+      name: 'a',
+    }, {
       type: 'parameter',
       paramType: '"a"',
       name: 'b',
@@ -43,7 +59,9 @@ function testDescriptorsMultiple() {
 // We want: a descriptor without a .paramType field is left untouched, because
 // there is no type position to substitute.
 function testDescriptorsNoType() {
-  const input = [{name: 'x'}];
+  const input = [{
+    name: 'x',
+  }];
   return substituteDescriptors(input, 'K', '"a"', noop) === input;
 }
 // We want: a non-array input is returned as-is, because the handler only

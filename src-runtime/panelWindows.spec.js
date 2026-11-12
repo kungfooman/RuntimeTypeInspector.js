@@ -126,7 +126,14 @@ class FakeNode {
     return current.connectedRoot === true;
   }
   getBoundingClientRect() {
-    return {left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0};
+    return {
+      left: 0,
+      top: 0,
+      right: 0,
+      bottom: 0,
+      width: 0,
+      height: 0,
+    };
   }
 }
 class FakeElement extends FakeNode {
@@ -258,7 +265,10 @@ function installFakeBrowser() {
       return Object.keys(store).length;
     },
   };
-  globalThis.location = {hash: '', href: 'http://localhost/'};
+  globalThis.location = {
+    hash: '',
+    href: 'http://localhost/',
+  };
   return () => {
     for (const key of Object.keys(saved)) {
       if (saved[key] === undefined) {
@@ -273,8 +283,15 @@ function stubWarn(loc, name) {
   return {
     loc,
     name,
-    expect: {type: 'object', properties: {a: 'number'}},
-    value: {a: 1},
+    expect: {
+      type: 'object',
+      properties: {
+        a: 'number',
+      },
+    },
+    value: {
+      a: 1,
+    },
     msg: `${loc} ${name} broke`,
     hits: 1,
     detailStrings: ['boom'],
@@ -461,20 +478,36 @@ function testPanelMaximizeRestore() {
       return false;
     }
     const {divAll} = TypePanel;
-    panel.titlebar.fire('mousedown', {clientX: 100, clientY: 100, target: panel.titlebar});
-    globalThis.document.fire('mousemove', {clientX: 500, clientY: 500});
+    panel.titlebar.fire('mousedown', {
+      clientX: 100,
+      clientY: 100,
+      target: panel.titlebar,
+    });
+    globalThis.document.fire('mousemove', {
+      clientX: 500,
+      clientY: 500,
+    });
     globalThis.document.fire('mouseup', {});
     if (divAll.style.left !== '8px' || divAll.style.top !== '8px') {
       return false;
     }
     const grip = panel.div.children.find((_) => _?.dataset?.dir === 'e');
-    grip.fire('mousedown', {clientX: 100, clientY: 100, target: grip});
-    globalThis.document.fire('mousemove', {clientX: 500, clientY: 100});
+    grip.fire('mousedown', {
+      clientX: 100,
+      clientY: 100,
+      target: grip,
+    });
+    globalThis.document.fire('mousemove', {
+      clientX: 500,
+      clientY: 100,
+    });
     globalThis.document.fire('mouseup', {});
     if (!String(panel.div.style.width).includes('calc')) {
       return false;
     }
-    panel.titlebar.fire('dblclick', {target: panel.buttonMaximize});
+    panel.titlebar.fire('dblclick', {
+      target: panel.buttonMaximize,
+    });
     if (panel.div.dataset.maximized !== 'true') {
       return false;
     }
@@ -482,7 +515,9 @@ function testPanelMaximizeRestore() {
     if (globalThis.localStorage.getItem('rti-panel-geometry') !== null) {
       return false;
     }
-    panel.titlebar.fire('dblclick', {target: panel.titlebar});
+    panel.titlebar.fire('dblclick', {
+      target: panel.titlebar,
+    });
     if (panel.div.dataset.maximized === 'true' || panel.buttonMaximize.textContent !== '□') {
       return false;
     }
@@ -517,8 +552,15 @@ function testCompareMaximizeRestore() {
     if (!String(win.el.style.width).includes('calc')) {
       return false;
     }
-    win.titlebar.fire('mousedown', {clientX: 100, clientY: 100, target: win.titlebar});
-    globalThis.document.fire('mousemove', {clientX: 500, clientY: 500});
+    win.titlebar.fire('mousedown', {
+      clientX: 100,
+      clientY: 100,
+      target: win.titlebar,
+    });
+    globalThis.document.fire('mousemove', {
+      clientX: 500,
+      clientY: 500,
+    });
     globalThis.document.fire('mouseup', {});
     if (win.el.style.left !== '8px' || win.el.style.top !== '8px') {
       return false;
@@ -625,7 +667,14 @@ function testActualMapFailureHighlighted() {
 function testActualNestedFailureExpands() {
   return withPanel(() => {
     const node = actualFor(
-      {a: {b: 1}, z: {y: 2}},
+      {
+        a: {
+          b: 1,
+        },
+        z: {
+          y: 2,
+        },
+      },
       expandType('{a: {b: string}, z: {y: number}}'),
       'config',
     );
@@ -664,7 +713,10 @@ function testActualFailuresRevealPastBatch() {
       value[`k${i}`] = i;
     }
     value.k29 = 'x';
-    const node = actualFor(value, {type: 'object', properties}, 'v');
+    const node = actualFor(value, {
+      type: 'object',
+      properties,
+    }, 'v');
     if (!node || !textOf(node).includes('k29')) {
       return false;
     }
@@ -679,7 +731,11 @@ function testActualFailuresRevealPastBatch() {
  */
 function testActualSnapshotMapHighlighted() {
   return withPanel(() => {
-    const snapshot = {$type: 'Map', size: 1, entries: [['apiKey', null]]};
+    const snapshot = {
+      $type: 'Map',
+      size: 1,
+      entries: [['apiKey', null]],
+    };
     const node = renderActualValue(snapshot, 'config', new Set(["config.get('apiKey')"]));
     if (!node || textOf(node).includes('$type')) {
       return false;
@@ -882,7 +938,9 @@ function testTaskbarActiveFollowsFront() {
       return false;
     }
     // Clicking the covered window flips the bright entry to it.
-    globalThis.document.fire('mousedown', {target: panel.compareWins.get('L1-a').el.children[0]});
+    globalThis.document.fire('mousedown', {
+      target: panel.compareWins.get('L1-a').el.children[0],
+    });
     const labels = panel.taskbarWins.children
       .filter((_) => _.className.includes('rti-taskbar-active'))
       .map((_) => _.textContent);
@@ -904,11 +962,15 @@ function testEscClosesTopmost() {
   return withPanel((panel) => {
     panel.openComparator(stubWarn('L1', 'a'));
     panel.openComparator(stubWarn('L2', 'b'));
-    globalThis.document.fire('keydown', {key: 'Escape'});
+    globalThis.document.fire('keydown', {
+      key: 'Escape',
+    });
     if (panel.compareWins.size !== 1 || panel.compareWins.has('L2-b')) {
       return false;
     }
-    globalThis.document.fire('keydown', {key: 'Escape'});
+    globalThis.document.fire('keydown', {
+      key: 'Escape',
+    });
     return panel.compareWins.size === 0;
   });
 }
@@ -943,12 +1005,24 @@ function testStaleInstanceIgnoresEvents() {
     }
     // A leaked pre-singleton instance must not process messages anymore.
     const stale = Object.create(TypePanel.prototype);
-    stale.handleEvent({data: {type: 'rti', destination: 'ui', action: 'clear'}});
+    stale.handleEvent({
+      data: {
+        type: 'rti',
+        destination: 'ui',
+        action: 'clear',
+      },
+    });
     if (panel.compareWins.size !== 0) {
       return false;
     }
     panel.openComparator(stubWarn('L2', 'b'));
-    stale.handleEvent({data: {type: 'rti', destination: 'ui', action: 'clear'}});
+    stale.handleEvent({
+      data: {
+        type: 'rti',
+        destination: 'ui',
+        action: 'clear',
+      },
+    });
     return panel.compareWins.size === 1;
   });
 }
@@ -963,7 +1037,9 @@ function testClickBringsToFront() {
     }
     // Document-capture path with a nested target (e.g. titlebar content),
     // as a real browser dispatches it.
-    globalThis.document.fire('mousedown', {target: a.children[0]});
+    globalThis.document.fire('mousedown', {
+      target: a.children[0],
+    });
     return Number(a.style.zIndex) > Number(b.style.zIndex);
   });
 }
@@ -1008,7 +1084,9 @@ function testRtiEntryFocusesPanelWithCount() {
     if (panel.div.style.display === 'none' || panel.activeWindow !== 'panel') {
       return false;
     }
-    const {count: prev} = options;
+    const {
+      count: prev,
+    } = options;
     options.count = 1;
     try {
       panel.updateErrorCount();
@@ -1022,7 +1100,9 @@ function testOutsideClickClearsAll() {
   return withPanel((panel) => {
     panel.openComparator(stubWarn('L1', 'a'));
     // Click on bare page (not a window): everything goes dim, nothing bright.
-    globalThis.document.fire('mousedown', {target: globalThis.document.body});
+    globalThis.document.fire('mousedown', {
+      target: globalThis.document.body,
+    });
     if (panel.activeWindow !== null) {
       return false;
     }
@@ -1046,7 +1126,9 @@ function testPanelClickFrontsOverCompares() {
     }
     // Click inside the main panel wrapper: it must front above compares,
     // main title blue again, taskbar kept above everything.
-    globalThis.document.fire('mousedown', {target: panel.toolbar});
+    globalThis.document.fire('mousedown', {
+      target: panel.toolbar,
+    });
     const panelZ = Number(divAll.style.zIndex);
     const titles = (key) => panel.compareWins.get(key).titlebar.classList;
     return (
@@ -1068,7 +1150,9 @@ function testActiveTitleFollowsClick() {
     if (titles('L2-b').contains('rti-inactive') !== false) {
       return false;
     }
-    globalThis.document.fire('mousedown', {target: panel.compareWins.get('L1-a').el.children[0]});
+    globalThis.document.fire('mousedown', {
+      target: panel.compareWins.get('L1-a').el.children[0],
+    });
     return titles('L1-a').contains('rti-inactive') === false &&
       titles('L2-b').contains('rti-inactive') === true;
   });
@@ -1079,7 +1163,10 @@ function testGrabActivatesWindow() {
     panel.openComparator(stubWarn('L2', 'b'));
     panel.setActive(null);
     // Grabbing the titlebar (drag start) marks the window active.
-    panel.compareWins.get('L1-a').titlebar.fire('mousedown', {clientX: 10, clientY: 10});
+    panel.compareWins.get('L1-a').titlebar.fire('mousedown', {
+      clientX: 10,
+      clientY: 10,
+    });
     return panel.activeWindow === 'L1-a';
   });
 }
@@ -1089,7 +1176,9 @@ function testPointerdownFronts() {
     panel.openComparator(stubWarn('L2', 'b'));
     const a = panel.compareWins.get('L1-a').el;
     const b = panel.compareWins.get('L2-b').el;
-    globalThis.document.fire('pointerdown', {target: a.children[0]});
+    globalThis.document.fire('pointerdown', {
+      target: a.children[0],
+    });
     return Number(a.style.zIndex) > Number(b.style.zIndex) && panel.activeWindow === 'L1-a';
   });
 }
@@ -1133,7 +1222,9 @@ function testTaskbarPressKeepsButtonAlive() {
     if (before === 'panel' || before === 'L1-a') {
       return false;
     }
-    globalThis.document.fire('mousedown', {target: entry});
+    globalThis.document.fire('mousedown', {
+      target: entry,
+    });
     if (!entry.isConnected || panel.activeWindow !== before) {
       return false;
     }
@@ -1150,10 +1241,17 @@ function testDragCannotLoseWindow() {
   return withPanel((panel) => {
     panel.openComparator(stubWarn('L1', 'a'));
     const {el, titlebar} = panel.compareWins.get('L1-a');
-    const press = {clientX: 100, clientY: 100, target: titlebar};
+    const press = {
+      clientX: 100,
+      clientY: 100,
+      target: titlebar,
+    };
     globalThis.document.fire('mousedown', press);
     titlebar.fire('mousedown', press);
-    globalThis.document.fire('mousemove', {clientX: 5000, clientY: 5000});
+    globalThis.document.fire('mousemove', {
+      clientX: 5000,
+      clientY: 5000,
+    });
     globalThis.document.fire('mouseup', {});
     // Fake viewport is 1600x900: sliver stays at right/bottom caption.
     if (el.style.left !== '1536px' || el.style.top !== '872px') {
@@ -1161,7 +1259,10 @@ function testDragCannotLoseWindow() {
     }
     globalThis.document.fire('mousedown', press);
     titlebar.fire('mousedown', press);
-    globalThis.document.fire('mousemove', {clientX: -5000, clientY: -5000});
+    globalThis.document.fire('mousemove', {
+      clientX: -5000,
+      clientY: -5000,
+    });
     globalThis.document.fire('mouseup', {});
     return el.style.left === '64px' && el.style.top === '0px';
   });
@@ -1177,19 +1278,33 @@ function testResizeKeepsCaptionOnScreen() {
     const {el} = panel.compareWins.get('L1-a');
     const grip = (dir) => el.children.find((_) => _?.dataset?.dir === dir);
     const north = grip('n');
-    const pressN = {clientX: 100, clientY: 100, target: north};
+    const pressN = {
+      clientX: 100,
+      clientY: 100,
+      target: north,
+    };
     globalThis.document.fire('mousedown', pressN);
     north.fire('mousedown', pressN);
-    globalThis.document.fire('mousemove', {clientX: 100, clientY: -5000});
+    globalThis.document.fire('mousemove', {
+      clientX: 100,
+      clientY: -5000,
+    });
     globalThis.document.fire('mouseup', {});
     if (el.style.top !== '0px') {
       return false;
     }
     const west = grip('w');
-    const pressW = {clientX: 100, clientY: 100, target: west};
+    const pressW = {
+      clientX: 100,
+      clientY: 100,
+      target: west,
+    };
     globalThis.document.fire('mousedown', pressW);
     west.fire('mousedown', pressW);
-    globalThis.document.fire('mousemove', {clientX: -5000, clientY: 100});
+    globalThis.document.fire('mousemove', {
+      clientX: -5000,
+      clientY: 100,
+    });
     globalThis.document.fire('mouseup', {});
     return el.style.left === '64px';
   });
@@ -1389,7 +1504,9 @@ function testSecondInstantiationStillFetchesErrors() {
       if (again !== panel) {
         return false;
       }
-      const sink = {postMessage: () => {}};
+      const sink = {
+        postMessage: () => {},
+      };
       const msg = {
         source: null,
         srcElement: sink,
@@ -1434,7 +1551,9 @@ function testCorpsePanelRebuildsLive() {
       }
       // Rebuilding re-syncs options from storage; re-quiet for the fetch.
       options.mode = 'never';
-      const sink = {postMessage: () => {}};
+      const sink = {
+        postMessage: () => {},
+      };
       const msg = {
         source: null,
         srcElement: sink,
@@ -1502,7 +1621,13 @@ function testCompareActualShowsTree() {
       panel,
       {
         ...stubWarn('L1', 'b'),
-        value: {$type: 'FakeWindow', name: '', location: {$type: 'FakeLocation'}},
+        value: {
+          $type: 'FakeWindow',
+          name: '',
+          location: {
+            $type: 'FakeLocation',
+          },
+        },
       },
     );
     const snapText = textOf(snap);
@@ -1523,7 +1648,11 @@ function testCompareActualBatches() {
     for (let i = 0; i < 25; i++) {
       big[`k${i}`] = i;
     }
-    const node = actualPane(panel, {...stubWarn('L1', 'c'), value: big, expect: 'any'});
+    const node = actualPane(panel, {
+      ...stubWarn('L1', 'c'),
+      value: big,
+      expect: 'any',
+    });
     const marker = findByClass(node, 'rti-more');
     if (!marker || !textOf(node).includes('...(+5 more)') || textOf(node).includes('k24')) {
       return false;
@@ -1560,7 +1689,13 @@ function testRepeatBumpsHitsWithoutLogChurn() {
         },
       });
       panel.addError({
-        data: {type: 'rti', destination: 'ui', action: 'addError', key: 'L2-b', repeat: true},
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          key: 'L2-b',
+          repeat: true,
+        },
       });
       const warnObj = panel.warnings['L2-b'];
       return (
@@ -1581,7 +1716,13 @@ function testRepeatUnknownKeyDropped() {
     options.mode = 'never';
     try {
       panel.addError({
-        data: {type: 'rti', destination: 'ui', action: 'addError', key: 'nope-x', repeat: true},
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          key: 'nope-x',
+          repeat: true,
+        },
       });
       return !panel.warnings['nope-x'] && panel.eventLog.length === 0;
     } finally {
@@ -1627,14 +1768,21 @@ function testUnknownActionWarnsInsteadOfThrowing() {
     const prevMode = options.mode;
     options.mode = 'never';
     try {
-      const sink = {postMessage: () => {}};
+      const sink = {
+        postMessage: () => {},
+      };
       const warns = recordWarns(() => {
         globalThis.window.fire(
           'message',
           {
             source: null,
             srcElement: sink,
-            data: {type: 'rti', destination: 'ui', action: 'bogus', key: 'x'},
+            data: {
+              type: 'rti',
+              destination: 'ui',
+              action: 'bogus',
+              key: 'x',
+            },
           },
         );
       });
@@ -1652,7 +1800,9 @@ function testDuplicateDeliveryWarnsOnce() {
     const prevMode = options.mode;
     options.mode = 'never';
     try {
-      const sink = {postMessage: () => {}};
+      const sink = {
+        postMessage: () => {},
+      };
       const event = {
         source: null,
         srcElement: sink,
@@ -1796,7 +1946,9 @@ function testForeignDocumentReattachesOnReopen() {
     deadBody.connectedRoot = true;
     globalThis.document.body.removeChild(TypePanel.divAll);
     deadBody.append(TypePanel.divAll);
-    TypePanel.divAll.ownerDocument = {name: 'popup-document'};
+    TypePanel.divAll.ownerDocument = {
+      name: 'popup-document',
+    };
     const revived = new TypePanel();
     delete TypePanel.divAll.ownerDocument;
     return revived === panel && TypePanel.divAll.parent === globalThis.document.body;
@@ -1829,7 +1981,10 @@ function testShowRecoversStrandedPanel() {
 function popupDocument() {
   const listeners = {};
   return {
-    defaultView: {innerWidth: 1600, innerHeight: 900},
+    defaultView: {
+      innerWidth: 1600,
+      innerHeight: 900,
+    },
     addEventListener: (type, fn) => {
       (listeners[type] ??= []).push(fn);
     },
@@ -1854,14 +2009,24 @@ function testPopoutDragUsesOwnDocument() {
     const {el, titlebar} = panel.compareWins.get('L1-a');
     const popupDoc = popupDocument();
     el.ownerDocument = popupDoc;
-    const press = {clientX: 100, clientY: 100, target: titlebar};
+    const press = {
+      clientX: 100,
+      clientY: 100,
+      target: titlebar,
+    };
     titlebar.fire('mousedown', press);
     const home = [el.style.left, el.style.top];
-    globalThis.document.fire('mousemove', {clientX: 500, clientY: 500});
+    globalThis.document.fire('mousemove', {
+      clientX: 500,
+      clientY: 500,
+    });
     if (el.style.left !== home[0] || el.style.top !== home[1]) {
       return false;
     }
-    popupDoc.fire('mousemove', {clientX: 200, clientY: 150});
+    popupDoc.fire('mousemove', {
+      clientX: 200,
+      clientY: 150,
+    });
     popupDoc.fire('mouseup', {});
     return el.style.left === '100px' && el.style.top === '50px';
   });
@@ -1877,12 +2042,22 @@ function testPopoutResizeUsesOwnDocument() {
     const popupDoc = popupDocument();
     el.ownerDocument = popupDoc;
     const grip = el.children.find((_) => _?.dataset?.dir === 'e');
-    grip.fire('mousedown', {clientX: 100, clientY: 100, target: grip});
-    globalThis.document.fire('mousemove', {clientX: 500, clientY: 100});
+    grip.fire('mousedown', {
+      clientX: 100,
+      clientY: 100,
+      target: grip,
+    });
+    globalThis.document.fire('mousemove', {
+      clientX: 500,
+      clientY: 100,
+    });
     if (el.style.width !== undefined) {
       return false;
     }
-    popupDoc.fire('mousemove', {clientX: 500, clientY: 100});
+    popupDoc.fire('mousemove', {
+      clientX: 500,
+      clientY: 100,
+    });
     popupDoc.fire('mouseup', {});
     return el.style.width === '400px';
   });
@@ -2010,7 +2185,9 @@ function popupStub(body) {
   const docListeners = {};
   const popupDoc = {
     title: '',
-    head: {appendChild() {}},
+    head: {
+      appendChild() {},
+    },
     body,
     defaultView: null,
     addEventListener: (type, fn) => {
@@ -2082,11 +2259,15 @@ function testPageshowRecoversStrandedPanel() {
     deadBody.connectedRoot = true;
     globalThis.document.body.removeChild(TypePanel.divAll);
     deadBody.append(TypePanel.divAll);
-    globalThis.window.fire('pageshow', {persisted: false});
+    globalThis.window.fire('pageshow', {
+      persisted: false,
+    });
     if (TypePanel.divAll.parent !== deadBody) {
       return false;
     }
-    globalThis.window.fire('pageshow', {persisted: true});
+    globalThis.window.fire('pageshow', {
+      persisted: true,
+    });
     return TypePanel.divAll.parent === globalThis.document.body && panel.popoutWin === null;
   });
 }
@@ -2695,13 +2876,19 @@ function testWalkTimeSortsAcrossKinds() {
     try {
       recordMapScan('Kind#mapheavy', 'v', 50);
       recordArrayScan('Kind#arrayheavy', 'v', 40);
-      panel.checksSort = {id: 'scanMs', desc: true};
+      panel.checksSort = {
+        id: 'scanMs',
+        desc: true,
+      };
       panel.updateCheckStats();
       const first = textOf(panel.checksTable.children[1]).includes('Kind#mapheavy');
       return first;
     } finally {
       resetCheckStats();
-      panel.checksSort = {id: 'scanMs', desc: true};
+      panel.checksSort = {
+        id: 'scanMs',
+        desc: true,
+      };
     }
   });
 }
@@ -2743,7 +2930,10 @@ function testSkippedColumnsFollowWindowing() {
  * @returns {object} The stand-in.
  */
 function collectionShaped(cells) {
-  const shaped = {length: cells.length, [Symbol.iterator]: Array.prototype.values.bind(cells)};
+  const shaped = {
+    length: cells.length,
+    [Symbol.iterator]: Array.prototype.values.bind(cells),
+  };
   cells.forEach((cell, i) => {
     shaped[i] = cell;
   });
@@ -2791,7 +2981,10 @@ function testStatsHeadersSortOnClick() {
       recordCheck('Zzz#checks', 'v', 5);
       recordMapScan('Aaa#scan-heavy', 'v', 50);
       recordMapScan('Bbb#scan-light', 'v', 1);
-      panel.checksSort = {id: 'scanMs', desc: true};
+      panel.checksSort = {
+        id: 'scanMs',
+        desc: true,
+      };
       panel.updateCheckStats();
       const firstByScan = textOf(panel.checksTable.children[1]).includes('Aaa#scan-heavy');
       const scanArrow = headText(panel, 'scanMs').includes('▼');
@@ -2813,7 +3006,10 @@ function testStatsHeadersSortOnClick() {
       );
     } finally {
       resetCheckStats();
-      panel.checksSort = {id: 'scanMs', desc: true};
+      panel.checksSort = {
+        id: 'scanMs',
+        desc: true,
+      };
     }
   });
 }

@@ -5,24 +5,43 @@ const noop = () => undefined;
 function testFunctionParamsAndRet() {
   const input = {
     type: 'function',
-    parameters: [{type: 'parameter', paramType: 'K', name: 'x'}],
+    parameters: [{
+      type: 'parameter',
+      paramType: 'K',
+      name: 'x',
+    }],
     ret: 'K',
   };
   return JSON.stringify(substituteFunction(input, 'K', '"a"', noop)) ===
     JSON.stringify({
       type: 'function',
-      parameters: [{type: 'parameter', paramType: '"a"', name: 'x'}],
+      parameters: [{
+        type: 'parameter',
+        paramType: '"a"',
+        name: 'x',
+      }],
       ret: '"a"',
     });
 }
 // We want: a function without a return type substitutes only parameters,
 // because there is no ret field to touch.
 function testFunctionNoRet() {
-  const input = {type: 'function', parameters: [{type: 'parameter', paramType: 'K', name: 'x'}]};
+  const input = {
+    type: 'function',
+    parameters: [{
+      type: 'parameter',
+      paramType: 'K',
+      name: 'x',
+    }],
+  };
   return JSON.stringify(substituteFunction(input, 'K', '"a"', noop)) ===
     JSON.stringify({
       type: 'function',
-      parameters: [{type: 'parameter', paramType: '"a"', name: 'x'}],
+      parameters: [{
+        type: 'parameter',
+        paramType: '"a"',
+        name: 'x',
+      }],
     });
 }
 // We want: a function with no matching key is returned by identity, so
@@ -30,7 +49,11 @@ function testFunctionNoRet() {
 function testFunctionUnchanged() {
   const input = {
     type: 'function',
-    parameters: [{type: 'parameter', paramType: 'number', name: 'x'}],
+    parameters: [{
+      type: 'parameter',
+      paramType: 'number',
+      name: 'x',
+    }],
     ret: 'boolean',
   };
   return substituteFunction(input, 'K', '"a"', noop) === input;
@@ -40,13 +63,21 @@ function testFunctionUnchanged() {
 function testNewType() {
   const input = {
     type: 'new',
-    parameters: [{type: 'parameter', paramType: 'K', name: 'x'}],
+    parameters: [{
+      type: 'parameter',
+      paramType: 'K',
+      name: 'x',
+    }],
     ret: 'K',
   };
   return JSON.stringify(substituteFunction(input, 'K', '"a"', noop)) ===
     JSON.stringify({
       type: 'new',
-      parameters: [{type: 'parameter', paramType: '"a"', name: 'x'}],
+      parameters: [{
+        type: 'parameter',
+        paramType: '"a"',
+        name: 'x',
+      }],
       ret: '"a"',
     });
 }

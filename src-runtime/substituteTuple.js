@@ -12,6 +12,9 @@ import {substitutes} from "./substitutes.js";
  */
 function substituteTuple(type, search, replace, warn) {
   const elements = substitutes.substituteList(type.elements, search, replace, warn);
-  return elements === type.elements ? type : {...type, elements};
+  return elements === type.elements ? type : {
+    ...type,
+    elements,
+  };
 }
 export {substituteTuple};

@@ -12,12 +12,18 @@ function testIntersectionMembers() {
     '"a"',
     noop,
   )) ===
-    JSON.stringify({type: 'intersection', members: ['"a"', 'number']});
+    JSON.stringify({
+      type: 'intersection',
+      members: ['"a"', 'number'],
+    });
 }
 // We want: an intersection with no matching key is returned by identity, so
 // unchanged subtrees keep their identity for downstream memos.
 function testIntersectionUnchanged() {
-  const input = {type: 'intersection', members: ['string', 'number']};
+  const input = {
+    type: 'intersection',
+    members: ['string', 'number'],
+  };
   return substituteIntersection(input, 'K', '"a"', noop) === input;
 }
 // We want: nested intersection members substitute recursively, because a
@@ -26,7 +32,10 @@ function testIntersectionNested() {
   return JSON.stringify(substituteIntersection(
     {
       type: 'intersection',
-      members: [{type: 'array', elementType: 'K'}, 'number'],
+      members: [{
+        type: 'array',
+        elementType: 'K',
+      }, 'number'],
     },
     'K',
     '"a"',
@@ -34,7 +43,10 @@ function testIntersectionNested() {
   )) ===
     JSON.stringify({
       type: 'intersection',
-      members: [{type: 'array', elementType: '"a"'}, 'number'],
+      members: [{
+        type: 'array',
+        elementType: '"a"',
+      }, 'number'],
     });
 }
 const tests = [

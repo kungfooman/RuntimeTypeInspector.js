@@ -304,7 +304,9 @@ function inferTypeFromDefault(node) {
     case 'ArrayExpression': keyword = 'TSArrayType'; break;
     default: return undefined;
   }
-  return {type: keyword};
+  return {
+    type: keyword,
+  };
 }
 /**
  * @param {Node} node - The function-like node.
@@ -392,8 +394,13 @@ function injectParameterProperties(node) {
         operator: '=',
         left: {
           type: 'MemberExpression',
-          object: {type: 'ThisExpression'},
-          property: {type: 'Identifier', name},
+          object: {
+            type: 'ThisExpression',
+          },
+          property: {
+            type: 'Identifier',
+            name,
+          },
           computed: false,
           optional: null,
         },
@@ -539,7 +546,10 @@ class ToJS extends Stringifier {
   namespaceExport(statement) {
     const {declaration} = statement;
     if (!declaration) {
-      return {code: '', names: []};
+      return {
+        code: '',
+        names: [],
+      };
     }
     let names = [];
     switch (declaration.type) {
@@ -564,7 +574,10 @@ class ToJS extends Stringifier {
       default:
         break;
     }
-    return {code: this.toSource(declaration), names};
+    return {
+      code: this.toSource(declaration),
+      names,
+    };
   }
   /**
    * Converts `enum` into a plain `const` object.
@@ -700,7 +713,10 @@ class ToJS extends Stringifier {
       if (specifiers.length === 0) {
         return '';
       }
-      return super.ExportNamedDeclaration({...node, specifiers});
+      return super.ExportNamedDeclaration({
+        ...node,
+        specifiers,
+      });
     }
     return super.ExportNamedDeclaration(node);
   }
@@ -714,7 +730,10 @@ class ToJS extends Stringifier {
     if (node.declare) {
       return '';
     }
-    return super.VariableDeclaration({...node, declare: false});
+    return super.VariableDeclaration({
+      ...node,
+      declare: false,
+    });
   }
 }
 /**
@@ -887,8 +906,16 @@ function makeComment(node, lines, parents) {
     type: 'CommentBlock',
     value,
     loc: {
-      start: {index: start, line: node.loc?.start?.line ?? 1, column: startColumn},
-      end: {index: start, line: node.loc?.start?.line ?? 1, column: startColumn},
+      start: {
+        index: start,
+        line: node.loc?.start?.line ?? 1,
+        column: startColumn,
+      },
+      end: {
+        index: start,
+        line: node.loc?.start?.line ?? 1,
+        column: startColumn,
+      },
     },
   };
 }
@@ -979,9 +1006,17 @@ function formatCommentBreaks(source) {
  */
 function parseTS(code) {
   try {
-    return parse(code, {sourceType: 'module', plugins: ['typescript']});
+    return parse(code, {
+      sourceType: 'module',
+      plugins: ['typescript'],
+    });
   } catch (e) {
-    return parse(code, {sourceType: 'module', plugins: [['typescript', {isTSX: true}], 'jsx']});
+    return parse(code, {
+      sourceType: 'module',
+      plugins: [['typescript', {
+        isTSX: true,
+      }], 'jsx'],
+    });
   }
 }
 export {ts2js, tsTypeToJSDoc, ToJS};

@@ -7,7 +7,11 @@ const silent = () => undefined;
 function testSinglePropDirect() {
   const parsed = expandType('{a?: K}["a"]');
   const created = createTypeFromIndexedAccess(parsed, silent);
-  const expected = {type: 'atom', atomType: 'K', optional: true};
+  const expected = {
+    type: 'atom',
+    atomType: 'K',
+    optional: true,
+  };
   return deepEqualType(created, expected);
 }
 // We want: several selected props to form a union, because `T[K1 | K2]`
@@ -15,7 +19,11 @@ function testSinglePropDirect() {
 function testMultiPropUnion() {
   const parsed = expandType('{a: K, b: number}["a" | "b"]');
   const created = createTypeFromIndexedAccess(parsed, silent);
-  const expected = {type: 'union', members: ['K', 'number'], optional: false};
+  const expected = {
+    type: 'union',
+    members: ['K', 'number'],
+    optional: false,
+  };
   return deepEqualType(created, expected);
 }
 // We want: a missing prop to yield undefined, because an unresolvable

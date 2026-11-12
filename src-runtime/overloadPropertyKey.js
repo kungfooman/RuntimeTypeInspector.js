@@ -7,7 +7,9 @@
  * overloadPropertyKey(123); // '123'
  */
 function overloadPropertyKey(value) {
-  const property = {[value]: true};
+  const property = {
+    [value]: true,
+  };
   return Reflect.ownKeys(property)[0];
 }
 export {overloadPropertyKey};

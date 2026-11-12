@@ -24,7 +24,12 @@ function prepare() {
     'PhColor',
     {
       type: 'object',
-      properties: {r: 'number', g: 'number', b: 'number', a: 'number'},
+      properties: {
+        r: 'number',
+        g: 'number',
+        b: 'number',
+        a: 'number',
+      },
     },
   );
   registerTypedef('PhSmall', expandType('{a: number, b: string}'));
@@ -64,13 +69,17 @@ function testPartialUnionDistributes() {
   if (validateType(1, expect, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  if (validateType({a: 1}, expect, 'loc', 'name', true, warn, 0) !== true) {
+  if (validateType({
+    a: 1,
+  }, expect, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
   if (validateType({}, expect, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  if (validateType({a: 'x'}, expect, 'loc', 'name', true, warn, 0) !== false) {
+  if (validateType({
+    a: 'x',
+  }, expect, 'loc', 'name', true, warn, 0) !== false) {
     return false;
   }
   return validateType(true, expect, 'loc', 'name', true, warn, 0) === false;
@@ -88,13 +97,20 @@ function testPartialIndexedAccessObject() {
   // Indexed access denoting a mapping resolves, so Partial of it accepts deep partials.
   prepare();
   const expect = expandType('Partial<PhTheme["nested"]>');
-  if (validateType({x: {a: 1, b: 's'}}, expect, 'loc', 'name', true, warn, 0) !== true) {
+  if (validateType({
+    x: {
+      a: 1,
+      b: 's',
+    },
+  }, expect, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
   if (validateType({}, expect, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  return validateType({x: 123}, expect, 'loc', 'name', true, warn, 0) === false;
+  return validateType({
+    x: 123,
+  }, expect, 'loc', 'name', true, warn, 0) === false;
 }
 function testPartialClass() {
   // Partial over a registered class accepts instances, empty objects and subsets with correct types.
@@ -106,10 +122,14 @@ function testPartialClass() {
   if (validateType({}, expect, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  if (validateType({r: 1}, expect, 'loc', 'name', true, warn, 0) !== true) {
+  if (validateType({
+    r: 1,
+  }, expect, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  return validateType({r: 'bad'}, expect, 'loc', 'name', true, warn, 0) === false;
+  return validateType({
+    r: 'bad',
+  }, expect, 'loc', 'name', true, warn, 0) === false;
 }
 function testPartialArray() {
   // Arrays stay arrays with optional elements instead of rejecting every array outright.
@@ -139,7 +159,10 @@ function testRequiredPassthrough() {
   if (validateType(1, union, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  if (validateType({a: 1, b: 's'}, union, 'loc', 'name', true, warn, 0) !== true) {
+  if (validateType({
+    a: 1,
+    b: 's',
+  }, union, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
   return validateType({}, union, 'loc', 'name', true, warn, 0) === false;
@@ -154,7 +177,12 @@ function testDeepPartialMapping() {
   if (validateType(
     {
       count: 1,
-      nested: {x: {a: 1, b: 's'}},
+      nested: {
+        x: {
+          a: 1,
+          b: 's',
+        },
+      },
     },
     expect,
     'loc',
@@ -165,25 +193,41 @@ function testDeepPartialMapping() {
   ) !== true) {
     return false;
   }
-  if (validateType({single: {a: 1}}, expect, 'loc', 'name', true, warn, 0) !== true) {
+  if (validateType({
+    single: {
+      a: 1,
+    },
+  }, expect, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  if (validateType({count: 'bad'}, expect, 'loc', 'name', true, warn, 0) !== false) {
+  if (validateType({
+    count: 'bad',
+  }, expect, 'loc', 'name', true, warn, 0) !== false) {
     return false;
   }
-  if (validateType({nested: {x: 123}}, expect, 'loc', 'name', true, warn, 0) !== false) {
+  if (validateType({
+    nested: {
+      x: 123,
+    },
+  }, expect, 'loc', 'name', true, warn, 0) !== false) {
     return false;
   }
-  return validateType({unknown: 1}, expect, 'loc', 'name', true, warn, 0) === false;
+  return validateType({
+    unknown: 1,
+  }, expect, 'loc', 'name', true, warn, 0) === false;
 }
 function testPickIndexedAccess() {
   // Pick over indexed access resolves the base first, so selections from nested shapes work.
   prepare();
   const expect = expandType('Pick<PhTheme["single"], "a">');
-  if (validateType({a: 1}, expect, 'loc', 'name', true, warn, 0) !== true) {
+  if (validateType({
+    a: 1,
+  }, expect, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  return validateType({a: 'x'}, expect, 'loc', 'name', true, warn, 0) === false;
+  return validateType({
+    a: 'x',
+  }, expect, 'loc', 'name', true, warn, 0) === false;
 }
 function testPartialDeepNesting() {
   // Doubly and triply nested Partials stay fully optional without rejecting valid subsets.
@@ -192,17 +236,25 @@ function testPartialDeepNesting() {
   if (validateType({}, double, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  if (validateType({a: 1}, double, 'loc', 'name', true, warn, 0) !== true) {
+  if (validateType({
+    a: 1,
+  }, double, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  if (validateType({a: 'x'}, double, 'loc', 'name', true, warn, 0) !== false) {
+  if (validateType({
+    a: 'x',
+  }, double, 'loc', 'name', true, warn, 0) !== false) {
     return false;
   }
   const triple = expandType('Partial<Partial<Partial<PhSmall> > >');
-  if (validateType({b: 's'}, triple, 'loc', 'name', true, warn, 0) !== true) {
+  if (validateType({
+    b: 's',
+  }, triple, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  return validateType({b: 1}, triple, 'loc', 'name', true, warn, 0) === false;
+  return validateType({
+    b: 1,
+  }, triple, 'loc', 'name', true, warn, 0) === false;
 }
 function testPartialNestedPickOmit() {
   // Partial composes with Pick/Omit: picked-away and omitted keys stay rejected while kept keys turn optional.
@@ -211,14 +263,20 @@ function testPartialNestedPickOmit() {
   if (validateType({}, pick, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  if (validateType({b: 's'}, pick, 'loc', 'name', true, warn, 0) !== false) {
+  if (validateType({
+    b: 's',
+  }, pick, 'loc', 'name', true, warn, 0) !== false) {
     return false;
   }
   const omit = expandType('Partial<Omit<PhSmall, "a">>');
-  if (validateType({b: 's'}, omit, 'loc', 'name', true, warn, 0) !== true) {
+  if (validateType({
+    b: 's',
+  }, omit, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  return validateType({a: 1}, omit, 'loc', 'name', true, warn, 0) === false;
+  return validateType({
+    a: 1,
+  }, omit, 'loc', 'name', true, warn, 0) === false;
 }
 function testPartialTuple() {
   // Tuples stay tuples with optional undefined-able members instead of rejecting every tuple outright.
@@ -270,24 +328,34 @@ function testPartialWrappers() {
   if (validateType({}, nonNull, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  if (validateType({a: 'x'}, nonNull, 'loc', 'name', true, warn, 0) !== false) {
+  if (validateType({
+    a: 'x',
+  }, nonNull, 'loc', 'name', true, warn, 0) !== false) {
     return false;
   }
   const readonly = expandType('Partial<Readonly<PhSmall>>');
-  if (validateType({b: 's'}, readonly, 'loc', 'name', true, warn, 0) !== true) {
+  if (validateType({
+    b: 's',
+  }, readonly, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  return validateType({b: 1}, readonly, 'loc', 'name', true, warn, 0) === false;
+  return validateType({
+    b: 1,
+  }, readonly, 'loc', 'name', true, warn, 0) === false;
 }
 function testPartialGenericAlias() {
   // Generic aliases instantiate before Partial applies, so Partial<Pick<T,...>>-style helpers work per argument.
   prepare();
   registerTypedef('PhPartial', expandType('Partial<T>'), ['T']);
   const expect = expandType('PhPartial<PhSmall>');
-  if (validateType({a: 1}, expect, 'loc', 'name', true, warn, 0) !== true) {
+  if (validateType({
+    a: 1,
+  }, expect, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  return validateType({a: 'x'}, expect, 'loc', 'name', true, warn, 0) === false;
+  return validateType({
+    a: 'x',
+  }, expect, 'loc', 'name', true, warn, 0) === false;
 }
 function testMixedUnionExcessDeliberate() {
   // Mixed literals against a Partial union are rejected by exactObjects while tsc accepts them structurally.
@@ -297,7 +365,10 @@ function testMixedUnionExcessDeliberate() {
   if (validateType({}, expect, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  return validateType({a: 1, c: true}, expect, 'loc', 'name', true, warn, 0) === false;
+  return validateType({
+    a: 1,
+    c: true,
+  }, expect, 'loc', 'name', true, warn, 0) === false;
 }
 class SubAnimal {
   constructor() {
@@ -314,8 +385,19 @@ function prepareAnimals() {
   clearTypedefs();
   registerClass(SubAnimal);
   registerClass(SubDog);
-  registerTypedef('SubAnimal', {type: 'object', properties: {legs: 'number'}});
-  registerTypedef('SubDog', {type: 'object', properties: {legs: 'number', bark: 'string'}});
+  registerTypedef('SubAnimal', {
+    type: 'object',
+    properties: {
+      legs: 'number',
+    },
+  });
+  registerTypedef('SubDog', {
+    type: 'object',
+    properties: {
+      legs: 'number',
+      bark: 'string',
+    },
+  });
   registerTypedef('SubZoo', expandType('{star: SubAnimal, count: number}'));
 }
 function testPartialSubclassNominal() {
@@ -328,7 +410,9 @@ function testPartialSubclassNominal() {
   if (validateType(new SubAnimal(), expect, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  return validateType({legs: 'bad'}, expect, 'loc', 'name', true, warn, 0) === false;
+  return validateType({
+    legs: 'bad',
+  }, expect, 'loc', 'name', true, warn, 0) === false;
 }
 function testUtilitiesAcceptInstances() {
   // Required/Pick/Omit of a class accept its instances (including subclasses) outright.
@@ -351,7 +435,9 @@ function testPartialIndexedSubclass() {
   if (validateType(new SubDog(), expect, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  return validateType({legs: 'bad'}, expect, 'loc', 'name', true, warn, 0) === false;
+  return validateType({
+    legs: 'bad',
+  }, expect, 'loc', 'name', true, warn, 0) === false;
 }
 function testPartialIntersection() {
   // Intersections merge member shapes before optionality applies.
@@ -361,10 +447,16 @@ function testPartialIntersection() {
   if (validateType({}, expect, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  if (validateType({a: 1, c: true}, expect, 'loc', 'name', true, warn, 0) !== true) {
+  if (validateType({
+    a: 1,
+    c: true,
+  }, expect, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  return validateType({a: 'x', c: true}, expect, 'loc', 'name', true, warn, 0) === false;
+  return validateType({
+    a: 'x',
+    c: true,
+  }, expect, 'loc', 'name', true, warn, 0) === false;
 }
 function testPartialCondition() {
   // Decidable conditions resolve to a branch first, so Partial applies to the denoted shape.
@@ -373,10 +465,14 @@ function testPartialCondition() {
   registerTypedef('PhMode', 'string');
   registerTypedef('PhCond', expandType('PhMode extends string ? PhSmall : PhOther'));
   const expect = expandType('Partial<PhCond>');
-  if (validateType({a: 1}, expect, 'loc', 'name', true, warn, 0) !== true) {
+  if (validateType({
+    a: 1,
+  }, expect, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  return validateType({a: 'x'}, expect, 'loc', 'name', true, warn, 0) === false;
+  return validateType({
+    a: 'x',
+  }, expect, 'loc', 'name', true, warn, 0) === false;
 }
 function testPartialRecord() {
   // Records stay records with undefined-able values; Required keeps them exactly.
@@ -385,17 +481,25 @@ function testPartialRecord() {
   if (validateType({}, partial, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  if (validateType({k: 1}, partial, 'loc', 'name', true, warn, 0) !== true) {
+  if (validateType({
+    k: 1,
+  }, partial, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  if (validateType({k: 'x'}, partial, 'loc', 'name', true, warn, 0) !== false) {
+  if (validateType({
+    k: 'x',
+  }, partial, 'loc', 'name', true, warn, 0) !== false) {
     return false;
   }
   const required = expandType('Required<Record<string, number>>');
-  if (validateType({k: 1}, required, 'loc', 'name', true, warn, 0) !== true) {
+  if (validateType({
+    k: 1,
+  }, required, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  return validateType({k: 'x'}, required, 'loc', 'name', true, warn, 0) === false;
+  return validateType({
+    k: 'x',
+  }, required, 'loc', 'name', true, warn, 0) === false;
 }
 function testIndexSignaturesPreserved() {
   // Index-signature shapes survive Partial/Required with base behavior intact.
@@ -418,7 +522,9 @@ function testPlatformBases() {
   if (validateType({}, partial, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  if (validateType({getTime: 1}, partial, 'loc', 'name', true, warn, 0) !== false) {
+  if (validateType({
+    getTime: 1,
+  }, partial, 'loc', 'name', true, warn, 0) !== false) {
     return false;
   }
   const required = expandType('Required<Date>');
@@ -431,17 +537,27 @@ function testIndexSignatureEnforcement() {
   // Signature-covered values validate against the value type, in bases and under utilities alike.
   prepare();
   registerTypedef('PhWords', expandType('{[n: number]: string, length: number}'));
-  if (validateType({0: 'hi', length: 1}, 'PhWords', 'loc', 'name', true, warn, 0) !== true) {
+  if (validateType({
+    0: 'hi',
+    length: 1,
+  }, 'PhWords', 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  if (validateType({0: 1, length: 1}, 'PhWords', 'loc', 'name', true, warn, 0) !== false) {
+  if (validateType({
+    0: 1,
+    length: 1,
+  }, 'PhWords', 'loc', 'name', true, warn, 0) !== false) {
     return false;
   }
   const partial = expandType('Partial<PhWords>');
-  if (validateType({0: 'hi'}, partial, 'loc', 'name', true, warn, 0) !== true) {
+  if (validateType({
+    0: 'hi',
+  }, partial, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  return validateType({0: 1}, partial, 'loc', 'name', true, warn, 0) === false;
+  return validateType({
+    0: 1,
+  }, partial, 'loc', 'name', true, warn, 0) === false;
 }
 function testPartialAny() {
   // `any` maps over its keys: an object bag admitting objects while rejecting primitives and nullish.
@@ -450,7 +566,9 @@ function testPartialAny() {
   if (validateType({}, partial, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  if (validateType({a: 1}, partial, 'loc', 'name', true, warn, 0) !== true) {
+  if (validateType({
+    a: 1,
+  }, partial, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
   if (validateType(1, partial, 'loc', 'name', true, warn, 0) !== false) {
@@ -499,10 +617,14 @@ function testSameNameCollapse() {
   if (validateType({}, collapsed, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  if (validateType({a: 1}, collapsed, 'loc', 'name', true, warn, 0) !== true) {
+  if (validateType({
+    a: 1,
+  }, collapsed, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  return validateType({a: 'x'}, collapsed, 'loc', 'name', true, warn, 0) === false;
+  return validateType({
+    a: 'x',
+  }, collapsed, 'loc', 'name', true, warn, 0) === false;
 }
 function testRemapFilters() {
   // Condition remaps filter on either polarity and Exclude filters directly.
@@ -510,18 +632,26 @@ function testRemapFilters() {
   registerTypedef('PhRow', expandType('{keep: number, drop: string}'));
   registerTypedef('PhExcl', expandType('{ [K in keyof PhRow as Exclude<K, "drop">]: PhRow[K] }'));
   const excluded = expandType('Partial<PhExcl>');
-  if (validateType({keep: 1}, excluded, 'loc', 'name', true, warn, 0) !== true) {
+  if (validateType({
+    keep: 1,
+  }, excluded, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  if (validateType({drop: 's'}, excluded, 'loc', 'name', true, warn, 0) !== false) {
+  if (validateType({
+    drop: 's',
+  }, excluded, 'loc', 'name', true, warn, 0) !== false) {
     return false;
   }
   registerTypedef('PhFalse', expandType('{ [K in keyof PhRow as K extends "drop" ? never : K]: PhRow[K] }'));
   const falseKept = expandType('Partial<PhFalse>');
-  if (validateType({keep: 1}, falseKept, 'loc', 'name', true, warn, 0) !== true) {
+  if (validateType({
+    keep: 1,
+  }, falseKept, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  return validateType({drop: 's'}, falseKept, 'loc', 'name', true, warn, 0) === false;
+  return validateType({
+    drop: 's',
+  }, falseKept, 'loc', 'name', true, warn, 0) === false;
 }
 function testTripleUnion() {
   // Three-way unions with primitives and nullish members distribute member-wise.

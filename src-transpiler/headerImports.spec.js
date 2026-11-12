@@ -9,7 +9,10 @@ const legacyHeader = "import {inspectIndexedAccess, inspectType, inspectTypeWith
  * @returns {string} Converted code with header.
  */
 function convert(src) {
-  const asserter = new Asserter({expandType, filename: 'test.js'});
+  const asserter = new Asserter({
+    expandType,
+    filename: 'test.js',
+  });
   const ast = parse(src, parserOptions);
   return asserter.getHeader(ast) + asserter.toSource(ast);
 }
@@ -53,7 +56,10 @@ function testForeignModuleImportKeepsHeader() {
 }
 function testNoArgHeaderUnchanged() {
   // Old callers passing no AST get the full legacy header (backward compat).
-  const asserter = new Asserter({expandType, filename: 'test.js'});
+  const asserter = new Asserter({
+    expandType,
+    filename: 'test.js',
+  });
   return asserter.getHeader().split('\n').find((line) => line.startsWith('import {')) === legacyHeader;
 }
 function testExportStarUnaffected() {

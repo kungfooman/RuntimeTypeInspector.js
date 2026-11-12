@@ -115,7 +115,13 @@ function depthsAt(str, upto) {
       paren--;
     }
   }
-  return {angle, curly, square, paren, quote: inSingle || inDouble || inBacktick};
+  return {
+    angle,
+    curly,
+    square,
+    paren,
+    quote: inSingle || inDouble || inBacktick,
+  };
 }
 /**
  * Finds a keyword (e.g. `in`, `as`, `extends`) at top level, outside brackets/quotes.
@@ -499,8 +505,15 @@ function parseFunctionParams(paramsRaw) {
       if (!name || !typeRaw) {
         return;
       }
-      plainParam = {type: 'parameter', paramType: expandTypeDepFreeOrAny(typeRaw), name};
-      parameters.push({type: 'array', elementType: plainParam});
+      plainParam = {
+        type: 'parameter',
+        paramType: expandTypeDepFreeOrAny(typeRaw),
+        name,
+      };
+      parameters.push({
+        type: 'array',
+        elementType: plainParam,
+      });
       continue;
     }
     const colonIdx = findTopLevelChar(trimmed, ':');
@@ -515,7 +528,11 @@ function parseFunctionParams(paramsRaw) {
       return;
     }
     const paramType = expandTypeDepFreeOrAny(typeRaw);
-    plainParam = {type: 'parameter', paramType, name: cleanName};
+    plainParam = {
+      type: 'parameter',
+      paramType,
+      name: cleanName,
+    };
     parameters.push(plainParam);
   }
   return parameters;
@@ -644,8 +661,16 @@ function parseIndexSignatureEntry(entry) {
   const indexType = expandTypeDepFreeOrAny(valueRaw);
   const indexParamType = expandTypeDepFreeOrAny(paramTypeRaw);
   /** @type {ExpandParameterNode} */
-  const indexParam = {type: 'parameter', paramType: indexParamType, name: paramName};
-  return {type: 'indexSignature', indexType, indexParameters: [indexParam]};
+  const indexParam = {
+    type: 'parameter',
+    paramType: indexParamType,
+    name: paramName,
+  };
+  return {
+    type: 'indexSignature',
+    indexType,
+    indexParameters: [indexParam],
+  };
 }
 /**
  * Splits a backtick template literal into quasis and `${...}` type raws.
@@ -727,10 +752,18 @@ function expandTupleElement(raw) {
         return;
       }
       const elementType = expandTypeDepFreeOrAny(typeRaw);
-      return {type: 'tupleMember', name, elementType, dotDot: true};
+      return {
+        type: 'tupleMember',
+        name,
+        elementType,
+        dotDot: true,
+      };
     }
     const annotation = expandTypeDepFreeOrAny(rest);
-    return {type: 'rest', annotation};
+    return {
+      type: 'rest',
+      annotation,
+    };
   }
   const colonIdx = findTopLevelChar(raw, ':');
   if (colonIdx === -1) {
@@ -738,7 +771,12 @@ function expandTupleElement(raw) {
     // with an empty label, matching tsc and the TS/Babel parsers.
     if (raw.endsWith('?') && raw.length > 1) {
       const inner = expandTypeDepFreeOrAny(raw.slice(0, -1).trim());
-      return {type: 'tupleMember', name: '', elementType: inner, optional: true};
+      return {
+        type: 'tupleMember',
+        name: '',
+        elementType: inner,
+        optional: true,
+      };
     }
     return expandTypeDepFree(raw);
   }
@@ -757,7 +795,11 @@ function expandTupleElement(raw) {
   }
   const member = expandTypeDepFreeOrAny(typeRaw);
   /** @type {ExpandTupleMemberNode} */
-  const mem = {type: 'tupleMember', name, elementType: member};
+  const mem = {
+    type: 'tupleMember',
+    name,
+    elementType: member,
+  };
   if (optional) {
     mem.optional = true;
   }
@@ -828,7 +870,13 @@ function expandTypeDepFree(type) {
     if (!complete || !resolved) {
       return;
     }
-    return {type: 'condition', checkType, extendsType, trueType, falseType};
+    return {
+      type: 'condition',
+      checkType,
+      extendsType,
+      trueType,
+      falseType,
+    };
   }
   // Unions and intersections split before nullable/keyof/typeof, matching
   // TS precedence (`&` binds tighter than `|`, both tighter than postfix
@@ -863,7 +911,10 @@ function expandTypeDepFree(type) {
   if (type.startsWith('keyof ') || type.startsWith('keyof(')) {
     const after = type.startsWith('keyof(') ? type.slice(5).trim() : type.slice(6).trim();
     if (after) {
-      return {type: 'keyof', argument: expandTypeDepFreeOrAny(after)};
+      return {
+        type: 'keyof',
+        argument: expandTypeDepFreeOrAny(after),
+      };
     }
   }
   // JSDocNullableType (`T?` / `?T`): union with null, matching expandType().
@@ -872,11 +923,17 @@ function expandTypeDepFree(type) {
   // matching tsc leniency).
   if (type.endsWith('?')) {
     const inner = expandTypeDepFreeOrAny(type.slice(0, -1).trim());
-    return {type: 'union', members: [inner, 'null']};
+    return {
+      type: 'union',
+      members: [inner, 'null'],
+    };
   }
   if (type.startsWith('?')) {
     const inner = expandTypeDepFreeOrAny(type.slice(1).trim());
-    return {type: 'union', members: [inner, 'null']};
+    return {
+      type: 'union',
+      members: [inner, 'null'],
+    };
   }
   // (0) Function and constructor types `(a: T, ...) => R`, `new (a: T) => R`.
   const func = parseFunctionRaw(type);
@@ -885,9 +942,17 @@ function expandTypeDepFree(type) {
     if (parameters !== undefined) {
       const ret = expandTypeDepFreeOrAny(func.retRaw);
       if (func.isNew) {
-        return {type: 'new', parameters, ret};
+        return {
+          type: 'new',
+          parameters,
+          ret,
+        };
       }
-      return {type: 'function', parameters, ret};
+      return {
+        type: 'function',
+        parameters,
+        ret,
+      };
     }
   }
   // (1) Rest parameters like `...string`: the top level of the gathered
@@ -914,23 +979,38 @@ function expandTypeDepFree(type) {
     if (split !== -1) {
       const first = expandTypeDepFreeOrAny(rest.slice(0, split).trim());
       const tail = expandTypeDepFreeOrAny(rest.slice(split + 1).trim());
-      return {type: 'union', members: [{type: 'array', elementType: first}, tail]};
+      return {
+        type: 'union',
+        members: [{
+          type: 'array',
+          elementType: first,
+        }, tail],
+      };
     }
     const elementType = expandTypeDepFreeOrAny(rest);
-    return {type: 'array', elementType};
+    return {
+      type: 'array',
+      elementType,
+    };
   }
   // (2)
   // Array<...>
   if (type.startsWith("Array<") && type.endsWith('>')) {
     const typeSlice = type.slice(6, -1);
     const elementType = expandTypeDepFreeOrAny(typeSlice);
-    return {type: "array", elementType};
+    return {
+      type: "array",
+      elementType,
+    };
   }
   // Promise<...>
   if (type.startsWith("Promise<") && type.endsWith('>')) {
     const typeSlice = type.slice(8, -1);
     const elementType = expandTypeDepFreeOrAny(typeSlice);
-    return {type: "promise", elementType};
+    return {
+      type: "promise",
+      elementType,
+    };
   }
   // (3) Object<...> or Record<...>
   if (
@@ -945,7 +1025,11 @@ function expandTypeDepFree(type) {
     } else {
       const key = recordSlice.slice(0, commaIdx).trim();
       const val = recordSlice.slice(commaIdx + 1).trim();
-      return {type: "record", key: expandTypeDepFreeOrAny(key), val: expandTypeDepFreeOrAny(val)};
+      return {
+        type: "record",
+        key: expandTypeDepFreeOrAny(key),
+        val: expandTypeDepFreeOrAny(val),
+      };
     }
   }
   // (3b) Map<...> / Set<...' for dep-free parity with expandType()
@@ -962,7 +1046,10 @@ function expandTypeDepFree(type) {
   }
   if (type.startsWith("Set<") && type.endsWith('>')) {
     const inner = type.slice(4, -1);
-    return {type: "set", elementType: expandTypeDepFreeOrAny(inner.trim())};
+    return {
+      type: "set",
+      elementType: expandTypeDepFreeOrAny(inner.trim()),
+    };
   }
   // (3c) Generic reference types like ArrayLike<T>, ReadonlyArray<T> etc.
   // Keep structured so the runtime can validate them instead of warning 'unchecked'.
@@ -983,7 +1070,12 @@ function expandTypeDepFree(type) {
       const iterable = expandTypeDepFreeOrAny(mapped.iterableRaw);
       const result = expandTypeDepFreeOrAny(mapped.resultRaw);
       /** @type {ExpandMappingNode} */
-      const out = {type: 'mapping', iterable, element: mapped.element, result};
+      const out = {
+        type: 'mapping',
+        iterable,
+        element: mapped.element,
+        result,
+      };
       if (mapped.nameRaw !== undefined) {
         out.nameType = expandTypeDepFreeOrAny(mapped.nameRaw);
       }
@@ -1055,7 +1147,10 @@ function expandTypeDepFree(type) {
           }
         } else {
           /** @type {ExpandAnnotatedAtomNode} */
-          const wrapped = {type: 'atom', atomType: expanded};
+          const wrapped = {
+            type: 'atom',
+            atomType: expanded,
+          };
           if (propOptional) {
             wrapped.optional = true;
           }
@@ -1070,10 +1165,14 @@ function expandTypeDepFree(type) {
     // Bare `{}` carries no `properties` key, matching the TS/Babel parsers
     // (and distinguishing it from the `object` keyword, which does).
     if (!Object.keys(properties).length && indexSignatures === undefined) {
-      return {type: 'object'};
+      return {
+        type: 'object',
+      };
     }
     /** @type {ExpandObjectNode} */
-    const out = {type: 'object'};
+    const out = {
+      type: 'object',
+    };
     if (Object.keys(properties).length) {
       out.properties = properties;
     }
@@ -1095,13 +1194,19 @@ function expandTypeDepFree(type) {
   // Test arrays: new pc.Mat3().set([1, 2, 3, "asd"])
   if (type.endsWith("[]")) {
     const typeSlice = type.slice(0, -2);
-    return {type: 'array', elementType: expandTypeDepFreeOrAny(typeSlice)};
+    return {
+      type: 'array',
+      elementType: expandTypeDepFreeOrAny(typeSlice),
+    };
   }
   // (10) expand tuples
   if (type[0] === '[' && type[type.length - 1] === ']') {
     const inner = type.slice(1, -1);
     if (inner.trim() === '') {
-      return {type: 'tuple', elements: []};
+      return {
+        type: 'tuple',
+        elements: [],
+      };
     }
     const elements = splitTopLevel(inner, ','); // ['null', ' Texture', ...]
     return {
@@ -1122,7 +1227,10 @@ function expandTypeDepFree(type) {
     }
   }
   if (type === 'object' || type === 'Object') {
-    return {type: 'object', properties: {}};
+    return {
+      type: 'object',
+      properties: {},
+    };
   }
   // (11) expand typeof expressions. Stays after nullable: TS binds
   // postfix-`?` loosest for `typeof`, so `typeof X?` nullables the whole
@@ -1130,14 +1238,23 @@ function expandTypeDepFree(type) {
   // A bare `typeof` (no operand, only reachable as a nullable-strip
   // artifact like `typeof ?`) is typeof-unknown, matching the TS parser.
   if (type === 'typeof') {
-    return {type: 'typeof', argument: 'any'};
+    return {
+      type: 'typeof',
+      argument: 'any',
+    };
   }
   if (type.startsWith('typeof ')) {
     const after = type.substring(7).trim();
     if (after) {
-      return {type: 'typeof', argument: expandTypeDepFreeOrAny(after)};
+      return {
+        type: 'typeof',
+        argument: expandTypeDepFreeOrAny(after),
+      };
     }
-    return {type: 'typeof', argument: 'any'};
+    return {
+      type: 'typeof',
+      argument: 'any',
+    };
   }
   // Literal normalization for parity with expandType():
   // numeric literals become numbers, true/false become booleans.
@@ -1152,10 +1269,15 @@ function expandTypeDepFree(type) {
   }
   // Bigint: `bigint` keyword and `123n` literals, matching expandType().
   if (type === 'bigint') {
-    return {type: 'bigint'};
+    return {
+      type: 'bigint',
+    };
   }
   if (/^\d+n$/.test(type)) {
-    return {type: 'bigint', literal: type.slice(0, -1)};
+    return {
+      type: 'bigint',
+      literal: type.slice(0, -1),
+    };
   }
   return type;
 }

@@ -3,7 +3,9 @@ import {options             } from './options.js';
 const tests = [
   () => inspectIndexedAccess([1, 2, 3], 1) === 2,
   () => inspectIndexedAccess('abc', 0) === 'a',
-  () => inspectIndexedAccess({a: 5}, 'a') === 5,
+  () => inspectIndexedAccess({
+    a: 5,
+  }, 'a') === 5,
   () => inspectIndexedAccess(new Float32Array([1, 2]), 1) === 2,
   // Out of bounds / negative / fractional indices still pass through
   () => inspectIndexedAccess([1, 2, 3], 42) === undefined,
@@ -31,8 +33,12 @@ const tests = [
   () => {
     const before = options.count;
     inspectIndexedAccess([1, 2, 3], 1);
-    inspectIndexedAccess({a: 5}, 'a');
-    inspectIndexedAccess({a: 5}, 1.5);
+    inspectIndexedAccess({
+      a: 5,
+    }, 'a');
+    inspectIndexedAccess({
+      a: 5,
+    }, 1.5);
     return options.count === before;
   },
   // Disabled: straight pass-through without any warnings

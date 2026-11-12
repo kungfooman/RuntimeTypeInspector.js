@@ -6,7 +6,11 @@ function testStringMatchesAll() {
     indexSignatures: [{
       type: 'indexSignature',
       indexType: 'number',
-      indexParameters: [{type: 'parameter', paramType: 'string', name: 'k'}],
+      indexParameters: [{
+        type: 'parameter',
+        paramType: 'string',
+        name: 'k',
+      }],
     }],
   };
   return matchIndexSignature(expect, 'a') !== undefined && matchIndexSignature(expect, '0') !== undefined;
@@ -18,7 +22,11 @@ function testNumberMatchesNumericOnly() {
     indexSignatures: [{
       type: 'indexSignature',
       indexType: 'string',
-      indexParameters: [{type: 'parameter', paramType: 'number', name: 'n'}],
+      indexParameters: [{
+        type: 'parameter',
+        paramType: 'number',
+        name: 'n',
+      }],
     }],
   };
   if (!matchIndexSignature(expect, '0')) {
@@ -49,12 +57,20 @@ function testNumericPrefersNumber() {
       {
         type: 'indexSignature',
         indexType: 'number',
-        indexParameters: [{type: 'parameter', paramType: 'string', name: 'k'}],
+        indexParameters: [{
+          type: 'parameter',
+          paramType: 'string',
+          name: 'k',
+        }],
       },
       {
         type: 'indexSignature',
         indexType: 'string',
-        indexParameters: [{type: 'parameter', paramType: 'number', name: 'n'}],
+        indexParameters: [{
+          type: 'parameter',
+          paramType: 'number',
+          name: 'n',
+        }],
       },
     ],
   };
@@ -67,12 +83,19 @@ function testNumericPrefersNumber() {
 }
 function testUnknownShapes() {
   // Missing signatures, unknown nodes and exotic parameters never match, preserving today's path.
-  if (matchIndexSignature({type: 'object', properties: {}}, 'a') !== undefined) {
+  if (matchIndexSignature({
+    type: 'object',
+    properties: {},
+  }, 'a') !== undefined) {
     return false;
   }
   const exotic = {
     type: 'object',
-    indexSignatures: [{type: 'indexSignature', indexType: 'number', indexParameters: []}],
+    indexSignatures: [{
+      type: 'indexSignature',
+      indexType: 'number',
+      indexParameters: [],
+    }],
   };
   if (matchIndexSignature(exotic, 'a') !== undefined) {
     return false;

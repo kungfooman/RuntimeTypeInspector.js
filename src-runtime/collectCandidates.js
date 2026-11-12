@@ -35,7 +35,11 @@ function collectCandidates(value, expect, out = []) {
     }
     const literal = literalOf(value);
     if (literal !== undefined) {
-      out.push({key: expect, literal, value});
+      out.push({
+        key: expect,
+        literal,
+        value,
+      });
     }
     return out;
   }

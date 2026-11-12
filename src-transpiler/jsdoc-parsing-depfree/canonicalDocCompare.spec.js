@@ -4,14 +4,26 @@ function testEqualIgnoresKeyOrder() {
   const first = {
     templates: [],
     overloads: [],
-    params: [{name: 'x', bracketed: false, type: 'number', dropped: false, merged: false}],
+    params: [{
+      name: 'x',
+      bracketed: false,
+      type: 'number',
+      dropped: false,
+      merged: false,
+    }],
     returns: '',
     callbacks: [],
   };
   const second = {
     callbacks: [],
     returns: '',
-    params: [{merged: false, dropped: false, type: 'number', bracketed: false, name: 'x'}],
+    params: [{
+      merged: false,
+      dropped: false,
+      type: 'number',
+      bracketed: false,
+      name: 'x',
+    }],
     overloads: [],
     templates: [],
   };
@@ -22,14 +34,26 @@ function testUnequalTypesFail() {
   const first = {
     templates: [],
     overloads: [],
-    params: [{name: 'x', bracketed: false, type: 'number', dropped: false, merged: false}],
+    params: [{
+      name: 'x',
+      bracketed: false,
+      type: 'number',
+      dropped: false,
+      merged: false,
+    }],
     returns: '',
     callbacks: [],
   };
   const second = {
     templates: [],
     overloads: [],
-    params: [{name: 'x', bracketed: false, type: 'string', dropped: false, merged: false}],
+    params: [{
+      name: 'x',
+      bracketed: false,
+      type: 'string',
+      dropped: false,
+      merged: false,
+    }],
     returns: '',
     callbacks: [],
   };
@@ -41,7 +65,13 @@ function testMergedContainerCoversChildren() {
   const actual = {
     templates: [],
     overloads: [],
-    params: [{name: 'options', bracketed: false, type: 'object', dropped: false, merged: false}, {
+    params: [{
+      name: 'options',
+      bracketed: false,
+      type: 'object',
+      dropped: false,
+      merged: false,
+    }, {
       name: 'options.maxRetries',
       bracketed: true,
       type: 'number',
@@ -54,7 +84,13 @@ function testMergedContainerCoversChildren() {
   const expected = {
     templates: [],
     overloads: [],
-    params: [{name: 'options', bracketed: false, type: '', dropped: false, merged: true}, {
+    params: [{
+      name: 'options',
+      bracketed: false,
+      type: '',
+      dropped: false,
+      merged: true,
+    }, {
       name: 'options.maxRetries',
       bracketed: true,
       type: 'number',
@@ -71,7 +107,13 @@ function testRenamedChildFailsCoverage() {
   const actual = {
     templates: [],
     overloads: [],
-    params: [{name: 'options', bracketed: false, type: 'object', dropped: false, merged: false}, {
+    params: [{
+      name: 'options',
+      bracketed: false,
+      type: 'object',
+      dropped: false,
+      merged: false,
+    }, {
       name: 'options.retry',
       bracketed: true,
       type: 'number',
@@ -84,7 +126,13 @@ function testRenamedChildFailsCoverage() {
   const expected = {
     templates: [],
     overloads: [],
-    params: [{name: 'options', bracketed: false, type: '', dropped: false, merged: true}, {
+    params: [{
+      name: 'options',
+      bracketed: false,
+      type: '',
+      dropped: false,
+      merged: true,
+    }, {
       name: 'options.maxRetries',
       bracketed: true,
       type: 'number',

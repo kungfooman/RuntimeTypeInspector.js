@@ -10,7 +10,10 @@ function testPromiseNumberValid() {
   //   const promise = new Promise((resolve, reject) => resolve(123));
   //   test(promise) must pass with no 'unchecked'.
   const expect = expandType('Promise<number>');
-  if (JSON.stringify(expect) !== JSON.stringify({type: 'promise', elementType: 'number'})) {
+  if (JSON.stringify(expect) !== JSON.stringify({
+    type: 'promise',
+    elementType: 'number',
+  })) {
     return false;
   }
   let unchecked = false;
@@ -41,7 +44,9 @@ function testPromiseNumberInvalid() {
   if (validateType('123', expect, 'test', 'a', true, warn, 0)) {
     return false;
   }
-  if (validateType({then: () => {}}, expect, 'test', 'a', true, warn, 0)) {
+  if (validateType({
+    then: () => {},
+  }, expect, 'test', 'a', true, warn, 0)) {
     return false;
   }
   if (validateType(null, expect, 'test', 'a', true, warn, 0)) {

@@ -43,9 +43,22 @@ function testDispatcherDelegates() {
     type: 'object',
     properties: {
       a: 'K',
-      els: {type: 'array', elementType: 'K'},
-      u: {type: 'union', members: ['K', 'number']},
-      f: {type: 'function', parameters: [{type: 'parameter', paramType: 'K', name: 'x'}]},
+      els: {
+        type: 'array',
+        elementType: 'K',
+      },
+      u: {
+        type: 'union',
+        members: ['K', 'number'],
+      },
+      f: {
+        type: 'function',
+        parameters: [{
+          type: 'parameter',
+          paramType: 'K',
+          name: 'x',
+        }],
+      },
     },
   };
   const direct = substituteType(tree, 'K', '"a"', noop);
@@ -90,9 +103,22 @@ function testOverrideComposes() {
           type: 'object',
           properties: {
             a: 'K',
-            els: {type: 'array', elementType: 'K'},
-            u: {type: 'union', members: ['K', 'number']},
-            f: {type: 'function', parameters: [{type: 'parameter', paramType: 'K', name: 'x'}]},
+            els: {
+              type: 'array',
+              elementType: 'K',
+            },
+            u: {
+              type: 'union',
+              members: ['K', 'number'],
+            },
+            f: {
+              type: 'function',
+              parameters: [{
+                type: 'parameter',
+                paramType: 'K',
+                name: 'x',
+              }],
+            },
           },
         },
         'K',
@@ -113,7 +139,11 @@ function testUnknownKindWarnsAndKeepsSearch() {
   // stock traversal doesn't know `opaque`, so `K` stays unsubstituted.
   // (Asserts that a warning fires, not its wording.)
   const warnings = [];
-  const tree = {type: 'opaque', name: 'UserId', underlying: 'K'};
+  const tree = {
+    type: 'opaque',
+    name: 'UserId',
+    underlying: 'K',
+  };
   const out = substituteType(tree, 'K', '"a"', (...args) => warnings.push(args));
   return (
     out === tree &&
@@ -132,7 +162,10 @@ function testOpaqueOverrideInstantiatesNested() {
     (type, search, replace, warn) => {
       if (type?.type === 'opaque') {
         const underlying = substituteType(type.underlying, search, replace, warn);
-        return underlying === type.underlying ? type : {...type, underlying};
+        return underlying === type.underlying ? type : {
+          ...type,
+          underlying,
+        };
       }
       return substituteType(type, search, replace, warn);
     },
@@ -142,8 +175,19 @@ function testOpaqueOverrideInstantiatesNested() {
       const tree = {
         type: 'object',
         properties: {
-          id: {type: 'opaque', name: 'UserId', underlying: 'K'},
-          ids: {type: 'array', elementType: {type: 'opaque', name: 'UserId', underlying: 'K'}},
+          id: {
+            type: 'opaque',
+            name: 'UserId',
+            underlying: 'K',
+          },
+          ids: {
+            type: 'array',
+            elementType: {
+              type: 'opaque',
+              name: 'UserId',
+              underlying: 'K',
+            },
+          },
         },
       };
       const out = substituteType(tree, 'K', '"a"', warn);

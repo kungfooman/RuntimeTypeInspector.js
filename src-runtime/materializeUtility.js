@@ -24,12 +24,18 @@ function materializeUtility(target, warn, depth) {
     const properties = {};
     for (const key of Object.keys(resolved.properties)) {
       const prop = resolved.properties[key];
-      properties[key] = prop && typeof prop === 'object' ? {...prop, optional: true} : {
+      properties[key] = prop && typeof prop === 'object' ? {
+        ...prop,
+        optional: true,
+      } : {
         type: prop,
         optional: true,
       };
     }
-    return {type: 'object', properties};
+    return {
+      type: 'object',
+      properties,
+    };
   }
   if (base === undefined || keys === undefined) {
     return;
@@ -49,6 +55,9 @@ function materializeUtility(target, warn, depth) {
       properties[key] = resolved.properties[key];
     }
   }
-  return {type: 'object', properties};
+  return {
+    type: 'object',
+    properties,
+  };
 }
 export {materializeUtility};

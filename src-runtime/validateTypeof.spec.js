@@ -84,7 +84,10 @@ function testIdentityPasses() {
   // `typeof Base` accepts Base itself.
   return withTypeofTargets(() => validateType(
     TypeofBase,
-    {type: 'typeof', argument: 'TypeofBase'},
+    {
+      type: 'typeof',
+      argument: 'TypeofBase',
+    },
     'loc',
     'name',
     true,
@@ -96,7 +99,10 @@ function testDirectSubclassPasses() {
   // `typeof Base` accepts a direct subclass (the registerScript case).
   return withTypeofTargets(() => validateType(
     TypeofChild,
-    {type: 'typeof', argument: 'TypeofBase'},
+    {
+      type: 'typeof',
+      argument: 'TypeofBase',
+    },
     'loc',
     'name',
     true,
@@ -108,7 +114,10 @@ function testIndirectSubclassPasses() {
   // `typeof Base` accepts an indirect subclass through the chain.
   return withTypeofTargets(() => validateType(
     TypeofGrandChild,
-    {type: 'typeof', argument: 'TypeofBase'},
+    {
+      type: 'typeof',
+      argument: 'TypeofBase',
+    },
     'loc',
     'name',
     true,
@@ -120,7 +129,10 @@ function testPrototypeLinkedPasses() {
   // `typeof Base` accepts createScript-style prototype linkage (no extends).
   return withTypeofTargets(() => validateType(
     TypeofLegacy,
-    {type: 'typeof', argument: 'TypeofBase'},
+    {
+      type: 'typeof',
+      argument: 'TypeofBase',
+    },
     'loc',
     'name',
     true,
@@ -133,7 +145,10 @@ function testStaticAndPrototypeLinkedPasses() {
   // still satisfies `typeof Base` through the prototype chain.
   return withTypeofTargets(() => validateType(
     TypeofModern,
-    {type: 'typeof', argument: 'TypeofBase'},
+    {
+      type: 'typeof',
+      argument: 'TypeofBase',
+    },
     'loc',
     'name',
     true,
@@ -147,7 +162,10 @@ function testUnrelatedClassFails() {
     const warnings = [];
     const ret = validateType(
       TypeofUnrelated,
-      {type: 'typeof', argument: 'TypeofBase'},
+      {
+        type: 'typeof',
+        argument: 'TypeofBase',
+      },
       'loc',
       'name',
       true,
@@ -165,7 +183,10 @@ function testInstanceFails() {
   // `typeof Base` rejects instances: constructors, not objects, are wanted.
   return withTypeofTargets(() => validateType(
     new TypeofChild(),
-    {type: 'typeof', argument: 'TypeofBase'},
+    {
+      type: 'typeof',
+      argument: 'TypeofBase',
+    },
     'loc',
     'name',
     true,

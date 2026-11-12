@@ -32,7 +32,10 @@ function validateArray(value, expect, loc, name, critical, warn, depth) {
     const nameIndex = `${name}[${i}]`;
     const ret = recurse(valueIndex, elementType, loc, nameIndex, critical, warn, depth + 1);
     if (!ret) {
-      const info = {expect: elementType, value: valueIndex};
+      const info = {
+        expect: elementType,
+        value: valueIndex,
+      };
       warn(`Element at index ${i} has a wrong type.`, info);
       return false;
     }

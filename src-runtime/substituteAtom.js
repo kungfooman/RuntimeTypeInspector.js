@@ -27,6 +27,9 @@ function substituteAtom(type, search, replace, warn) {
       readonly: type.readonly ?? inner.readonly,
     };
   }
-  return {...type, atomType: inner};
+  return {
+    ...type,
+    atomType: inner,
+  };
 }
 export {substituteAtom};

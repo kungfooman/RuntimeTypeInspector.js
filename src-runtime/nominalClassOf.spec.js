@@ -30,7 +30,12 @@ function testPrimitive() {
 function testTypedefObject() {
   // Plain object typedefs stay structural: no constructor is returned.
   clearTypedefs();
-  registerTypedef('NomBox', {type: 'object', properties: {a: 'number'}});
+  registerTypedef('NomBox', {
+    type: 'object',
+    properties: {
+      a: 'number',
+    },
+  });
   return nominalClassOf('NomBox') === undefined;
 }
 function testAliasChain() {
@@ -49,13 +54,21 @@ function testHarvestedPair() {
   // Harvested shapes share the class name: the constructor still wins so checks stay nominal.
   clearTypedefs();
   registerClass(NomBase);
-  registerTypedef('NomBase', {type: 'object', properties: {x: 'number'}});
+  registerTypedef('NomBase', {
+    type: 'object',
+    properties: {
+      x: 'number',
+    },
+  });
   return nominalClassOf('NomBase') === NomBase;
 }
 function testNonString() {
   // Nodes pass through untouched: only names can denote classes.
   clearTypedefs();
-  return nominalClassOf({type: 'object', properties: {}}) === undefined;
+  return nominalClassOf({
+    type: 'object',
+    properties: {},
+  }) === undefined;
 }
 const tests = [
   testDirectClass,

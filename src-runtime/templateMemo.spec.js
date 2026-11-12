@@ -11,7 +11,9 @@ function testMemoStableAcrossRepeats() {
   // identical call adds no cache entry and decides identically.
   substitutedCache.clear();
   try {
-    const templates = () => ({T: 'string'});
+    const templates = () => ({
+      T: 'string',
+    });
     const first = inspectTypeWithTemplates('a', 'T', 'memoSite', 'v', templates());
     const sizeAfterFirst = substitutedCache.size;
     const second = inspectTypeWithTemplates('b', 'T', 'memoSite', 'v', templates());
@@ -31,10 +33,16 @@ function testBindingsDistinguishEntries() {
   substitutedCache.clear();
   try {
     const expect = expandType('K extends "a" | "b" ? K : never');
-    const a = inspectTypeWithTemplates('a', expect, 'memoPins', 'v', {K: '"a"'});
+    const a = inspectTypeWithTemplates('a', expect, 'memoPins', 'v', {
+      K: '"a"',
+    });
     const sizeAfterA = substitutedCache.size;
-    const b = inspectTypeWithTemplates('b', expect, 'memoPins', 'v', {K: '"b"'});
-    const c = inspectTypeWithTemplates('c', expect, 'memoPins', 'v', {K: '"a"'});
+    const b = inspectTypeWithTemplates('b', expect, 'memoPins', 'v', {
+      K: '"b"',
+    });
+    const c = inspectTypeWithTemplates('c', expect, 'memoPins', 'v', {
+      K: '"a"',
+    });
     return (
       a === true &&
       b === true &&
@@ -51,10 +59,21 @@ function testMappingReflectsReregistration() {
   // guard) instead of serving the stale shape.
   const prev = typedefs.Box;
   try {
-    registerTypedef('Box', {type: 'object', properties: {w: 'number'}});
+    registerTypedef('Box', {
+      type: 'object',
+      properties: {
+        w: 'number',
+      },
+    });
     const node = expandType('{ [K in keyof Box]-?: Box[K] }');
     const before = JSON.stringify(createTypeFromMapping(node, () => {}));
-    registerTypedef('Box', {type: 'object', properties: {w: 'number', h: 'number'}});
+    registerTypedef('Box', {
+      type: 'object',
+      properties: {
+        w: 'number',
+        h: 'number',
+      },
+    });
     const after = JSON.stringify(createTypeFromMapping(node, () => {}));
     return (
       before.includes('"w"') &&
@@ -103,7 +122,12 @@ function testNegZeroDistinctFromZero() {
   // pin distinct union members instead of merging like their identical
   // JSON spellings did. Validation is unaffected (`-0 === +0`).
   try {
-    const templates = {T: {type: 'union', members: [-0, '"a"']}};
+    const templates = {
+      T: {
+        type: 'union',
+        members: [-0, '"a"'],
+      },
+    };
     const first = inspectTypeWithTemplates(-0, 'T', 'memoZero', 'v', templates);
     const second = inspectTypeWithTemplates(0, 'T', 'memoZero', 'v', templates);
     const pinned = templates.T;
@@ -124,7 +148,16 @@ function testNegZeroDistinctFromZero() {
 function testReplaceNeverMutates() {
   // Pure substitution: the input tree is byte-identical afterwards, matched
   // subtrees are shared by identity, and only the rewrite path allocates.
-  const input = {type: 'object', properties: {a: 'K', b: {type: 'array', elementType: 'number'}}};
+  const input = {
+    type: 'object',
+    properties: {
+      a: 'K',
+      b: {
+        type: 'array',
+        elementType: 'number',
+      },
+    },
+  };
   const before = JSON.stringify(input);
   const out = substituteType(input, 'K', '"x"', () => {});
   return (

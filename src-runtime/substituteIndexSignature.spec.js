@@ -12,7 +12,10 @@ function testIndexSignatureType() {
     '"a"',
     noop,
   )) ===
-    JSON.stringify({type: 'indexSignature', indexType: '"a"'});
+    JSON.stringify({
+      type: 'indexSignature',
+      indexType: '"a"',
+    });
 }
 // We want: the index parameters substitute, because they are descriptors
 // with their own .type positions.
@@ -20,19 +23,30 @@ function testIndexSignatureParams() {
   const input = {
     type: 'indexSignature',
     indexType: 'string',
-    indexParameters: [{type: 'parameter', paramType: 'K', name: 'k'}],
+    indexParameters: [{
+      type: 'parameter',
+      paramType: 'K',
+      name: 'k',
+    }],
   };
   return JSON.stringify(substituteIndexSignature(input, 'K', '"a"', noop)) ===
     JSON.stringify({
       type: 'indexSignature',
       indexType: 'string',
-      indexParameters: [{type: 'parameter', paramType: '"a"', name: 'k'}],
+      indexParameters: [{
+        type: 'parameter',
+        paramType: '"a"',
+        name: 'k',
+      }],
     });
 }
 // We want: an index signature with no matching key is returned by identity,
 // so unchanged subtrees keep their identity for downstream memos.
 function testIndexSignatureUnchanged() {
-  const input = {type: 'indexSignature', indexType: 'string'};
+  const input = {
+    type: 'indexSignature',
+    indexType: 'string',
+  };
   return substituteIndexSignature(input, 'K', '"a"', noop) === input;
 }
 const tests = [

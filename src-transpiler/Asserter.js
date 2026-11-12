@@ -84,17 +84,50 @@ class Asserter extends Stringifier {
   }
   /** @type {Record<string, Stat>} */
   stats = {
-    'ArrowFunctionExpression'  : {checked: 0, unchecked: 0},
-    'ClassMethod#constructor'  : {checked: 0, unchecked: 0},
-    'ClassMethod#get'          : {checked: 0, unchecked: 0},
-    'ClassMethod#method'       : {checked: 0, unchecked: 0},
-    'ClassMethod#set'          : {checked: 0, unchecked: 0},
-    'ClassPrivateMethod#get'   : {checked: 0, unchecked: 0},
-    'ClassPrivateMethod#method': {checked: 0, unchecked: 0},
-    'ClassPrivateMethod#set'   : {checked: 0, unchecked: 0},
-    'FunctionDeclaration'      : {checked: 0, unchecked: 0},
-    'FunctionExpression'       : {checked: 0, unchecked: 0},
-    'ObjectMethod'             : {checked: 0, unchecked: 0},
+    'ArrowFunctionExpression'  : {
+      checked: 0,
+      unchecked: 0,
+    },
+    'ClassMethod#constructor'  : {
+      checked: 0,
+      unchecked: 0,
+    },
+    'ClassMethod#get'          : {
+      checked: 0,
+      unchecked: 0,
+    },
+    'ClassMethod#method'       : {
+      checked: 0,
+      unchecked: 0,
+    },
+    'ClassMethod#set'          : {
+      checked: 0,
+      unchecked: 0,
+    },
+    'ClassPrivateMethod#get'   : {
+      checked: 0,
+      unchecked: 0,
+    },
+    'ClassPrivateMethod#method': {
+      checked: 0,
+      unchecked: 0,
+    },
+    'ClassPrivateMethod#set'   : {
+      checked: 0,
+      unchecked: 0,
+    },
+    'FunctionDeclaration'      : {
+      checked: 0,
+      unchecked: 0,
+    },
+    'FunctionExpression'       : {
+      checked: 0,
+      unchecked: 0,
+    },
+    'ObjectMethod'             : {
+      checked: 0,
+      unchecked: 0,
+    },
   };
   /**
    * We expand type-asserted ArrowFunctionExpressions in order to add type assertions.
@@ -591,7 +624,10 @@ class Asserter extends Stringifier {
       comment = sections.impl || '';
     }
     if (sections.overloads.length && !comment) {
-      return {templates: undefined, params: {}};
+      return {
+        templates: undefined,
+        params: {},
+      };
     }
     if (!comment) {
       return;
@@ -625,8 +661,13 @@ class Asserter extends Stringifier {
           return;
         }
         const paramName = this.getNameOfParam(node.params[0]);
-        const params = {[paramName]: setter};
-        return {templates: undefined, params};
+        const params = {
+          [paramName]: setter,
+        };
+        return {
+          templates: undefined,
+          params,
+        };
       }
     }
     const {templates, params} = parseJSDocDocument(comment, this.expandType);
@@ -667,7 +708,10 @@ class Asserter extends Stringifier {
         templates = this.templatesOf(ancestor);
       }
       if (templates) {
-        merged = {...merged, ...templates};
+        merged = {
+          ...merged,
+          ...templates,
+        };
       }
     }
     return merged;
@@ -757,7 +801,10 @@ class Asserter extends Stringifier {
     const stat = stats[type];
     if (!stat) {
       this.warn("getStatsForNode> dummy, but unhandled... fix for node type", node);
-      return {checked: 0, unchecked: 0};
+      return {
+        checked: 0,
+        unchecked: 0,
+      };
     }
     return stat;
   }
@@ -892,7 +939,10 @@ class Asserter extends Stringifier {
       stat.checked++;
       return this.emitDefaultChecks(node, inferred, true);
     }
-    const {templates: ownTemplates, params} = jsdoc;
+    const {
+      templates: ownTemplates,
+      params,
+    } = jsdoc;
     if (!params) {
       console.warn('generateTypeChecks> expected params, got none.', {jsdoc});
       stat.unchecked++;
@@ -902,7 +952,10 @@ class Asserter extends Stringifier {
     // this node: merge them under method-local templates so `K` in
     // `@param {K}` resolves jointly. Inner scopes shadow outer ones.
     const scopeTemplates = this.getScopeTemplates(node);
-    const templates = scopeTemplates ? {...scopeTemplates, ...ownTemplates} : ownTemplates;
+    const templates = scopeTemplates ? {
+      ...scopeTemplates,
+      ...ownTemplates,
+    } : ownTemplates;
     stat.checked++;
     const {spaces} = this;
     let out = '';
@@ -1143,7 +1196,10 @@ class Asserter extends Stringifier {
       const inline = parseInlineParamType(param.leadingComments, this.expandType) ??
         parseInlineParamType(target.leadingComments, this.expandType);
       if (inline !== undefined) {
-        checks.push({name: target.name, type: annotateOptional(inline, isAssignment)});
+        checks.push({
+          name: target.name,
+          type: annotateOptional(inline, isAssignment),
+        });
         continue;
       }
       if (!isAssignment) {
@@ -1153,7 +1209,10 @@ class Asserter extends Stringifier {
       if (inferred === undefined) {
         continue;
       }
-      checks.push({name: target.name, type: annotateOptional(inferred, true)});
+      checks.push({
+        name: target.name,
+        type: annotateOptional(inferred, true),
+      });
     }
     return checks;
   }
@@ -1209,7 +1268,10 @@ class Asserter extends Stringifier {
    * @returns {string|null} The class name `X`, or null when no match.
    */
   assignPrototypeOwner(call, child) {
-    const {callee, arguments: args} = call;
+    const {
+      callee,
+      arguments: args,
+    } = call;
     if (!Array.isArray(args) || args.indexOf(child) < 1) {
       return null;
     }
@@ -1336,7 +1398,11 @@ class Asserter extends Stringifier {
         if (parent.init !== child || parent.id.type !== 'Identifier') {
           return null;
         }
-        return {owner: this.toSource(parent.id), prefix, instance: false};
+        return {
+          owner: this.toSource(parent.id),
+          prefix,
+          instance: false,
+        };
       }
       if (parent.type === 'AssignmentExpression') {
         if (parent.right !== child || child.type !== 'ObjectExpression') {
@@ -1345,20 +1411,32 @@ class Asserter extends Stringifier {
         const {left} = parent;
         if (left.type === 'MemberExpression' && !left.computed &&
             left.property.type === 'Identifier' && left.property.name === 'prototype') {
-          return {owner: this.toSource(left.object), prefix, instance: true};
+          return {
+            owner: this.toSource(left.object),
+            prefix,
+            instance: true,
+          };
         }
         // `o.x = {m() {}}` keeps the declared chain; other shapes
         // (`this.o.x = ...`, `a.b.c = ...`) stay bare: the method outlives
         // any single lexical binding.
         if (left.type === 'Identifier') {
-          return {owner: this.toSource(left), prefix, instance: false};
+          return {
+            owner: this.toSource(left),
+            prefix,
+            instance: false,
+          };
         }
         return null;
       }
       if (parent.type === 'CallExpression') {
         const owner = this.assignPrototypeOwner(parent, child);
         if (owner) {
-          return {owner, prefix, instance: true};
+          return {
+            owner,
+            prefix,
+            instance: true,
+          };
         }
         return null;
       }

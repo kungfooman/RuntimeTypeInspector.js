@@ -76,7 +76,10 @@ function parseJSDocTypedef(typedefs, typedefTemplates, warn, comment, expandType
         }
         buf += '\n' + stripped[++i];
       }
-      const {content: def, nextIndex} = extractCurlyContent(buf);
+      const {
+        content: def,
+        nextIndex,
+      } = extractCurlyContent(buf);
       let name = buf.substring(nextIndex).trim();
       // Drop description
       [name] = name.split(' ');

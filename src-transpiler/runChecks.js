@@ -19,7 +19,11 @@ import * as runtime from '../src-runtime/index.js';
  * runChecks(srcWithNumberParam, 'exampleFn', probe);
  */
 function runChecks(src, expose, body) {
-  const asserter = new Asserter({expandType, addHeader: false, filename: 'test.js'});
+  const asserter = new Asserter({
+    expandType,
+    addHeader: false,
+    filename: 'test.js',
+  });
   let out = asserter.toSource(parse(src, parserOptions));
   // `export` cannot run inside `new Function`: strip it. Export only affects
   // how the transpiler attaches JSDoc (already done above), never the checks.

@@ -8,7 +8,10 @@ function testOptionalMember() {
     elements: [{
       type: 'tupleMember',
       name: 'x',
-      elementType: {type: 'atom', atomType: 'number'},
+      elementType: {
+        type: 'atom',
+        atomType: 'number',
+      },
       optional: true,
     }],
   };
@@ -22,7 +25,10 @@ function testRestMember() {
     elements: [{
       type: 'tupleMember',
       name: 'values',
-      elementType: {type: 'array', elementType: 'number'},
+      elementType: {
+        type: 'array',
+        elementType: 'number',
+      },
       dotDot: true,
     }],
   };
@@ -33,7 +39,12 @@ function testBareRestMember() {
   const actual = overloadToTuple('@param {...number} values');
   const expected = {
     type: 'tuple',
-    elements: [{type: 'tupleMember', name: 'values', elementType: 'number', dotDot: true}],
+    elements: [{
+      type: 'tupleMember',
+      name: 'values',
+      elementType: 'number',
+      dotDot: true,
+    }],
   };
   return deepEqualType(actual, expected);
 }
@@ -42,14 +53,22 @@ function testOptionalRestRejects() {
   const actual = overloadToTuple('@param {...number[]} [values]');
   const expected = {
     type: 'tuple',
-    elements: [{type: 'tupleMember', name: 'values', elementType: 'never', optional: true}],
+    elements: [{
+      type: 'tupleMember',
+      name: 'values',
+      elementType: 'never',
+      optional: true,
+    }],
   };
   return deepEqualType(actual, expected);
 }
 // A rest marker before the name is the TS1003 error: the member drops.
 function testMisplacedRestDrops() {
   const actual = overloadToTuple('@param {number[]} ...values');
-  const expected = {type: 'tuple', elements: []};
+  const expected = {
+    type: 'tuple',
+    elements: [],
+  };
   return deepEqualType(actual, expected);
 }
 export const tests = [testOptionalMember, testRestMember, testBareRestMember, testOptionalRestRejects, testMisplacedRestDrops];

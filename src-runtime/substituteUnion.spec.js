@@ -12,12 +12,18 @@ function testUnionMembers() {
     '"a"',
     noop,
   )) ===
-    JSON.stringify({type: 'union', members: ['"a"', 'number']});
+    JSON.stringify({
+      type: 'union',
+      members: ['"a"', 'number'],
+    });
 }
 // We want: a union with no matching key is returned by identity, so
 // unchanged subtrees keep their identity for downstream memos.
 function testUnionUnchanged() {
-  const input = {type: 'union', members: ['string', 'number']};
+  const input = {
+    type: 'union',
+    members: ['string', 'number'],
+  };
   return substituteUnion(input, 'K', '"a"', noop) === input;
 }
 // We want: nested union members substitute recursively, because a member
@@ -26,13 +32,22 @@ function testUnionNested() {
   return JSON.stringify(substituteUnion(
     {
       type: 'union',
-      members: [{type: 'array', elementType: 'K'}, 'number'],
+      members: [{
+        type: 'array',
+        elementType: 'K',
+      }, 'number'],
     },
     'K',
     '"a"',
     noop,
   )) ===
-    JSON.stringify({type: 'union', members: [{type: 'array', elementType: '"a"'}, 'number']});
+    JSON.stringify({
+      type: 'union',
+      members: [{
+        type: 'array',
+        elementType: '"a"',
+      }, 'number'],
+    });
 }
 const tests = [
   testUnionMembers,

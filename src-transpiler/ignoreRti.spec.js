@@ -11,7 +11,11 @@ function convert(src) {
   const origWarn = console.warn;
   console.warn = () => undefined;
   try {
-    const asserter = new Asserter({expandType, addHeader: false, filename: 'test.js'});
+    const asserter = new Asserter({
+      expandType,
+      addHeader: false,
+      filename: 'test.js',
+    });
     return asserter.toSource(parse(src, parserOptions));
   } finally {
     console.warn = origWarn;

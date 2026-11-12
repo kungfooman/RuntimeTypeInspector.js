@@ -270,7 +270,11 @@ function parseJSDocNodes(src) {
         cursor.index = look;
         const {typeRaw, headStart} = parseBraceType(cursor);
         const headReader = tag === '@template' ? sliceTemplateHead : sliceParenHead;
-        tags.push({tag, typeRaw, headRaw: headReader(cursor, headStart)});
+        tags.push({
+          tag,
+          typeRaw,
+          headRaw: headReader(cursor, headStart),
+        });
         continue;
       }
       if (tag === '@template') {
@@ -281,7 +285,11 @@ function parseJSDocNodes(src) {
         // path runs to the line end: braced heads sliced above.
         cursor.index += 1;
         const headRaw = sliceTemplateHead(cursor, token.end ?? token.pos);
-        tags.push({tag, typeRaw: '', headRaw});
+        tags.push({
+          tag,
+          typeRaw: '',
+          headRaw,
+        });
         continue;
       }
       if (tag === '@param') {
@@ -298,7 +306,11 @@ function parseJSDocNodes(src) {
         // keeps `a`).
         cursor.index += 1;
         const headRaw = sliceBareHead(cursor, token.end ?? token.pos);
-        tags.push({tag, typeRaw: '', headRaw});
+        tags.push({
+          tag,
+          typeRaw: '',
+          headRaw,
+        });
         continue;
       }
       if (tag === '@type') {
@@ -325,7 +337,11 @@ function parseJSDocNodes(src) {
       cursor.index += 1;
       const headRaw = sliceHead(cursor, token.end ?? token.pos);
       const head = headRaw.split(/\s+/)[0] ?? '';
-      tags.push({tag, typeRaw: '', headRaw: head});
+      tags.push({
+        tag,
+        typeRaw: '',
+        headRaw: head,
+      });
       continue;
     }
     // Any other tag still takes a brace type when one opens right after
@@ -343,12 +359,20 @@ function parseJSDocNodes(src) {
     if (look < cursor.tokens.length && cursor.tokens[look].kind === 'lbrace') {
       cursor.index = look;
       const {typeRaw, headStart} = parseBraceType(cursor);
-      tags.push({tag, typeRaw, headRaw: sliceHead(cursor, headStart)});
+      tags.push({
+        tag,
+        typeRaw,
+        headRaw: sliceHead(cursor, headStart),
+      });
       continue;
     }
     const fallback = cursor.tokens[look]?.pos ?? cursor.src.length;
     cursor.consumedUpTo = Math.max(cursor.consumedUpTo, fallback);
-    tags.push({tag, typeRaw: '', headRaw: ''});
+    tags.push({
+      tag,
+      typeRaw: '',
+      headRaw: '',
+    });
     cursor.index += 1;
   }
   return tags;

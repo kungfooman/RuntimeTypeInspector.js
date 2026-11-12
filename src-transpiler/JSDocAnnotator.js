@@ -307,8 +307,13 @@ class JSDocAnnotator {
         return;
       }
       const paramName = node.params[0].type === 'Identifier' ? node.params[0].name : 'value';
-      const params = {[paramName]: setter};
-      return {templates: undefined, params};
+      const params = {
+        [paramName]: setter,
+      };
+      return {
+        templates: undefined,
+        params,
+      };
     }
     const {templates, params} = parseJSDocDocument(comment, this.expandType);
     if (!templates && !params) {

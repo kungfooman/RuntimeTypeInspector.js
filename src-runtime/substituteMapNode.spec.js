@@ -13,12 +13,20 @@ function testMapNodeKeyVal() {
     '"a"',
     noop,
   )) ===
-    JSON.stringify({type: 'map', key: '"a"', val: 'string'});
+    JSON.stringify({
+      type: 'map',
+      key: '"a"',
+      val: 'string',
+    });
 }
 // We want: a map with no matching key is returned by identity, so
 // unchanged subtrees keep their identity for downstream memos.
 function testMapNodeUnchanged() {
-  const input = {type: 'map', key: 'string', val: 'number'};
+  const input = {
+    type: 'map',
+    key: 'string',
+    val: 'number',
+  };
   return substituteMapNode(input, 'K', '"a"', noop) === input;
 }
 // We want: nested map key/value substitute recursively, because
@@ -28,13 +36,23 @@ function testMapNodeNested() {
     {
       type: 'map',
       key: 'K',
-      val: {type: 'array', elementType: 'K'},
+      val: {
+        type: 'array',
+        elementType: 'K',
+      },
     },
     'K',
     '"a"',
     noop,
   )) ===
-    JSON.stringify({type: 'map', key: '"a"', val: {type: 'array', elementType: '"a"'}});
+    JSON.stringify({
+      type: 'map',
+      key: '"a"',
+      val: {
+        type: 'array',
+        elementType: '"a"',
+      },
+    });
 }
 const tests = [
   testMapNodeKeyVal,

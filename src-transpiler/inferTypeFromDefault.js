@@ -20,15 +20,23 @@ function inferTypeFromDefault(node) {
     case 'BooleanLiteral':
       return 'boolean';
     case 'BigIntLiteral':
-      return {type: 'bigint'};
+      return {
+        type: 'bigint',
+      };
     case 'RegExpLiteral':
       return 'RegExp';
     case 'TemplateLiteral':
       return 'string';
     case 'ArrayExpression':
-      return {type: 'array', elementType: 'any'};
+      return {
+        type: 'array',
+        elementType: 'any',
+      };
     case 'ObjectExpression':
-      return {type: 'object', properties: {}};
+      return {
+        type: 'object',
+        properties: {},
+      };
     case 'ArrowFunctionExpression':
     case 'FunctionExpression':
       return 'Function';
@@ -51,7 +59,9 @@ function inferTypeFromDefault(node) {
         return 'number';
       }
       if ((operator === '-' || operator === '+') && argument.type === 'BigIntLiteral') {
-        return {type: 'bigint'};
+        return {
+          type: 'bigint',
+        };
       }
       break;
     }

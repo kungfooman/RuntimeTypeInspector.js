@@ -53,7 +53,9 @@ function testUnaryAndSpecial() {
   if (inferTypeFromDefault(defaultOf('!x')) !== 'boolean') {
     return false;
   }
-  if (JSON.stringify(inferTypeFromDefault(defaultOf('123n'))) !== JSON.stringify({type: 'bigint'})) {
+  if (JSON.stringify(inferTypeFromDefault(defaultOf('123n'))) !== JSON.stringify({
+    type: 'bigint',
+  })) {
     return false;
   }
   if (inferTypeFromDefault(defaultOf('/re/')) !== 'RegExp') {

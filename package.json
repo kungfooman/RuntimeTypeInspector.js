@@ -14,6 +14,7 @@
     "lint:inline-casts": "node src-lint/find-inline-casts.mjs",
     "lint:align": "node src-lint/align-imports.mjs --check",
     "expand-bool-returns": "node src-lint/expand-bool-returns.mjs",
+    "expand-objects": "node src-lint/expand-objects.mjs",
     "align-imports": "node src-lint/align-imports.mjs",
     "break-hanging": "node src-lint/break-hanging-calls.mjs",
     "watch": "rollup -c -w",

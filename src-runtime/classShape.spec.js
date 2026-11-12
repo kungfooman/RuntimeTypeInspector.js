@@ -101,7 +101,12 @@ function testHarvestPreferred() {
     }
   }
   classes.RtiHarv = RtiHarv;
-  typedefs.RtiHarv = {type: 'object', properties: {harvestedProp: 'string'}};
+  typedefs.RtiHarv = {
+    type: 'object',
+    properties: {
+      harvestedProp: 'string',
+    },
+  };
   bumpClassVersion();
   bumpTypedefVersion();
   try {
@@ -127,7 +132,12 @@ function testSubclassWins() {
   }
   classes.RtiWBase = RtiWBase;
   classes.RtiWSub = RtiWSub;
-  typedefs.RtiWBase = {type: 'object', properties: {dup: 'number'}};
+  typedefs.RtiWBase = {
+    type: 'object',
+    properties: {
+      dup: 'number',
+    },
+  };
   bumpClassVersion();
   bumpTypedefVersion();
   try {
@@ -187,7 +197,12 @@ function testWipeWithBumpInvalidates() {
     }
   }
   classes.RtiWipe = RtiWipe;
-  typedefs.RtiWipe = {type: 'object', properties: {harvested: 'string'}};
+  typedefs.RtiWipe = {
+    type: 'object',
+    properties: {
+      harvested: 'string',
+    },
+  };
   bumpClassVersion();
   bumpTypedefVersion();
   try {

@@ -39,7 +39,9 @@ function testUnclonableStaysStructured() {
 }
 function testPreviewNeverBareObject() {
   const msgs = captureMessages(() => {
-    inspectType({a: 1}, 'number', 'loc', 'preview');
+    inspectType({
+      a: 1,
+    }, 'number', 'loc', 'preview');
   });
   return (
     msgs.length === 1 &&
@@ -58,7 +60,12 @@ function testExtrasSnapshotted() {
           a: 1,
           f: () => {},
         },
-        {type: 'object', properties: {a: 'number'}},
+        {
+          type: 'object',
+          properties: {
+            a: 'number',
+          },
+        },
         'loc',
         'extras',
       );

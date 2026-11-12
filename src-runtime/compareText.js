@@ -16,7 +16,10 @@ export function compareText(warnObj) {
   try {
     diagnosis = explainMismatch(warnObj.value, warnObj.expect, warnObj.name);
   } catch {
-    diagnosis = {findings: [], stub: ''};
+    diagnosis = {
+      findings: [],
+      stub: '',
+    };
   }
   lines.push('Diagnosis:');
   if (diagnosis.findings.length) {

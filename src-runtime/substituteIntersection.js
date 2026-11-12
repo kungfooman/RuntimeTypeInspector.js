@@ -12,6 +12,9 @@ import {substitutes} from "./substitutes.js";
  */
 function substituteIntersection(type, search, replace, warn) {
   const members = substitutes.substituteList(type.members, search, replace, warn);
-  return members === type.members ? type : {...type, members};
+  return members === type.members ? type : {
+    ...type,
+    members,
+  };
 }
 export {substituteIntersection};

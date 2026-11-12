@@ -111,6 +111,12 @@ export function validateTypeof(value, expect, loc, name, critical, warn, depth) 
       return false;
     }
   }
-  warn('unchecked', {value, type: 'typeof', loc, name, expect});
+  warn('unchecked', {
+    value,
+    type: 'typeof',
+    loc,
+    name,
+    expect,
+  });
   return false;
 }

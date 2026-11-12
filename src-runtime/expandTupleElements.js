@@ -24,7 +24,10 @@ function expandTupleElements(elements) {
     let raw = el;
     // Named rest: ...b: number[]  (tupleMember with dotDot)
     if (el && typeof el === 'object' && el.type === 'tupleMember' && el.dotDot) {
-      raw = {type: 'rest', annotation: el.elementType};
+      raw = {
+        type: 'rest',
+        annotation: el.elementType,
+      };
     }
     if (raw && typeof raw === 'object' && raw.type === 'rest') {
       const ann = raw.annotation;
@@ -32,7 +35,12 @@ function expandTupleElements(elements) {
         expanded.push(...ann.elements);
       } else if (ann && ann.type === 'array') {
         if (variadic) {
-          return {expanded, variadic, variadicPos, error: 'multiple-variadic'};
+          return {
+            expanded,
+            variadic,
+            variadicPos,
+            error: 'multiple-variadic',
+          };
         }
         variadic = ann;
         variadicPos = expanded.length;
@@ -43,6 +51,11 @@ function expandTupleElements(elements) {
       expanded.push(el);
     }
   }
-  return {expanded, variadic, variadicPos, error: undefined};
+  return {
+    expanded,
+    variadic,
+    variadicPos,
+    error: undefined,
+  };
 }
 export {expandTupleElements};

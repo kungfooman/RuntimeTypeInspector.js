@@ -46,7 +46,9 @@ function stringifyType(type, space = 0, depth = 0) {
       return stringifyType(type.atomType, space, depth + 1);
     }
   }
-  const {type: kind} = type;
+  const {
+    type: kind,
+  } = type;
   // {type: 'string', optional: true} etc. where kind is a plain type name
   // and carries no extra structural fields - unwrap below after switch.
   let out;
@@ -65,7 +67,10 @@ function stringifyType(type, space = 0, depth = 0) {
           const isReadonly = !!(val && typeof val === 'object' && val.readonly);
           const prefix = isReadonly ? 'readonly ' : '';
           if (isOpt) {
-            const inner = {...val, optional: false};
+            const inner = {
+              ...val,
+              optional: false,
+            };
             const innerStr = stringifyType(inner, space, depth + 1);
             parts.push(`${prefix}${stringifyKey(key)}?: ${innerStr}`);
           } else {

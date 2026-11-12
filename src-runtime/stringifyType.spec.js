@@ -5,9 +5,18 @@ function testIssue154() {
   const t2 = {
     type: 'object',
     properties: {
-      aa: {type: 'tuple', elements: [1, 2, 3, "'aa'", 1, 2, 3]},
-      bb: {type: 'tuple', elements: [1, 2, 3, "'bb'", 1, 2, 3]},
-      cc: {type: 'tuple', elements: [1, 2, 3, "'cc'", 1, 2, 3]},
+      aa: {
+        type: 'tuple',
+        elements: [1, 2, 3, "'aa'", 1, 2, 3],
+      },
+      bb: {
+        type: 'tuple',
+        elements: [1, 2, 3, "'bb'", 1, 2, 3],
+      },
+      cc: {
+        type: 'tuple',
+        elements: [1, 2, 3, "'cc'", 1, 2, 3],
+      },
     },
     optional: false,
   };
@@ -24,9 +33,18 @@ function testIssue154PrettyNonNormalized() {
   const t2 = {
     type: 'object',
     properties: {
-      aa: {type: 'tuple', elements: [1, 2, 3, "'aa'", 1, 2, 3]},
-      bb: {type: 'tuple', elements: [1, 2, 3, "'bb'", 1, 2, 3]},
-      cc: {type: 'tuple', elements: [1, 2, 3, "'cc'", 1, 2, 3]},
+      aa: {
+        type: 'tuple',
+        elements: [1, 2, 3, "'aa'", 1, 2, 3],
+      },
+      bb: {
+        type: 'tuple',
+        elements: [1, 2, 3, "'bb'", 1, 2, 3],
+      },
+      cc: {
+        type: 'tuple',
+        elements: [1, 2, 3, "'cc'", 1, 2, 3],
+      },
     },
     optional: false,
   };
@@ -84,7 +102,13 @@ function testIssue154PrettyNonNormalized() {
 function testRestKept() {
   const str = stringifyType({
     type: 'tuple',
-    elements: [1, {type: 'rest', annotation: {type: 'tuple', elements: [2, 3]}}],
+    elements: [1, {
+      type: 'rest',
+      annotation: {
+        type: 'tuple',
+        elements: [2, 3],
+      },
+    }],
   });
   if (str !== '[1, ...[2, 3]]') {
     console.warn('stringifyType rest mismatch', {str});
@@ -94,7 +118,12 @@ function testRestKept() {
 }
 // Mappings print in mapped-type notation.
 function testMapping() {
-  const str = stringifyType({type: 'mapping', iterable: 'ObjKeys', element: 'Key', result: 'Key'});
+  const str = stringifyType({
+    type: 'mapping',
+    iterable: 'ObjKeys',
+    element: 'Key',
+    result: 'Key',
+  });
   if (str !== '{[Key in ObjKeys]: Key}') {
     console.warn('stringifyType mapping mismatch', {str});
     return false;
@@ -138,7 +167,13 @@ function testMappingModifiers() {
 function testReadonlyProps() {
   const str = stringifyType({
     type: 'object',
-    properties: {id: {type: 'string', readonly: true}, x: 'number'},
+    properties: {
+      id: {
+        type: 'string',
+        readonly: true,
+      },
+      x: 'number',
+    },
   });
   if (str !== '{readonly id: string, x: number}') {
     console.warn('stringifyType readonly mismatch', {str});
@@ -223,7 +258,10 @@ function testFunctionPrintsReturn() {
     console.warn('stringifyType function return mismatch', {str});
     return false;
   }
-  const bare = stringifyType({type: 'function', parameters: []});
+  const bare = stringifyType({
+    type: 'function',
+    parameters: [],
+  });
   if (bare !== '()=>any') {
     console.warn('stringifyType bare function mismatch', {bare});
     return false;

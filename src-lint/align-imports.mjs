@@ -1,6 +1,7 @@
 import {readdirSync, readFileSync, statSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import * as espree from 'espree';
+import {isBareShorthand} from './isBareShorthand.mjs';
 function collectJsFiles(path, out) {
   let stat;
   try {
@@ -112,8 +113,8 @@ function collect(node, out) {
   }
 }
 // The core rule cannot scope by AST node, so this gate owns the split:
-// ImportDeclaration braces carry run padding, every other brace pair
-// (ObjectExpression, ObjectPattern) must have no inner padding.
+// ImportDeclaration lines carry run padding, and single-line objects
+// must be bare shorthand (see isBareShorthand.mjs).
 function checkBraces(file, code, ast) {
   const problems = [];
   const bracePairs = new Map();
@@ -139,10 +140,11 @@ function checkBraces(file, code, ast) {
     if (pair.open.loc.start.line !== pair.close.loc.end.line) {
       continue;
     }
-    const inner = code.slice(pair.open.range[1], pair.close.range[0]);
-    if (inner !== inner.trim()) {
-      problems.push(file + ':' + pair.open.loc.start.line + ': padded braces outside imports');
+    if (isBareShorthand(node)) {
+      continue;
     }
+    const name = node.type === 'ObjectPattern' ? 'destructuring' : 'object';
+    problems.push(file + ':' + pair.open.loc.start.line + ': single-line ' + name + ' must be bare shorthand like {a, b, c}');
   }
   return problems;
 }

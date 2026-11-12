@@ -13,7 +13,10 @@ function testForeignArrayPasses() {
 }
 // A length-carrying impostor is not an array in any realm.
 function testArrayImpostorRejected() {
-  return isArrayValue({length: 4, 0: 1}) === false && isArrayValue('nope') === false;
+  return isArrayValue({
+    length: 4,
+    0: 1,
+  }) === false && isArrayValue('nope') === false;
 }
 // Foreign maps and sets pass the brand check while instanceof fails.
 function testForeignMapSetPass() {
@@ -54,7 +57,9 @@ function testPromiseBrandCrossRealm() {
     isPromiseValue(foreign) === true &&
     isPromiseValue(Promise.resolve(1)) === true &&
     isPromiseValue(new PlainSub((resolve) => resolve(1))) === true &&
-    isPromiseValue({then() {}}) === false
+    isPromiseValue({
+      then() {},
+    }) === false
   );
 }
 export const tests = [

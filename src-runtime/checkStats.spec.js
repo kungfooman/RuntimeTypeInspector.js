@@ -8,7 +8,9 @@ import {expandType  } from '../src-transpiler/expandType.js';
  * restore without turning suite ordering into part of the contract.
  * @type {{checkStats: boolean}}
  */
-const virgin = {checkStats: options.checkStats};
+const virgin = {
+  checkStats: options.checkStats,
+};
 function testKindWalksAccumulatePerKind() {
   // Each container kind accumulates its own total and worst: Set, Array
   // and Object walks land in separate ledgers on the same row, and kinds
@@ -57,7 +59,10 @@ function testInspectTypeSplitsParams() {
   options.checkStats = true;
   resetCheckStats();
   const exprOk = inspectType('x > 0', 'string', 'E#m', 'expr');
-  const arrExpect = {type: 'array', elementType: 'string'};
+  const arrExpect = {
+    type: 'array',
+    elementType: 'string',
+  };
   const definesOk = inspectType(['a', 'b'], arrExpect, 'E#m', 'defines');
   const rows = getCheckStats();
   const expr = rows.find(_ => _.loc === 'E#m expr');
@@ -79,12 +84,21 @@ function testValidatorsRecordTheirKind() {
   options.checkStats = true;
   resetCheckStats();
   const warn = () => undefined;
-  const setExpect = {type: 'set', elementType: 'number'};
-  const arrExpect = {type: 'array', elementType: 'number'};
+  const setExpect = {
+    type: 'set',
+    elementType: 'number',
+  };
+  const arrExpect = {
+    type: 'array',
+    elementType: 'number',
+  };
   const recExpect = expandType('Record<string, number>');
   const setOk = validateType(new Set([1, 'x']), setExpect, 'V#kinds', 'v', true, warn, 0) === false;
   const arrOk = validateType([1, 'x'], arrExpect, 'V#kinds', 'v', true, warn, 0) === false;
-  const recOk = validateType({a: 1, b: 'x'}, recExpect, 'V#kinds', 'v', true, warn, 0) === false;
+  const recOk = validateType({
+    a: 1,
+    b: 'x',
+  }, recExpect, 'V#kinds', 'v', true, warn, 0) === false;
   recordCheck('V#kinds', 'v', 0);
   const [row] = getCheckStats();
   const ok = setOk && arrOk && recOk &&

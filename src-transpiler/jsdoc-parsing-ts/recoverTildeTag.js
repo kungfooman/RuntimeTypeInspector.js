@@ -30,6 +30,9 @@ function recoverTildeTag(source, truncated) {
   if (group.text.startsWith(truncated) === false || group.text[truncated.length] !== '~') {
     return null;
   }
-  return {typeRaw: group.text, headRaw: source.slice(group.end).trim()};
+  return {
+    typeRaw: group.text,
+    headRaw: source.slice(group.end).trim(),
+  };
 }
 export {recoverTildeTag};

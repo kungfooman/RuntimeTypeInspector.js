@@ -60,7 +60,11 @@ function instantiateReference(type, warn) {
   });
   instance = deepFreeze(instance);
   if (key !== undefined) {
-    referenceInstances.set(key, {typedefV: typedefVersion, classV: classVersion, instance});
+    referenceInstances.set(key, {
+      typedefV: typedefVersion,
+      classV: classVersion,
+      instance,
+    });
   }
   return instance;
 }

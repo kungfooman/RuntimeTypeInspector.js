@@ -12,7 +12,11 @@ function clearObject(obj) {
 }
 function test1() {
   // Simple: template literal without interpolations
-  const expect = {type: 'templateLiteral', quasis: ['id'], types: []};
+  const expect = {
+    type: 'templateLiteral',
+    quasis: ['id'],
+    types: [],
+  };
   if (!validateType('id', expect, 'loc', 'name', true, () => undefined, 0)) {
     return false;
   }
@@ -26,7 +30,10 @@ function test2() {
   const expect = {
     type: 'templateLiteral',
     quasis: ['', 'x'],
-    types: [{type: 'union', members: ['"a"', '"b"']}],
+    types: [{
+      type: 'union',
+      members: ['"a"', '"b"'],
+    }],
   };
   const values = resolveTemplateLiteralValues(expect, () => undefined);
   if (JSON.stringify(values) !== JSON.stringify(['ax', 'bx'])) {
@@ -40,8 +47,14 @@ function test3() {
     type: 'templateLiteral',
     quasis: ['', '_', ''],
     types: [
-      {type: 'union', members: ['"a"', '"b"']},
-      {type: 'union', members: ['"1"', '"2"']},
+      {
+        type: 'union',
+        members: ['"a"', '"b"'],
+      },
+      {
+        type: 'union',
+        members: ['"1"', '"2"'],
+      },
     ],
   };
   const values = resolveTemplateLiteralValues(expect, () => undefined);
@@ -60,9 +73,16 @@ function test4() {
       {
         type: 'templateLiteral',
         quasis: ['', '!'],
-        types: [{type: 'union', members: ['"a"', '"b"']}],
+        types: [{
+          type: 'union',
+          members: ['"a"', '"b"'],
+        }],
       },
-      {type: 'templateLiteral', quasis: ['~'], types: []},
+      {
+        type: 'templateLiteral',
+        quasis: ['~'],
+        types: [],
+      },
     ],
   };
   const values = resolveTemplateLiteralValues(expect, () => undefined);
@@ -77,7 +97,10 @@ function test5() {
   const expect = {
     type: 'templateLiteral',
     quasis: ['v', ''],
-    types: [{type: 'union', members: [1, 2]}],
+    types: [{
+      type: 'union',
+      members: [1, 2],
+    }],
   };
   if (!validateType('v1', expect, 'loc', 'name', true, () => undefined, 0)) {
     return false;
@@ -90,7 +113,10 @@ function test5() {
 function test6() {
   // References to registered typedefs are resolved recursively
   clearObject(typedefs);
-  registerTypedef('Lang', {type: 'union', members: ['"en"', '"ja"', '"pt"']});
+  registerTypedef('Lang', {
+    type: 'union',
+    members: ['"en"', '"ja"', '"pt"'],
+  });
   registerTypedef(
     'AllLocaleIDs',
     {
@@ -127,7 +153,11 @@ function test6() {
 }
 function test7() {
   // Non-enumerable interpolations (like `string`) fail gracefully
-  const expect = {type: 'templateLiteral', quasis: ['', '_'], types: ['string']};
+  const expect = {
+    type: 'templateLiteral',
+    quasis: ['', '_'],
+    types: ['string'],
+  };
   const values = resolveTemplateLiteralValues(expect, () => undefined);
   if (values !== undefined) {
     return false;
@@ -150,7 +180,10 @@ function test8() {
   const expected = {
     type: 'templateLiteral',
     quasis: ['', '_', ''],
-    types: [{type: 'union', members: ['A', 'B']}, 'C'],
+    types: [{
+      type: 'union',
+      members: ['A', 'B'],
+    }, 'C'],
   };
   if (JSON.stringify(withSpans) !== JSON.stringify(expected)) {
     return false;

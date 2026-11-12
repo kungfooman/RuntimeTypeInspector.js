@@ -22,8 +22,13 @@ function inspectOverloads(args, signatures, loc, name) {
   const members = [];
   const noop = () => undefined;
   for (const [index, signature] of signatures.entries()) {
-    const templates = {...signature.templates};
-    const state = {pinned: new Set(), constraints: {}};
+    const templates = {
+      ...signature.templates,
+    };
+    const state = {
+      pinned: new Set(),
+      constraints: {},
+    };
     const {elements} = signature.tuple;
     for (let i = 0; i < args.length; i++) {
       let member = elements[i];
@@ -56,6 +61,9 @@ function inspectOverloads(args, signatures, loc, name) {
       return inspectType(args, tuple, loc, name);
     }
   }
-  return inspectType(args, {type: 'union', members}, loc, name);
+  return inspectType(args, {
+    type: 'union',
+    members,
+  }, loc, name);
 }
 export {inspectOverloads};

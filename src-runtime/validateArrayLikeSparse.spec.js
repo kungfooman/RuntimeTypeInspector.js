@@ -53,7 +53,9 @@ function testBadShapesFail() {
     validateArrayLikeSparse(null, numbers(), 'loc', 'name', true, warn, 0) === false &&
     validateArrayLikeSparse(42, likeNumbers(), 'loc', 'name', true, warn, 0) === false &&
     validateArrayLikeSparse([1], 'number', 'loc', 'name', true, warn, 0) === false &&
-    validateArrayLikeSparse([1], {type: 'array'}, 'loc', 'name', true, warn, 0) === false
+    validateArrayLikeSparse([1], {
+      type: 'array',
+    }, 'loc', 'name', true, warn, 0) === false
   );
 }
 function testBareArrayLikeIsShapeOnly() {

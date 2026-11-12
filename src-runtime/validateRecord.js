@@ -29,7 +29,10 @@ function validateRecord(value, expect, loc, name, critical, warn, depth) {
     if (key === 'number' || typeof key === 'number') {
       const ok = typeof key === 'number' ? prop === String(key) : String(Number(prop)) === prop;
       if (!ok) {
-        warn(`> validateType> record> key '${prop}' is no number.`, {expect: key, value: prop});
+        warn(`> validateType> record> key '${prop}' is no number.`, {
+          expect: key,
+          value: prop,
+        });
         return false;
       }
     } else if (key !== undefined && key !== 'any' && key !== 'unknown' && key !== '*' &&
@@ -51,7 +54,10 @@ function validateRecord(value, expect, loc, name, critical, warn, depth) {
     }
     const ret = recurse(valueKey, val, loc, nameKey, critical, warn, depth + 1);
     if (!ret) {
-      const info = {expect: val, value: valueKey};
+      const info = {
+        expect: val,
+        value: valueKey,
+      };
       warn(`> validateType> record> The ${nameKey} property has an invalid type.`, info);
       return false;
     }

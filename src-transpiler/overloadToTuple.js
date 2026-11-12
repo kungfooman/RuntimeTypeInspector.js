@@ -44,7 +44,10 @@ function overloadToTuple(section, expandType = expandTypeDepFree, ignored = new 
     const optional = isExpandedObject(type) && type.optional === true;
     let elementType = type;
     if (optional) {
-      elementType = {...type, optional: false};
+      elementType = {
+        ...type,
+        optional: false,
+      };
     }
     let rest = false;
     if (tag !== undefined && tag.typeRaw.trim().startsWith('...')) {
@@ -55,12 +58,19 @@ function overloadToTuple(section, expandType = expandTypeDepFree, ignored = new 
     if (ignored.has(name)) {
       const erased = rest && isArrayNode(elementType);
       if (erased) {
-        elementType = {type: 'array', elementType: 'any'};
+        elementType = {
+          type: 'array',
+          elementType: 'any',
+        };
       } else {
         elementType = 'any';
       }
     }
-    const member = {type: 'tupleMember', name, elementType};
+    const member = {
+      type: 'tupleMember',
+      name,
+      elementType,
+    };
     if (optional) {
       member.optional = true;
     }
@@ -69,6 +79,9 @@ function overloadToTuple(section, expandType = expandTypeDepFree, ignored = new 
     }
     elements.push(member);
   }
-  return {type: 'tuple', elements};
+  return {
+    type: 'tuple',
+    elements,
+  };
 }
 export {overloadToTuple};

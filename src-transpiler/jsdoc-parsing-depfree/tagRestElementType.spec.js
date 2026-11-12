@@ -8,8 +8,20 @@ function testDocumentedRestUnwraps() {
     invalidRest: false,
     optional: false,
     name: 'values',
-  }, {type: 'array', elementType: {type: 'array', elementType: 'number'}});
-  return deepEqualType(actual, {elementType: {type: 'array', elementType: 'number'}, dotDot: true});
+  }, {
+    type: 'array',
+    elementType: {
+      type: 'array',
+      elementType: 'number',
+    },
+  });
+  return deepEqualType(actual, {
+    elementType: {
+      type: 'array',
+      elementType: 'number',
+    },
+    dotDot: true,
+  });
 }
 // The bare `...T` spelling turns variadic over the gathered element itself.
 function testBareRestKeepsGathered() {
@@ -19,8 +31,14 @@ function testBareRestKeepsGathered() {
     invalidRest: false,
     optional: false,
     name: 'values',
-  }, {type: 'array', elementType: 'number'});
-  return deepEqualType(actual, {elementType: 'number', dotDot: true});
+  }, {
+    type: 'array',
+    elementType: 'number',
+  });
+  return deepEqualType(actual, {
+    elementType: 'number',
+    dotDot: true,
+  });
 }
 // Nested arrays flow through: `...T[][]` varies over the gathered element.
 function testNestedRestVariesOuter() {
@@ -32,10 +50,22 @@ function testNestedRestVariesOuter() {
     name: 'values',
   }, {
     type: 'array',
-    elementType: {type: 'array', elementType: {type: 'array', elementType: 'number'}},
+    elementType: {
+      type: 'array',
+      elementType: {
+        type: 'array',
+        elementType: 'number',
+      },
+    },
   });
   return deepEqualType(actual, {
-    elementType: {type: 'array', elementType: {type: 'array', elementType: 'number'}},
+    elementType: {
+      type: 'array',
+      elementType: {
+        type: 'array',
+        elementType: 'number',
+      },
+    },
     dotDot: true,
   });
 }
@@ -47,8 +77,18 @@ function testOptionalRestRejects() {
     invalidRest: false,
     optional: true,
     name: 'values',
-  }, {type: 'array', elementType: {type: 'array', elementType: 'number'}, optional: false});
-  return deepEqualType(actual, {elementType: 'never', dotDot: false});
+  }, {
+    type: 'array',
+    elementType: {
+      type: 'array',
+      elementType: 'number',
+    },
+    optional: false,
+  });
+  return deepEqualType(actual, {
+    elementType: 'never',
+    dotDot: false,
+  });
 }
 // Without a rest marker the type passes through untouched.
 function testPlainParamPassesThrough() {
@@ -58,9 +98,15 @@ function testPlainParamPassesThrough() {
     invalidRest: false,
     optional: false,
     name: 'values',
-  }, {type: 'array', elementType: 'number'});
+  }, {
+    type: 'array',
+    elementType: 'number',
+  });
   return deepEqualType(actual, {
-    elementType: {type: 'array', elementType: 'number'},
+    elementType: {
+      type: 'array',
+      elementType: 'number',
+    },
     dotDot: false,
   });
 }
@@ -72,15 +118,33 @@ function testParenAndGenericRestUnwrap() {
     invalidRest: false,
     optional: false,
     name: 'values',
-  }, {type: 'array', elementType: {type: 'array', elementType: 'number'}});
+  }, {
+    type: 'array',
+    elementType: {
+      type: 'array',
+      elementType: 'number',
+    },
+  });
   const second = tagRestElementType({
     typeRaw: '...Array<number>',
     nameRaw: 'values',
     invalidRest: false,
     optional: false,
     name: 'values',
-  }, {type: 'array', elementType: {type: 'array', elementType: 'number'}});
-  const expected = {elementType: {type: 'array', elementType: 'number'}, dotDot: true};
+  }, {
+    type: 'array',
+    elementType: {
+      type: 'array',
+      elementType: 'number',
+    },
+  });
+  const expected = {
+    elementType: {
+      type: 'array',
+      elementType: 'number',
+    },
+    dotDot: true,
+  };
   return (
     deepEqualType(first, expected) &&
     deepEqualType(second, expected)

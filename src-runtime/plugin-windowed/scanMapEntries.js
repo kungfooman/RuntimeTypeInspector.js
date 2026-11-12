@@ -38,7 +38,10 @@ function scanMapEntries(value, key, val, loc, name, critical, warn, depth) {
     if (key !== undefined) {
       const goodKey = recurse(k, key, loc, nameKey, critical, warn, depth + 1);
       if (!goodKey) {
-        const info = {expect: key, value: k};
+        const info = {
+          expect: key,
+          value: k,
+        };
         warn(`Map key ${formatMapKey(k)} has wrong type.`, info);
         return false;
       }
@@ -46,7 +49,10 @@ function scanMapEntries(value, key, val, loc, name, critical, warn, depth) {
     if (val !== undefined) {
       const good = recurse(v, val, loc, nameKey, critical, warn, depth + 1);
       if (!good) {
-        const info = {expect: val, value: v};
+        const info = {
+          expect: val,
+          value: v,
+        };
         warn(`Element ${nameKey} has wrong type.`, info);
         return false;
       }

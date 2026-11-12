@@ -43,7 +43,9 @@ function captureMessage(fn) {
 // Optional bare template params instantiate: `@param {T} [a]` with a valid
 // value must pass silently (used to warn `unchecked` + `@todo unhandled`).
 function testOptionalBareInstantiates() {
-  const templates = {T: 'any'};
+  const templates = {
+    T: 'any',
+  };
   const parsed = expandType('{a?: T}');
   const input = parsed.properties.a;
   const {ret, warnings} = captureWarns(() => inspectTypeWithTemplates('x', input, 'f', 'a', templates));
@@ -55,7 +57,9 @@ function testOptionalBareInstantiates() {
 }
 // Omitted optional bare params pass without poisoning the template.
 function testOptionalBareOmitted() {
-  const templates = {T: 'any'};
+  const templates = {
+    T: 'any',
+  };
   const parsed = expandType('{a?: T}');
   const input = parsed.properties.a;
   const {ret, warnings} = captureWarns(() => inspectTypeWithTemplates(undefined, input, 'f', 'a', templates));
@@ -85,7 +89,10 @@ function testOptionalUnrelatedSilent() {
 function testTypeofSilent() {
   let warns = 0;
   const noisy = () => warns++;
-  const out = substituteType({type: 'typeof', argument: 'X'}, 'X', 'number', noisy);
+  const out = substituteType({
+    type: 'typeof',
+    argument: 'X',
+  }, 'X', 'number', noisy);
   return warns === 0 && out.argument === 'X';
 }
 // Templates inside index signatures instantiate like properties.
@@ -98,7 +105,11 @@ function testIndexSignatureSubstitutes() {
     indexSignatures: [{
       type: 'indexSignature',
       indexType: 'T',
-      indexParameters: [{type: 'parameter', paramType: 'string', name: 'k'}],
+      indexParameters: [{
+        type: 'parameter',
+        paramType: 'string',
+        name: 'k',
+      }],
     }],
   };
   const out = substituteType(type, 'T', 'number', noisy);
@@ -108,7 +119,9 @@ function testIndexSignatureSubstitutes() {
 // literal `"x"` from `a`, then widens the pin to `string` while warning on
 // `b`, matching tsc (symmetric in argument order).
 function testFirstPinWins() {
-  const templates = {T: 'any'};
+  const templates = {
+    T: 'any',
+  };
   const first = captureWarns(() => inspectTypeWithTemplates('x', 'T', 'loc', 'a', templates));
   if (!first.ret || templates.T !== '"x"') {
     return false;
@@ -117,7 +130,9 @@ function testFirstPinWins() {
   if (second.ret || templates.T !== 'string') {
     return false;
   }
-  const swapped = {T: 'any'};
+  const swapped = {
+    T: 'any',
+  };
   captureWarns(() => inspectTypeWithTemplates(1, 'T', 'loc', 'a', swapped));
   const secondSwapped = captureWarns(() => inspectTypeWithTemplates('x', 'T', 'loc', 'b', swapped));
   return swapped.T === 'number' && !secondSwapped.ret;
@@ -126,7 +141,9 @@ function testFirstPinWins() {
 // `"a"` from the element, then widens to `string` while warning on `y`,
 // matching tsc.
 function testNestedFirstPins() {
-  const templates = {T: 'any'};
+  const templates = {
+    T: 'any',
+  };
   const first = captureWarns(() => inspectTypeWithTemplates(
     ['a'],
     {
@@ -146,16 +163,22 @@ function testNestedFirstPins() {
 // Bare-then-nested with diverging literals passes when widened: `f('a',
 // `{sub: 'b'})` pins `string`, matching tsc.
 function testNestedAfterBareWidens() {
-  const templates = {K: 'any'};
+  const templates = {
+    K: 'any',
+  };
   const first = captureWarns(() => inspectTypeWithTemplates('a', 'K', 'loc', 'name', templates));
   if (!first.ret) {
     return false;
   }
   const second = captureWarns(() => inspectTypeWithTemplates(
-    {sub: 'b'},
+    {
+      sub: 'b',
+    },
     {
       type: 'object',
-      properties: {sub: 'K'},
+      properties: {
+        sub: 'K',
+      },
     },
     'loc',
     'opts',
@@ -170,7 +193,12 @@ function testNestedAfterBareWidens() {
 // Literal-union constraints union instead of widening: `hD('a', 'b')` with
 // `@template {"a"|"b"} K` pins `"a"|"b"`, matching tsc.
 function testLiteralUnionConstraint() {
-  const templates = {K: {type: 'union', members: ['"a"', '"b"']}};
+  const templates = {
+    K: {
+      type: 'union',
+      members: ['"a"', '"b"'],
+    },
+  };
   const first = captureWarns(() => inspectTypeWithTemplates('a', 'K', 'loc', 'a', templates));
   if (!first.ret || templates.K !== '"a"') {
     return false;
@@ -179,37 +207,63 @@ function testLiteralUnionConstraint() {
   if (!second.ret) {
     return false;
   }
-  return JSON.stringify(templates.K) === JSON.stringify({type: 'union', members: ['"a"', '"b"']});
+  return JSON.stringify(templates.K) === JSON.stringify({
+    type: 'union',
+    members: ['"a"', '"b"'],
+  });
 }
 // `NoInfer<K>` blocks inference AND keeps the literal: `h('a', {sub: 'b'})`
 // with `@template {string} K` warns with `K` still `"a"`, matching tsc.
 function testNoInferBlocksAndKeepsLiteral() {
-  const noInfer = (arg) => ({type: 'reference', name: 'NoInfer', args: [arg]});
-  const shape = () => ({type: 'object', properties: {sub: noInfer('K')}});
-  const templates = {K: 'string'};
+  const noInfer = (arg) => ({
+    type: 'reference',
+    name: 'NoInfer',
+    args: [arg],
+  });
+  const shape = () => ({
+    type: 'object',
+    properties: {
+      sub: noInfer('K'),
+    },
+  });
+  const templates = {
+    K: 'string',
+  };
   const first = captureWarns(() => inspectTypeWithTemplates('a', 'K', 'loc', 'name', templates));
   if (!first.ret || templates.K !== '"a"') {
     return false;
   }
-  const bad = captureWarns(() => inspectTypeWithTemplates({sub: 'b'}, shape(), 'loc', 'opts', templates));
+  const bad = captureWarns(() => inspectTypeWithTemplates({
+    sub: 'b',
+  }, shape(), 'loc', 'opts', templates));
   if (bad.ret || templates.K !== '"a"') {
     return false;
   }
-  const goodTemplates = {K: 'string'};
+  const goodTemplates = {
+    K: 'string',
+  };
   captureWarns(() => inspectTypeWithTemplates('a', 'K', 'loc', 'name', goodTemplates));
-  const good = captureWarns(() => inspectTypeWithTemplates({sub: 'a'}, shape(), 'loc', 'opts', goodTemplates));
+  const good = captureWarns(() => inspectTypeWithTemplates({
+    sub: 'a',
+  }, shape(), 'loc', 'opts', goodTemplates));
   if (!good.ret) {
     return false;
   }
-  const numTemplates = {K: 'string'};
+  const numTemplates = {
+    K: 'string',
+  };
   captureWarns(() => inspectTypeWithTemplates('a', 'K', 'loc', 'name', numTemplates));
-  const num = captureWarns(() => inspectTypeWithTemplates({sub: 1}, shape(), 'loc', 'opts', numTemplates));
+  const num = captureWarns(() => inspectTypeWithTemplates({
+    sub: 1,
+  }, shape(), 'loc', 'opts', numTemplates));
   return !num.ret;
 }
 // Precision is retained where it matters: a pin from a bare occurrence keeps
 // later nested occurrences precise (the `addComponent` pattern).
 function testNestedStaysPrecise() {
-  const templates = {T: '"camera"'};
+  const templates = {
+    T: '"camera"',
+  };
   const good = captureWarns(() => inspectTypeWithTemplates(
     ['camera'],
     {
@@ -236,7 +290,9 @@ function testNestedStaysPrecise() {
 // expected type and the argument, then keep RTI's deep detail after it.
 function testMessageMatchesTscTriple() {
   const msg = captureMessage(() => {
-    const templates = {T: 'any'};
+    const templates = {
+      T: 'any',
+    };
     captureWarns(() => inspectTypeWithTemplates('x', 'T', 'loc', 'triple', templates));
     inspectTypeWithTemplates(1, 'T', 'loc', 'triple', templates);
   });

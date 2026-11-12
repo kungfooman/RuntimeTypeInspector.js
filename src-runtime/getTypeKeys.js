@@ -149,9 +149,15 @@ function keyNames(keys, warn, depth) {
  */
 function asOptionalProp(prop) {
   if (prop && typeof prop === 'object') {
-    return {...prop, optional: true};
+    return {
+      ...prop,
+      optional: true,
+    };
   }
-  return {type: prop, optional: true};
+  return {
+    type: prop,
+    optional: true,
+  };
 }
 /**
  * Stamps Omit/Pick provenance onto a materialized shape so renderers know
@@ -167,14 +173,21 @@ function asOptionalProp(prop) {
 function tagProvenance(result, name, args) {
   let source;
   try {
-    source = stringifyType({type: 'reference', name, args});
+    source = stringifyType({
+      type: 'reference',
+      name,
+      args,
+    });
     if (source.length > 80) {
       source = `${source.slice(0, 77)}...`;
     }
   } catch {
     source = name;
   }
-  const info = {removed: name === 'Omit', source};
+  const info = {
+    removed: name === 'Omit',
+    source,
+  };
   const isUnion = result?.type === 'union' && Array.isArray(result?.members);
   const members = isUnion ? result.members : [result];
   for (const member of members) {
@@ -233,9 +246,15 @@ function resolveUtilityShape(name, args, warn, depth = 0) {
       for (const key of Object.keys(shape.properties)) {
         properties[key] = asOptionalProp(shape.properties[key]);
       }
-      return {type: 'object', properties};
+      return {
+        type: 'object',
+        properties,
+      };
     });
-    return members.length === 1 ? members[0] : {type: 'union', members};
+    return members.length === 1 ? members[0] : {
+      type: 'union',
+      members,
+    };
   }
   if (name === 'Required') {
     // Shallow like validation: only top-level optionality is stripped.
@@ -243,11 +262,20 @@ function resolveUtilityShape(name, args, warn, depth = 0) {
       const properties = {};
       for (const key of Object.keys(shape.properties)) {
         const prop = shape.properties[key];
-        properties[key] = prop && typeof prop === 'object' ? {...prop, optional: false} : prop;
+        properties[key] = prop && typeof prop === 'object' ? {
+          ...prop,
+          optional: false,
+        } : prop;
       }
-      return {type: 'object', properties};
+      return {
+        type: 'object',
+        properties,
+      };
     });
-    return members.length === 1 ? members[0] : {type: 'union', members};
+    return members.length === 1 ? members[0] : {
+      type: 'union',
+      members,
+    };
   }
   if (keys === undefined) {
     return;
@@ -264,9 +292,15 @@ function resolveUtilityShape(name, args, warn, depth = 0) {
         properties[key] = shape.properties[key];
       }
     }
-    return {type: 'object', properties};
+    return {
+      type: 'object',
+      properties,
+    };
   });
-  const out = members.length === 1 ? members[0] : {type: 'union', members};
+  const out = members.length === 1 ? members[0] : {
+    type: 'union',
+    members,
+  };
   return tagProvenance(out, name, args);
 }
 /**
@@ -328,7 +362,10 @@ function resolveObject(type, warn, depth) {
       }
       Object.assign(properties, resolved.properties ?? {});
     }
-    return {type: 'object', properties};
+    return {
+      type: 'object',
+      properties,
+    };
   }
   if (type.type === 'mapping') {
     const materialize = validators.materializeMapping;

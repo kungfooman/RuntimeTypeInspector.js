@@ -26,7 +26,10 @@ function eraseIgnoredOverloadParams(tuple, fnNode, ignored) {
     if (isNamed === false || !member) {
       continue;
     }
-    member.elementType = member.dotDot ? {type: 'array', elementType: 'any'} : 'any';
+    member.elementType = member.dotDot ? {
+      type: 'array',
+      elementType: 'any',
+    } : 'any';
   }
   return tuple;
 }

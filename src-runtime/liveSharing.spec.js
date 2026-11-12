@@ -21,7 +21,10 @@ class LiveBox {
 }
 class LiveVec {
   constructor() {
-    Object.assign(this, {x: 0, y: 0});
+    Object.assign(this, {
+      x: 0,
+      y: 0,
+    });
   }
 }
 function prepareLiveTower() {
@@ -96,7 +99,9 @@ function testForeignMapsValidate() {
 // not promises in any realm. Awaiting behavior is unobservable either way.
 function testForeignPromisePassesThenableFails() {
   const foreignPromise = vm.runInNewContext('Promise.resolve(1)');
-  const thenable = {then() {}};
+  const thenable = {
+    then() {},
+  };
   const promiseExpect = expandType('Promise<number>');
   const goodForeign = validateType(foreignPromise, promiseExpect, 'loc', 'name', true, silent, 0);
   const badThenable = validateType(thenable, promiseExpect, 'loc', 'name', true, silent, 0);
@@ -119,7 +124,9 @@ function testForeignIterablePasses() {
   })`;
   const foreign = vm.runInNewContext(src);
   const goodForeign = validateType(foreign, iterableExpect, 'loc', 'name', true, silent, 0);
-  return goodForeign === true && checkBothFail(() => ({nope: 1}), iterableExpect);
+  return goodForeign === true && checkBothFail(() => ({
+    nope: 1,
+  }), iterableExpect);
 }
 // Template inference collects from foreign arrays element-wise: one
 // candidate per element, each naming the same template key.
@@ -139,7 +146,9 @@ function testForeignMapNestingTagged() {
   prepareLiveTower();
   const foreignMap = vm.runInNewContext('new Map()');
   foreignMap.set('box', new LiveBox());
-  const tagged = tagSnapshot({m: foreignMap});
+  const tagged = tagSnapshot({
+    m: foreignMap,
+  });
   return tagged.m.$type === undefined && tagged.m.get('box').$type === 'LiveBox';
 }
 // Foreign map entries survive log serialization as entries, not `{}`:
@@ -148,7 +157,9 @@ function testForeignMapStringified() {
   const src = `new Map([
     ["a", 1],
   ])`;
-  const snap = stringifyValue({m: vm.runInNewContext(src)});
+  const snap = stringifyValue({
+    m: vm.runInNewContext(src),
+  });
   return (
     snap.m.$type === 'Map' &&
     Array.isArray(snap.m.entries) &&
@@ -164,8 +175,12 @@ function testForeignMistypedStillFails() {
   const boxExpect = expandType('{w: number}');
   return (
     checkBothFail(() => [1, 'x'], expandType('number[]')) &&
-    checkBothFail(() => ({w: 'x'}), boxExpect) &&
-    checkBothFail(() => ({x: 0}), expandType('{x: number, y: number}'))
+    checkBothFail(() => ({
+      w: 'x',
+    }), boxExpect) &&
+    checkBothFail(() => ({
+      x: 0,
+    }), expandType('{x: number, y: number}'))
   );
 }
 // A foreign tagged snapshot with the wrong tag fails nominal checks:
@@ -283,7 +298,11 @@ a`;
 // Array-like foreign objects validate by shape: a length-carrier with
 // numeric indices and no Array brand still satisfies ArrayLike.
 function testForeignArrayLike() {
-  return checkBoth(() => ({0: 1, 1: 2, length: 2}), expandType('ArrayLike<number>'));
+  return checkBoth(() => ({
+    0: 1,
+    1: 2,
+    length: 2,
+  }), expandType('ArrayLike<number>'));
 }
 // Proxies forward brands: a proxy around a foreign array is an array,
 // since Array.isArray sees through the proxy to the target.
@@ -325,14 +344,24 @@ function testForeignDisplaysSurvive() {
 function testExcessUnionStaysClean() {
   const unionExpect = expandType('{a: number} | {b: string}');
   const prev = options.exactObjects;
-  setOptions({exactObjects: false});
+  setOptions({
+    exactObjects: false,
+  });
   let verdict;
   let rows;
   try {
-    verdict = validateType({a: 1, typo: 2}, unionExpect, 'loc', 'name', true, silent, 0);
-    rows = explainMismatch({a: 1, typo: 2}, unionExpect, 'v').findings.length;
+    verdict = validateType({
+      a: 1,
+      typo: 2,
+    }, unionExpect, 'loc', 'name', true, silent, 0);
+    rows = explainMismatch({
+      a: 1,
+      typo: 2,
+    }, unionExpect, 'v').findings.length;
   } finally {
-    setOptions({exactObjects: prev});
+    setOptions({
+      exactObjects: prev,
+    });
   }
   return verdict === true && rows === 0;
 }
@@ -381,7 +410,9 @@ function testForeignIArguments() {
 function testForeignTypedArrayValidates() {
   const foreign = vm.runInNewContext('new Float32Array(2)');
   const good = validateType(foreign, 'Float32Array', 'loc', 'name', true, silent, 0);
-  const bad = validateType({length: 2}, 'Float32Array', 'loc', 'name', true, silent, 0);
+  const bad = validateType({
+    length: 2,
+  }, 'Float32Array', 'loc', 'name', true, silent, 0);
   return good === true && bad === false;
 }
 export const tests = [

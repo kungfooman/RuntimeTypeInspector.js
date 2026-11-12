@@ -243,10 +243,16 @@ function removalInfo(expect, key, seen = []) {
         source = `${source.slice(0, 77)}...`;
       }
       if (name === 'Omit' && listed) {
-        return {removed: true, source};
+        return {
+          removed: true,
+          source,
+        };
       }
       if (name === 'Pick' && !listed) {
-        return {removed: false, source};
+        return {
+          removed: false,
+          source,
+        };
       }
       return null;
     }
@@ -340,8 +346,14 @@ function diffMapValue(value, mat, path, depth) {
   }
   const findings = [];
   let shown = 0;
-  const memberOf = {container: expectSnip(mat), noun: 'entry'};
-  const keyOf = {container: expectSnip(mat), noun: 'key'};
+  const memberOf = {
+    container: expectSnip(mat),
+    noun: 'entry',
+  };
+  const keyOf = {
+    container: expectSnip(mat),
+    noun: 'key',
+  };
   try {
     for (const [key, val] of value) {
       if (shown >= MAX_MAP_ENTRIES) {
@@ -416,7 +428,10 @@ function diffSetValue(value, mat, path, depth) {
   }
   const findings = [];
   let i = 0;
-  const memberOf = {container: expectSnip(mat), noun: 'member'};
+  const memberOf = {
+    container: expectSnip(mat),
+    noun: 'member',
+  };
   try {
     for (const item of value) {
       if (i >= MAX_MAP_ENTRIES) {
@@ -481,7 +496,10 @@ function diffArrayValue(value, mat, path, depth) {
   }
   const findings = [];
   let shown = 0;
-  const memberOf = {container: expectSnip(mat), noun: 'element'};
+  const memberOf = {
+    container: expectSnip(mat),
+    noun: 'element',
+  };
   try {
     for (let i = 0; i < value.length; i++) {
       if (shown >= MAX_MAP_ENTRIES) {
@@ -556,7 +574,10 @@ function diffTupleValue(value, mat, path, depth) {
   }
   const findings = [];
   let shown = 0;
-  const memberOf = {container: expectSnip(mat), noun: 'element'};
+  const memberOf = {
+    container: expectSnip(mat),
+    noun: 'element',
+  };
   const push = (val, type, idx) => {
     if (shown >= MAX_MAP_ENTRIES) {
       return false;
@@ -613,7 +634,13 @@ function diffTupleValue(value, mat, path, depth) {
         const fixed = required === expanded.length;
         const want = fixed ? `${required}` : `${required} to ${expanded.length}`;
         const detail = `Expected a tuple of length ${want}, got length ${value.length}.`;
-        return [{path, kind: 'wrong', expected: expectSnip(mat), actual: snip(value), detail}];
+        return [{
+          path,
+          kind: 'wrong',
+          expected: expectSnip(mat),
+          actual: snip(value),
+          detail,
+        }];
       }
       for (let i = 0; i < expanded.length; i++) {
         // Missing tail is optional (length checked above): nothing to diff.
@@ -691,7 +718,10 @@ function diffValue(value, expect, path, depth, memberOf) {
         return [];
       }
       if (!best || score(sub) < score(best.findings)) {
-        best = {member, findings: sub};
+        best = {
+          member,
+          findings: sub,
+        };
       }
     }
     if (!best) {
@@ -786,7 +816,10 @@ function diffValue(value, expect, path, depth, memberOf) {
       }
       // Present: presence already established, so strip the optional wrapper
       // — findings read `'draft' | 'published'`, not `(…)|undefined`.
-      const present = prop && typeof prop === 'object' ? {...prop, optional: false} : prop;
+      const present = prop && typeof prop === 'object' ? {
+        ...prop,
+        optional: false,
+      } : prop;
       findings.push(...diffValue(value[key], present, subPath, depth + 1));
     }
     for (const key of Object.keys(value)) {

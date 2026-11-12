@@ -19,6 +19,10 @@ function substituteNew(type, search, replace, warn) {
   if (parameters === type.parameters && ret === type.ret) {
     return type;
   }
-  return {...type, parameters, ret};
+  return {
+    ...type,
+    parameters,
+    ret,
+  };
 }
 export {substituteNew};

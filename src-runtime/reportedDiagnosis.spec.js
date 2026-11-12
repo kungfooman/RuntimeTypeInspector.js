@@ -40,14 +40,24 @@ function prepare() {
     'ReportWidget',
     {
       type: 'object',
-      properties: {r: 'number', g: 'number', b: 'number', a: 'number', spin: 'Function'},
+      properties: {
+        r: 'number',
+        g: 'number',
+        b: 'number',
+        a: 'number',
+        spin: 'Function',
+      },
     },
   );
   registerTypedef(
     'ReportVec2',
     {
       type: 'object',
-      properties: {x: 'number', y: 'number', set: 'Function'},
+      properties: {
+        x: 'number',
+        y: 'number',
+        set: 'Function',
+      },
     },
   );
 }
@@ -88,7 +98,9 @@ function testReportCarriesNoDiagnosis() {
   // Per-error cost stays at validation: the report carries value, expect
   // and messages, never a precomputed diagnosis. Both transports agree.
   for (const crossRealm of [false, true]) {
-    const posted = postReport({r: 'x'}, 'ReportWidget', 'reportLocOne', 'reportNameOne', crossRealm);
+    const posted = postReport({
+      r: 'x',
+    }, 'ReportWidget', 'reportLocOne', 'reportNameOne', crossRealm);
     if (!posted || posted.findings !== undefined || posted.stub !== undefined) {
       return false;
     }
@@ -100,7 +112,9 @@ function testLazyDiffFindsRowInForeignRegistry() {
   // types registered the lazy diff finds the true row. Rendered from the
   // transported value, not a hand-built one, so clone damage would show.
   for (const crossRealm of [false, true]) {
-    const posted = postReport({r: 'x'}, 'ReportWidget', 'reportLocTwo', 'reportNameTwo', crossRealm);
+    const posted = postReport({
+      r: 'x',
+    }, 'ReportWidget', 'reportLocTwo', 'reportNameTwo', crossRealm);
     const rendered = compareText({
       msg: 'm',
       expect: posted.expect,
@@ -120,9 +134,15 @@ function testLazyDiffDegradesWithoutRegistry() {
   // instead of inventing member rows. Late-loading twins can only add
   // information from here, never silently change a verdict-shaped row.
   prepare();
-  const posted = postReport({r: 'x'}, 'ReportWidget', 'reportLocThree', 'reportNameThree', false);
-  const savedTypedefs = {...typedefs};
-  const savedClasses = {...classes};
+  const posted = postReport({
+    r: 'x',
+  }, 'ReportWidget', 'reportLocThree', 'reportNameThree', false);
+  const savedTypedefs = {
+    ...typedefs,
+  };
+  const savedClasses = {
+    ...classes,
+  };
   Object.keys(typedefs).forEach((key) => delete typedefs[key]);
   Object.keys(classes).forEach((key) => delete classes[key]);
   bumpTypedefVersion();
@@ -153,21 +173,34 @@ function testAnchorsPayloadKeepsSingleRow() {
   const widget = new ReportWidget();
   for (const crossRealm of [false, true]) {
     const posted = postReport(
-      {anchor: [0, 0, 1, 1], tint: widget, align: [0, 0]},
+      {
+        anchor: [0, 0, 1, 1],
+        tint: widget,
+        align: [0, 0],
+      },
       {
         type: 'object',
         properties: {
           anchor: {
             type: 'union',
-            members: ['ReportVec2', {type: 'array', elementType: 'number'}],
+            members: ['ReportVec2', {
+              type: 'array',
+              elementType: 'number',
+            }],
             optional: true,
           },
           tint: {
             type: 'union',
-            members: ['ReportWidget', {type: 'array', elementType: 'number'}],
+            members: ['ReportWidget', {
+              type: 'array',
+              elementType: 'number',
+            }],
             optional: true,
           },
-          align: {type: 'ReportVec2', optional: true},
+          align: {
+            type: 'ReportVec2',
+            optional: true,
+          },
         },
       },
       'reportLocFour',
@@ -195,14 +228,27 @@ function testOptionDriftShowsInLocalDiff() {
     checkInfinity: options.checkInfinity,
     exactObjects: options.exactObjects,
   };
-  setOptions({strictNullChecks: true, checkInfinity: false, exactObjects: false});
+  setOptions({
+    strictNullChecks: true,
+    checkInfinity: false,
+    exactObjects: false,
+  });
   let posted;
   try {
     posted = postReport(
-      {a: [0, Infinity], b: 'x'},
+      {
+        a: [0, Infinity],
+        b: 'x',
+      },
       {
         type: 'object',
-        properties: {a: {type: 'array', elementType: 'number'}, b: 'number'},
+        properties: {
+          a: {
+            type: 'array',
+            elementType: 'number',
+          },
+          b: 'number',
+        },
       },
       'reportLocFive',
       'reportNameFive',
@@ -214,7 +260,11 @@ function testOptionDriftShowsInLocalDiff() {
   if (!posted) {
     return false;
   }
-  setOptions({strictNullChecks: true, checkInfinity: true, exactObjects: true});
+  setOptions({
+    strictNullChecks: true,
+    checkInfinity: true,
+    exactObjects: true,
+  });
   let rendered;
   try {
     rendered = compareText({
@@ -245,16 +295,25 @@ function testValidatorDriftShowsInLocalDiff() {
   // them.
   prepare();
   const posted = postReport(
-    {anchor: [0, 0, 1, 1], align: [0, 0]},
+    {
+      anchor: [0, 0, 1, 1],
+      align: [0, 0],
+    },
     {
       type: 'object',
       properties: {
         anchor: {
           type: 'union',
-          members: ['ReportVec2', {type: 'array', elementType: 'number'}],
+          members: ['ReportVec2', {
+            type: 'array',
+            elementType: 'number',
+          }],
           optional: true,
         },
-        align: {type: 'ReportVec2', optional: true},
+        align: {
+          type: 'ReportVec2',
+          optional: true,
+        },
       },
     },
     'reportLocSix',

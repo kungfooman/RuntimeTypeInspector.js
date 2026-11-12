@@ -15,7 +15,9 @@ function testDescribeTypedArrays() {
   );
 }
 function testDescribeTypedArrayBounded() {
-  const text = describeValueType(new Uint8Array(Array.from({length: 30}, (_, i) => i)));
+  const text = describeValueType(new Uint8Array(Array.from({
+    length: 30,
+  }, (_, i) => i)));
   return (
     text.startsWith('Uint8Array(30) [0, 1, 2') &&
     text.endsWith(', ...]') &&
@@ -65,12 +67,16 @@ function testDescribeLeaves() {
   );
 }
 function testDescribeClassInstance() {
-  const vec = Object.assign(Object.create((class Vec3 {}).prototype), {x: 1});
+  const vec = Object.assign(Object.create((class Vec3 {}).prototype), {
+    x: 1,
+  });
   return describeValueType(vec) === 'Vec3 {x: 1}';
 }
 function testDescribePlainUnaffected() {
   return (
-    describeValueType({a: 1}) === '{a: 1}' &&
+    describeValueType({
+      a: 1,
+    }) === '{a: 1}' &&
     describeValueType([1, 2]) === '[1, 2]' &&
     describeValueType('x') === '"x"' &&
     describeValueType(1) === '1'
@@ -84,7 +90,9 @@ function testPrettyTypedArray() {
   );
 }
 function testPrettyTypedArrayBounded() {
-  const text = prettyValue(new Uint8Array(Array.from({length: 30}, (_, i) => i)));
+  const text = prettyValue(new Uint8Array(Array.from({
+    length: 30,
+  }, (_, i) => i)));
   const lines = new Set(text.split('\n'));
   return (
     text.startsWith('Uint8Array(30) [') &&
@@ -94,7 +102,9 @@ function testPrettyTypedArrayBounded() {
   );
 }
 function testPrettyLeaves() {
-  const vec = Object.assign(Object.create((class Vec3 {}).prototype), {x: 1});
+  const vec = Object.assign(Object.create((class Vec3 {}).prototype), {
+    x: 1,
+  });
   return (
     prettyValue(new DataView(new ArrayBuffer(16))) === 'DataView(16)' &&
     prettyValue(new ArrayBuffer(8)) === 'ArrayBuffer(8)' &&
@@ -112,7 +122,9 @@ function testPrettyLeaves() {
 }
 function testPrettyPlainUnaffected() {
   return (
-    prettyValue({a: 1}) === undefined &&
+    prettyValue({
+      a: 1,
+    }) === undefined &&
     prettyValue([1, 2]) === undefined &&
     prettyValue('x') === undefined &&
     prettyValue(1) === undefined &&
@@ -120,7 +132,9 @@ function testPrettyPlainUnaffected() {
   );
 }
 function testFormatCompareNoDollarType() {
-  const vec = Object.assign(Object.create((class Vec3 {}).prototype), {x: 1});
+  const vec = Object.assign(Object.create((class Vec3 {}).prototype), {
+    x: 1,
+  });
   const cases = [
     formatCompare('number', new Uint8Array([1, 2, 3])).actualPretty,
     formatCompare('number', 123n).actualPretty,
@@ -141,11 +155,15 @@ function testFormatCompareNoDollarType() {
   );
 }
 function testFormatComparePlainUnaffected() {
-  const {actualPretty} = formatCompare('number', {a: 1});
+  const {actualPretty} = formatCompare('number', {
+    a: 1,
+  });
   return actualPretty.includes('"a"') && !actualPretty.includes('Vec3');
 }
 function testSnipNoDollarType() {
-  const vec = Object.assign(Object.create((class Vec3 {}).prototype), {x: 1});
+  const vec = Object.assign(Object.create((class Vec3 {}).prototype), {
+    x: 1,
+  });
   const cases = [
     snip(new Uint8Array([1, 2, 3])),
     snip(123n),
@@ -169,14 +187,19 @@ function testSnipNoDollarType() {
 }
 function testSnipPlainUnaffected() {
   return (
-    snip({a: 1}) === '{"a":1}' &&
+    snip({
+      a: 1,
+    }) === '{"a":1}' &&
     snip([1, 2]) === '[1,2]' &&
     snip('x') === '"x"'
   );
 }
 function testStringifySharedArrayBuffer() {
   return JSON.stringify(stringifyValue(new SharedArrayBuffer(8))) ===
-    JSON.stringify({$type: 'SharedArrayBuffer', byteLength: 8});
+    JSON.stringify({
+      $type: 'SharedArrayBuffer',
+      byteLength: 8,
+    });
 }
 function testInspectSummaryShowsTypedArray() {
   // End to end: the `Argument of type …` summary reads console-style
@@ -207,7 +230,9 @@ function testWarningTypedArrayCell() {
   }
 }
 function testWarningTypedArrayCellBounded() {
-  const {warn, restore} = warningFor(new Uint8Array(Array.from({length: 30}, (_, i) => i)));
+  const {warn, restore} = warningFor(new Uint8Array(Array.from({
+    length: 30,
+  }, (_, i) => i)));
   try {
     const text = dump(warn.td_value);
     // Summary plus 20 entry rows plus the `...(+N more)` marker.
@@ -246,7 +271,9 @@ function testWarningLeafCell() {
 function testWarningNestedTypedArray() {
   // A typed array nested in a plain object reads as a one-liner, never
   // `[object Uint8Array]`.
-  const {warn, restore} = warningFor({t: new Uint8Array([1, 2])});
+  const {warn, restore} = warningFor({
+    t: new Uint8Array([1, 2]),
+  });
   try {
     const text = dump(warn.td_value);
     return !text.includes('[object Uint8Array]') && text.includes('Uint8Array(2) [1, 2]');
@@ -255,7 +282,9 @@ function testWarningNestedTypedArray() {
   }
 }
 function testWarningPlainUnaffected() {
-  const {warn, restore} = warningFor({a: 1});
+  const {warn, restore} = warningFor({
+    a: 1,
+  });
   try {
     const text = dump(warn.td_value);
     return (
@@ -282,7 +311,10 @@ function giantWindow() {
   win.document = Object.assign(
     new FakeDocument(),
     {
-      location: Object.assign(new FakeLocation(), {href: 'https://x/', origin: 'https://x'}),
+      location: Object.assign(new FakeLocation(), {
+        href: 'https://x/',
+        origin: 'https://x',
+      }),
     },
   );
   win.name = '';
@@ -390,11 +422,21 @@ function testSnapshotMapWithFunction() {
   return text.startsWith('Map(1) {') && text.includes('=>');
 }
 function testSnapshotBigint() {
-  return describeValueType({$type: 'bigint', value: '123'}) === '123n' &&
-    prettyValue({$type: 'bigint', value: '123'}) === '123n';
+  return describeValueType({
+    $type: 'bigint',
+    value: '123',
+  }) === '123n' &&
+    prettyValue({
+      $type: 'bigint',
+      value: '123',
+    }) === '123n';
 }
 function testSnapshotTypedArray() {
-  const snapshot = {$type: 'Uint8Array', length: 2, values: [1, 2]};
+  const snapshot = {
+    $type: 'Uint8Array',
+    length: 2,
+    values: [1, 2],
+  };
   if (describeValueType(snapshot) !== 'Uint8Array(2)') {
     return false;
   }
@@ -408,7 +450,10 @@ function testSnapshotTypedArray() {
 function testUserDataDollarTypeUnaffected() {
   // Genuine data in the same shape (lowercase tags like query operators)
   // keeps expanding instead of collapsing to a tag.
-  const data = {$type: 'string', a: 1};
+  const data = {
+    $type: 'string',
+    a: 1,
+  };
   return (
     describeValueType(data).includes('a: 1') &&
     describeValueType(data) !== 'string' &&
@@ -419,7 +464,9 @@ function testUserDataDollarTypeUnaffected() {
 function testPanelSnapshotCapturesBeyondLogBreadth() {
   // Unclonable values post roomy snapshots: hundreds of keys arrive, so
   // tree batches yield data instead of ending at a tombstone row.
-  const wide = {handler: () => {}};
+  const wide = {
+    handler: () => {},
+  };
   for (let i = 0; i < 401; i++) {
     wide[`k${i}`] = i;
   }

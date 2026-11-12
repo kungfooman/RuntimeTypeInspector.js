@@ -20,6 +20,12 @@ function substituteCondition(type, search, replace, warn) {
     trueType === type.trueType && falseType === type.falseType) {
     return type;
   }
-  return {...type, checkType, extendsType, trueType, falseType};
+  return {
+    ...type,
+    checkType,
+    extendsType,
+    trueType,
+    falseType,
+  };
 }
 export {substituteCondition};

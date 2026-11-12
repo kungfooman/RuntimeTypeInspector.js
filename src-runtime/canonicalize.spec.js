@@ -4,7 +4,11 @@ import {expandType   } from '../src-transpiler/expandType.js';
 // We want: keys sorted and `false` flags plus explicit `undefined`
 // normalized away, so the output is stable for JSON comparison.
 function testSortsKeysAndDropsNoise() {
-  const inp = {...expandType('{b: string, a: string}'), optional: false, c: undefined};
+  const inp = {
+    ...expandType('{b: string, a: string}'),
+    optional: false,
+    c: undefined,
+  };
   return (
     deepEqualType(canonicalize(inp), expandType('{a: string, b: string}')) === true
   );
@@ -12,7 +16,10 @@ function testSortsKeysAndDropsNoise() {
 // We want: `readonly: false` dropped like `optional: false`, since
 // both mean the same in RTI semantics.
 function testReadonlyFalseDropped() {
-  const inp = {...expandType('{a: string}'), readonly: false};
+  const inp = {
+    ...expandType('{a: string}'),
+    readonly: false,
+  };
   return (
     deepEqualType(canonicalize(inp), expandType('{a: string}')) === true
   );

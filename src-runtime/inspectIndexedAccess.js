@@ -17,7 +17,12 @@ function addIndexedAccessWarning(value, index, loc, msg, details) {
     // console.log("breakpoints", breakpoints);
     debugger;
     breakpoints.delete(key); // trigger only once to quickly get app running again
-    crossContextPostMessage({type: 'rti', action: 'deleteBreakpoint', destination: 'ui', key});
+    crossContextPostMessage({
+      type: 'rti',
+      action: 'deleteBreakpoint',
+      destination: 'ui',
+      key,
+    });
   }
   const strings = [msg];
   crossContextPostMessage({

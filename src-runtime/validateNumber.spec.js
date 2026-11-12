@@ -77,7 +77,9 @@ function testFailuresWarn() {
 function testInObjectValid() {
   const warnings = [];
   const ret = validateNumberInObject(
-    {a: 1},
+    {
+      a: 1,
+    },
     'a',
     (...args) => {
       warnings.push(args);
@@ -89,7 +91,9 @@ function testInObjectKeepsKeys() {
   // Old `validateNumber(obj, prop)` generated `type#prop` warning keys.
   const warnings = [];
   const ret = validateNumberInObject(
-    {b: '1'},
+    {
+      b: '1',
+    },
     'b',
     (...args) => {
       warnings.push(args);
@@ -111,7 +115,9 @@ function testInObjectIssueExample() {
   if (!validateNumberInObject(['1', 2, 3], 1, warn)) {
     return false;
   }
-  if (validateNumberInObject({c: null}, 'c', warn)) {
+  if (validateNumberInObject({
+    c: null,
+  }, 'c', warn)) {
     return false;
   }
   return true;

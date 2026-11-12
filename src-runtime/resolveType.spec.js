@@ -8,12 +8,22 @@ function prepare() {
    * @typedef {ObjValuesTypedef} ObjValuesTypedef2
    */
   // Upper typedef's create these:
-  registerTypedef('Obj', {"type": "object", "properties": {"a": "'aa'", "b": "'bb'", "c": "'cc'"}});
+  registerTypedef('Obj', {
+    "type": "object",
+    "properties": {
+      "a": "'aa'",
+      "b": "'bb'",
+      "c": "'cc'",
+    },
+  });
   registerTypedef(
     'ObjValues',
     {
       "type": "indexedAccess",
-      "index": {"type": "keyof", "argument": "Obj"},
+      "index": {
+        "type": "keyof",
+        "argument": "Obj",
+      },
       "object": "Obj",
     },
   );

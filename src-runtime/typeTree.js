@@ -110,7 +110,11 @@ function objectShapeMatches(value) {
  * @param {string} path - Dotted argument path for excess-key fix hints.
  * @returns {object} Tree node.
  */
-function buildTypeTree(expect, value, label, budget = {nodes: 0, names: [], objs: []}, path = '') {
+function buildTypeTree(expect, value, label, budget = {
+  nodes: 0,
+  names: [],
+  objs: [],
+}, path = '') {
   const node = {
     label,
     path,

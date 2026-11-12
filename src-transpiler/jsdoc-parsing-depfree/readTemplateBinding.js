@@ -18,8 +18,14 @@
 function readTemplateBinding(binding) {
   const match = binding.match(/^\[\s*([A-Za-z_$][\w$]*)\s*(?:=\s*(.*?))?\s*\]$/);
   if (match) {
-    return {name: match[1], default: (match[2] ?? '').trim()};
+    return {
+      name: match[1],
+      default: (match[2] ?? '').trim(),
+    };
   }
-  return {name: binding, default: ''};
+  return {
+    name: binding,
+    default: '',
+  };
 }
 export {readTemplateBinding};

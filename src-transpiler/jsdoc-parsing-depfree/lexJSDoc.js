@@ -54,12 +54,20 @@ function lexJSDoc(src) {
   while (i < src.length) {
     const c = src[i];
     if (c === '*' && src[i + 1] === '/') {
-      tokens.push({kind: 'end', pos: i, end: i + 2});
+      tokens.push({
+        kind: 'end',
+        pos: i,
+        end: i + 2,
+      });
       i += 2;
       continue;
     }
     if (c === '\n') {
-      tokens.push({kind: 'newline', pos: i, end: i + 1});
+      tokens.push({
+        kind: 'newline',
+        pos: i,
+        end: i + 1,
+      });
       i += 1;
       continue;
     }
@@ -68,7 +76,11 @@ function lexJSDoc(src) {
       while (j < src.length && isSpace(src[j])) {
         j += 1;
       }
-      tokens.push({kind: 'space', pos: i, end: j});
+      tokens.push({
+        kind: 'space',
+        pos: i,
+        end: j,
+      });
       i = j;
       continue;
     }
@@ -77,42 +89,77 @@ function lexJSDoc(src) {
       while (src[j] === '*') {
         j += 1;
       }
-      tokens.push({kind: 'stars', pos: i, end: j});
+      tokens.push({
+        kind: 'stars',
+        pos: i,
+        end: j,
+      });
       i = j;
       continue;
     }
     if (c === '{') {
-      tokens.push({kind: 'lbrace', pos: i, end: i + 1});
+      tokens.push({
+        kind: 'lbrace',
+        pos: i,
+        end: i + 1,
+      });
       i += 1;
       continue;
     }
     if (c === '}') {
-      tokens.push({kind: 'rbrace', pos: i, end: i + 1});
+      tokens.push({
+        kind: 'rbrace',
+        pos: i,
+        end: i + 1,
+      });
       i += 1;
       continue;
     }
     if (c === '[') {
-      tokens.push({kind: 'lbracket', value: '[', pos: i, end: i + 1});
+      tokens.push({
+        kind: 'lbracket',
+        value: '[',
+        pos: i,
+        end: i + 1,
+      });
       i += 1;
       continue;
     }
     if (c === ']') {
-      tokens.push({kind: 'rbracket', value: ']', pos: i, end: i + 1});
+      tokens.push({
+        kind: 'rbracket',
+        value: ']',
+        pos: i,
+        end: i + 1,
+      });
       i += 1;
       continue;
     }
     if (c === '=') {
-      tokens.push({kind: 'equals', pos: i, end: i + 1});
+      tokens.push({
+        kind: 'equals',
+        pos: i,
+        end: i + 1,
+      });
       i += 1;
       continue;
     }
     if (c === ',') {
-      tokens.push({kind: 'comma', pos: i, end: i + 1});
+      tokens.push({
+        kind: 'comma',
+        pos: i,
+        end: i + 1,
+      });
       i += 1;
       continue;
     }
     if (c === '-' || c === '/') {
-      tokens.push({kind: 'punct', value: c, pos: i, end: i + 1});
+      tokens.push({
+        kind: 'punct',
+        value: c,
+        pos: i,
+        end: i + 1,
+      });
       i += 1;
       continue;
     }
@@ -121,12 +168,22 @@ function lexJSDoc(src) {
       while (src[j] === '.') {
         j += 1;
       }
-      tokens.push({kind: 'dots', value: src.slice(i, j), pos: i, end: j});
+      tokens.push({
+        kind: 'dots',
+        value: src.slice(i, j),
+        pos: i,
+        end: j,
+      });
       i = j;
       continue;
     }
     if (c === '(' || c === ')') {
-      tokens.push({kind: 'paren', value: c, pos: i, end: i + 1});
+      tokens.push({
+        kind: 'paren',
+        value: c,
+        pos: i,
+        end: i + 1,
+      });
       i += 1;
       continue;
     }
@@ -143,9 +200,21 @@ function lexJSDoc(src) {
         const opens = /^[\s*/]*$/.test(before) || /(?:^|\s)@overload$/.test(before.trim());
         const candidate = src.slice(i, j);
         if (knownTags.has(candidate)) {
-          tokens.push({kind: 'tag', value: candidate, pos: i, end: j, opens});
+          tokens.push({
+            kind: 'tag',
+            value: candidate,
+            pos: i,
+            end: j,
+            opens,
+          });
         } else {
-          tokens.push({kind: 'at', value: candidate, pos: i, end: j, opens});
+          tokens.push({
+            kind: 'at',
+            value: candidate,
+            pos: i,
+            end: j,
+            opens,
+          });
         }
         i = j;
         continue;
@@ -158,13 +227,22 @@ function lexJSDoc(src) {
       while (j < src.length && isWord(src[j])) {
         j += 1;
       }
-      tokens.push({kind: 'word', value: src.slice(i, j), pos: i, end: j});
+      tokens.push({
+        kind: 'word',
+        value: src.slice(i, j),
+        pos: i,
+        end: j,
+      });
       i = j;
       continue;
     }
     i += 1;
   }
-  tokens.push({kind: 'eof', pos: src.length, end: src.length});
+  tokens.push({
+    kind: 'eof',
+    pos: src.length,
+    end: src.length,
+  });
   return tokens;
 }
 export {lexJSDoc};

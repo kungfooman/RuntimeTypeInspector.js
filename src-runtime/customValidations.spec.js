@@ -13,7 +13,9 @@ function testNumberInObjectBypassesCustomValidations() {
   };
   customValidations.push(counter);
   try {
-    const ret = validateNumberInObject({x: 1}, 'x', silent);
+    const ret = validateNumberInObject({
+      x: 1,
+    }, 'x', silent);
     return ret === true && calls === 0;
   } finally {
     customValidations.length = 0;

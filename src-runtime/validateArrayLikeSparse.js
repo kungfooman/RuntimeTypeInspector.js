@@ -25,7 +25,13 @@ function validateArrayLikeSparse(value, expect, loc, name, critical, warn, depth
   const isArray = expect && expect.type === 'array';
   const isArrayLike = expect && expect.type === 'reference' && expect.name === 'ArrayLike';
   if (!isArray && !isArrayLike) {
-    warn('unchecked', {value, type: 'sparse', loc, name, expect});
+    warn('unchecked', {
+      value,
+      type: 'sparse',
+      loc,
+      name,
+      expect,
+    });
     return false;
   }
   // Bare `ArrayLike` (no args) is a shape-only check like in
@@ -33,7 +39,13 @@ function validateArrayLikeSparse(value, expect, loc, name, critical, warn, depth
   // and fails closed.
   const elementType = isArray ? expect.elementType : (expect.args?.[0] ?? 'any');
   if (elementType === undefined) {
-    warn('unchecked', {value, type: 'sparse', loc, name, expect});
+    warn('unchecked', {
+      value,
+      type: 'sparse',
+      loc,
+      name,
+      expect,
+    });
     return false;
   }
   if (isArray && !isArrayValue(value)) {
@@ -42,7 +54,10 @@ function validateArrayLikeSparse(value, expect, loc, name, critical, warn, depth
   }
   if (!isArray) {
     if (value === null || value === undefined) {
-      warn(`Expected ArrayLike, got ${value}.`, {value, expect: elementType});
+      warn(`Expected ArrayLike, got ${value}.`, {
+        value,
+        expect: elementType,
+      });
       return false;
     }
     const valueType = typeof value;
@@ -75,7 +90,10 @@ function validateArrayLikeSparse(value, expect, loc, name, critical, warn, depth
     const nameIndex = `${name}[${i}]`;
     const ret = recurse(valueIndex, elementType, loc, nameIndex, critical, warn, depth + 1);
     if (!ret) {
-      const info = {expect: elementType, value: valueIndex};
+      const info = {
+        expect: elementType,
+        value: valueIndex,
+      };
       warn(`Element at index ${i} has a wrong type.`, info);
       return false;
     }

@@ -19,7 +19,10 @@ function testBareNameMatchSkipsRegistry() {
   prepare();
   try {
     return unionNominalTag(
-      {r: 1, $type: 'TagBox'},
+      {
+        r: 1,
+        $type: 'TagBox',
+      },
       ['TagBox', {
         type: 'array',
         elementType: 'number',
@@ -34,8 +37,15 @@ function testBareNameMatchSkipsRegistry() {
 function testWrappedMemberUnwraps() {
   prepare();
   try {
-    const wrapped = {type: 'reference', name: 'Readonly', args: ['TagBox']};
-    return unionNominalTag({r: 1, $type: 'TagBox'}, [wrapped, 'number']) === true;
+    const wrapped = {
+      type: 'reference',
+      name: 'Readonly',
+      args: ['TagBox'],
+    };
+    return unionNominalTag({
+      r: 1,
+      $type: 'TagBox',
+    }, [wrapped, 'number']) === true;
   } finally {
     unprepare();
   }
@@ -45,7 +55,10 @@ function testWrappedMemberUnwraps() {
 function testSubclassTagSatisfiesParent() {
   prepare();
   try {
-    return unionNominalTag({r: 1, $type: 'TagSubBox'}, ['TagBox']) === true;
+    return unionNominalTag({
+      r: 1,
+      $type: 'TagSubBox',
+    }, ['TagBox']) === true;
   } finally {
     unprepare();
   }
@@ -56,24 +69,40 @@ function testSubclassTagSatisfiesParent() {
 function testNonMatchesDecline() {
   prepare();
   try {
-    const plain = unionNominalTag({r: 1}, ['TagBox']) === false;
-    const stranger = unionNominalTag({r: 1, $type: 'TagGizmo'}, ['TagBox']) === false;
+    const plain = unionNominalTag({
+      r: 1,
+    }, ['TagBox']) === false;
+    const stranger = unionNominalTag({
+      r: 1,
+      $type: 'TagGizmo',
+    }, ['TagBox']) === false;
     const shaped = unionNominalTag(
-      {r: 1, $type: 'TagBox'},
+      {
+        r: 1,
+        $type: 'TagBox',
+      },
       [{
         type: 'object',
-        properties: {r: 'number'},
+        properties: {
+          r: 'number',
+        },
       }],
     ) === false;
     const opaque = unionNominalTag(
-      {r: 1, $type: 'TagBox'},
+      {
+        r: 1,
+        $type: 'TagBox',
+      },
       [{
         type: 'reference',
         name: 'Partial',
         args: ['TagBox'],
       }],
     ) === false;
-    const empty = unionNominalTag({r: 1, $type: 'TagBox'}, []) === false;
+    const empty = unionNominalTag({
+      r: 1,
+      $type: 'TagBox',
+    }, []) === false;
     return (
       plain &&
       stranger &&

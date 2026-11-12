@@ -63,11 +63,17 @@ function resolveObjectSide(object, warn, depth = 0) {
     return;
   }
   if (target.type === 'object') {
-    return target.properties ? target : {type: 'object', properties: {}};
+    return target.properties ? target : {
+      type: 'object',
+      properties: {},
+    };
   }
   if (target.type === undefined) {
     // Bare `{}` (e.g. a conditional false-branch) is the empty object type.
-    return {type: 'object', properties: target.properties ?? {}};
+    return {
+      type: 'object',
+      properties: target.properties ?? {},
+    };
   }
   if (target.type === 'mapping') {
     return createTypeFromMapping(target, warn) ?? undefined;
@@ -82,7 +88,10 @@ function resolveObjectSide(object, warn, depth = 0) {
       }
       Object.assign(properties, resolved.properties);
     }
-    return {type: 'object', properties};
+    return {
+      type: 'object',
+      properties,
+    };
   }
   if (target.type === 'indexedAccess') {
     return resolveObject(target, warn);

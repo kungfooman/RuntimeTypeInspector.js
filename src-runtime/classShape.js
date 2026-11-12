@@ -44,14 +44,20 @@ function prototypeShape(ctor) {
         if (typeof desc.value === 'function') {
           properties[key] = 'Function';
         } else if (desc.get || desc.set) {
-          properties[key] = desc.get && !desc.set ? {type: 'any', readonly: true} : 'any';
+          properties[key] = desc.get && !desc.set ? {
+            type: 'any',
+            readonly: true,
+          } : 'any';
         } else if ('value' in desc) {
           properties[key] = 'any';
         }
       }
       proto = Object.getPrototypeOf(proto);
     }
-    shape = {type: 'object', properties};
+    shape = {
+      type: 'object',
+      properties,
+    };
     methodShapes.set(ctor, shape);
   }
   return shape;
@@ -92,8 +98,16 @@ function mergedClassShape(name) {
       Object.assign(properties, prototypeShape(chain[i]).properties);
     }
   }
-  const shape = deepFreeze({type: 'object', properties});
-  mergedShapes.set(name, {classV: classVersion, typedefV: typedefVersion, head, shape});
+  const shape = deepFreeze({
+    type: 'object',
+    properties,
+  });
+  mergedShapes.set(name, {
+    classV: classVersion,
+    typedefV: typedefVersion,
+    head,
+    shape,
+  });
   return shape;
 }
 export {mergedClassShape, prototypeShape};

@@ -20,7 +20,9 @@ function simplifyType(type) {
   if (!(type instanceof Object)) {
     return type;
   }
-  const out = {...type};
+  const out = {
+    ...type,
+  };
   if (!isExpandedObject(out)) {
     return out;
   }

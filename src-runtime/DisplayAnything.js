@@ -181,7 +181,9 @@ class DisplayAnything {
     if (!this.el) {
       this.el = Div({
         className: 'rti-line',
-        style: {marginLeft: `${this.depth * 18}px`},
+        style: {
+          marginLeft: `${this.depth * 18}px`,
+        },
       });
     }
     this.refreshContent();
@@ -280,7 +282,10 @@ class DisplayAnything {
     }
     this.markerEl = Div({
       className: 'rti-more',
-      dataset: {shown: String(this.children.length), total: String(this.allKeys.length)},
+      dataset: {
+        shown: String(this.children.length),
+        total: String(this.allKeys.length),
+      },
       title: 'Show more rows',
       textContent: `...(+${hidden} more)`,
       onclick: () => this.showMore(),
@@ -380,8 +385,14 @@ class DisplayAnything {
       this.el.className += ' rti-dimmed';
     }
     this.el.append(
-      Span({className: 'rti-key', textContent: String(this.key)}),
-      Span({className: 'rti-separator', textContent: ':'}),
+      Span({
+        className: 'rti-key',
+        textContent: String(this.key),
+      }),
+      Span({
+        className: 'rti-separator',
+        textContent: ':',
+      }),
       this.valueEl,
     );
   }
@@ -393,19 +404,33 @@ class DisplayAnything {
   buildBranch() {
     const header = [];
     if (this.key === DisplayAnything.nokey) {
-      this.typeEl = Span({className: 'rti-type', textContent: this.headerTag()});
+      this.typeEl = Span({
+        className: 'rti-type',
+        textContent: this.headerTag(),
+      });
       header.push(this.typeEl);
     } else {
-      header.push(Span({className: 'rti-key', textContent: String(this.key)}));
+      header.push(Span({
+        className: 'rti-key',
+        textContent: String(this.key),
+      }));
       const snap = snapshotTag(this.value);
       if (snap !== undefined) {
-        this.typeEl = Span({className: 'rti-type', textContent: snap});
+        this.typeEl = Span({
+          className: 'rti-type',
+          textContent: snap,
+        });
         header.push(this.typeEl);
       }
     }
-    this.sizeEl = Span({className: 'rti-size', textContent: this.safeSize()});
+    this.sizeEl = Span({
+      className: 'rti-size',
+      textContent: this.safeSize(),
+    });
     header.push(this.sizeEl);
-    this.detailsEl = Details({open: this.depth === 0 ? true : undefined}, Summary({}, ...header));
+    this.detailsEl = Details({
+      open: this.depth === 0 ? true : undefined,
+    }, Summary({}, ...header));
     this.detailsEl.dataset.limit = String(this.limit);
     this.syncNodes();
     for (const child of this.children) {

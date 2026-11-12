@@ -24,11 +24,17 @@ function testForeignInstanceUntagged() {
 }
 // Plain data, arrays, null-protos and lowercase tags behave as before.
 function testNonSnapshotsUntagged() {
-  const bare = Object.assign(Object.create(null), {$type: 'Color'});
+  const bare = Object.assign(Object.create(null), {
+    $type: 'Color',
+  });
   return (
-    snapshotTag({r: 1}) === undefined &&
+    snapshotTag({
+      r: 1,
+    }) === undefined &&
     snapshotTag(vm.runInNewContext('[1, 2]')) === undefined &&
-    snapshotTag({$type: 'color'}) === undefined &&
+    snapshotTag({
+      $type: 'color',
+    }) === undefined &&
     snapshotTag(bare) === 'Color'
   );
 }

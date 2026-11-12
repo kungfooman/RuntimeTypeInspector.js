@@ -173,7 +173,9 @@ function testModeChangeRepostsFull() {
   try {
     const posted = capturePosts(() => {
       inspectType('x', expandType('number'), 'takeModes', 'v');
-      inspectType({a: 1}, expandType('number'), 'takeModes', 'v');
+      inspectType({
+        a: 1,
+      }, expandType('number'), 'takeModes', 'v');
       inspectType('y', expandType('number'), 'takeModes', 'v');
       inspectType('z', expandType('number'), 'takeModes', 'v');
     });
@@ -230,7 +232,9 @@ function testRepeatsStayCheap() {
   // Timing guard for the hot-loop path: N repeats must stay a small
   // fraction of N full reports for the same value. Same process back to
   // back, so the ratio survives slow machines where absolute budgets lie.
-  const big = Array.from({length: 5000}, (_, i) => i);
+  const big = Array.from({
+    length: 5000,
+  }, (_, i) => i);
   const expect = expandType('string');
   const calls = 50;
   const margin = 10;

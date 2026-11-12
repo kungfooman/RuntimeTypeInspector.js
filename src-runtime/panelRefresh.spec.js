@@ -3,11 +3,22 @@ import {refreshWarning} from './TypePanel.js';
  * @returns {object} Writable stub standing in for a Warning row.
  */
 function stubWarning() {
-  return {hits: 0, value: undefined, expect: undefined, msg: '', detailStrings: []};
+  return {
+    hits: 0,
+    value: undefined,
+    expect: undefined,
+    msg: '',
+    detailStrings: [],
+  };
 }
 function testFirstHitSetsAll() {
   const warnObj = stubWarning();
-  refreshWarning(warnObj, {value: 'x', expect: 'string[]', msg: 'm1', strings: ['s1']});
+  refreshWarning(warnObj, {
+    value: 'x',
+    expect: 'string[]',
+    msg: 'm1',
+    strings: ['s1'],
+  });
   return (
     warnObj.value === 'x' &&
     warnObj.expect === 'string[]' &&
@@ -60,7 +71,12 @@ function testSecondHitRefreshesExpect() {
 function testStringsCopied() {
   const warnObj = stubWarning();
   const strings = ['a'];
-  refreshWarning(warnObj, {value: 1, expect: 'number', msg: 'm', strings});
+  refreshWarning(warnObj, {
+    value: 1,
+    expect: 'number',
+    msg: 'm',
+    strings,
+  });
   strings.push('mutated');
   return warnObj.detailStrings.length === 1;
 }

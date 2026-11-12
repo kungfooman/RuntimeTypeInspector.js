@@ -4,7 +4,13 @@ import {registerTypedef, typedefs, bumpTypedefVersion} from './registerTypedef.j
 // object without the flag while the registered typedef keeps it, so later
 // checks still see the readonly spelling.
 function testStripCopiesRegistryAlias() {
-  registerTypedef('ReadonlyBox', {type: 'object', properties: {v: 'number'}, readonly: true});
+  registerTypedef('ReadonlyBox', {
+    type: 'object',
+    properties: {
+      v: 'number',
+    },
+    readonly: true,
+  });
   try {
     const stripped = applyReadonlyModifier('ReadonlyBox', '-');
     return (
@@ -23,9 +29,17 @@ function testStripCopiesRegistryAlias() {
 // an alias unconditionally breaks structural comparisons like `IfEquals`,
 // which must see the same spelling on both sides.
 function testNoFlagKeepsIdentity() {
-  registerTypedef('WritableBox', {type: 'object', properties: {v: 'number'}});
+  registerTypedef('WritableBox', {
+    type: 'object',
+    properties: {
+      v: 'number',
+    },
+  });
   try {
-    const plain = {type: 'object', properties: {}};
+    const plain = {
+      type: 'object',
+      properties: {},
+    };
     return applyReadonlyModifier('WritableBox', '-') === 'WritableBox' &&
       applyReadonlyModifier(plain, '-') === plain;
   } finally {

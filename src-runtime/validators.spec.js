@@ -66,7 +66,10 @@ function testRecurseGuard() {
   validators.validateType = undefined;
   let threw = null;
   try {
-    validateType([1], {type: 'array', elementType: 'number'}, 'loc', 'name', true, warn, 0);
+    validateType([1], {
+      type: 'array',
+      elementType: 'number',
+    }, 'loc', 'name', true, warn, 0);
   } catch (e) {
     threw = e;
   } finally {

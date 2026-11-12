@@ -12,12 +12,18 @@ function testPromiseElement() {
     '"a"',
     noop,
   )) ===
-    JSON.stringify({type: 'promise', elementType: '"a"'});
+    JSON.stringify({
+      type: 'promise',
+      elementType: '"a"',
+    });
 }
 // We want: a promise with no matching key is returned by identity, so
 // unchanged subtrees keep their identity for downstream memos.
 function testPromiseUnchanged() {
-  const input = {type: 'promise', elementType: 'number'};
+  const input = {
+    type: 'promise',
+    elementType: 'number',
+  };
   return substitutePromise(input, 'K', '"a"', noop) === input;
 }
 // We want: nested promise element types substitute recursively, because
@@ -26,13 +32,22 @@ function testPromiseNested() {
   return JSON.stringify(substitutePromise(
     {
       type: 'promise',
-      elementType: {type: 'array', elementType: 'K'},
+      elementType: {
+        type: 'array',
+        elementType: 'K',
+      },
     },
     'K',
     '"a"',
     noop,
   )) ===
-    JSON.stringify({type: 'promise', elementType: {type: 'array', elementType: '"a"'}});
+    JSON.stringify({
+      type: 'promise',
+      elementType: {
+        type: 'array',
+        elementType: '"a"',
+      },
+    });
 }
 const tests = [
   testPromiseElement,

@@ -23,7 +23,10 @@ function unprepare() {
 function testTaggedSnapshotMatchesBareName() {
   prepare();
   try {
-    return snapshotNominalMatch({w: 1, $type: 'MatchBox'}, 'MatchBox') === true;
+    return snapshotNominalMatch({
+      w: 1,
+      $type: 'MatchBox',
+    }, 'MatchBox') === true;
   } finally {
     unprepare();
   }
@@ -33,7 +36,9 @@ function testTaggedSnapshotMatchesBareName() {
 function testUntaggedValueStaysStrict() {
   prepare();
   try {
-    return snapshotNominalMatch({w: 1}, 'MatchBox') === false;
+    return snapshotNominalMatch({
+      w: 1,
+    }, 'MatchBox') === false;
   } finally {
     unprepare();
   }
@@ -43,9 +48,20 @@ function testUntaggedValueStaysStrict() {
 function testStrangerFailsSubclassPasses() {
   prepare();
   try {
-    registerTypedef('MatchAlias', {type: 'object', properties: {w: 'number'}});
-    const stranger = snapshotNominalMatch({w: 1, $type: 'Gadget'}, 'MatchBox') === false;
-    const sub = snapshotNominalMatch({w: 1, $type: 'MatchSubBox'}, 'MatchBox') === true;
+    registerTypedef('MatchAlias', {
+      type: 'object',
+      properties: {
+        w: 'number',
+      },
+    });
+    const stranger = snapshotNominalMatch({
+      w: 1,
+      $type: 'Gadget',
+    }, 'MatchBox') === false;
+    const sub = snapshotNominalMatch({
+      w: 1,
+      $type: 'MatchSubBox',
+    }, 'MatchBox') === true;
     delete typedefs.MatchAlias;
     return stranger && sub;
   } finally {

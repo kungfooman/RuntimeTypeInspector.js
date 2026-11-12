@@ -24,7 +24,10 @@ function testListNested() {
     '"a"',
     noop,
   )) ===
-    JSON.stringify([{type: 'array', elementType: '"a"'}, 'number']);
+    JSON.stringify([{
+      type: 'array',
+      elementType: '"a"',
+    }, 'number']);
 }
 // We want: an empty list returns an empty list, because there is nothing
 // to substitute.

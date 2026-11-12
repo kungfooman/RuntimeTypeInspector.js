@@ -314,7 +314,10 @@ function recordObjectScan(loc, name, ms) {
 function getCheckStats() {
   const rows = [];
   for (const [loc, row] of checkStats) {
-    rows.push({loc, ...row});
+    rows.push({
+      loc,
+      ...row,
+    });
   }
   const walkMs = (row) => row.scanMs + row.setMs + row.arrayMs + row.objectMs;
   rows.sort((a, b) => walkMs(b) - walkMs(a) || b.checkMs - a.checkMs || b.checks - a.checks ||

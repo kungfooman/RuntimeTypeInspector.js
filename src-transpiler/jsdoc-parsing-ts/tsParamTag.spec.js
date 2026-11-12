@@ -2,9 +2,13 @@ import {tsParamTag} from './tsParamTag.js';
 // A plain row reads name, brackets, and brace text through.
 function testPlainRowReadsThrough() {
   const tag = {
-    name: {getText: () => 'x'},
+    name: {
+      getText: () => 'x',
+    },
     isBracketed: false,
-    typeExpression: {getText: () => '{number}'},
+    typeExpression: {
+      getText: () => '{number}',
+    },
   };
   const actual = tsParamTag(tag);
   return (
@@ -18,9 +22,13 @@ function testPlainRowReadsThrough() {
 // the depfree invalidRest decline, carried as the `dropped` flag.
 function testMisplacedRestDrops() {
   const tag = {
-    name: {getText: () => '...values'},
+    name: {
+      getText: () => '...values',
+    },
     isBracketed: false,
-    typeExpression: {getText: () => '{number[]}'},
+    typeExpression: {
+      getText: () => '{number[]}',
+    },
   };
   const actual = tsParamTag(tag);
   return actual.name === '...values' && actual.dropped === true;
@@ -29,9 +37,13 @@ function testMisplacedRestDrops() {
 // the depfree `*value` decline.
 function testEmptyNameDrops() {
   const tag = {
-    name: {getText: () => ''},
+    name: {
+      getText: () => '',
+    },
     isBracketed: false,
-    typeExpression: {getText: () => '{number}'},
+    typeExpression: {
+      getText: () => '{number}',
+    },
   };
   return tsParamTag(tag).dropped === true;
 }
@@ -41,9 +53,13 @@ function testEmptyNameDrops() {
 function testTildeTypeRecoversRawRow() {
   const tag = {
     getText: () => '@param {Array<X~Y>} intersects',
-    name: {getText: () => ''},
+    name: {
+      getText: () => '',
+    },
     isBracketed: false,
-    typeExpression: {getText: () => '{Array<X'},
+    typeExpression: {
+      getText: () => '{Array<X',
+    },
   };
   const actual = tsParamTag(tag);
   return (
@@ -57,9 +73,13 @@ function testTildeTypeRecoversRawRow() {
 function testTildeBracketedHeadRecoversFlag() {
   const tag = {
     getText: () => '@param {Array<X~Y>} [hits=[]]',
-    name: {getText: () => ''},
+    name: {
+      getText: () => '',
+    },
     isBracketed: false,
-    typeExpression: {getText: () => '{Array<X'},
+    typeExpression: {
+      getText: () => '{Array<X',
+    },
   };
   const actual = tsParamTag(tag);
   return (
