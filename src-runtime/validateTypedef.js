@@ -1,4 +1,4 @@
-import {typedefs    } from "./registerTypedef.js";
+import {typedefs} from "./registerTypedef.js";
 import {recurse} from "./validators.js";
 /**
  * @param {*} value - The actual value that we need to validate.

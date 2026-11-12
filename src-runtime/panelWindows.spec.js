@@ -271,8 +271,13 @@ function installFakeBrowser() {
 }
 function stubWarn(loc, name) {
   return {
-    loc, name, expect: {type: 'object', properties: {a: 'number'}}, value: {a: 1},
-    msg: `${loc} ${name} broke`, hits: 1, detailStrings: ['boom'],
+    loc,
+    name,
+    expect: {type: 'object', properties: {a: 'number'}},
+    value: {a: 1},
+    msg: `${loc} ${name} broke`,
+    hits: 1,
+    detailStrings: ['boom'],
   };
 }
 /**
@@ -572,7 +577,7 @@ function rowDetails(node, key) {
     }
     const kids = current.children ?? [];
     if (kids.length === 3 && kids[0]?.textContent === key && kids[2]?.tag === 'details') {
-      found = kids[2];
+      [, , found] = kids;
       return;
     }
     for (const child of kids) {
@@ -601,7 +606,8 @@ function actualFor(value, expect, name) {
 function testActualMapFailureHighlighted() {
   return withPanel(() => {
     const node = actualFor(new Map([['apiKey', null], ['other', 'x']]),
-                           expandType('Map<string, string | number>'), 'config');
+                           expandType('Map<string, string | number>'),
+                           'config');
     if (!node || node.children[0]?.open !== true) {
       return false;
     }
@@ -617,7 +623,8 @@ function testActualMapFailureHighlighted() {
 function testActualNestedFailureExpands() {
   return withPanel(() => {
     const node = actualFor({a: {b: 1}, z: {y: 2}},
-                           expandType('{a: {b: string}, z: {y: number}}'), 'config');
+                           expandType('{a: {b: string}, z: {y: number}}'),
+                           'config');
     if (!node) {
       return false;
     }
@@ -731,7 +738,11 @@ function testActualBranchHeaders() {
     if (!live || !textOf(live).includes('array [2]')) {
       return false;
     }
-    const snap = renderActualValue({$type: 'Uint8Array', length: 2, values: [1, 2]}, 'v', new Set());
+    const snap = renderActualValue({
+      $type: 'Uint8Array',
+      length: 2,
+      values: [1, 2],
+    }, 'v', new Set());
     return !!snap && textOf(snap).includes('Uint8Array(2)') && !textOf(snap).includes('$type');
   });
 }
@@ -768,14 +779,13 @@ function testActualCustomClassHighlighted() {
  */
 function testTypeTreeSetRootWarns() {
   return withPanel((panel) => {
-    const tree = buildTypeTree(expandType('Set<string | number>'), new Set(['admin', true]),
-                               'items', undefined, 'items');
+    const tree = buildTypeTree(expandType('Set<string | number>'), new Set(['admin', true]), 'items', undefined, 'items');
     if (tree.passes !== 'shape') {
       return false;
     }
     const box = panel.renderTypeNode(tree, 0);
-    const details = box.children[0];
-    const mark = details?.children[0]?.children[0];
+    const [details] = box.children;
+    const [mark] = details?.children[0]?.children ?? [];
     return mark?.textContent.includes('⚠') && mark?.className.includes('rti-warn') &&
       findAllByClass(box, 'rti-warn').length === 1 && details?.open === true;
   });
@@ -787,8 +797,15 @@ function testTypeTreeSetRootWarns() {
  */
 function testActualCompareHighlightsMap() {
   return withPanel((panel) => {
-    const warnObj = {loc: 'L1', name: 'config', expect: expandType('Map<string, string>'),
-      value: new Map([['apiKey', null]]), msg: 'm', hits: 1, detailStrings: []};
+    const warnObj = {
+      loc: 'L1',
+      name: 'config',
+      expect: expandType('Map<string, string>'),
+      value: new Map([['apiKey', null]]),
+      msg: 'm',
+      hits: 1,
+      detailStrings: [],
+    };
     const node = actualPane(panel, warnObj);
     if (node.tag === 'pre') {
       return false;
@@ -1063,7 +1080,7 @@ function testTaskbarAlwaysVisible() {
 function testCompareWindowsResizable() {
   return withPanel((panel) => {
     panel.openComparator(stubWarn('L1', 'a'));
-    const el = panel.compareWins.get('L1-a').el;
+    const {el} = panel.compareWins.get('L1-a');
     const dirs = el.children
       .map((_) => _?.dataset?.dir)
       .filter(Boolean)
@@ -1082,7 +1099,7 @@ function testTaskbarPressKeepsButtonAlive() {
   return withPanel((panel) => {
     panel.openComparator(stubWarn('L1', 'a'));
     panel.openComparator(stubWarn('L2', 'b'));
-    const entry = panel.taskbarWins.children[0];
+    const [entry] = panel.taskbarWins.children;
     const before = panel.activeWindow;
     if (before === 'panel' || before === 'L1-a') {
       return false;
@@ -1155,7 +1172,10 @@ function testResizeKeepsCaptionOnScreen() {
  */
 function testStaleGeometryClampedToViewport() {
   return withPanel((panel) => {
-    globalThis.localStorage.setItem('rti-panel-geometry', JSON.stringify({left: '-2000px', top: '3000px'}));
+    globalThis.localStorage.setItem('rti-panel-geometry', JSON.stringify({
+      left: '-2000px',
+      top: '3000px',
+    }));
     panel.applyGeometry();
     return TypePanel.divAll.style.left === '64px' && TypePanel.divAll.style.top === '872px';
   });
@@ -1291,7 +1311,10 @@ function testPersistedPositionWinsOverStart() {
     const prev = options.panelPosition;
     try {
       globalThis.localStorage.setItem('rti-panel-position', 'top-left');
-      globalThis.localStorage.setItem('rti-panel-geometry', JSON.stringify({left: '100px', top: '100px'}));
+      globalThis.localStorage.setItem('rti-panel-geometry', JSON.stringify({
+        left: '100px',
+        top: '100px',
+      }));
       TypePanel.instance = null;
       TypePanel.divAll = null;
       const fresh = new TypePanel();
@@ -1319,9 +1342,23 @@ function testSecondInstantiationStillFetchesErrors() {
         return false;
       }
       const sink = {postMessage: () => {}};
-      const msg = {source: null, srcElement: sink, data: {type: 'rti', destination: 'ui', action: 'addError',
-        value: 1, expect: 'string', loc: 'L1', name: 'a', valueToString: '1',
-        strings: ['boom'], extras: [], key: 'L1-a'}};
+      const msg = {
+        source: null,
+        srcElement: sink,
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          value: 1,
+          expect: 'string',
+          loc: 'L1',
+          name: 'a',
+          valueToString: '1',
+          strings: ['boom'],
+          extras: [],
+          key: 'L1-a',
+        },
+      };
       globalThis.window.fire('message', msg);
       const warnObj = panel.warnings['L1-a'];
       return !!warnObj && panel.warnedTable.contains(warnObj.tr);
@@ -1350,9 +1387,23 @@ function testCorpsePanelRebuildsLive() {
       // Rebuilding re-syncs options from storage; re-quiet for the fetch.
       options.mode = 'never';
       const sink = {postMessage: () => {}};
-      const msg = {source: null, srcElement: sink, data: {type: 'rti', destination: 'ui', action: 'addError',
-        value: 1, expect: 'string', loc: 'L1', name: 'a', valueToString: '1',
-        strings: ['boom'], extras: [], key: 'L1-a'}};
+      const msg = {
+        source: null,
+        srcElement: sink,
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          value: 1,
+          expect: 'string',
+          loc: 'L1',
+          name: 'a',
+          valueToString: '1',
+          strings: ['boom'],
+          extras: [],
+          key: 'L1-a',
+        },
+      };
       globalThis.window.fire('message', msg);
       const warnObj = revived.warnings['L1-a'];
       const fetched = !!warnObj && revived.warnedTable.contains(warnObj.tr);
@@ -1395,8 +1446,10 @@ function testCompareActualShowsTree() {
     if (!text.includes('a') || !text.includes('1')) {
       return false;
     }
-    const snap = actualPane(panel, {...stubWarn('L1', 'b'),
-      value: {$type: 'FakeWindow', name: '', location: {$type: 'FakeLocation'}}});
+    const snap = actualPane(panel, {
+      ...stubWarn('L1', 'b'),
+      value: {$type: 'FakeWindow', name: '', location: {$type: 'FakeLocation'}},
+    });
     const snapText = textOf(snap);
     return snap.className.includes('rti-line') && snapText.includes('FakeWindow') &&
       snapText.includes('FakeLocation') && !snapText.includes('$type');
@@ -1428,10 +1481,24 @@ function testRepeatBumpsHitsWithoutLogChurn() {
     const prevMode = options.mode;
     options.mode = 'never';
     try {
-      panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError',
-        value: 1, expect: 'string', loc: 'L2', name: 'b', valueToString: '1',
-        strings: ['boom'], extras: [], key: 'L2-b'}});
-      panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError', key: 'L2-b', repeat: true}});
+      panel.addError({
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          value: 1,
+          expect: 'string',
+          loc: 'L2',
+          name: 'b',
+          valueToString: '1',
+          strings: ['boom'],
+          extras: [],
+          key: 'L2-b',
+        },
+      });
+      panel.addError({
+        data: {type: 'rti', destination: 'ui', action: 'addError', key: 'L2-b', repeat: true},
+      });
       const warnObj = panel.warnings['L2-b'];
       return !!warnObj && warnObj.hits === 2 && panel.eventLog.length === 1;
     } finally {
@@ -1446,7 +1513,9 @@ function testRepeatUnknownKeyDropped() {
     const prevMode = options.mode;
     options.mode = 'never';
     try {
-      panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError', key: 'nope-x', repeat: true}});
+      panel.addError({
+        data: {type: 'rti', destination: 'ui', action: 'addError', key: 'nope-x', repeat: true},
+      });
       return !panel.warnings['nope-x'] && panel.eventLog.length === 0;
     } finally {
       options.mode = prevMode;
@@ -1493,8 +1562,11 @@ function testUnknownActionWarnsInsteadOfThrowing() {
     try {
       const sink = {postMessage: () => {}};
       const warns = recordWarns(() => {
-        globalThis.window.fire('message', {source: null, srcElement: sink,
-          data: {type: 'rti', destination: 'ui', action: 'bogus', key: 'x'}});
+        globalThis.window.fire('message', {
+          source: null,
+          srcElement: sink,
+          data: {type: 'rti', destination: 'ui', action: 'bogus', key: 'x'},
+        });
       });
       return warns.length === 1 && Object.keys(panel.warnings).length === 0;
     } finally {
@@ -1511,10 +1583,23 @@ function testDuplicateDeliveryWarnsOnce() {
     options.mode = 'never';
     try {
       const sink = {postMessage: () => {}};
-      const event = {source: null, srcElement: sink,
-        data: {type: 'rti', destination: 'ui', action: 'addError',
-          value: 1, expect: 'string', loc: 'L9', name: 'dup', valueToString: '1',
-          strings: ['boom'], extras: [], key: 'L9-dup'}};
+      const event = {
+        source: null,
+        srcElement: sink,
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          value: 1,
+          expect: 'string',
+          loc: 'L9',
+          name: 'dup',
+          valueToString: '1',
+          strings: ['boom'],
+          extras: [],
+          key: 'L9-dup',
+        },
+      };
       const warns = recordWarns(() => {
         globalThis.window.fire('message', event);
         globalThis.window.fire('message', event);
@@ -1544,9 +1629,22 @@ function testTransmittedStackPreferred() {
     options.mode = 'never';
     try {
       const stack = ['Error', 'at ValFn (app.js:10:5)', 'at tick (app.js:20:3)'];
-      panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError',
-        value: 1, expect: 'string', loc: 'L4', name: 's', valueToString: '1',
-        strings: ['boom'], extras: [], key: 'L4-s', stack}});
+      panel.addError({
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          value: 1,
+          expect: 'string',
+          loc: 'L4',
+          name: 's',
+          valueToString: '1',
+          strings: ['boom'],
+          extras: [],
+          key: 'L4-s',
+          stack,
+        },
+      });
       return panel.eventLog.length === 1 && panel.eventLog[0].stack !== undefined &&
         JSON.stringify(panel.eventLog[0].stack) === JSON.stringify(stack);
     } finally {
@@ -1561,9 +1659,21 @@ function testMissingStackFallsBack() {
     const prevMode = options.mode;
     options.mode = 'never';
     try {
-      panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError',
-        value: 1, expect: 'string', loc: 'L5', name: 't', valueToString: '1',
-        strings: ['boom'], extras: [], key: 'L5-t'}});
+      panel.addError({
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          value: 1,
+          expect: 'string',
+          loc: 'L5',
+          name: 't',
+          valueToString: '1',
+          strings: ['boom'],
+          extras: [],
+          key: 'L5-t',
+        },
+      });
       const logged = panel.eventLog.length === 1 ? panel.eventLog[0].stack : undefined;
       return Array.isArray(logged) && logged.length >= 1;
     } finally {
@@ -1579,7 +1689,10 @@ function testMissingStackFallsBack() {
  */
 function testDeadPopoutReattachesOnReopen() {
   return withPanel((panel) => {
-    panel.popoutWin = {closed: true, close() {}};
+    panel.popoutWin = {
+      closed: true,
+      close() {},
+    };
     panel.buttonPopout.textContent = '🗗';
     const deadBody = new FakeElement('body');
     deadBody.connectedRoot = true;
@@ -1614,7 +1727,10 @@ function testForeignDocumentReattachesOnReopen() {
  */
 function testShowRecoversStrandedPanel() {
   return withPanel((panel) => {
-    panel.popoutWin = {closed: true, close() {}};
+    panel.popoutWin = {
+      closed: true,
+      close() {},
+    };
     const deadBody = new FakeElement('body');
     deadBody.connectedRoot = true;
     globalThis.document.body.removeChild(TypePanel.divAll);
@@ -1702,9 +1818,21 @@ function testRowCopyButtonCopies() {
       const prevMode = options.mode;
       options.mode = 'never';
       try {
-        panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError',
-          value: 1, expect: 'string', loc: 'L9', name: 'z', valueToString: '1',
-          strings: ['boom'], extras: [], key: 'L9-z'}});
+        panel.addError({
+          data: {
+            type: 'rti',
+            destination: 'ui',
+            action: 'addError',
+            value: 1,
+            expect: 'string',
+            loc: 'L9',
+            name: 'z',
+            valueToString: '1',
+            strings: ['boom'],
+            extras: [],
+            key: 'L9-z',
+          },
+        });
       } finally {
         options.mode = prevMode;
       }
@@ -1735,9 +1863,21 @@ function testRowCopyMarkResetsOnRefresh() {
       const prevMode = options.mode;
       options.mode = 'never';
       try {
-        panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError',
-          value: 1, expect: 'string', loc: 'L9', name: 'z', valueToString: '1',
-          strings: ['boom'], extras: [], key: 'L9-z'}});
+        panel.addError({
+          data: {
+            type: 'rti',
+            destination: 'ui',
+            action: 'addError',
+            value: 1,
+            expect: 'string',
+            loc: 'L9',
+            name: 'z',
+            valueToString: '1',
+            strings: ['boom'],
+            extras: [],
+            key: 'L9-z',
+          },
+        });
       } finally {
         options.mode = prevMode;
       }
@@ -1746,9 +1886,21 @@ function testRowCopyMarkResetsOnRefresh() {
       if (!warnObj.button_copy.classList.contains('rti-copied')) {
         return false;
       }
-      panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError',
-        value: 'other', expect: 'string', loc: 'L9', name: 'z', valueToString: 'other',
-        strings: ['bang'], extras: [], key: 'L9-z'}});
+      panel.addError({
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          value: 'other',
+          expect: 'string',
+          loc: 'L9',
+          name: 'z',
+          valueToString: 'other',
+          strings: ['bang'],
+          extras: [],
+          key: 'L9-z',
+        },
+      });
       return warnObj.button_copy.textContent === '📋' &&
         !warnObj.button_copy.classList.contains('rti-copied');
     } finally {
@@ -1789,10 +1941,14 @@ function popupStub(body) {
     document: popupDoc,
     addEventListener() {},
   };
-  return {popup, opened, open: (...args) => {
-    opened.push(args);
-    return popup;
-  }};
+  return {
+    popup,
+    opened,
+    open: (...args) => {
+      opened.push(args);
+      return popup;
+    },
+  };
 }
 /**
  * Popping out opens a fresh unnamed window: a reused name would recapture a
@@ -1817,7 +1973,10 @@ function testPopoutOpensBlankWindow() {
  */
 function testSaveGeometrySkipsPopout() {
   return withPanel((panel) => {
-    panel.popoutWin = {closed: false, close() {}};
+    panel.popoutWin = {
+      closed: false,
+      close() {},
+    };
     panel.saveGeometry();
     return globalThis.localStorage.getItem('rti-panel-geometry') === null;
   });
@@ -1830,7 +1989,10 @@ function testSaveGeometrySkipsPopout() {
  */
 function testPageshowRecoversStrandedPanel() {
   return withPanel((panel) => {
-    panel.popoutWin = {closed: true, close() {}};
+    panel.popoutWin = {
+      closed: true,
+      close() {},
+    };
     const deadBody = new FakeElement('body');
     deadBody.connectedRoot = true;
     globalThis.document.body.removeChild(TypePanel.divAll);
@@ -1852,17 +2014,33 @@ function testPageshowRecoversStrandedPanel() {
  * @returns {void}
  */
 function feedError(panel, sink) {
-  const msg = {source: sink, data: {type: 'rti', destination: 'ui', action: 'addError',
-    value: 1, expect: 'string', loc: 'L1', name: 'a', valueToString: '1',
-    strings: ['boom'], extras: [], key: 'L1-a'}};
+  const msg = {
+    source: sink,
+    data: {
+      type: 'rti',
+      destination: 'ui',
+      action: 'addError',
+      value: 1,
+      expect: 'string',
+      loc: 'L1',
+      name: 'a',
+      valueToString: '1',
+      strings: ['boom'],
+      extras: [],
+      key: 'L1-a',
+    },
+  };
   globalThis.window.fire('message', msg);
 }
 function testWindowedCheckboxWiresOptionStorageAndWorker() {
   return withPanel((panel) => {
     const prevWindowed = options.windowedChecks;
-    const sink = {messages: [], postMessage(data) {
-      this.messages.push(data);
-    }};
+    const sink = {
+      messages: [],
+      postMessage(data) {
+        this.messages.push(data);
+      },
+    };
     try {
       options.windowedChecks = false;
       const prevMode = options.mode;
@@ -1884,9 +2062,12 @@ function testWindowCapInputClampsAndForwards() {
   // garbage input never clobbers the live value.
   return withPanel((panel) => {
     const prevCap = options.mapCheckWindowCap;
-    const sink = {messages: [], postMessage(data) {
-      this.messages.push(data);
-    }};
+    const sink = {
+      messages: [],
+      postMessage(data) {
+        this.messages.push(data);
+      },
+    };
     try {
       const prevMode = options.mode;
       options.mode = 'never';
@@ -1913,9 +2094,12 @@ function testWindowCapInputClampsAndForwards() {
 function testWindowMinTotalInputClampsAndForwards() {
   return withPanel((panel) => {
     const prevMin = options.mapCheckWindowMinTotalMs;
-    const sink = {messages: [], postMessage(data) {
-      this.messages.push(data);
-    }};
+    const sink = {
+      messages: [],
+      postMessage(data) {
+        this.messages.push(data);
+      },
+    };
     try {
       const prevMode = options.mode;
       options.mode = 'never';
@@ -2021,9 +2205,12 @@ function testStateButtonsAreShortVerbsWithReset() {
 function testCheckStatsCheckboxWiresOptionStorageAndWorker() {
   return withPanel((panel) => {
     const prevStats = options.checkStats;
-    const sink = {messages: [], postMessage(data) {
-      this.messages.push(data);
-    }};
+    const sink = {
+      messages: [],
+      postMessage(data) {
+        this.messages.push(data);
+      },
+    };
     try {
       const prevMode = options.mode;
       options.mode = 'never';
@@ -2233,8 +2420,8 @@ function testStatsLocCellIsButtonWithTitle() {
     try {
       recordCheck('get', 'v', 1);
       panel.updateCheckStats();
-      const cell = panel.checksTable.children[1].children[0];
-      const btn = cell.children[0];
+      const [cell] = panel.checksTable.children[1].children;
+      const [btn] = cell.children;
       return btn.tag === 'button' && btn.textContent === 'get v' &&
         btn.title.startsWith('get v') && btn.title.length > 'get v'.length;
     } finally {
@@ -2452,11 +2639,11 @@ function testStatsHeadersSortOnClick() {
   // carries an arrow so the order is visible, not guessed. Columns are
   // found by sort id, so conditional columns cannot shift them.
   const clickHead = (panel, id) => {
-    const head = panel.checksTable.children[0];
+    const [head] = panel.checksTable.children;
     head.children[statsColIndex(panel, id)].onclick();
   };
   const headText = (panel, id) => {
-    const head = panel.checksTable.children[0];
+    const [head] = panel.checksTable.children;
     return head.children[statsColIndex(panel, id)].textContent;
   };
   return withPanel((panel) => {
@@ -2493,8 +2680,8 @@ function testStatsWinMaximizesViaSharedCore() {
     panel.showStatsWin();
     try {
       const el = panel.statsWin;
-      const width = el.style.width;
-      const height = el.style.height;
+      const {width} = el.style;
+      const {height} = el.style;
       panel.toggleStatsMaximize();
       const maximized = el.dataset.maximized === 'true' &&
         el.classList.contains('rti-maximized') &&
@@ -2517,7 +2704,7 @@ function testStatsWinCaptionHasMinMaxClose() {
   return withPanel((panel) => {
     panel.showStatsWin();
     try {
-      const caption = panel.statsWin.children[0].children[1];
+      const [, caption] = panel.statsWin.children[0].children;
       const labels = caption.children.map(_ => _.textContent);
       return labels.join(',') === '_,□,×';
     } finally {
@@ -2533,7 +2720,7 @@ function testStatsWinCaptionHasMinMaxClose() {
  * @returns {number} Header index, or -1.
  */
 function statsColIndex(panel, id) {
-  const head = panel.checksTable.children[0];
+  const [head] = panel.checksTable.children;
   for (let i = 0; i < head.children.length; i++) {
     if (head.children[i].dataset.sort === id) {
       return i;
@@ -2569,7 +2756,7 @@ function testStatsHeaderCellsCarryTooltips() {
     try {
       recordCheck('Tip#x', 'v', 1);
       panel.updateCheckStats();
-      const header = panel.checksTable.children[0];
+      const [header] = panel.checksTable.children;
       const ids = [];
       for (let i = 0; i < header.children.length; i++) {
         ids.push(header.children[i].dataset.sort);
@@ -2592,9 +2779,9 @@ function testStatsLocClickShowsCallStack() {
     try {
       recordCheck('Where#x', 'v', 1);
       panel.updateCheckStats();
-      const btn = panel.checksTable.children[1].children[0].children[0];
+      const [btn] = panel.checksTable.children[1].children[0].children;
       btn.onclick();
-      const detail = panel.checksTable.children[2];
+      const [, , detail] = panel.checksTable.children;
       const shown = detail.className === 'rti-checks-loc-detail' &&
         textOf(detail).includes('Where#x') &&
         textOf(detail).includes('recordCheck');

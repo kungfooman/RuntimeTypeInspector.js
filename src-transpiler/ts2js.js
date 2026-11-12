@@ -1,4 +1,4 @@
-import {parse      } from '@babel/parser';
+import {parse} from '@babel/parser';
 import {Stringifier} from './Stringifier.js';
 import {nodeChildren} from './nodeChildren.js';
 import {nodeIsFunctionLike} from './nodeIsFunctionLike.js';
@@ -92,8 +92,9 @@ function tsTypeToJSDoc(node) {
       return `${tsTypeToJSDoc(node.parameterName)} is ${tsTypeToJSDoc(node.typeAnnotation)}`;
     case 'TSImportType': {
       const {argument, qualifier, typeArguments} = node;
-      const arg = argument.type === 'StringLiteral' ? `'${jsImportSource(argument)}'` : tsTypeToJSDoc(argument);
-      let out = 'import(' + arg + ')';
+      const isString = argument.type === 'StringLiteral';
+      const source = isString ? `'${jsImportSource(argument)}'` : tsTypeToJSDoc(argument);
+      let out = 'import(' + source + ')';
       if (qualifier) {
         out += '.' + tsTypeToJSDoc(qualifier);
       }
@@ -105,13 +106,19 @@ function tsTypeToJSDoc(node) {
     case 'TSMappedType': {
       const {typeParameter, typeAnnotation} = node;
       const name = tsTypeToJSDoc(typeParameter?.name);
-      const constraint = typeParameter?.constraint ? ' in ' + tsTypeToJSDoc(typeParameter.constraint) : '';
+      const bound = typeParameter?.constraint ? tsTypeToJSDoc(typeParameter.constraint) : '';
+      const constraint = bound ? ' in ' + bound : '';
       const optional = node.optional ? '?' : '';
       const value = typeAnnotation ? tsTypeToJSDoc(typeAnnotation) : 'any';
       return `{ [${name}${constraint}]${optional}: ${value} }`;
     }
-    case 'TSConditionalType':
-      return `${tsTypeToJSDoc(node.checkType)} extends ${tsTypeToJSDoc(node.extendsType)} ? ${tsTypeToJSDoc(node.trueType)} : ${tsTypeToJSDoc(node.falseType)}`;
+    case 'TSConditionalType': {
+      const check = tsTypeToJSDoc(node.checkType);
+      const base = tsTypeToJSDoc(node.extendsType);
+      const yes = tsTypeToJSDoc(node.trueType);
+      const no = tsTypeToJSDoc(node.falseType);
+      return `${check} extends ${base} ? ${yes} : ${no}`;
+    }
     case 'TSTemplateLiteralType':
       return templateLiteralToJSDoc(node);
     default:
@@ -141,7 +148,10 @@ function literalToJSDoc(literal) {
   if (literal.type === 'UnaryExpression') {
     return literal.operator + tsTypeToJSDoc(literal.argument);
   }
-  if (literal.type === 'StringLiteral' || literal.type === 'NumericLiteral' || literal.type === 'BooleanLiteral') {
+  const isString = literal.type === 'StringLiteral';
+  const isNumber = literal.type === 'NumericLiteral';
+  const isBoolean = literal.type === 'BooleanLiteral';
+  if (isString || isNumber || isBoolean) {
     return literal.extra?.raw ?? String(literal.value);
   }
   if (literal.type === 'BigIntLiteral') {
@@ -175,9 +185,10 @@ function propertySignatureToJSDoc(node) {
  */
 function functionSignatureToJSDoc(node) {
   const params = node.parameters
-    .map(param => {
+    .map((param) => {
       const name = param.type === 'Identifier' ? param.name : '';
-      const type = param.typeAnnotation ? tsTypeToJSDoc(param.typeAnnotation.typeAnnotation) : 'any';
+      const annotation = param.typeAnnotation?.typeAnnotation;
+      const type = annotation ? tsTypeToJSDoc(annotation) : 'any';
       return name && name !== 'this' ? `${name}: ${type}` : type;
     })
     .join(', ');
@@ -215,14 +226,13 @@ function paramToJSDoc(param, index) {
   let optional = false;
   let rest = false;
   let defaultText;
-  const typeAnnotationOf = value => value?.typeAnnotation?.typeAnnotation;
+  const typeAnnotationOf = (value) => value?.typeAnnotation?.typeAnnotation;
   if (param.type === 'Identifier') {
-    name = param.name;
-    optional = param.optional;
+    ({name, optional} = param);
     type = typeAnnotationOf(param);
   } else if (param.type === 'AssignmentPattern') {
     optional = true;
-    const left = param.left;
+    const {left, right} = param;
     if (left.type === 'Identifier') {
       name = left.name;
       type = typeAnnotationOf(left);
@@ -233,15 +243,18 @@ function paramToJSDoc(param, index) {
       }
       type = typeAnnotationOf(left);
     }
-    if (param.right?.type === 'StringLiteral' || param.right?.type === 'NumericLiteral' || param.right?.type === 'BooleanLiteral') {
-      defaultText = param.right.extra?.raw ?? String(param.right.value);
+    const isString = right?.type === 'StringLiteral';
+    const isNumber = right?.type === 'NumericLiteral';
+    const isBoolean = right?.type === 'BooleanLiteral';
+    if (isString || isNumber || isBoolean) {
+      defaultText = right.extra?.raw ?? String(right.value);
     }
     if (!type) {
-      type = inferTypeFromDefault(param.right);
+      type = inferTypeFromDefault(right);
     }
   } else if (param.type === 'RestElement') {
     rest = true;
-    const argument = param.argument;
+    const {argument} = param;
     if (argument.type === 'Identifier') {
       name = argument.name;
       type = typeAnnotationOf(param);
@@ -314,7 +327,7 @@ function jsdocLinesFromFunction(node) {
   const lines = [];
   if (node.typeParameters?.params) {
     for (const tp of node.typeParameters.params) {
-      const name = tp.name;
+      const {name} = tp;
       lines.push(`@template {${name}} ${name}`);
     }
   }
@@ -339,7 +352,7 @@ function injectParameterProperties(node) {
   }
   const properties = node.params.filter(param => param.type === 'TSParameterProperty');
   for (const property of properties) {
-    const parameter = property.parameter;
+    const {parameter} = property;
     if (parameter.type !== 'Identifier' && parameter.type !== 'AssignmentPattern') {
       console.warn('ts2js> unhandled parameter property', property);
       continue;
@@ -351,7 +364,9 @@ function injectParameterProperties(node) {
     }
     const {name} = target;
     const alreadyAssigned = body.some(stmt => {
-      if (stmt.type !== 'ExpressionStatement') return false;
+      if (stmt.type !== 'ExpressionStatement') {
+        return false;
+      }
       const expr = stmt.expression;
       return expr.type === 'AssignmentExpression' &&
         expr.operator === '=' &&
@@ -470,7 +485,7 @@ class ToJS extends Stringifier {
     const memberSource = this.namespaceMembers(body, name);
     this.numSpaces = saved;
     this.namespaceLevel = level;
-    const spaces = this.spaces;
+    const {spaces} = this;
     const outer = '  '.repeat(level + 1);
     const inner = memberSource
       .replace(/ \*\/ +(?=[a-zA-Z_$])/g, '*/\n')
@@ -551,7 +566,7 @@ class ToJS extends Stringifier {
    * @returns {string} The object literal.
    */
   TSEnumDeclaration(node) {
-    const spaces = this.spaces;
+    const {spaces} = this;
     let running = 0;
     const entries = node.members.map(member => {
       const key = this.toSource(member.id);
@@ -597,20 +612,21 @@ class ToJS extends Stringifier {
    */
   typedefLines(node) {
     if (node.type === 'TSTypeAliasDeclaration') {
-      const name = node.id.name;
+      const {name} = node.id;
       return [`@typedef {${tsTypeToJSDoc(node.typeAnnotation)}} ${name}`];
     }
-    const name = node.id.name;
+    const {name} = node.id;
     const lines = [`@typedef {Object} ${name}`];
     for (const member of node.body?.body ?? []) {
       if (member.type === 'TSPropertySignature') {
         const propName = tsTypeToJSDoc(member.key);
-        const optional = member.optional;
-        const type = member.typeAnnotation ? tsTypeToJSDoc(member.typeAnnotation.typeAnnotation) : 'any';
+        const {optional} = member;
+        const annotation = member.typeAnnotation?.typeAnnotation;
+        const type = annotation ? tsTypeToJSDoc(annotation) : 'any';
         lines.push(`@property {${type}} ${optional ? '[' + propName + ']' : propName}`);
       } else if (member.type === 'TSMethodSignature') {
         const methodName = tsTypeToJSDoc(member.key);
-        const optional = member.optional;
+        const {optional} = member;
         const type = functionSignatureToJSDoc(member);
         lines.push(`@property {${type}} ${optional ? '[' + methodName + ']' : methodName}`);
       }
@@ -623,7 +639,7 @@ class ToJS extends Stringifier {
    * @returns {string} The comment string.
    */
   jsdocComment(lines) {
-    const spaces = this.spaces;
+    const {spaces} = this;
     let out = spaces + '/**\n';
     for (const line of lines) {
       out += spaces + ' * ' + line + '\n';
@@ -641,7 +657,8 @@ class ToJS extends Stringifier {
   ImportDeclaration(node) {
     const typeSpecifiers = node.specifiers.filter(_ => _.importKind === 'type');
     const valueSpecifiers = node.specifiers.filter(_ => _.importKind !== 'type');
-    const fullyTypeOnly = node.importKind === 'type' || (typeSpecifiers.length && valueSpecifiers.length === 0);
+    const isTypeOnly = node.importKind === 'type';
+    const fullyTypeOnly = isTypeOnly || (typeSpecifiers.length && valueSpecifiers.length === 0);
     if (fullyTypeOnly) {
       return importTypeToJSDoc(node.specifiers, node.source);
     }
@@ -650,7 +667,11 @@ class ToJS extends Stringifier {
       out = importTypeToJSDoc(typeSpecifiers, node.source);
     }
     if (valueSpecifiers.length) {
-      const valueImport = super.ImportDeclaration({...node, importKind: 'value', specifiers: valueSpecifiers});
+      const valueImport = super.ImportDeclaration({
+        ...node,
+        importKind: 'value',
+        specifiers: valueSpecifiers,
+      });
       out = out ? out + '\n' + valueImport : valueImport;
     }
     return out;
@@ -756,7 +777,6 @@ function annotate(node, parents) {
     return;
   }
   parents.push(node);
-
   const {type} = node;
   if (nodeIsFunctionLike(node)) {
     if ((type === 'ClassMethod' || type === 'ClassPrivateMethod') && node.kind === 'constructor') {
@@ -768,7 +788,8 @@ function annotate(node, parents) {
     }
   } else if (type === 'ClassProperty' || type === 'ClassPrivateProperty') {
     if (node.typeAnnotation?.typeAnnotation && !node.declare) {
-      attachComment(node, [`@type {${tsTypeToJSDoc(node.typeAnnotation.typeAnnotation)}}`], parents);
+      const annotation = tsTypeToJSDoc(node.typeAnnotation.typeAnnotation);
+      attachComment(node, [`@type {${annotation}}`], parents);
     }
   } else if (type === 'ClassDeclaration' || type === 'ClassExpression') {
     const interfaces = node.implements || [];
@@ -870,10 +891,22 @@ function makeComment(node, lines, parents) {
  * @type {Set<string>}
  */
 const indentingNodeTypes = new Set([
-  'ClassDeclaration', 'ClassExpression', 'FunctionDeclaration', 'FunctionExpression',
-  'ArrowFunctionExpression', 'ObjectMethod', 'ClassMethod', 'ClassPrivateMethod',
-  'BlockStatement', 'IfStatement', 'ObjectExpression', 'ArrayExpression',
-  'ObjectPattern', 'ParenthesizedExpression', 'JSXElement', 'JSXFragment',
+  'ClassDeclaration',
+  'ClassExpression',
+  'FunctionDeclaration',
+  'FunctionExpression',
+  'ArrowFunctionExpression',
+  'ObjectMethod',
+  'ClassMethod',
+  'ClassPrivateMethod',
+  'BlockStatement',
+  'IfStatement',
+  'ObjectExpression',
+  'ArrayExpression',
+  'ObjectPattern',
+  'ParenthesizedExpression',
+  'JSXElement',
+  'JSXFragment',
   'TSEnumDeclaration',
 ]);
 /**
@@ -946,7 +979,6 @@ function parseTS(code) {
   }
 }
 export {ts2js, tsTypeToJSDoc, ToJS};
-
 /**
  * @file
  * @todo Consider rendering nested namespaces leading flat, so their member

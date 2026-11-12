@@ -16,7 +16,9 @@ function testIssue241ArrayLikeValid() {
   const expect = expandType('ArrayLike<number>');
   let unchecked = false;
   const ret = validateType([1, 2, 3], expect, 'test', 'a', true, (...args) => {
-    if (args[0] === 'unchecked') unchecked = true;
+    if (args[0] === 'unchecked') {
+      unchecked = true;
+    }
   }, 0);
   return ret === true && unchecked === false;
 }
@@ -106,10 +108,18 @@ function testNonNullable() {
 }
 function testArrayLikeBareAndAliases() {
   // Bare ArrayLike: shape-only check, any element type passes.
-  if (!validateType([1, '2'], {type: 'reference', name: 'ArrayLike', args: []}, 'loc', 'name', true, warn, 0)) {
+  if (!validateType([1, '2'], {
+    type: 'reference',
+    name: 'ArrayLike',
+    args: [],
+  }, 'loc', 'name', true, warn, 0)) {
     return false;
   }
-  if (validateType({}, {type: 'reference', name: 'ArrayLike', args: []}, 'loc', 'name', true, warn, 0)) {
+  if (validateType({}, {
+    type: 'reference',
+    name: 'ArrayLike',
+    args: [],
+  }, 'loc', 'name', true, warn, 0)) {
     return false;
   }
   // DOM list aliases behave like ArrayLike.
@@ -124,18 +134,32 @@ function testArrayLikeBareAndAliases() {
 }
 function testUnknownReferenceIsUnchecked() {
   let sawUnchecked = false;
-  const ret = validateType(1, {type: 'reference', name: 'NopeNotReal', args: []}, 'loc', 'name', true, (...args) => {
-    if (args[0] === 'unchecked') sawUnchecked = true;
+  const ret = validateType(1, {
+    type: 'reference',
+    name: 'NopeNotReal',
+    args: [],
+  }, 'loc', 'name', true, (...args) => {
+    if (args[0] === 'unchecked') {
+      sawUnchecked = true;
+    }
   }, 0);
   return ret === false && sawUnchecked === true;
 }
 function testReferenceToTypedef() {
   clearTypedefs();
   registerTypedef('MyNum', 'number');
-  if (!validateType(1, {type: 'reference', name: 'MyNum', args: []}, 'loc', 'name', true, warn, 0)) {
+  if (!validateType(1, {
+    type: 'reference',
+    name: 'MyNum',
+    args: [],
+  }, 'loc', 'name', true, warn, 0)) {
     return false;
   }
-  if (validateType('1', {type: 'reference', name: 'MyNum', args: []}, 'loc', 'name', true, warn, 0)) {
+  if (validateType('1', {
+    type: 'reference',
+    name: 'MyNum',
+    args: [],
+  }, 'loc', 'name', true, warn, 0)) {
     return false;
   }
   return true;
@@ -144,7 +168,11 @@ function testReplaceTypeHandlesReference() {
   // @template T ... ArrayLike<T> must support T substitution via inspectTypeWithTemplates.
   const expect = expandType('ArrayLike<T>');
   const replaced = substituteType(expect, 'T', 'number', warn);
-  if (JSON.stringify(replaced) !== JSON.stringify({type: 'reference', name: 'ArrayLike', args: ['number']})) {
+  if (JSON.stringify(replaced) !== JSON.stringify({
+    type: 'reference',
+    name: 'ArrayLike',
+    args: ['number'],
+  })) {
     return false;
   }
   if (!validateType([1, 2], replaced, 'loc', 'name', true, warn, 0)) {
@@ -157,7 +185,11 @@ function testReplaceTypeHandlesReference() {
 }
 function testExpandTypeDepFreeReference() {
   const ref = expandTypeDepFree('ArrayLike<number>');
-  if (JSON.stringify(ref) !== JSON.stringify({type: 'reference', name: 'ArrayLike', args: ['number']})) {
+  if (JSON.stringify(ref) !== JSON.stringify({
+    type: 'reference',
+    name: 'ArrayLike',
+    args: ['number'],
+  })) {
     return false;
   }
   if (!validateType([1], ref, 'loc', 'name', true, warn, 0)) {
@@ -194,7 +226,11 @@ function testArrayLikeDirectContract() {
   if (direct([1, '2'], node, 'loc', 'name', true, warn, 0) !== false) {
     return false;
   }
-  if (direct([1, '2'], {type: 'reference', name: 'ArrayLike', args: []}, 'loc', 'name', true, warn, 0) !== true) {
+  if (direct([1, '2'], {
+    type: 'reference',
+    name: 'ArrayLike',
+    args: [],
+  }, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
   const warnings = [];
@@ -269,7 +305,11 @@ function testAwaitedPassesThroughNonPromise() {
 function testAwaitedNeedsArgument() {
   // A missing argument fails loudly instead of passing everything.
   const warnings = [];
-  const ret = validateType(1, {type: 'reference', name: 'Awaited', args: []}, 'loc', 'name', true, (...args) => warnings.push(args[0]), 0);
+  const ret = validateType(1, {
+    type: 'reference',
+    name: 'Awaited',
+    args: [],
+  }, 'loc', 'name', true, (...args) => warnings.push(args[0]), 0);
   return ret === false && warnings.some((_) => typeof _ === 'string' && _.includes('Awaited requires one type argument'));
 }
 function testReturnTypeResolves() {
@@ -290,12 +330,20 @@ function testReturnTypeNeedsFunction() {
   // Non-function arguments and missing returns fail loudly: without a
   // declared return there is nothing to validate against.
   const warnings = [];
-  const bad = validateType(1, {type: 'reference', name: 'ReturnType', args: ['number']}, 'loc', 'name', true, (...args) => warnings.push(args[0]), 0);
+  const bad = validateType(1, {
+    type: 'reference',
+    name: 'ReturnType',
+    args: ['number'],
+  }, 'loc', 'name', true, (...args) => warnings.push(args[0]), 0);
   if (bad !== false || !warnings.some((_) => typeof _ === 'string' && _.includes('ReturnType requires a function type'))) {
     return false;
   }
   const missing = [];
-  const noArg = validateType(1, {type: 'reference', name: 'ReturnType', args: []}, 'loc', 'name', true, (...args) => missing.push(args[0]), 0);
+  const noArg = validateType(1, {
+    type: 'reference',
+    name: 'ReturnType',
+    args: [],
+  }, 'loc', 'name', true, (...args) => missing.push(args[0]), 0);
   return noArg === false && missing.some((_) => typeof _ === 'string' && _.includes('ReturnType requires one type argument'));
 }
 function testIntrinsicsEnforceCase() {
@@ -324,7 +372,11 @@ function testIntrinsicsNeedStrings() {
     return false;
   }
   const warnings = [];
-  const ret = validateType('x', {type: 'reference', name: 'Uppercase', args: []}, 'loc', 'name', true, (...args) => warnings.push(args[0]), 0);
+  const ret = validateType('x', {
+    type: 'reference',
+    name: 'Uppercase',
+    args: [],
+  }, 'loc', 'name', true, (...args) => warnings.push(args[0]), 0);
   return ret === false && warnings.some((_) => typeof _ === 'string' && _.includes('Uppercase requires one type argument'));
 }
 function testReadonlyMapSet() {
@@ -347,12 +399,20 @@ function testReadonlyMapSet() {
 function testReadonlyCollectionsNeedArgs() {
   // Missing type arguments fail loudly instead of passing everything.
   const mapWarnings = [];
-  const mapRet = validateType(new Map(), {type: 'reference', name: 'ReadonlyMap', args: ['string']}, 'loc', 'name', true, (...args) => mapWarnings.push(args[0]), 0);
+  const mapRet = validateType(new Map(), {
+    type: 'reference',
+    name: 'ReadonlyMap',
+    args: ['string'],
+  }, 'loc', 'name', true, (...args) => mapWarnings.push(args[0]), 0);
   if (mapRet !== false || !mapWarnings.some((_) => typeof _ === 'string' && _.includes('ReadonlyMap requires two type arguments'))) {
     return false;
   }
   const setWarnings = [];
-  const setRet = validateType(new Set(), {type: 'reference', name: 'ReadonlySet', args: []}, 'loc', 'name', true, (...args) => setWarnings.push(args[0]), 0);
+  const setRet = validateType(new Set(), {
+    type: 'reference',
+    name: 'ReadonlySet',
+    args: [],
+  }, 'loc', 'name', true, (...args) => setWarnings.push(args[0]), 0);
   return setRet === false && setWarnings.some((_) => typeof _ === 'string' && _.includes('ReadonlySet requires one type argument'));
 }
 export const tests = [

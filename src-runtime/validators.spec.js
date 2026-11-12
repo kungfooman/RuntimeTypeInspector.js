@@ -24,7 +24,11 @@ function testOverrideTakesEffect() {
   };
   let ret;
   try {
-    ret = validateType([1, 2, '3'], {type: 'reference', name: 'ArrayLike', args: ['number']}, 'loc', 'name', true, warn, 0);
+    ret = validateType([1, 2, '3'], {
+      type: 'reference',
+      name: 'ArrayLike',
+      args: ['number'],
+    }, 'loc', 'name', true, warn, 0);
   } finally {
     validators.validateReference = orig;
   }
@@ -33,7 +37,11 @@ function testOverrideTakesEffect() {
 // Restoring the override brings back real validation.
 function testOverrideRestored() {
   // After restore, real validation is back (invalid element fails).
-  return validateType([1, 2, '3'], {type: 'reference', name: 'ArrayLike', args: ['number']}, 'loc', 'name', true, warn, 0) === false;
+  return validateType([1, 2, '3'], {
+    type: 'reference',
+    name: 'ArrayLike',
+    args: ['number'],
+  }, 'loc', 'name', true, warn, 0) === false;
 }
 // Recursing without registration throws a helpful error.
 function testRecurseGuard() {
@@ -72,12 +80,28 @@ function testPrimitiveOverrideTakesEffect() {
     ['bigint', 1n, 1],
     ['void', undefined, 0],
   ]) {
-    const orig = validators[{string: 'validateString', boolean: 'validateBoolean', null: 'validateNull', undefined: 'validateUndefined', symbol: 'validateSymbol', bigint: 'validateBigint', void: 'validateVoid'}[type]];
+    const orig = validators[{
+      string: 'validateString',
+      boolean: 'validateBoolean',
+      null: 'validateNull',
+      undefined: 'validateUndefined',
+      symbol: 'validateSymbol',
+      bigint: 'validateBigint',
+      void: 'validateVoid',
+    }[type]];
     if (typeof orig !== 'function') {
       return false;
     }
     let calls = 0;
-    validators[{string: 'validateString', boolean: 'validateBoolean', null: 'validateNull', undefined: 'validateUndefined', symbol: 'validateSymbol', bigint: 'validateBigint', void: 'validateVoid'}[type]] = () => {
+    validators[{
+      string: 'validateString',
+      boolean: 'validateBoolean',
+      null: 'validateNull',
+      undefined: 'validateUndefined',
+      symbol: 'validateSymbol',
+      bigint: 'validateBigint',
+      void: 'validateVoid',
+    }[type]] = () => {
       calls++;
       return true;
     };
@@ -85,7 +109,15 @@ function testPrimitiveOverrideTakesEffect() {
     try {
       ret = validateType(bad, type, 'loc', 'name', true, warn, 0);
     } finally {
-      validators[{string: 'validateString', boolean: 'validateBoolean', null: 'validateNull', undefined: 'validateUndefined', symbol: 'validateSymbol', bigint: 'validateBigint', void: 'validateVoid'}[type]] = orig;
+      validators[{
+        string: 'validateString',
+        boolean: 'validateBoolean',
+        null: 'validateNull',
+        undefined: 'validateUndefined',
+        symbol: 'validateSymbol',
+        bigint: 'validateBigint',
+        void: 'validateVoid',
+      }[type]] = orig;
     }
     if (ret !== true || calls !== 1) {
       return false;

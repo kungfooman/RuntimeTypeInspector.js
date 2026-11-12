@@ -1,29 +1,34 @@
 import {tsOverloadTag} from './tsOverloadTag.js';
-
 // A signature with a return lowers params and return brace text.
 function testSignatureLowersParamsAndReturn() {
   const tag = {
     typeExpression: {
-      parameters: [{name: {getText: () => 'text'}, isBracketed: false, typeExpression: {getText: () => '{string}'}}],
+      parameters: [{
+        name: {getText: () => 'text'},
+        isBracketed: false,
+        typeExpression: {getText: () => '{string}'},
+      }],
       type: {typeExpression: {getText: () => '{string}'}},
     },
   };
   const actual = tsOverloadTag(tag);
   return actual.params.length === 1 && actual.params[0].name === 'text' && actual.returns === 'string';
 }
-
 // A signature without a return lowers an empty return, not undefined.
 function testMissingReturnLowersEmpty() {
   const tag = {
     typeExpression: {
-      parameters: [{name: {getText: () => 'x'}, isBracketed: true, typeExpression: {getText: () => '{number}'}}],
+      parameters: [{
+        name: {getText: () => 'x'},
+        isBracketed: true,
+        typeExpression: {getText: () => '{number}'},
+      }],
       type: undefined,
     },
   };
   const actual = tsOverloadTag(tag);
   return actual.params.length === 1 && actual.params[0].bracketed === true && actual.returns === '';
 }
-
 // A container row absorbs its dotted children as type text inside the
 // signature (the playcanvas `script/component.js` `args` shape), so the
 // nested params un-merge like the flat tail: container marked merged,
@@ -36,8 +41,18 @@ function testDottedContainerUnmerges() {
   const tag = {
     typeExpression: {
       parameters: [
-        {name: {getText: () => 'type'}, isBracketed: false, typeExpression: {getText: () => '{new (...args: any[]) => T}'}, getText: () => '@param {new (...args: any[]) => T} type\n'},
-        {name: {getText: () => 'args'}, isBracketed: true, typeExpression: {getText: () => '@param {boolean} [args.enabled]\n'}, getText: () => tail},
+        {
+          name: {getText: () => 'type'},
+          isBracketed: false,
+          typeExpression: {getText: () => '{new (...args: any[]) => T}'},
+          getText: () => '@param {new (...args: any[]) => T} type\n',
+        },
+        {
+          name: {getText: () => 'args'},
+          isBracketed: true,
+          typeExpression: {getText: () => '@param {boolean} [args.enabled]\n'},
+          getText: () => tail,
+        },
       ],
       type: {typeExpression: {getText: () => '{T|null}'}},
     },
@@ -51,7 +66,6 @@ function testDottedContainerUnmerges() {
     actual.params[2].name === 'args.enabled'
   );
 }
-
 // A second overload section keeps its own dotted rows: un-merging is
 // per-signature, never leaking children across sections. Stubs mirror
 // real node text: tsc merges the children into the container's own
@@ -60,7 +74,12 @@ function testSecondSectionKeepsOwnDottedRows() {
   const ones = tsOverloadTag({
     typeExpression: {
       parameters: [
-        {name: {getText: () => 'args'}, isBracketed: true, typeExpression: {getText: () => '@param {string} [args.a]\n'}, getText: () => '@param {object} [args]\n@param {string} [args.a]\n'},
+        {
+          name: {getText: () => 'args'},
+          isBracketed: true,
+          typeExpression: {getText: () => '@param {string} [args.a]\n'},
+          getText: () => '@param {object} [args]\n@param {string} [args.a]\n',
+        },
       ],
       type: undefined,
     },
@@ -68,7 +87,12 @@ function testSecondSectionKeepsOwnDottedRows() {
   const twos = tsOverloadTag({
     typeExpression: {
       parameters: [
-        {name: {getText: () => 'args'}, isBracketed: true, typeExpression: {getText: () => '@param {number} [args.b]\n'}, getText: () => '@param {object} [args]\n@param {number} [args.b]\n'},
+        {
+          name: {getText: () => 'args'},
+          isBracketed: true,
+          typeExpression: {getText: () => '@param {number} [args.b]\n'},
+          getText: () => '@param {object} [args]\n@param {number} [args.b]\n',
+        },
       ],
       type: undefined,
     },
@@ -80,5 +104,4 @@ function testSecondSectionKeepsOwnDottedRows() {
     twos.params.some((row) => row.name === 'args.a') === false
   );
 }
-
 export const tests = [testSignatureLowersParamsAndReturn, testMissingReturnLowersEmpty, testDottedContainerUnmerges, testSecondSectionKeepsOwnDottedRows];

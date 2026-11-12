@@ -1,4 +1,4 @@
-import {createType     } from './createType.js';
+import {createType} from './createType.js';
 import {registerTypedef} from './registerTypedef.js';
 function prepare() {
   /**
@@ -9,19 +9,12 @@ function prepare() {
    */
   registerTypedef('Obj', {
     "type": "object",
-    "properties": {
-      "a": "'aa'",
-      "b": "\"bb\"",
-      "c": "'cc'"
-    }
+    "properties": {"a": "'aa'", "b": "\"bb\"", "c": "'cc'"},
   });
   registerTypedef('ObjValues', {
     "type": "indexedAccess",
-    "index": {
-      "type": "keyof",
-      "argument": "Obj"
-    },
-    "object": "Obj"
+    "index": {"type": "keyof", "argument": "Obj"},
+    "object": "Obj",
   });
   registerTypedef('ObjValuesTypedef', "ObjValues");
   registerTypedef('ObjValuesTypedef2', "ObjValuesTypedef");

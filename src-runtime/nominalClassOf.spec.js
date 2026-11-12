@@ -64,6 +64,6 @@ const tests = [
   testTypedefObject,
   testAliasChain,
   testHarvestedPair,
-  testNonString
+  testNonString,
 ];
 export {tests};

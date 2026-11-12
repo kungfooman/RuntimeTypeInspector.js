@@ -4,13 +4,19 @@
  * stays one element; named `...b: T[]` (`tupleMember` with `dotDot`)
  * converts first. Shared with the explainer (see `tupleEffective`).
  * @param {any[]} elements - Raw tuple elements.
- * @returns {{expanded: any[], variadic: *, variadicPos: number, error: *}} Expanded list plus variadic slot, or an error for multiple variadics.
+ * @returns {{expanded: any[], variadic: *, variadicPos: number, error: *}} Expanded
+ * list plus variadic slot, or an error for multiple variadics.
  * @example
- * expandTupleElements(['number', {type: 'rest', annotation: {type: 'array', elementType: 'string'}}]);
- * // {expanded: ['number'], variadic: {type: 'array', elementType: 'string'}, variadicPos: 1, error: undefined}
+ * expandTupleElements([
+ *   'number',
+ *   {type: 'rest', annotation: {type: 'array', elementType: 'string'}},
+ * ]);
+ * // {expanded: ['number'], variadic: {type: 'array', elementType: 'string'},
+ * //  variadicPos: 1, error: undefined}
  */
 function expandTupleElements(elements) {
-  // Expand rest elements: ...[1,2,3] -> 1,2,3 ; ...T[] -> variadic ; ...b: T[] -> variadic
+  // Expand rest elements: `...[1,2,3]` spreads, `...T[]` is variadic,
+  // anything else stays one element
   const expanded = [];
   let variadic = null;
   let variadicPos = -1;
@@ -18,7 +24,7 @@ function expandTupleElements(elements) {
     let raw = el;
     // Named rest: ...b: number[]  (tupleMember with dotDot)
     if (el && typeof el === 'object' && el.type === 'tupleMember' && el.dotDot) {
-      raw = { type: 'rest', annotation: el.elementType };
+      raw = {type: 'rest', annotation: el.elementType};
     }
     if (raw && typeof raw === 'object' && raw.type === 'rest') {
       const ann = raw.annotation;

@@ -18,13 +18,25 @@ function testSecondHitRefreshesExpect() {
   const warnObj = stubWarning();
   refreshWarning(warnObj, {
     value: 'Single Error',
-    expect: {type: 'condition', checkType: true, extendsType: true, trueType: 'string[]', falseType: 'string'},
+    expect: {
+      type: 'condition',
+      checkType: true,
+      extendsType: true,
+      trueType: 'string[]',
+      falseType: 'string',
+    },
     msg: 'm1',
     strings: ['s1'],
   });
   refreshWarning(warnObj, {
     value: ['Error 1'],
-    expect: {type: 'condition', checkType: false, extendsType: true, trueType: 'string[]', falseType: 'string'},
+    expect: {
+      type: 'condition',
+      checkType: false,
+      extendsType: true,
+      trueType: 'string[]',
+      falseType: 'string',
+    },
     msg: 'm2',
     strings: ['s2'],
   });

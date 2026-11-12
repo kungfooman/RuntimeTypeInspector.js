@@ -23,7 +23,12 @@ function testOnByDefault() {
   let ret;
   try {
     ret = validateType({a: 1, extra: true},
-                       expandType('{a: number}'), 'loc', 'name', true, warn, 0) === false;
+                       expandType('{a: number}'),
+                       'loc',
+                       'name',
+                       true,
+                       warn,
+                       0) === false;
   } finally {
     options.exactObjects = prev;
   }
@@ -31,36 +36,68 @@ function testOnByDefault() {
 }
 function testOffWhenDisabled() {
   return withExact(false, () => validateType({a: 1, extra: true},
-                                             expandType('{a: number}'), 'loc', 'name', true, warn, 0));
+                                             expandType('{a: number}'),
+                                             'loc',
+                                             'name',
+                                             true,
+                                             warn,
+                                             0));
 }
 function testExcessFailsWhenExact() {
   return withExact(true, () => validateType({a: 1, extra: true},
-                                            expandType('{a: number}'), 'loc', 'name', true, warn, 0) === false);
+                                            expandType('{a: number}'),
+                                            'loc',
+                                            'name',
+                                            true,
+                                            warn,
+                                            0) === false);
 }
 function testExactPassesClean() {
   return withExact(true, () => validateType({a: 1},
-                                            expandType('{a: number}'), 'loc', 'name', true, warn, 0));
+                                            expandType('{a: number}'),
+                                            'loc',
+                                            'name',
+                                            true,
+                                            warn,
+                                            0));
 }
 function testNestedExcessFails() {
   return withExact(true, () => validateType({sub: {a: 1, extra: 2}},
-                                            expandType('{sub: {a: number}}'), 'loc', 'name', true, warn, 0) === false);
+                                            expandType('{sub: {a: number}}'),
+                                            'loc',
+                                            'name',
+                                            true,
+                                            warn,
+                                            0) === false);
 }
 function testUnionPicksCleanMember() {
   // Excess in one member must not poison the other: `{a}` still matches.
   return withExact(true, () => validateType({a: 1},
-                                            expandType('{a: number} | {b: string}'), 'loc', 'name', true, warn, 0));
+                                            expandType('{a: number} | {b: string}'),
+                                            'loc',
+                                            'name',
+                                            true,
+                                            warn,
+                                            0));
 }
 function testExcessMessageNamesKey() {
   return withExact(true, () => {
     const messages = [];
-    validateType({a: 1, bogus: 2}, expandType('{a: number}'),
-                 'loc', 'name', true, (...args) => messages.push(args[0]), 0);
+    validateType({
+      a: 1,
+      bogus: 2,
+    }, expandType('{a: number}'), 'loc', 'name', true, (...args) => messages.push(args[0]), 0);
     return messages.some((_) => typeof _ === 'string' && _.includes('bogus'));
   });
 }
 function testProfilerHintStillIgnored() {
   return withExact(true, () => validateType({a: 1, profilerHint: 'x'},
-                                            expandType('{a: number}'), 'loc', 'name', true, warn, 0));
+                                            expandType('{a: number}'),
+                                            'loc',
+                                            'name',
+                                            true,
+                                            warn,
+                                            0));
 }
 const tests = [
   testOnByDefault,

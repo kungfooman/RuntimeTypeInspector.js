@@ -20,7 +20,10 @@ class PhColor {
 function prepare() {
   clearTypedefs();
   registerClass(PhColor);
-  registerTypedef('PhColor', {type: 'object', properties: {r: 'number', g: 'number', b: 'number', a: 'number'}});
+  registerTypedef('PhColor', {
+    type: 'object',
+    properties: {r: 'number', g: 'number', b: 'number', a: 'number'},
+  });
   registerTypedef('PhSmall', expandType('{a: number, b: string}'));
   registerTypedef('PhTheme', expandType('{nested: {[K in "x"|"y"]: PhSmall}, count: number, single: PhSmall}'));
 }
@@ -135,7 +138,10 @@ function testDeepPartialMapping() {
   if (validateType({}, expect, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
-  if (validateType({count: 1, nested: {x: {a: 1, b: 's'}}}, expect, 'loc', 'name', true, warn, 0) !== true) {
+  if (validateType({
+    count: 1,
+    nested: {x: {a: 1, b: 's'}},
+  }, expect, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
   if (validateType({single: {a: 1}}, expect, 'loc', 'name', true, warn, 0) !== true) {
@@ -542,6 +548,6 @@ const tests = [
   testPartialTemplateKeyof,
   testSameNameCollapse,
   testRemapFilters,
-  testTripleUnion
+  testTripleUnion,
 ];
 export {tests};

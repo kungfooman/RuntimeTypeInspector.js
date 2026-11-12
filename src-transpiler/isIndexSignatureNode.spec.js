@@ -3,7 +3,11 @@ import {expandType} from './expandType.js';
 // We want: real signature nodes recognized, so pushes need no cast.
 function testSignatureNodePasses() {
   return (
-    isIndexSignatureNode({type: 'indexSignature', indexType: 'string', indexParameters: []}) === true
+    isIndexSignatureNode({
+      type: 'indexSignature',
+      indexType: 'string',
+      indexParameters: [],
+    }) === true
   );
 }
 // We want: the containing object rejected, since it is not itself a signature.

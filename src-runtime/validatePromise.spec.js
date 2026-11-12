@@ -18,7 +18,9 @@ function testPromiseNumberValid() {
     resolve(123);
   });
   const ret = validateType(promise, expect, 'test', 'a', true, (...args) => {
-    if (args[0] === 'unchecked') unchecked = true;
+    if (args[0] === 'unchecked') {
+      unchecked = true;
+    }
   }, 0);
   return ret === true && unchecked === false;
 }

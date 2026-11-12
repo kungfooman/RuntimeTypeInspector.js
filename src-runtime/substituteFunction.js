@@ -12,7 +12,10 @@ import {substitutes, recurseSubstitute} from "./substitutes.js";
  */
 function substituteFunction(type, search, replace, warn) {
   const parameters = substitutes.substituteDescriptors(type.parameters, search, replace, warn);
-  const ret = type.ret === undefined ? undefined : recurseSubstitute(type.ret, search, replace, warn);
+  let {ret} = type;
+  if (ret !== undefined) {
+    ret = recurseSubstitute(ret, search, replace, warn);
+  }
   if (parameters === type.parameters && ret === type.ret) {
     return type;
   }

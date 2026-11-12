@@ -1,7 +1,6 @@
 import {arrowArity} from './arrowArity.js';
 import {collectOverloadBlocks} from './jsdoc-parsing-depfree/collectOverloadBlocks.js';
 import {splitOverloadSections} from './jsdoc-parsing-depfree/splitOverloadSections.js';
-
 /**
  * Counts the leading dummy parameters an overload wrapper needs.
  * @param {object} node - Arrow node carrying overload documentation.
@@ -16,7 +15,9 @@ import {splitOverloadSections} from './jsdoc-parsing-depfree/splitOverloadSectio
  */
 function overloadArity(node, parents) {
   const sections = splitOverloadSections(collectOverloadBlocks(node, parents));
-  if (!sections.overloads.length) return 0;
+  if (!sections.overloads.length) {
+    return 0;
+  }
   return arrowArity(node);
 }
 export {overloadArity};

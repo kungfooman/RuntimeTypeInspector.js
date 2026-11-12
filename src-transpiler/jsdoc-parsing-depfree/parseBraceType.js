@@ -59,18 +59,21 @@ function parseBraceType(cursor) {
   // boundary; the raw type keeps the failure visible for the expander.
   let tailEnd = lastEnd !== -1 ? lastEnd : cursor.tokens.length - 1;
   for (let k = cursor.index + 1; k < tailEnd; k++) {
-    const kind = cursor.tokens[k].kind;
+    const {kind} = cursor.tokens[k];
     if (kind === 'tag' || kind === 'at' || kind === 'end') {
       tailEnd = k;
       break;
     }
   }
-  const stop = cursor.tokens[tailEnd].kind === 'eof' ? cursor.src.length : cursor.tokens[tailEnd].pos;
+  const tailToken = cursor.tokens[tailEnd];
+  const stop = tailToken.kind === 'eof' ? cursor.src.length : tailToken.pos;
   const tail = cursor.src.slice(open.pos + 1, stop);
   const headMatch = tail.match(/^\s*(\S+?)\s+([A-Za-z_$][\w$]*(?:\.[\w$]+)*)\s*\*?\s*$/);
   if (headMatch && headMatch[1] !== undefined && headMatch[2] !== undefined) {
-    const typeRaw = headMatch[1];
-    const headStart = open.pos + 1 + tail.indexOf(headMatch[2], tail.indexOf(headMatch[1]) + headMatch[1].length);
+    const [, typeRaw] = headMatch;
+    const [, needle, head] = headMatch;
+    const anchor = tail.indexOf(needle) + needle.length;
+    const headStart = open.pos + 1 + tail.indexOf(head, anchor);
     cursor.index = tailEnd;
     return {typeRaw, balanced, headStart};
   }

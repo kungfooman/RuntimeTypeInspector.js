@@ -2,7 +2,6 @@ import {parseJSDocDocument} from './parseJSDocDocument.js';
 import {parseParamHead} from './parseParamHead.js';
 import {makeParamTag} from './makeParamTag.js';
 import {docParamTag} from './docParamTag.js';
-
 /**
  * Lowers one overload section to the shared schema entry: each section's
  * params (names, brackets, brace text) and return type agree.
@@ -30,7 +29,7 @@ function docOverloadSection(section) {
   }
   const sectionDoc = parseJSDocDocument(section);
   const params = (sectionDoc.tags ?? []).map((tag) => {
-    const name = parseParamHead(tag.nameRaw ?? '').name;
+    const {name} = parseParamHead(tag.nameRaw ?? '');
     const group = tag.typeRaw === '' && name !== '' ? (tag.nameRaw ?? '').slice((tag.nameRaw ?? '').indexOf(name) + name.length).match(/\{([^{}]*)\}/) : null;
     const typeRaw = group !== null && group[1].trim() !== '' ? group[1] : tag.typeRaw;
     return docParamTag(makeParamTag(typeRaw, tag.nameRaw ?? ''), typeRaw);

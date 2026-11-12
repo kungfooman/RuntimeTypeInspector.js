@@ -15,7 +15,10 @@ function testClassUnchanged() {
 // We want: nested class element types substitute recursively, because
 // the element type may itself contain the search key at any depth.
 function testClassNested() {
-  return JSON.stringify(substituteClass({type: 'class', elementType: {type: 'array', elementType: 'K'}}, 'K', '"a"', noop)) ===
+  return JSON.stringify(substituteClass({
+    type: 'class',
+    elementType: {type: 'array', elementType: 'K'},
+  }, 'K', '"a"', noop)) ===
     JSON.stringify({type: 'class', elementType: {type: 'array', elementType: '"a"'}});
 }
 const tests = [

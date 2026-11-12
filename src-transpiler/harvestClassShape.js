@@ -76,7 +76,10 @@ function keyName(key, computed) {
  * @returns {*} Unwrapped node.
  */
 function unwrap(node) {
-  while (node && (node.type === 'ParenthesizedExpression' || node.type === 'TSAsExpression' || node.type === 'TSSatisfiesExpression')) {
+  const wrapped = (current) => current.type === 'ParenthesizedExpression' ||
+    current.type === 'TSAsExpression' ||
+    current.type === 'TSSatisfiesExpression';
+  while (node && wrapped(node)) {
     node = node.expression;
   }
   return node;
@@ -98,7 +101,8 @@ function record(fields, name, entry, warn, className) {
     return;
   }
   if (entry.jsdoc && existing.jsdoc && entry.raw !== existing.raw) {
-    warn(`harvestClassShape: ${className}.${name} has conflicting JSDoc types (${existing.raw} vs ${entry.raw})`);
+    const where = `${className}.${name} has conflicting JSDoc types`;
+    warn(`harvestClassShape: ${where} (${existing.raw} vs ${entry.raw})`);
   }
   const winner = entry.rank >= existing.rank ? entry : existing;
   winner.readonly = existing.readonly || entry.readonly;
@@ -116,7 +120,11 @@ function entryToType(entry) {
     return t;
   }
   if (t && typeof t === 'object') {
-    return {...t, ...(entry.readonly ? {readonly: true} : {}), ...(entry.optional ? {optional: true} : {})};
+    return {
+      ...t,
+      ...(entry.readonly ? {readonly: true} : {}),
+      ...(entry.optional ? {optional: true} : {}),
+    };
   }
   const out = {type: t};
   if (entry.readonly) {
@@ -151,7 +159,12 @@ function recordThisAssign(left, right, comment, conditional, ctx) {
   const declared = tagType(comment, '@type', expandType);
   if (right === undefined) {
     // Op-assign/update (`+=`, `++`): exists, type unknown.
-    record(fields, name, {type: 'any', rank: CTOR_INFER, jsdoc: false, optional: conditional}, warn, className);
+    record(fields, name, {
+      type: 'any',
+      rank: CTOR_INFER,
+      jsdoc: false,
+      optional: conditional,
+    }, warn, className);
     return;
   }
   const inferred = inferTypeFromDefault(unwrap(right));
@@ -343,7 +356,7 @@ function setterParamName(param) {
 function setterType(set, expandType) {
   const setComment = lastBlockComment(set);
   const paramName = setterParamName(set.params[0]);
-  const params = parseJSDocDocument(setComment ?? '', expandType).params;
+  const {params} = parseJSDocDocument(setComment ?? '', expandType);
   if (paramName && params && params[paramName] !== undefined) {
     return {type: params[paramName], raw: undefined, jsdoc: true};
   }
@@ -418,7 +431,8 @@ function harvestClassShape(node, {expandType, warn}) {
     const get = ctx.gets[name];
     const set = ctx.sets[name];
     const getComment = lastBlockComment(get);
-    const getType = tagType(getComment, '@type', expandType) ?? tagType(getComment, '@returns', expandType);
+    const fromType = tagType(getComment, '@type', expandType);
+    const getType = fromType ?? tagType(getComment, '@returns', expandType);
     const setInfo = set ? setterType(set, expandType) : undefined;
     const type = getType?.type ?? setInfo?.type ?? 'any';
     record(ctx.fields, name, {

@@ -1,5 +1,5 @@
 import {crossContextPostMessage} from './crossContextPostMessage.js';
-import {breakpoints            } from './inspectType.js';
+import {breakpoints} from './inspectType.js';
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -22,7 +22,12 @@ function validateDivisionAddWarning(value, expect, loc, name, msg, details) {
     type: 'rti',
     action: 'addError',
     destination: 'ui',
-    value, expect, loc, name, strings, /*valueToString, extras,*/ key,
+    value,
+    expect,
+    loc,
+    name,
+    strings, /*valueToString, extras,*/
+    key,
     // validateDivision specific:
     // msg,
     details, // not handled in TypePanel

@@ -13,9 +13,21 @@ function testKeyOrderInsensitive() {
 function testUndefinedAndFalseFlagsDropped() {
   return (
     deepEqualType({a: 1, b: undefined}, {a: 1}) === true &&
-    deepEqualType({type: 'atom', atomType: 'string', optional: false}, {type: 'atom', atomType: 'string'}) === true &&
-    deepEqualType({type: 'atom', atomType: 'string', readonly: false}, {type: 'atom', atomType: 'string'}) === true &&
-    deepEqualType({type: 'atom', atomType: 'string', optional: true}, {type: 'atom', atomType: 'string'}) === false
+    deepEqualType({
+      type: 'atom',
+      atomType: 'string',
+      optional: false,
+    }, {type: 'atom', atomType: 'string'}) === true &&
+    deepEqualType({
+      type: 'atom',
+      atomType: 'string',
+      readonly: false,
+    }, {type: 'atom', atomType: 'string'}) === true &&
+    deepEqualType({
+      type: 'atom',
+      atomType: 'string',
+      optional: true,
+    }, {type: 'atom', atomType: 'string'}) === false
   );
 }
 // We want: nesting (arrays, nested nodes) to compare structurally, so
@@ -44,8 +56,16 @@ function testPrimitivesByValue() {
 // flag, so `optional: true` stays distinct from `optional: false`.
 function testTrueFlagDistinctFromFalse() {
   return (
-    deepEqualType({type: 'atom', atomType: 'string', optional: true}, {type: 'atom', atomType: 'string', optional: false}) === false &&
-    deepEqualType({type: 'atom', atomType: 'string', readonly: true}, {type: 'atom', atomType: 'string', readonly: false}) === false
+    deepEqualType({type: 'atom', atomType: 'string', optional: true}, {
+      type: 'atom',
+      atomType: 'string',
+      optional: false,
+    }) === false &&
+    deepEqualType({type: 'atom', atomType: 'string', readonly: true}, {
+      type: 'atom',
+      atomType: 'string',
+      readonly: false,
+    }) === false
   );
 }
 // We want: arrays to compare positionally, so tuple element order is

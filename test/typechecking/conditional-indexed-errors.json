@@ -1,0 +1,29 @@
+{
+  "throws": [
+    {
+      "loc": "checkClassIndexedTrue",
+      "name": "x",
+      "value": "a"
+    },
+    {
+      "loc": "checkClassIndexedFalse",
+      "name": "x",
+      "value": 1
+    },
+    {
+      "loc": "checkAliasIndexedTrue",
+      "name": "x",
+      "value": "a"
+    },
+    {
+      "loc": "checkChainIndexedTrue",
+      "name": "x",
+      "value": "a"
+    },
+    {
+      "loc": "checkInheritedIndexedTrue",
+      "name": "x",
+      "value": "a"
+    }
+  ]
+}

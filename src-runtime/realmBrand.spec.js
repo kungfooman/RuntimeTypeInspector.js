@@ -24,8 +24,17 @@ function testForeignMapSetPass() {
 }
 // Duck-typed impostors (right methods, wrong brand) are rejected.
 function testMapSetImpostorRejected() {
-  const fakeMap = {get() {}, set() {}, has() {}, size: 0};
-  const fakeSet = {add() {}, has() {}, size: 0};
+  const fakeMap = {
+    get() {},
+    set() {},
+    has() {},
+    size: 0,
+  };
+  const fakeSet = {
+    add() {},
+    has() {},
+    size: 0,
+  };
   return isMapValue(fakeMap) === false && isSetValue(fakeSet) === false &&
     isMapValue(new Map()) === true && isSetValue(new Set()) === true;
 }

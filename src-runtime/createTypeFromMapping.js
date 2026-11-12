@@ -3,9 +3,10 @@ import {deepFreeze} from "./deepFreeze.js";
 import {versionedCache} from "./memoize.js";
 import {canonicalKey} from "./canonicalKey.js";
 import {getTypeKeys} from "./getTypeKeys.js";
-import {typedefs, typedefVersion   } from "./registerTypedef.js";
+import {typedefs, typedefVersion} from "./registerTypedef.js";
 import {classVersion} from "./registerClass.js";
-import {evaluateCondition, extendsCheck, literalType, resolveForExtends} from "./evaluateCondition.js";
+import {evaluateCondition, extendsCheck, literalType} from "./evaluateCondition.js";
+import {resolveForExtends} from "./evaluateCondition.js";
 import {validators} from "./validators.js";
 import {applyQuestionModifier} from "./applyQuestionModifier.js";
 import {applyReadonlyModifier} from "./applyReadonlyModifier.js";
@@ -116,11 +117,21 @@ function flattenRest(type) {
       }
     }
     return changed ? {...type, properties} : type;
-  } else if ((type.type === 'union' || type.type === 'intersection') && Array.isArray(type.members)) {
+  } else if (type.type === 'union' && Array.isArray(type.members)) {
     let changed = false;
-    const members = type.members.map((m) => {
-      const next = flattenRest(m);
-      if (next !== m) {
+    const members = type.members.map((member) => {
+      const next = flattenRest(member);
+      if (next !== member) {
+        changed = true;
+      }
+      return next;
+    });
+    return changed ? {...type, members} : type;
+  } else if (type.type === 'intersection' && Array.isArray(type.members)) {
+    let changed = false;
+    const members = type.members.map((member) => {
+      const next = flattenRest(member);
+      if (next !== member) {
         changed = true;
       }
       return next;
@@ -218,8 +229,10 @@ function instantiateMapping(expect, warn) {
       if (!substitutedCond || substitutedCond.type !== 'condition') {
         // Idiomatic `Exclude` filters (`as Exclude<K, 'drop'>`) decide per
         // key directly: excluded keys drop, the rest keep their name.
-        if (substitutedCond && substitutedCond.type === 'reference' && substitutedCond.name === 'Exclude' &&
-          Array.isArray(substitutedCond.args) && substitutedCond.args.length === 2) {
+        const isRef = substitutedCond?.type === 'reference';
+        const isExclude = isRef && substitutedCond?.name === 'Exclude';
+        const hasArgs = Array.isArray(substitutedCond?.args) && substitutedCond.args.length === 2;
+        if (isExclude && hasArgs) {
           const excluded = extendsCheck(keyType, substitutedCond.args[1], warn);
           if (excluded === true) {
             continue;
@@ -231,7 +244,8 @@ function instantiateMapping(expect, warn) {
           warn('validateMapping: nameType is not a condition after substitution', substitutedCond);
         }
       } else {
-        const decision = evaluateCondition(substitutedCond.checkType, substitutedCond.extendsType, warn);
+        const {checkType, extendsType} = substitutedCond;
+        const decision = evaluateCondition(checkType, extendsType, warn);
         if (decision === true || decision === false) {
           const branch = decision === true ? substitutedCond.trueType : substitutedCond.falseType;
           if (branch === 'never') {

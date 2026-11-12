@@ -15,7 +15,10 @@ function testRestUnchanged() {
 // We want: nested rest annotations substitute recursively, because the
 // annotation may itself contain the search key at any depth.
 function testRestNested() {
-  return JSON.stringify(substituteRest({type: 'rest', annotation: {type: 'array', elementType: 'K'}}, 'K', '"a"', noop)) ===
+  return JSON.stringify(substituteRest({
+    type: 'rest',
+    annotation: {type: 'array', elementType: 'K'},
+  }, 'K', '"a"', noop)) ===
     JSON.stringify({type: 'rest', annotation: {type: 'array', elementType: '"a"'}});
 }
 const tests = [

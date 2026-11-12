@@ -15,7 +15,10 @@ function testArrayUnchanged() {
 // We want: nested array nodes substitute recursively, because the element
 // type itself may contain the search key at any depth.
 function testArrayNested() {
-  return JSON.stringify(substituteArray({type: 'array', elementType: {type: 'array', elementType: 'K'}}, 'K', '"a"', noop)) ===
+  return JSON.stringify(substituteArray({
+    type: 'array',
+    elementType: {type: 'array', elementType: 'K'},
+  }, 'K', '"a"', noop)) ===
     JSON.stringify({type: 'array', elementType: {type: 'array', elementType: '"a"'}});
 }
 const tests = [

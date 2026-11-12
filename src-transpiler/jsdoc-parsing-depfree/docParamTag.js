@@ -1,5 +1,4 @@
 /** @import {ParamTag} from './parseJSDoc.js' */
-
 /**
  * Reads one parameter node to the shared schema row. The name is the
  * validated bind name (empty when the tag binds nothing, like tsc's

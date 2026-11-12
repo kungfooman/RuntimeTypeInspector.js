@@ -47,7 +47,11 @@ function testNestedCollects() {
   if (keysOf({sub: 'b'}, {type: 'object', properties: {sub: 'K'}}) !== 'K="\\"b\\""') {
     return false;
   }
-  const indexed = {type: 'object', properties: {}, indexSignatures: [{type: 'indexSignature', indexType: 'T', indexParameters: []}]};
+  const indexed = {
+    type: 'object',
+    properties: {},
+    indexSignatures: [{type: 'indexSignature', indexType: 'T', indexParameters: []}],
+  };
   return keysOf({a: 'x'}, indexed) === 'T="\\"x\\""';
 }
 // Record/map values collect; keys never do.

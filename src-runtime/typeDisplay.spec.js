@@ -274,7 +274,10 @@ function testSnipGiantInstanceCollapsesToTag() {
   return snip(giantWindow()) === 'FakeWindow';
 }
 function testNestedGiantCollapses() {
-  const outer = Object.assign(Object.create((class Box {}).prototype), {label: 'x', win: giantWindow()});
+  const outer = Object.assign(Object.create((class Box {}).prototype), {
+    label: 'x',
+    win: giantWindow(),
+  });
   return describeValueType(outer) === 'Box {label: "x", win: FakeWindow}';
 }
 function testInspectSummaryShowsGiantTag() {
@@ -359,7 +362,7 @@ function testPanelSnapshotCapturesBeyondLogBreadth() {
   if (msgs.length !== 1) {
     return false;
   }
-  const {value} = msgs[0];
+  const [{value}] = msgs;
   return value.k400 === 400 &&
     !Object.keys(value).some((key) => key.startsWith('[...+'));
 }

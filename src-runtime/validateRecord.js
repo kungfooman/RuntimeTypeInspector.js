@@ -32,9 +32,13 @@ function validateRecord(value, expect, loc, name, critical, warn, depth) {
         warn(`> validateType> record> key '${prop}' is no number.`, {expect: key, value: prop});
         return false;
       }
-    } else if (key !== undefined && key !== 'any' && key !== 'unknown' && key !== '*' && key !== 'string') {
+    } else if (key !== undefined && key !== 'any' && key !== 'unknown' && key !== '*' &&
+      key !== 'string') {
       if (!recurse(prop, key, loc, nameKey, critical, warn, depth + 1)) {
-        warn(`> validateType> record> key '${prop}' has an invalid type.`, {expect: key, value: prop});
+        warn(`> validateType> record> key '${prop}' has an invalid type.`, {
+          expect: key,
+          value: prop,
+        });
         return false;
       }
     }
@@ -44,10 +48,7 @@ function validateRecord(value, expect, loc, name, critical, warn, depth) {
     }
     const ret = recurse(valueKey, val, loc, nameKey, critical, warn, depth + 1);
     if (!ret) {
-      const info = {
-        expect: val,
-        value: valueKey
-      };
+      const info = {expect: val, value: valueKey};
       warn(`> validateType> record> The ${nameKey} property has an invalid type.`, info);
       return false;
     }

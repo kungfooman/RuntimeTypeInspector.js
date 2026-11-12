@@ -1,42 +1,42 @@
-import {customTypes         } from "./customTypes.js";
-import {customValidations   } from "./customValidations.js";
-import {options             } from "./options.js";
-import {classes             } from "./registerClass.js";
-import {typedefs            } from "./registerTypedef.js";
+import {customTypes} from "./customTypes.js";
+import {customValidations} from "./customValidations.js";
+import {options} from "./options.js";
+import {classes} from "./registerClass.js";
+import {typedefs} from "./registerTypedef.js";
 import "./lookupGlobalConstructor.js";
-import {validateArray       } from "./validateArray.js";
-import {validateArrayLike   } from "./validateArrayLike.js";
-import {validateCondition   } from "./validateCondition.js";
+import {validateArray} from "./validateArray.js";
+import {validateArrayLike} from "./validateArrayLike.js";
+import {validateCondition} from "./validateCondition.js";
 import {validateIntersection} from "./validateIntersection.js";
 import {validateGlobalConstructor} from "./validateGlobalConstructor.js";
 import {validateIndexedAccess} from "./validateIndexedAccess.js";
-import {validateIArguments   } from "./validateIArguments.js";
-import {validateKeyof       } from "./validateKeyof.js";
-import {validateMap         } from "./validateMap.js";
-import {validateMapping     } from "./validateMapping.js";
-import {validateNull        } from "./validateNull.js";
-import {validateNumber      } from "./validateNumber.js";
-import {validateObject      } from "./validateObject.js";
-import {validateBigint      } from "./validateBigint.js";
-import {validateBoolean     } from "./validateBoolean.js";
-import {validateString      } from "./validateString.js";
-import {validateSymbol      } from "./validateSymbol.js";
-import {validateUndefined   } from "./validateUndefined.js";
-import {validateVoid        } from "./validateVoid.js";
-import {validatePromise     } from "./validatePromise.js";
-import {validateRecord      } from "./validateRecord.js";
-import {validateReference   } from "./validateReference.js";
-import {validateSet         } from "./validateSet.js";
+import {validateIArguments} from "./validateIArguments.js";
+import {validateKeyof} from "./validateKeyof.js";
+import {validateMap} from "./validateMap.js";
+import {validateMapping} from "./validateMapping.js";
+import {validateNull} from "./validateNull.js";
+import {validateNumber} from "./validateNumber.js";
+import {validateObject} from "./validateObject.js";
+import {validateBigint} from "./validateBigint.js";
+import {validateBoolean} from "./validateBoolean.js";
+import {validateString} from "./validateString.js";
+import {validateSymbol} from "./validateSymbol.js";
+import {validateUndefined} from "./validateUndefined.js";
+import {validateVoid} from "./validateVoid.js";
+import {validatePromise} from "./validatePromise.js";
+import {validateRecord} from "./validateRecord.js";
+import {validateReference} from "./validateReference.js";
+import {validateSet} from "./validateSet.js";
 import {validateTemplateLiteral} from "./validateTemplateLiteral.js";
-import {validateTuple       } from "./validateTuple.js";
-import {validateTypeof      } from "./validateTypeof.js";
-import {validateTypedef     } from "./validateTypedef.js";
-import {validateUnion       } from "./validateUnion.js";
+import {validateTuple} from "./validateTuple.js";
+import {validateTypeof} from "./validateTypeof.js";
+import {validateTypedef} from "./validateTypedef.js";
+import {validateUnion} from "./validateUnion.js";
 import {createTypeFromIndexedAccess} from "./createTypeFromIndexedAccess.js";
 import {atomUnwrap} from "./atomUnwrap.js";
 import {snapshotMatches} from "./snapshotMatches.js";
-import {validators          } from "./validators.js";
-import {installWalkTimers   } from "./plugin-walk-timers/installWalkTimers.js";
+import {validators} from "./validators.js";
+import {installWalkTimers} from "./plugin-walk-timers/installWalkTimers.js";
 /**
  * Populates the dispatch table: every edge points outward from here, so the
  * module graph stays acyclic. Importing this module (or the package index)
@@ -120,10 +120,7 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
     return true;
   }
   if (!(expect instanceof Object)) {
-    expect = {
-      type: expect,
-      optional: false
-    };
+    expect = {type: expect, optional: false};
   }
   // Tagged annotated atoms (`{type: 'atom', atomType: T}`) unwrap to the
   // inner type with the occurrence flags merged in: a tree replacement
@@ -213,7 +210,9 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
     case 'set':
       return validators.validateSet(value, expect, loc, name, critical, warn, depth + 1);
     case 'templateLiteral':
-      return validators.validateTemplateLiteral(value, expect, loc, name, critical, warn, depth + 1);
+      return validators.validateTemplateLiteral(
+        value, expect, loc, name, critical, warn, depth + 1,
+      );
     case 'tuple':
       // Trigger: pc.app.scene.setSkybox([1, 2, 3]);
       return validators.validateTuple(value, expect, loc, name, critical, warn, depth + 1);

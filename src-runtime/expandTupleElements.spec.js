@@ -12,7 +12,11 @@ function testLeavesInputAlone() {
 // We want: tuple spreads to splice, array annotations to become the single
 // variadic with its position, and named `...b: T[]` members to convert.
 function testDesugaring() {
-  const named = {type: 'tupleMember', elementType: {type: 'array', elementType: 'string'}, dotDot: true};
+  const named = {
+    type: 'tupleMember',
+    elementType: {type: 'array', elementType: 'string'},
+    dotDot: true,
+  };
   const {expanded, variadic, variadicPos, error} = expandTupleElements(['boolean', named]);
   return expanded.length === 1 && expanded[0] === 'boolean' &&
     variadic && variadic.type === 'array' && variadic.elementType === 'string' &&

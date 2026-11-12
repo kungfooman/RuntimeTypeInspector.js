@@ -94,14 +94,22 @@ function testRevokedProxy() {
   return true;
 }
 function testContainers() {
-  const out = stringifyValue({m: new Map([['a', 1]]), s: new Set([1, 2]), t: new Int32Array([1, 2, 3])});
+  const out = stringifyValue({
+    m: new Map([['a', 1]]),
+    s: new Set([1, 2]),
+    t: new Int32Array([1, 2, 3]),
+  });
   if (out.m.$type !== 'Map' || out.s.$type !== 'Set' || out.t.$type !== 'Int32Array') {
     return false;
   }
   if (JSON.stringify(out.t.values) !== '[1,2,3]') {
     return false;
   }
-  if (JSON.stringify(stringifyValue(new Map())) !== JSON.stringify({$type: 'Map', size: 0, entries: []})) {
+  if (JSON.stringify(stringifyValue(new Map())) !== JSON.stringify({
+    $type: 'Map',
+    size: 0,
+    entries: [],
+  })) {
     return false;
   }
   return true;

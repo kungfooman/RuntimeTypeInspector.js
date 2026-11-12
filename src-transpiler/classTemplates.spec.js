@@ -5,7 +5,7 @@ import {noneUnchecked} from './noneUnchecked.js';
 // only applies when nothing is inferred (issue #265 parsed this as
 // undefined, so the whole class went unchecked).
 function testConstrainedDefaultKeepsConstraint() {
-  const templates = parseJSDocDocument('@template {AssetType | (string & {})} [K=string]').templates;
+  const {templates} = parseJSDocDocument('@template {AssetType | (string & {})} [K=string]');
   if (!templates || typeof templates.K !== 'object' || templates.K.type !== 'union') {
     return false;
   }

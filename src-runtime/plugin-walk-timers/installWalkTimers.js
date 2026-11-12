@@ -65,10 +65,18 @@ function installWalkTimers() {
  * validators.validateArray.walkTimed; // undefined
  */
 function resetWalkTimers() {
-  for (const key of ['validateArray', 'validateArrayLike', 'validateArrayLikeSparse', 'validateSet', 'validateRecord']) {
-    const timed = validators[key];
-    if (typeof timed === 'function' && timed.walkTimed === true && typeof timed.walkOrig === 'function') {
-      validators[key] = timed.walkOrig;
+  const timed = [
+    'validateArray',
+    'validateArrayLike',
+    'validateArrayLikeSparse',
+    'validateSet',
+    'validateRecord',
+  ];
+  for (const key of timed) {
+    const candidate = validators[key];
+    const isWrapped = typeof candidate === 'function' && candidate.walkTimed === true;
+    if (isWrapped && typeof candidate.walkOrig === 'function') {
+      validators[key] = candidate.walkOrig;
     }
   }
 }

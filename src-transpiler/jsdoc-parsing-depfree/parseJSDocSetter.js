@@ -1,7 +1,6 @@
 import {expandTypeDepFree} from "../expandTypeDepFree.js";
 import {parseJSDocDocument} from "./parseJSDocDocument.js";
 /** @import {ExpandedType} from './expandedType.js' */
-
 /**
  * Thin view over the single document parse: the setter type (exactly one
  * `@type` tag) out of the shared scan.

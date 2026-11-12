@@ -1,14 +1,16 @@
 import {splitOverloadSections} from './splitOverloadSections.js';
 import {deepEqualType} from '../../src-runtime/deepEqualType.js';
-
 // Stacked blocks preserve the implementation separately from the signatures.
 function testStackedSections() {
   const blocks = ['@overload @param {number} x', '@overload @param {string} x', '@param {any} x'];
   const actual = splitOverloadSections(blocks);
-  const expected = {overloads: [' @param {number} x', ' @param {string} x'], impl: '@param {any} x', preMarker: ''};
+  const expected = {
+    overloads: [' @param {number} x', ' @param {string} x'],
+    impl: '@param {any} x',
+    preMarker: '',
+  };
   return deepEqualType(actual, expected);
 }
-
 // Return tags separate a single block's overloads from its implementation tail.
 function testSingleBlockSections() {
   const src = `@overload
@@ -26,7 +28,6 @@ function testSingleBlockSections() {
     result.impl.includes('{any}')
   );
 }
-
 // A section-breaking marker (`@callback`/`@type`) terminates the section:
 // the break text belongs to the tail, never to the entry — exactly like
 // tsc, where the marker parses as its own tag. A head with no rows still
@@ -39,7 +40,6 @@ function testBreakingMarkerSplitsTail() {
     actual.impl.includes('@callback Cb')
   );
 }
-
 // A template-first part stalls before any row: tsc emits the empty marker
 // and strands the rows, so the stranded part routes to the tail with an
 // empty entry standing in.
@@ -51,7 +51,6 @@ function testTemplateFirstStalls() {
     actual.impl.includes('@param {K} a')
   );
 }
-
 // A template after rows rode the same marker that holds them (one span,
 // errors included): the piece stays whole so the entry absorbs it exactly
 // as tsc parses it.
@@ -64,7 +63,6 @@ function testTemplateAfterRowsAbsorbs() {
     (actual.impl === null || actual.impl === '')
   );
 }
-
 // A template before the marker is flat scope, never section content: the
 // split returns it separately so the fold can scope every section under
 // it without splicing text into any section.
@@ -77,5 +75,4 @@ function testPreMarkerTemplateStaysOut() {
     actual.preMarker.includes('@template T')
   );
 }
-
 export const tests = [testStackedSections, testSingleBlockSections, testBreakingMarkerSplitsTail, testTemplateFirstStalls, testTemplateAfterRowsAbsorbs, testPreMarkerTemplateStaysOut];

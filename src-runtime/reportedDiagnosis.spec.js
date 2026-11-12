@@ -36,8 +36,14 @@ function prepare() {
   // next to the classes so snapshots diff against data, not just methods.
   registerClass(ReportWidget);
   registerClass(ReportVec2);
-  registerTypedef('ReportWidget', {type: 'object', properties: {r: 'number', g: 'number', b: 'number', a: 'number', spin: 'Function'}});
-  registerTypedef('ReportVec2', {type: 'object', properties: {x: 'number', y: 'number', set: 'Function'}});
+  registerTypedef('ReportWidget', {
+    type: 'object',
+    properties: {r: 'number', g: 'number', b: 'number', a: 'number', spin: 'Function'},
+  });
+  registerTypedef('ReportVec2', {
+    type: 'object',
+    properties: {x: 'number', y: 'number', set: 'Function'},
+  });
 }
 /**
  * Captures the posted report of one failing check. Cross-realm mode pushes
@@ -57,9 +63,11 @@ function postReport(value, expect, loc, name, crossRealm) {
   prepare();
   const prevParent = globalThis.parent;
   let posted = null;
-  globalThis.parent = {postMessage: (msg) => {
-    posted = msg;
-  }};
+  globalThis.parent = {
+    postMessage: (msg) => {
+      posted = msg;
+    },
+  };
   try {
     inspectType(value, expect, `${loc}-${crossRealm ? 'cross' : 'same'}`, name);
   } finally {
@@ -87,7 +95,13 @@ function testLazyDiffFindsRowInForeignRegistry() {
   // transported value, not a hand-built one, so clone damage would show.
   for (const crossRealm of [false, true]) {
     const posted = postReport({r: 'x'}, 'ReportWidget', 'reportLocTwo', 'reportNameTwo', crossRealm);
-    const rendered = compareText({msg: 'm', expect: posted.expect, value: posted.value, name: 'reportNameTwo', hits: 1});
+    const rendered = compareText({
+      msg: 'm',
+      expect: posted.expect,
+      value: posted.value,
+      name: 'reportNameTwo',
+      hits: 1,
+    });
     if (!rendered.includes('reportNameTwo') || !rendered.includes('Diagnosis:')) {
       return false;
     }
@@ -108,7 +122,13 @@ function testLazyDiffDegradesWithoutRegistry() {
   bumpTypedefVersion();
   let rendered;
   try {
-    rendered = compareText({msg: 'm', expect: posted.expect, value: posted.value, name: 'reportNameThree', hits: 1});
+    rendered = compareText({
+      msg: 'm',
+      expect: posted.expect,
+      value: posted.value,
+      name: 'reportNameThree',
+      hits: 1,
+    });
   } finally {
     Object.assign(typedefs, savedTypedefs);
     Object.assign(classes, savedClasses);
@@ -128,11 +148,22 @@ function testAnchorsPayloadKeepsSingleRow() {
   for (const crossRealm of [false, true]) {
     const posted = postReport(
       {anchor: [0, 0, 1, 1], tint: widget, align: [0, 0]},
-      {type: 'object', properties: {
-        anchor: {type: 'union', members: ['ReportVec2', {type: 'array', elementType: 'number'}], optional: true},
-        tint: {type: 'union', members: ['ReportWidget', {type: 'array', elementType: 'number'}], optional: true},
-        align: {type: 'ReportVec2', optional: true},
-      }},
+      {
+        type: 'object',
+        properties: {
+          anchor: {
+            type: 'union',
+            members: ['ReportVec2', {type: 'array', elementType: 'number'}],
+            optional: true,
+          },
+          tint: {
+            type: 'union',
+            members: ['ReportWidget', {type: 'array', elementType: 'number'}],
+            optional: true,
+          },
+          align: {type: 'ReportVec2', optional: true},
+        },
+      },
       'reportLocFour',
       'reportNameFour',
       crossRealm,
@@ -153,11 +184,18 @@ function testOptionDriftShowsInLocalDiff() {
   // extra `a[1]` row the verdict never saw. The lazy diff reflects the
   // rendering realm; it does not promise the checking verdict.
   prepare();
-  const prev = {strictNullChecks: options.strictNullChecks, checkInfinity: options.checkInfinity, exactObjects: options.exactObjects};
+  const prev = {
+    strictNullChecks: options.strictNullChecks,
+    checkInfinity: options.checkInfinity,
+    exactObjects: options.exactObjects,
+  };
   setOptions({strictNullChecks: true, checkInfinity: false, exactObjects: false});
   let posted;
   try {
-    posted = postReport({a: [0, Infinity], b: 'x'}, {type: 'object', properties: {a: {type: 'array', elementType: 'number'}, b: 'number'}}, 'reportLocFive', 'reportNameFive', false);
+    posted = postReport({a: [0, Infinity], b: 'x'}, {
+      type: 'object',
+      properties: {a: {type: 'array', elementType: 'number'}, b: 'number'},
+    }, 'reportLocFive', 'reportNameFive', false);
   } finally {
     setOptions(prev);
   }
@@ -167,7 +205,13 @@ function testOptionDriftShowsInLocalDiff() {
   setOptions({strictNullChecks: true, checkInfinity: true, exactObjects: true});
   let rendered;
   try {
-    rendered = compareText({msg: 'm', expect: posted.expect, value: posted.value, name: 'reportNameFive', hits: 1});
+    rendered = compareText({
+      msg: 'm',
+      expect: posted.expect,
+      value: posted.value,
+      name: 'reportNameFive',
+      hits: 1,
+    });
   } finally {
     setOptions(prev);
   }
@@ -186,10 +230,17 @@ function testValidatorDriftShowsInLocalDiff() {
   prepare();
   const posted = postReport(
     {anchor: [0, 0, 1, 1], align: [0, 0]},
-    {type: 'object', properties: {
-      anchor: {type: 'union', members: ['ReportVec2', {type: 'array', elementType: 'number'}], optional: true},
-      align: {type: 'ReportVec2', optional: true},
-    }},
+    {
+      type: 'object',
+      properties: {
+        anchor: {
+          type: 'union',
+          members: ['ReportVec2', {type: 'array', elementType: 'number'}],
+          optional: true,
+        },
+        align: {type: 'ReportVec2', optional: true},
+      },
+    },
     'reportLocSix',
     'reportNameSix',
     false,
@@ -200,7 +251,13 @@ function testValidatorDriftShowsInLocalDiff() {
   validators.validateArray = () => false;
   let rendered;
   try {
-    rendered = compareText({msg: 'm', expect: posted.expect, value: posted.value, name: 'reportNameSix', hits: 1});
+    rendered = compareText({
+      msg: 'm',
+      expect: posted.expect,
+      value: posted.value,
+      name: 'reportNameSix',
+      hits: 1,
+    });
   } finally {
     validators.validateArray = validateArray;
   }
@@ -230,7 +287,13 @@ function testTypedArrayDiagnosisSurvivesTransit() {
     if (findings.some((row) => row.path.endsWith('$type') || JSON.stringify(row).includes('$type'))) {
       return false;
     }
-    const rendered = compareText({msg: 'm', expect: posted.expect, value: posted.value, name: 'reportNameSeven', hits: 1});
+    const rendered = compareText({
+      msg: 'm',
+      expect: posted.expect,
+      value: posted.value,
+      name: 'reportNameSeven',
+      hits: 1,
+    });
     const localRows = rendered.match(/^- \[/gm) || [];
     if (localRows.length !== 4 || rendered.includes('$type')) {
       return false;

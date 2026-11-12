@@ -66,18 +66,22 @@ function testCyclesSafe() {
 }
 function testNeverThrows() {
   // Hostile values fall back to the input for today's behavior.
-  const proxy = new Proxy({}, {getPrototypeOf() {
-    throw new Error('nope');
-  }});
+  const proxy = new Proxy({}, {
+    getPrototypeOf() {
+      throw new Error('nope');
+    },
+  });
   return tagSnapshot(proxy) === proxy;
 }
 function testPostedValuesTagged() {
   // End to end: a failing check posts the tagged snapshot, not the live instance.
   const prevParent = globalThis.parent;
   let posted = null;
-  globalThis.parent = {postMessage: (msg) => {
-    posted = msg;
-  }};
+  globalThis.parent = {
+    postMessage: (msg) => {
+      posted = msg;
+    },
+  };
   try {
     inspectType(new TagSnapWidget(), 'string', 'TagSnapLoc', 'tagSnapName');
   } finally {

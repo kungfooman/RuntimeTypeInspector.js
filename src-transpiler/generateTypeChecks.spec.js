@@ -49,7 +49,6 @@ function testRestBindingStillChecks() {
   const failing = runChecks(failingSrc, 'takeRestFail', (scope, {hits, posted}) => hits.length === 1 && posted.length === 1);
   return passing && failing;
 }
-
 // Arrow overloads use actual call arguments while the body keeps lexical arguments.
 function testOverloadedArrowLexicalArguments() {
   const src = `function outer(marker) {
@@ -68,7 +67,6 @@ function testOverloadedArrowLexicalArguments() {
     scope.result === 'marker1' && hits.length === 2
   ));
 }
-
 // Suppression names the implementation parameter even when overload names differ.
 function testOverloadedScopedIgnoreUsesPosition() {
   const src = `/**
@@ -87,7 +85,6 @@ function testOverloadedScopedIgnoreUsesPosition() {
     takeIgnoredOverload('ignored', 3);`;
   return runChecks(src, 'takeIgnoredOverload', (scope, {hits}) => hits.length === 1);
 }
-
 // A parameter named Array cannot shadow the argument-list conversion.
 function testOverloadParameterNamedArray() {
   const src = `/**
@@ -101,7 +98,6 @@ function testOverloadParameterNamedArray() {
     takeArrayNamedParam('bad');`;
   return runChecks(src, 'takeArrayNamedParam', (scope, {hits}) => hits.length === 1);
 }
-
 // A named arrow keeps its length, inferred name, and one report per bad call.
 function testOverloadedArrowMetadata() {
   const src = `/**
@@ -122,7 +118,6 @@ function testOverloadedArrowMetadata() {
     posted[0].name === 'arguments'
   ));
 }
-
 // An object property arrow retains its inferred property name and arity.
 function testOverloadedPropertyArrowMetadata() {
   const src = `const container = {
@@ -137,7 +132,6 @@ function testOverloadedPropertyArrowMetadata() {
     hits.length === 1
   ));
 }
-
 // An async arrow keeps its metadata even when the surrounding scope shadows Object.
 function testOverloadedAsyncArrowMetadata() {
   const src = `const Object = null;
@@ -150,7 +144,6 @@ function testOverloadedAsyncArrowMetadata() {
     scope.asyncAction.constructor.name === 'AsyncFunction'
   ));
 }
-
 // An async arrow awaits through the wrapper while the check runs first.
 function testOverloadedAsyncArrowAwaitThroughWrapper() {
   const src = `/** @overload @param {number} value @returns {Promise<number>} */
@@ -180,7 +173,6 @@ function testOverloadedAsyncArrowAwaitThroughWrapper() {
     ));
   });
 }
-
 // An async arrow forwards extra arguments through the stored rest carrier.
 function testOverloadedAsyncArrowRestForwards() {
   const src = `/**
@@ -201,7 +193,6 @@ function testOverloadedAsyncArrowRestForwards() {
     scope.result.then((value) => value === 6 && hits.length === 0)
   ));
 }
-
 // An async arrow with a block body keeps lexical this through the wrapper.
 function testOverloadedAsyncArrowLexicalThis() {
   const src = `const holder = {
@@ -220,7 +211,6 @@ function testOverloadedAsyncArrowLexicalThis() {
     ))
   ));
 }
-
 // An async generator arrow preserves its protocol through the wrapper.
 function testOverloadedAsyncGeneratorArrow() {
   const src = `/** @overload @param {number} value @returns {AsyncGenerator<number>} */
@@ -243,7 +233,6 @@ function testOverloadedAsyncGeneratorArrow() {
     ));
   });
 }
-
 // A sync generator function keeps its protocol while the inline check runs first.
 function testOverloadedSyncGeneratorFunction() {
   const src = `/** @overload @param {number} value @returns {Generator<number>} */
@@ -263,7 +252,6 @@ function testOverloadedSyncGeneratorFunction() {
     hits.length === 0
   ));
 }
-
 // A sync generator warns before the first yield without consuming the iterable.
 function testOverloadedSyncGeneratorWarnsFirst() {
   const src = `/** @overload @param {number} value @returns {Generator<number>} */
@@ -279,7 +267,6 @@ function testOverloadedSyncGeneratorWarnsFirst() {
     scope.first.done === false
   ));
 }
-
 // Computed keys are coerced once in order, including symbols and nearby properties.
 function testOverloadedComputedPropertyMetadata() {
   const src = `const events = [];
@@ -312,7 +299,6 @@ function testOverloadedComputedPropertyMetadata() {
     );
   });
 }
-
 // A yielded key remains in the generator, rather than a generated arrow scope.
 function testOverloadedYieldedPropertyKey() {
   const src = `function* makeHolder() {
@@ -335,7 +321,6 @@ function testOverloadedYieldedPropertyKey() {
     );
   });
 }
-
 // Reentrant key coercion and a same-named outer binding keep independent keys.
 function testOverloadedReentrantComputedKeys() {
   const src = `const outerBinding = 7;
@@ -357,8 +342,8 @@ function testOverloadedReentrantComputedKeys() {
     [key]: (value) => value + outerBinding
   };`;
   return runChecks(src, 'inner, outer', (scope, {hits}) => {
-    const nested = scope.inner.nested;
-    const outer = scope.outer.outer;
+    const {nested} = scope.inner;
+    const {outer} = scope.outer;
     return (
       nested(1) === 8 &&
       outer(2) === 9 &&
@@ -370,7 +355,6 @@ function testOverloadedReentrantComputedKeys() {
     );
   });
 }
-
 // A computed proto key remains an own data property, not a prototype setter.
 function testOverloadedComputedProtoKey() {
   const src = `const key = '__proto__';
@@ -388,7 +372,6 @@ function testOverloadedComputedProtoKey() {
     );
   });
 }
-
 // Dummy arity parameters forward values positionally without shadowing outer bindings.
 function testOverloadedDummyArityForwards() {
   const src = `const outerBinding = 7;
@@ -410,7 +393,6 @@ function testOverloadedDummyArityForwards() {
     posted.length === 0
   ));
 }
-
 // Destructured and required parameters keep their behavior under the wrapper.
 function testOverloadedDummyArityShapes() {
   const src = `/**
@@ -432,7 +414,6 @@ function testOverloadedDummyArityShapes() {
     posted[0].name === 'arguments'
   ));
 }
-
 // A defaulted tail converts to required in emission, so the tail keeps its slot.
 function testOverloadedDummyArityOptionalTail() {
   const src = `/**
@@ -452,7 +433,6 @@ function testOverloadedDummyArityOptionalTail() {
     posted.length === 0
   ));
 }
-
 // The inserted key scope keeps the enclosing method's super, this, and arguments.
 function testOverloadedComputedLexicalBindings() {
   const src = `class Base {
@@ -479,7 +459,6 @@ function testOverloadedComputedLexicalBindings() {
     );
   });
 }
-
 // Named and private class field arrows keep their metadata and report their owning class.
 function testOverloadedNamedClassFields() {
   const src = `class Holder {
@@ -513,7 +492,6 @@ function testOverloadedNamedClassFields() {
     );
   });
 }
-
 // Computed class keys are coerced once per class, even when class creation reenters.
 function testOverloadedComputedClassFieldChecks() {
   const src = `const symbol = Symbol('inner');
@@ -550,7 +528,6 @@ function testOverloadedComputedClassFieldChecks() {
     hits.length === 2
   ));
 }
-
 // A second instance coerces the same class key again without changing the outcome.
 function testOverloadedComputedClassFieldSecondInstance() {
   const src = `let reads = 0;
@@ -579,7 +556,6 @@ function testOverloadedComputedClassFieldSecondInstance() {
     hits.length === 1
   ));
 }
-
 export const tests = [
   testMismatchedParamSkips,
   testOverloadDocblockMismatchSkips,

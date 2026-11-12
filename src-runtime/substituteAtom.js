@@ -21,7 +21,11 @@ function substituteAtom(type, search, replace, warn) {
     return type;
   }
   if (inner !== null && typeof inner === 'object' && !Array.isArray(inner)) {
-    return {...inner, optional: type.optional || inner.optional, readonly: type.readonly ?? inner.readonly};
+    return {
+      ...inner,
+      optional: type.optional || inner.optional,
+      readonly: type.readonly ?? inner.readonly,
+    };
   }
   return {...type, atomType: inner};
 }

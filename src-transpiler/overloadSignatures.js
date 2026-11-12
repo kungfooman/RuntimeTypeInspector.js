@@ -2,7 +2,6 @@ import {overloadToTuple} from './overloadToTuple.js';
 import {parseJSDocDocument} from './jsdoc-parsing-depfree/parseJSDocDocument.js';
 import {expandTypeDepFree} from './expandTypeDepFree.js';
 import {eraseIgnoredOverloadParams} from './eraseIgnoredOverloadParams.js';
-
 /**
  * Builds runtime overload signatures for one documented function.
  * Pre-marker templates scope every section (flat scope, matching tsc
@@ -17,15 +16,20 @@ import {eraseIgnoredOverloadParams} from './eraseIgnoredOverloadParams.js';
  */
 function overloadSignatures(overloads, fnNode, options = {}) {
   const parser = options.expandType || expandTypeDepFree;
-  const scopeTemplates = options.scopeTemplates;
-  const ignored = options.ignored;
+  const {scopeTemplates} = options;
+  const {ignored} = options;
   const ignoreSet = ignored instanceof Set ? ignored : undefined;
-  const preMarker = options.preMarker === undefined || options.preMarker === '' ? undefined : parseJSDocDocument(options.preMarker, parser).templates;
+  const hasPreMarker = options.preMarker !== undefined && options.preMarker !== '';
+  const preTemplates = hasPreMarker ?
+    parseJSDocDocument(options.preMarker, parser).templates :
+    undefined;
   return overloads.map((section) => {
     const tuple = overloadToTuple(section, parser, ignoreSet);
-    if (ignored instanceof Set) eraseIgnoredOverloadParams(tuple, fnNode, ignored);
+    if (ignored instanceof Set) {
+      eraseIgnoredOverloadParams(tuple, fnNode, ignored);
+    }
     const {templates: own} = parseJSDocDocument(section, parser);
-    const templates = {...preMarker, ...scopeTemplates, ...own};
+    const templates = {...preTemplates, ...scopeTemplates, ...own};
     return {tuple, templates};
   });
 }

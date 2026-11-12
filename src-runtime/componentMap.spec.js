@@ -143,7 +143,12 @@ function testGenericMappedInstantiation() {
   prepare();
   registerTypedef('Box', {type: 'object', properties: {a: '"x"', b: 1}});
   const templates = {T: 'Box'};
-  const mapping = () => ({type: 'mapping', iterable: {type: 'keyof', argument: 'T'}, element: 'K', result: {type: 'indexedAccess', index: 'K', object: 'T'}});
+  const mapping = () => ({
+    type: 'mapping',
+    iterable: {type: 'keyof', argument: 'T'},
+    element: 'K',
+    result: {type: 'indexedAccess', index: 'K', object: 'T'},
+  });
   if (!inspectTypeWithTemplates({a: 'x', b: 1}, mapping(), 'loc', 'name', templates)) {
     return false;
   }

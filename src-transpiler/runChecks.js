@@ -15,7 +15,8 @@ import * as runtime from '../src-runtime/index.js';
  * @param {Function} body - Receives `(scope, {hits, posted})`.
  * @returns {*} Whatever `body` returns.
  * @example
- * runChecks('/** @param {number} x *\/ function f(x) { return x; }', 'f', (scope) => typeof scope.f);
+ * const probe = (scope) => typeof scope.exampleFn;
+ * runChecks(srcWithNumberParam, 'exampleFn', probe);
  */
 function runChecks(src, expose, body) {
   const asserter = new Asserter({expandType, addHeader: false, filename: 'test.js'});
@@ -26,21 +27,47 @@ function runChecks(src, expose, body) {
   const hits = [];
   const posted = [];
   const origSelf = globalThis.self;
-  globalThis.self = {addEventListener: () => {}, postMessage: (msg) => posted.push(msg)};
+  globalThis.self = {
+    addEventListener: () => {},
+    postMessage: (msg) => posted.push(msg),
+  };
   try {
-    // eslint-disable-next-line no-new-func -- must execute converted code to test real checking
-    const fn = new Function(
-      'inspectType', 'inspectTypeWithTemplates', 'inspectOverloads', 'overloadPropertyKey', 'youCanAddABreakpointHere',
-      'registerClass', 'registerTypedef', 'registerVariable', 'registerImportNamespaceSpecifier',
-      'inspectIndexedAccess', 'validateDivision',
-      `${out}\n;return {${expose}};`
+    const names = [
+      'inspectType',
+      'inspectTypeWithTemplates',
+      'inspectOverloads',
+      'overloadPropertyKey',
+      'youCanAddABreakpointHere',
+      'registerClass',
+      'registerTypedef',
+      'registerVariable',
+      'registerImportNamespaceSpecifier',
+      'inspectIndexedAccess',
+      'validateDivision',
+    ];
+    // Must execute converted code to test real checking.
+    const fn = new Function( // eslint-disable-line no-new-func
+      ...names,
+      `${out}\n;return {${expose}};`,
     );
+    const recordHit = (...args) => {
+      hits.push(args);
+    };
+    const values = [
+      runtime.inspectType,
+      runtime.inspectTypeWithTemplates,
+      runtime.inspectOverloads,
+      runtime.overloadPropertyKey,
+      recordHit,
+      runtime.registerClass,
+      runtime.registerTypedef,
+      runtime.registerVariable,
+      runtime.registerImportNamespaceSpecifier,
+      runtime.inspectIndexedAccess,
+      runtime.validateDivision,
+    ];
     const scope = fn(
-      runtime.inspectType, runtime.inspectTypeWithTemplates, runtime.inspectOverloads, runtime.overloadPropertyKey, (...args) => {
-        hits.push(args);
-      },
-      runtime.registerClass, runtime.registerTypedef, runtime.registerVariable,
-      runtime.registerImportNamespaceSpecifier, runtime.inspectIndexedAccess, runtime.validateDivision
+      ...values,
     );
     return body(scope, {hits, posted});
   } finally {

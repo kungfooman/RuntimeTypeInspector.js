@@ -35,7 +35,7 @@ function testKindTimeFoldsIntoCheckTime() {
   recordSetScan('T#fold-set', 'v', 30);
   recordArrayScan('T#fold-set', 'v', 12);
   recordCheck('T#fold-set', 'v', 0);
-  const coarse = getCheckStats()[0];
+  const [coarse] = getCheckStats();
   // Both walks fold into the one enclosing check: total and worst both
   // read 42, since the check is the unit the worst is measured in.
   const coarseOk = coarse.checkMs === 42 && coarse.maxCheckMs === 42;
@@ -77,7 +77,7 @@ function testValidatorsRecordTheirKind() {
   const arrOk = validateType([1, 'x'], arrExpect, 'V#kinds', 'v', true, warn, 0) === false;
   const recOk = validateType({a: 1, b: 'x'}, recExpect, 'V#kinds', 'v', true, warn, 0) === false;
   recordCheck('V#kinds', 'v', 0);
-  const row = getCheckStats()[0];
+  const [row] = getCheckStats();
   const ok = setOk && arrOk && recOk &&
     row.setWalks === 1 && row.arrayWalks === 1 && row.objectWalks === 1 &&
     row.checks === 1 && row.checkMs === row.setMs + row.arrayMs + row.objectMs;
@@ -96,13 +96,13 @@ function testNestedScanTimeFoldsIntoCheckTime() {
   resetCheckStats();
   recordMapScan('T#fold', 'v', 30);
   recordCheck('T#fold', 'v', 0);
-  const coarse = getCheckStats()[0];
+  const [coarse] = getCheckStats();
   const coarseOk = coarse.checks === 1 && coarse.scanMs === 30 &&
     coarse.checkMs === 30 && coarse.maxCheckMs === 30;
   resetCheckStats();
   recordMapScan('T#fine', 'v', 30);
   recordCheck('T#fine', 'v', 42);
-  const fine = getCheckStats()[0];
+  const [fine] = getCheckStats();
   const fineOk = fine.checkMs === 42 && fine.maxCheckMs === 42 && fine.scanMs === 30;
   return coarseOk && fineOk;
 }
@@ -212,7 +212,7 @@ function testRowCarriesCallStack() {
   options.checkStats = true;
   resetCheckStats();
   recordCheck('T#stack', 'v', 1);
-  const stack = getCheckStats()[0].stack;
+  const [{stack}] = getCheckStats();
   return typeof stack === 'string' && stack.includes('recordCheck') &&
     stack.includes('rowFor') && stack.includes('Error');
 }

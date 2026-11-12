@@ -31,7 +31,10 @@ function testStrictByDefault() {
 }
 function testNonStrictNullPasses() {
   return withNonStrict(() => {
-    for (const expect of ['number', 'string', 'boolean', 'object', {type: 'array', elementType: 'number'}]) {
+    for (const expect of ['number', 'string', 'boolean', 'object', {
+      type: 'array',
+      elementType: 'number',
+    }]) {
       if (!validateType(null, expect, 'loc', 'name', true, warn, 0)) {
         return false;
       }
@@ -50,7 +53,10 @@ function testNonStrictStillRejectsWrong() {
     if (validateType(1, 'string', 'loc', 'name', true, warn, 0)) {
       return false;
     }
-    if (validateType([1, 'x'], {type: 'array', elementType: 'number'}, 'loc', 'name', true, warn, 0)) {
+    if (validateType([1, 'x'], {
+      type: 'array',
+      elementType: 'number',
+    }, 'loc', 'name', true, warn, 0)) {
       return false;
     }
     return true;
@@ -58,7 +64,11 @@ function testNonStrictStillRejectsWrong() {
 }
 function testNonStrictNonNullable() {
   // Matches TypeScript with strictNullChecks off: null is in every domain.
-  return withNonStrict(() => validateType(null, {type: 'reference', name: 'NonNullable', args: ['number']}, 'loc', 'name', true, warn, 0));
+  return withNonStrict(() => validateType(null, {
+    type: 'reference',
+    name: 'NonNullable',
+    args: ['number'],
+  }, 'loc', 'name', true, warn, 0));
 }
 function testFlagRestored() {
   withNonStrict(() => true);

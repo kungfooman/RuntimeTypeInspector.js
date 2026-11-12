@@ -98,7 +98,7 @@ function stringifyValue(value, options = {}) {
         if (val instanceof DataView) {
           return {$type: tag, byteLength: val.byteLength};
         }
-        const length = val.length;
+        const {length} = val;
         const count = Math.min(length, maxBreadth);
         const values = [];
         for (let i = 0; i < count; i++) {
@@ -117,7 +117,9 @@ function stringifyValue(value, options = {}) {
         const count = Math.min(entries.length, maxBreadth);
         const out = [];
         for (let i = 0; i < count; i++) {
-          out.push([walk(entries[i][0], depth + 1, `${path}[${i}][0]`), walk(entries[i][1], depth + 1, `${path}[${i}][1]`)]);
+          const key = walk(entries[i][0], depth + 1, `${path}[${i}][0]`);
+          const entry = walk(entries[i][1], depth + 1, `${path}[${i}][1]`);
+          out.push([key, entry]);
         }
         if (entries.length > count) {
           out.push(`[...+${entries.length - count} more]`);
@@ -172,13 +174,17 @@ function stringifyValue(value, options = {}) {
       seen.push({obj: val, path});
       const stringKeys = Object.keys(val);
       const symbolKeys = Object.getOwnPropertySymbols(val);
-      const labels = [...stringKeys, ...symbolKeys.map((sym) => (sym.description === undefined ? '[Symbol]' : `[Symbol ${sym.description}]`))];
+      const namedSymbol = (sym) => `[Symbol ${sym.description}]`;
+      const symbolLabel = (sym) => (sym.description === undefined ? '[Symbol]' : namedSymbol(sym));
+      const labels = [...stringKeys, ...symbolKeys.map(symbolLabel)];
       const count = Math.min(labels.length, maxBreadth);
       for (let i = 0; i < count; i++) {
         const key = labels[i];
+        const isString = i < stringKeys.length;
+        const offset = i - stringKeys.length;
         let prop;
         try {
-          prop = i < stringKeys.length ? val[stringKeys[i]] : val[symbolKeys[i - stringKeys.length]];
+          prop = isString ? val[stringKeys[i]] : val[symbolKeys[offset]];
         } catch {
           out[key] = '[Getter threw]';
           continue;

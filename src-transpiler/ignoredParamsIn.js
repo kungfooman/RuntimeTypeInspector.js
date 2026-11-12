@@ -16,8 +16,10 @@ function ignoredParamsIn(text) {
   if (at === -1) {
     return null;
   }
-  const line = text.slice(at).split('\n', 1)[0];
-  const names = line.slice('@ignoreRTI'.length).split(/[\s,]+/).map((name) => name.replace(/^[`'"]+|[`'"]+$/g, '')).filter(Boolean);
+  const [line] = text.slice(at).split('\n', 1);
+  const rawNames = line.slice('@ignoreRTI'.length).split(/[\s,]+/);
+  const stripQuotes = (name) => name.replace(/^[`'"]+|[`'"]+$/g, '');
+  const names = rawNames.map(stripQuotes).filter(Boolean);
   return names.length ? new Set(names) : 'all';
 }
 export {ignoredParamsIn};

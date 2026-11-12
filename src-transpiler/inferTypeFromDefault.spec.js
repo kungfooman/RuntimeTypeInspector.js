@@ -32,10 +32,16 @@ function testNullishSkipped() {
   return true;
 }
 function testContainers() {
-  if (JSON.stringify(inferTypeFromDefault(defaultOf('[]'))) !== JSON.stringify({type: 'array', elementType: 'any'})) {
+  if (JSON.stringify(inferTypeFromDefault(defaultOf('[]'))) !== JSON.stringify({
+    type: 'array',
+    elementType: 'any',
+  })) {
     return false;
   }
-  if (JSON.stringify(inferTypeFromDefault(defaultOf('{}'))) !== JSON.stringify({type: 'object', properties: {}})) {
+  if (JSON.stringify(inferTypeFromDefault(defaultOf('{}'))) !== JSON.stringify({
+    type: 'object',
+    properties: {},
+  })) {
     return false;
   }
   return true;

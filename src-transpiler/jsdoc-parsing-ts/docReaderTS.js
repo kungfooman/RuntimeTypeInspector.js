@@ -10,7 +10,6 @@ import {tsOverloadTag} from './tsOverloadTag.js';
 import {tsCallbackTag} from './tsCallbackTag.js';
 import {tsDottedChildren} from './tsDottedChildren.js';
 import {recoverTildeTag} from './recoverTildeTag.js';
-
 /**
  * Lowers one JSDoc comment through the TypeScript compiler to the shared
  * canonical document: the same `{templates, overloads, params, returns,
@@ -28,8 +27,9 @@ import {recoverTildeTag} from './recoverTildeTag.js';
 function docReaderTS(comment) {
   // TS only attaches JSDoc inside real comment delimiters; the depfree
   // reader takes bare tag text, so wrap here and keep one input shape.
-  const source = ts.createSourceFile('docreader.ts', '/**\n' + comment + '\n*/\nfunction __docReader() {}', ts.ScriptTarget.Latest, true);
-  const fn = source.statements[0];
+  const text = `/**\n${comment}\n*/\nfunction __docReader() {}`;
+  const source = ts.createSourceFile('docreader.ts', text, ts.ScriptTarget.Latest, true);
+  const [fn] = source.statements;
   /** @type {import('../jsdoc-parsing-depfree/canonicalDoc.js').CanonicalDoc} */
   const doc = {templates: [], overloads: [], params: [], returns: '', callbacks: []};
   for (const tag of ts.getJSDocTags(fn) ?? []) {
@@ -173,7 +173,8 @@ function docReaderTS(comment) {
   doc.params = out;
   // Callback rows group under their callback on the depfree side too;
   // never count them as flat implementation rows.
-  const callbackNames = new Set(doc.callbacks.flatMap((entry) => entry.params.map((param) => param.name)));
+  const names = (entry) => entry.params.map((param) => param.name);
+  const callbackNames = new Set(doc.callbacks.flatMap(names));
   doc.params = doc.params.filter((param) => !callbackNames.has(param.name));
   return doc;
 }

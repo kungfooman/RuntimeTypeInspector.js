@@ -66,7 +66,8 @@ function prototypeShape(ctor) {
 function mergedClassShape(name) {
   const head = classes[name];
   const cached = mergedShapes.get(name);
-  if (cached && cached.classV === classVersion && cached.typedefV === typedefVersion && cached.head === head) {
+  const fresh = cached && cached.classV === classVersion && cached.typedefV === typedefVersion;
+  if (fresh && cached.head === head) {
     return cached.shape;
   }
   const properties = {};

@@ -1,5 +1,5 @@
 import {registerTypedef} from './registerTypedef.js';
-import {resolveType    } from './resolveType.js';
+import {resolveType} from './resolveType.js';
 function prepare() {
   /**
    * @typedef {{a: 'aa', b: 'bb', c: 'cc'}} Obj
@@ -8,21 +8,11 @@ function prepare() {
    * @typedef {ObjValuesTypedef} ObjValuesTypedef2
    */
   // Upper typedef's create these:
-  registerTypedef('Obj', {
-    "type": "object",
-    "properties": {
-      "a": "'aa'",
-      "b": "'bb'",
-      "c": "'cc'"
-    }
-  });
+  registerTypedef('Obj', {"type": "object", "properties": {"a": "'aa'", "b": "'bb'", "c": "'cc'"}});
   registerTypedef('ObjValues', {
     "type": "indexedAccess",
-    "index": {
-      "type": "keyof",
-      "argument": "Obj"
-    },
-    "object": "Obj"
+    "index": {"type": "keyof", "argument": "Obj"},
+    "object": "Obj",
   });
   registerTypedef('ObjValuesTypedef', "ObjValues");
   registerTypedef('ObjValuesTypedef2', "ObjValuesTypedef");

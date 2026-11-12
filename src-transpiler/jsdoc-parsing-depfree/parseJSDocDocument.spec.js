@@ -1,6 +1,5 @@
 import {parseJSDoc} from './parseJSDoc.js';
 import {parseJSDocDocument} from './parseJSDocDocument.js';
-
 // One scan feeds every node at once: the same comment yields params,
 // templates, and the setter together, so `@overload` sections never see
 // params and templates disagree the way three scans could.
@@ -14,7 +13,6 @@ function testDocumentFeedsAllViews() {
     doc.tags[0].typeRaw === 'T'
   );
 }
-
 // Same-line tags scan as one row each: the head never swallows a follower.
 // Inline `@overload @param` rows stay visible; mid-line prose stays out.
 function testLexerRules() {
@@ -28,7 +26,6 @@ function testLexerRules() {
     prose === undefined
   );
 }
-
 // Raw tags ride beside expanded params: the `...` marker the expansion
 // erases survives on the tag for rest detection downstream.
 function testTagsKeepRawBesideExpanded() {
@@ -40,25 +37,23 @@ function testTagsKeepRawBesideExpanded() {
     doc.params?.values?.type === 'array'
   );
 }
-
 // A rest marker before the name flags invalid and yields no params: the
 // misspelled member drops before dotted-path folding ever sees it.
 function testMisplacedRestFlagsInvalid() {
   const doc = parseJSDocDocument('* @param {number[]} ...values');
-  const tag = doc.tags[0];
+  const [tag] = doc.tags;
   return (
     doc.tags.length === 1 &&
     tag.invalidRest === true &&
     doc.params === undefined
   );
 }
-
 // Trailing prose stays out of the name; dotted names still fold into
 // nested objects while the tag stays flat.
 function testHeadsAndDottedNames() {
   const doc = parseJSDocDocument('* @param {...number[]} values trailing words here');
   const dotted = parseJSDocDocument('* @param {string} outputs.logits The logits');
-  const tag = doc.tags[0];
+  const [tag] = doc.tags;
   return (
     tag.name === 'values' &&
     tag.invalidRest === false &&
@@ -66,7 +61,6 @@ function testHeadsAndDottedNames() {
     dotted.params?.outputs !== undefined
   );
 }
-
 // Templates ride the document: a constrained default keeps the
 // constraint, a bare name stands in as any, and bracket defaults expand
 // under the name. Exactly one `@type` yields the setter; two yield none.
@@ -84,26 +78,23 @@ function testTemplatesAndSetter() {
     two.setter === undefined
   );
 }
-
 // Bracket defaults expand with optionality, like the legacy entry did.
 function testBracketDefaultExpands() {
   const params = parseJSDoc('* @param {Object} [kwargs={}] Optional arguments.');
   return params?.kwargs !== undefined;
 }
-
 // A swapped head carries the type itself (`@param label {string}`):
 // tsc binds the first word as the name and the first group past it as
 // the type, so the fold splits the same way instead of binding nothing.
 function testSwappedHeadSplits() {
   const doc = parseJSDocDocument('@param label {string}');
-  const tag = doc.tags[0];
+  const [tag] = doc.tags;
   return (
     tag.name === 'label' &&
     tag.typeRaw === 'string' &&
     doc.params?.label === 'string'
   );
 }
-
 // The split needs a non-empty group past the name: a leading group is
 // the braced tag's own type, so it never re-splits. (The YUIDoc `{}`
 // vacancy still expands to `any` at the fold — pre-existing behavior,
@@ -115,7 +106,6 @@ function testSwappedHeadNeedsGroup() {
     braced.tags[0].typeRaw === 'string'
   );
 }
-
 export const tests = [
   testDocumentFeedsAllViews,
   testLexerRules,

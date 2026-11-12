@@ -22,7 +22,7 @@ function validateUnion(value, expect, loc, name, critical, warn, depth) {
     name + ` union type: ${member?.type || member}`,
     false,
     () => undefined,
-    depth + 1
+    depth + 1,
   ));
   if (!ret) {
     warn(`Given value doesn't satisfy any union member.`);

@@ -8,4 +8,4 @@ let breakpointID = 0;
 function youCanAddABreakpointHere() {
   return breakpointID++;
 }
-export {breakpointID,  youCanAddABreakpointHere};
+export {breakpointID, youCanAddABreakpointHere};

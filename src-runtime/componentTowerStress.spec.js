@@ -144,10 +144,7 @@ function testWritableKeysDropsGetterOnly() {
   prepareStress();
   registerTypedef('TwMixed', {
     type: 'object',
-    properties: {
-      ro: {type: 'TwColor', readonly: true},
-      rw: 'TwColor',
-    },
+    properties: {ro: {type: 'TwColor', readonly: true}, rw: 'TwColor'},
   });
   const keys = getTypeKeys(expandType('TwWritable<TwMixed>'), warn);
   if (!Array.isArray(keys) || JSON.stringify(keys) !== JSON.stringify(['rw'])) {
@@ -196,10 +193,7 @@ function testNullSlotJoinsMap() {
   prepareStress();
   registerTypedef('TwNullEntity', {
     type: 'object',
-    properties: {
-      camera: {type: 'union', members: ['TwCam', 'null']},
-      name: 'string',
-    },
+    properties: {camera: {type: 'union', members: ['TwCam', 'null']}, name: 'string'},
   });
   registerTypedef('TwNullMap', expandType('{ [K in keyof TwNullEntity as NonNullable<TwNullEntity[K]> extends TwComponent ? K : never]: NonNullable<TwNullEntity[K]> }'));
   let count = 0;
@@ -350,7 +344,13 @@ function testDeferredStaysUndecidable() {
   if (extendsCheck({type: 'keyof', argument: 'TwMissing'}, 'TwComponent') !== undefined) {
     return false;
   }
-  if (extendsCheck({type: 'condition', checkType: 'TwBox', extendsType: 'TwComponent', trueType: '"a"', falseType: '"b"'}, 'TwComponent') !== undefined) {
+  if (extendsCheck({
+    type: 'condition',
+    checkType: 'TwBox',
+    extendsType: 'TwComponent',
+    trueType: '"a"',
+    falseType: '"b"',
+  }, 'TwComponent') !== undefined) {
     return false;
   }
   return true;
@@ -358,7 +358,10 @@ function testDeferredStaysUndecidable() {
 // Union checks fail fast on a decisive member, even beside deferred ones.
 function testUnionMixShortCircuits() {
   prepareStress();
-  const mixed = {type: 'union', members: [{type: 'array', elementType: 'string'}, expandType('TwBoxed<number>')]};
+  const mixed = {
+    type: 'union',
+    members: [{type: 'array', elementType: 'string'}, expandType('TwBoxed<number>')],
+  };
   if (extendsCheck(mixed, 'TwComponent') !== false) {
     return false;
   }
@@ -419,7 +422,10 @@ function testBigMapSilent() {
       tags: expandType('ReadonlyArray<string>'),
       run: 'Function',
       rec: {type: 'record', key: 'string', val: 'number'},
-      nested: {type: 'object', properties: {deep: {type: 'array', elementType: {type: 'tuple', elements: ['number']}}}},
+      nested: {
+        type: 'object',
+        properties: {deep: {type: 'array', elementType: {type: 'tuple', elements: ['number']}}},
+      },
       name: 'string',
       addComponent: 'Function',
     },

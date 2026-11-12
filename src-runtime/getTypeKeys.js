@@ -112,8 +112,13 @@ function resolveKeys(target, warn, depth) {
     return resolveKeys(target.atomType, warn, depth + 1);
   }
   if (target.type === 'reference' || target.type === 'keyof' || target.type === 'condition') {
-    if (target.type === 'reference' && (target.name === 'NonNullable' || target.name === 'Readonly' || target.name === 'NoInfer') && target.args?.length) {
-      return resolveKeys(target.args[0], warn, depth + 1);
+    const isNonNull = target.type === 'reference' && target.name === 'NonNullable';
+    const isReadonly = target.type === 'reference' && target.name === 'Readonly';
+    const isNoInfer = target.type === 'reference' && target.name === 'NoInfer';
+    const transparent = (isNonNull || isReadonly || isNoInfer) && target.args?.length;
+    if (transparent) {
+      const [inner] = target.args;
+      return resolveKeys(inner, warn, depth + 1);
     }
     return getTypeKeys(target, warn, depth + 1);
   }
@@ -170,10 +175,16 @@ function tagProvenance(result, name, args) {
     source = name;
   }
   const info = {removed: name === 'Omit', source};
-  const members = result && result.type === 'union' && Array.isArray(result.members) ? result.members : [result];
+  const isUnion = result?.type === 'union' && Array.isArray(result?.members);
+  const members = isUnion ? result.members : [result];
   for (const member of members) {
     if (member && typeof member === 'object') {
-      Object.defineProperty(member, '__provenance', {value: info, enumerable: false, writable: true, configurable: true});
+      Object.defineProperty(member, '__provenance', {
+        value: info,
+        enumerable: false,
+        writable: true,
+        configurable: true,
+      });
     }
   }
   return result;
@@ -324,7 +335,7 @@ function resolveObject(type, warn, depth) {
   }
   if (type.type === 'indexedAccess') {
     const {index} = type;
-    let object = type.object;
+    let {object} = type;
     if (typeof object === 'string' && typedefs[object]) {
       object = typedefs[object];
     }
@@ -350,10 +361,15 @@ function resolveObject(type, warn, depth) {
   }
   if (type.type === 'reference') {
     const {name, args} = type;
-    if ((name === 'NonNullable' || name === 'Readonly' || name === 'NoInfer') && args?.length) {
+    const isNonNull = name === 'NonNullable';
+    const isReadonly = name === 'Readonly';
+    const isNoInfer = name === 'NoInfer';
+    if ((isNonNull || isReadonly || isNoInfer) && args?.length) {
       return resolveObject(args[0], warn, depth + 1);
     }
-    if ((name === 'Partial' || name === 'Pick' || name === 'Omit' || name === 'Required') && args?.length) {
+    const isPartial = name === 'Partial' || name === 'Pick';
+    const isOmit = name === 'Omit' || name === 'Required';
+    if ((isPartial || isOmit) && args?.length) {
       const shape = resolveUtilityShape(name, args, warn, depth + 1);
       return shape && shape.type === 'object' ? shape : undefined;
     }
@@ -412,7 +428,7 @@ function keysOfConditionalMapping(access, from, warn, depth) {
   const decide = validators.decideIfEquals;
   const evaluate = validators.evaluateCondition;
   const mapping = access.object;
-  const element = mapping.element;
+  const {element} = mapping;
   if (typeof element !== 'string') {
     return;
   }
@@ -471,7 +487,7 @@ function keysOfConditionalMapping(access, from, warn, depth) {
   return kept;
 }
 function keysOfExtract(expect, warn, depth) {
-  var _expect$args;
+  let _expect$args;
   const [from, to] = (_expect$args = expect.args) != null ? _expect$args : [];
   if (from === undefined || to === undefined) {
     return;
@@ -484,7 +500,8 @@ function keysOfExtract(expect, warn, depth) {
     }
     target = instance;
   }
-  if (target?.type === 'indexedAccess' && target.object?.type === 'mapping' && target.object?.nameType !== undefined) {
+  const isRemap = target?.type === 'indexedAccess' && target.object?.type === 'mapping';
+  if (isRemap && target.object?.nameType !== undefined) {
     // Key-remapping (`as` clause) filters keys by branch: handled below.
     // Plain value mappings fall through to member filtering instead.
     return keysOfConditionalMapping(target, from, warn, depth);
@@ -510,9 +527,7 @@ function keysOfExtract(expect, warn, depth) {
           kept.push(stripped);
           continue;
         }
-        warn('keysOfExtract: undecidable member, skipping.', {
-          member
-        });
+        warn('keysOfExtract: undecidable member, skipping.', {member});
         continue;
       }
       // Bare keys validate as their literal against the target union.
@@ -529,9 +544,7 @@ function keysOfExtract(expect, warn, depth) {
         kept.push(member);
         continue;
       }
-      warn('keysOfExtract: undecidable member, skipping.', {
-        member
-      });
+      warn('keysOfExtract: undecidable member, skipping.', {member});
       continue;
     }
     if (member && member.type === 'condition') {
@@ -549,14 +562,10 @@ function keysOfExtract(expect, warn, depth) {
         }
         continue;
       }
-      warn('keysOfExtract: undecidable member, skipping.', {
-        member
-      });
+      warn('keysOfExtract: undecidable member, skipping.', {member});
       continue;
     }
-    warn('keysOfExtract: unnameable member, skipping.', {
-      member
-    });
+    warn('keysOfExtract: unnameable member, skipping.', {member});
   }
   return kept;
 }
@@ -647,7 +656,10 @@ function getTypeKeys(expect, warn, depth = 0) {
   }
   if (typeof expect === 'string') {
     // Quoted literal: its own key, e.g. `Entity["camera"]` looks up `camera`.
-    if (expect.length >= 2 && (expect[0] === "'" && expect[expect.length - 1] === "'" || expect[0] === '"' && expect[expect.length - 1] === '"')) {
+    const quoted = expect.length >= 2;
+    const isSingle = quoted && expect[0] === "'" && expect[expect.length - 1] === "'";
+    const isDouble = quoted && expect[0] === '"' && expect[expect.length - 1] === '"';
+    if (isSingle || isDouble) {
       return [expect.slice(1, -1)];
     }
     if (typedefs[expect]) {
@@ -669,13 +681,10 @@ function getTypeKeys(expect, warn, depth = 0) {
         return getTypeKeys(prototypeShape(ctor), warn, depth + 1);
       }
     }
-
     warn("getTypeKeys> 'expect' was a string but not a typedef, unhandled case.");
     return;
   }
-  const {
-    type
-  } = expect;
+  const {type} = expect;
   if (type === 'typeof') {
     const varName = expect.argument;
     const variable = variables[varName];
@@ -690,12 +699,10 @@ function getTypeKeys(expect, warn, depth = 0) {
     // Same unwrap as resolveKeys: keys of the wrapped type.
     return getTypeKeys(expect.atomType, warn, depth + 1);
   } else if (type === 'object') {
-    var _expect$properties;
+    let _expect$properties;
     return Object.keys((_expect$properties = expect.properties) != null ? _expect$properties : {});
   } else if (type === 'keyof') {
-    const {
-      argument
-    } = expect;
+    const {argument} = expect;
     //console.log("want key for", argument);
     return getTypeKeys(argument, warn, depth + 1);
   } else if (type === 'intersection' && Array.isArray(expect.members)) {
@@ -718,10 +725,7 @@ function getTypeKeys(expect, warn, depth = 0) {
     // Instantiate generic typedefs (e.g. MergedComponentOptions<"camera">),
     // follow plain ones, resolve utilities to key lists directly.
     // Classes stay out: constructors don't retain members.
-    const {
-      name,
-      args
-    } = expect;
+    const {name, args} = expect;
     if ((name === 'NonNullable' || name === 'Readonly' || name === 'NoInfer') && args?.length) {
       if (name === 'NonNullable') {
         // `NonNullable<Entity["camera"]>` denotes `CameraComponent`, not the
@@ -769,7 +773,8 @@ function getTypeKeys(expect, warn, depth = 0) {
     // Evaluate through the table (a static import would cycle back here).
     const evaluate = validators.evaluateCondition;
     if (!evaluate) {
-      warn('getTypeKeys: condition support needs evaluateCondition (import validateType or the runtime index first).', expect);
+      const hint = 'import validateType or the runtime index first';
+      warn(`getTypeKeys: condition support needs evaluateCondition (${hint}).`, expect);
       return;
     }
     const decision = evaluate(expect.checkType, expect.extendsType, warn);
@@ -784,7 +789,8 @@ function getTypeKeys(expect, warn, depth = 0) {
     // Materialize through the table (a static import would cycle back here).
     const materialize = validators.materializeMapping;
     if (!materialize) {
-      warn('getTypeKeys: mapping support needs createTypeFromMapping (import validateType or the runtime index first).', expect);
+      const hint = 'import validateType or the runtime index first';
+      warn(`getTypeKeys: mapping support needs createTypeFromMapping (${hint}).`, expect);
       return;
     }
     if (++mappingDepth > 10) {
@@ -802,12 +808,8 @@ function getTypeKeys(expect, warn, depth = 0) {
       mappingDepth--;
     }
   } else if (type === 'indexedAccess') {
-    const {
-      index
-    } = expect;
-    let {
-      object
-    } = expect;
+    const {index} = expect;
+    let {object} = expect;
     // todo replace with resolveType
     if (typeof object === 'string' && typedefs[object]) {
       object = typedefs[object];
@@ -824,7 +826,8 @@ function getTypeKeys(expect, warn, depth = 0) {
       warn(`Couldn't get keys for index type`, index);
       return;
     }
-    const resolved = object && object.type === 'object' ? object : resolveObject(object, warn, depth + 1);
+    const isObject = object?.type === 'object';
+    const resolved = isObject ? object : resolveObject(object, warn, depth + 1);
     if (!resolved || !resolved.properties) {
       warn(`Couldn't get keys for type - missing object properties`, expect);
       return;

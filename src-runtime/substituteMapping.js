@@ -17,7 +17,10 @@ function substituteMapping(type, search, replace, warn) {
   }
   const iterable = recurseSubstitute(type.iterable, search, replace, warn);
   const result = recurseSubstitute(type.result, search, replace, warn);
-  const nameType = type.nameType === undefined ? undefined : recurseSubstitute(type.nameType, search, replace, warn);
+  let {nameType} = type;
+  if (nameType !== undefined) {
+    nameType = recurseSubstitute(nameType, search, replace, warn);
+  }
   if (iterable === type.iterable && result === type.result && nameType === type.nameType) {
     return type;
   }

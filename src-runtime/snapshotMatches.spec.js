@@ -54,7 +54,10 @@ function testUnknownClassFails() {
 // class branch, not the `validateReference` one.
 function testTaggedSnapshotValidatesBareName() {
   prepare();
-  return validateType({w: 1, $type: 'SpecialWidget'}, 'SpecialWidget', 'loc', 'name', true, silent, 0) === true;
+  return validateType({
+    w: 1,
+    $type: 'SpecialWidget',
+  }, 'SpecialWidget', 'loc', 'name', true, silent, 0) === true;
 }
 // We want: a stranger snapshot to fail the bare class name, because the
 // tag names a class outside the expected hierarchy.

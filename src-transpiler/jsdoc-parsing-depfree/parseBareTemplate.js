@@ -1,7 +1,6 @@
 import {expandTypeDepFree} from "../expandTypeDepFree.js";
 import {splitTemplateBindings} from "./splitTemplateBindings.js";
 /** @import {ExpandType, ExpandTypeReturnType} from './parseJSDoc.js' */
-
 /**
  * Reads one braceless `@template` head: each comma-separated binding
  * contributes its default under its name (`[A=X]`), a bare name stands

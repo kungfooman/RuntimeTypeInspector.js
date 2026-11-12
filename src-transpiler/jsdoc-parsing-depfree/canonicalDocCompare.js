@@ -1,11 +1,11 @@
 import {canonicalize} from '../../src-runtime/canonicalize.js';
-
 /**
  * Structural compare of two canonical documents: key-sorted,
  * absent-vs-false blind, arrays ordered.
  * @example
- * canonicalDocEqual({templates: [], overloads: [], params: [], returns: '', callbacks: []}, {templates: [], overloads: [], params: [], returns: '', callbacks: []});
- * // true
+ * const emptyActual = {templates: [], overloads: []};
+ * const emptyExpected = {templates: [], overloads: []};
+ * canonicalDocEqual(emptyActual, emptyExpected); // true
  * @param {import('./canonicalDoc.js').CanonicalDoc} actual - First document.
  * @param {import('./canonicalDoc.js').CanonicalDoc} expected - Second document.
  * @returns {boolean} True when structurally identical.
@@ -13,7 +13,6 @@ import {canonicalize} from '../../src-runtime/canonicalize.js';
 function canonicalDocEqual(actual, expected) {
   return JSON.stringify(canonicalize(actual)) === JSON.stringify(canonicalize(expected));
 }
-
 /**
  * Coverage check for the granularity difference: TS absorbs dotted
  * sub-params into their container (the container carries `merged: true`
@@ -26,15 +25,18 @@ function canonicalDocEqual(actual, expected) {
  * Containers live in flat rows and inside callback entries; both walk
  * the same way.
  * @example
- * canonicalDocCovers({templates: [], overloads: [], params: [], returns: '', callbacks: []}, {templates: [], overloads: [], params: [], returns: '', callbacks: []});
- * // true
+ * const emptyActual = {templates: [], overloads: []};
+ * const emptyExpected = {templates: [], overloads: []};
+ * canonicalDocCovers(emptyActual, emptyExpected); // true
  * @param {import('./canonicalDoc.js').CanonicalDoc} actual - Depfree document.
  * @param {import('./canonicalDoc.js').CanonicalDoc} expected - TS document.
  * @returns {boolean} True when coverage holds both ways.
  */
 function canonicalDocCovers(actual, expected) {
+  const sameTemplates = JSON.stringify(canonicalize(actual.templates)) ===
+    JSON.stringify(canonicalize(expected.templates));
   if (
-    JSON.stringify(canonicalize(actual.templates)) !== JSON.stringify(canonicalize(expected.templates)) ||
+    sameTemplates === false ||
     actual.returns !== expected.returns ||
     actual.overloads.length !== expected.overloads.length ||
     actual.callbacks.length !== expected.callbacks.length
@@ -49,7 +51,12 @@ function canonicalDocCovers(actual, expected) {
       const param = actualParams[index];
       const tsRow = expectedParams[index];
       if (tsRow.merged === true) {
-        if (param === undefined || param.name !== tsRow.name || param.bracketed !== tsRow.bracketed) {
+        const sameName = param !== undefined && param.name === tsRow.name;
+        const sameBrackets = param !== undefined && param.bracketed === tsRow.bracketed;
+        if (
+          sameName === false ||
+          sameBrackets === false
+        ) {
           return false;
         }
         continue;
@@ -66,9 +73,16 @@ function canonicalDocCovers(actual, expected) {
   if (!walk(actual.params, expected.params)) {
     return false;
   }
-  if (actual.callbacks.some((entry, index) => entry.name !== expected.callbacks[index].name || !walk(entry.params, expected.callbacks[index].params))) {
+  const callbackCovers = (entry, index) => {
+    const expectedEntry = expected.callbacks[index];
+    return entry.name === expectedEntry.name && walk(entry.params, expectedEntry.params);
+  };
+  if (actual.callbacks.some((entry, index) => callbackCovers(entry, index) === false)) {
     return false;
   }
-  return actual.overloads.every((signature, index) => walk(signature.params, expected.overloads[index].params));
+  const signatureCovers = (signature, index) => {
+    return walk(signature.params, expected.overloads[index].params);
+  };
+  return actual.overloads.every(signatureCovers);
 }
 export {canonicalDocEqual, canonicalDocCovers};

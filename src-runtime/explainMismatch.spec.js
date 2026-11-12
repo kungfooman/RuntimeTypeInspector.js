@@ -118,7 +118,10 @@ function testPresentValuesLoseOptionalWrapper() {
   // not `('draft' | ...)|undefined` — presence settles optionality.
   reset();
   registerTypedef('Article', expandType('{title: string, status: "draft" | "published"}'));
-  const {findings} = explainMismatch({title: 'x', status: 1}, expandType('Partial<Article>'), 'patch');
+  const {findings} = explainMismatch({
+    title: 'x',
+    status: 1,
+  }, expandType('Partial<Article>'), 'patch');
   const wrong = findings.find((_) => _.path === 'patch.status');
   return findings.length === 1 && !!wrong && !wrong.expected.includes('undefined');
 }
@@ -128,7 +131,8 @@ function testOmitExcessNamesRemoval() {
   reset();
   registerTypedef('Account', expandType('{id: string, email: string, role: string}'));
   const {findings} = explainMismatch(
-    {email: 'a', role: 'b', id: 1}, expandType('Omit<Account, "id">'), 'payload');
+    {email: 'a', role: 'b', id: 1}, expandType('Omit<Account, "id">'), 'payload',
+  );
   const extra = findings.find((_) => _.path === 'payload.id');
   return findings.length === 1 && !!extra && extra.kind === 'extra' &&
     extra.detail.includes('deliberately removed by') && extra.detail.includes('Omit') &&
@@ -138,7 +142,8 @@ function testPickExcessNamesSelection() {
   reset();
   registerTypedef('User', expandType('{id: number, name: string}'));
   const {findings} = explainMismatch(
-    {name: 'x', id: 1}, expandType('Pick<User, "name">'), 'user');
+    {name: 'x', id: 1}, expandType('Pick<User, "name">'), 'user',
+  );
   const extra = findings.find((_) => _.path === 'user.id');
   return findings.length === 1 && !!extra &&
     extra.detail.includes('not selected by') && extra.detail.includes('Pick') &&
@@ -147,7 +152,8 @@ function testPickExcessNamesSelection() {
 function testPlainExcessStillSuspectsTypo() {
   reset();
   const {findings} = explainMismatch(
-    {fov: 60, fovv: 1}, expandType('{fov: number}'), 'options');
+    {fov: 60, fovv: 1}, expandType('{fov: number}'), 'options',
+  );
   const extra = findings.find((_) => _.path === 'options.fovv');
   return !!extra && extra.detail.includes('check spelling');
 }
@@ -159,7 +165,8 @@ function testExtrasInformationalWhenLenient() {
   options.exactObjects = false;
   try {
     const {findings} = explainMismatch(
-      {fov: 60, fovv: 1}, expandType('{fov: number}'), 'options');
+      {fov: 60, fovv: 1}, expandType('{fov: number}'), 'options',
+    );
     const extra = findings.find((_) => _.path === 'options.fovv');
     return !!extra && extra.info === true && !extra.fix &&
       extra.detail.includes('informational');
@@ -177,7 +184,11 @@ function testCollectFailPaths() {
   const paths = collectFailPaths([
     {path: 'a', kind: 'wrong'},
     {path: 'b', kind: 'extra', info: true},
-    {path: 'c', kind: 'union', children: [{path: 'c', kind: 'wrong', children: [{path: "c.get('k')", kind: 'wrong'}]}]},
+    {
+      path: 'c',
+      kind: 'union',
+      children: [{path: 'c', kind: 'wrong', children: [{path: "c.get('k')", kind: 'wrong'}]}],
+    },
   ]);
   return paths.has('a') && paths.has('c') && paths.has("c.get('k')") &&
     !paths.has('b') && paths.size === 3;
@@ -197,7 +208,8 @@ function testCollectFailPathsEmpty() {
 function testCollectFailPathsMapMismatch() {
   reset();
   const {findings} = explainMismatch(new Map([['apiKey', null]]),
-                                     expandType('Map<string, string | number>'), 'config');
+                                     expandType('Map<string, string | number>'),
+                                     'config');
   const paths = collectFailPaths(findings);
   return paths.has("config.get('apiKey')");
 }
@@ -210,7 +222,8 @@ function testCollectFailPathsMapMismatch() {
 function testSetMemberUnionAdmitsShape() {
   reset();
   const {findings} = explainMismatch(new Set(['admin', true]),
-                                     expandType('Set<string | number>'), 'items');
+                                     expandType('Set<string | number>'),
+                                     'items');
   if (findings.length !== 1) {
     return false;
   }
@@ -226,7 +239,8 @@ function testSetMemberUnionAdmitsShape() {
 function testMapEntryUnionAdmitsShape() {
   reset();
   const {findings} = explainMismatch(new Map([['apiKey', null]]),
-                                     expandType('Map<string, string | number>'), 'config');
+                                     expandType('Map<string, string | number>'),
+                                     'config');
   if (findings.length !== 1) {
     return false;
   }
@@ -243,7 +257,8 @@ function testMapEntryUnionAdmitsShape() {
 function testPropertyUnionNamesSubject() {
   reset();
   const {findings} = explainMismatch({color: true},
-                                     expandType('{color: string | number}'), 'options');
+                                     expandType('{color: string | number}'),
+                                     'options');
   if (findings.length !== 1) {
     return false;
   }
@@ -303,15 +318,27 @@ function testTupleLengthMismatch() {
 function testTupleOptionalTail() {
   // A missing optional tail is fine; a present-but-wrong one pinpoints.
   reset();
-  const optional = {type: 'tuple', elements: ['number', {type: 'tupleMember', elementType: 'string', optional: true}]};
+  const optional = {
+    type: 'tuple',
+    elements: ['number', {type: 'tupleMember', elementType: 'string', optional: true}],
+  };
   return explainMismatch([1], optional, 'v').findings.length === 0 &&
     explainMismatch([1, 2], optional, 'v').findings.length === 1;
 }
 function testTupleRestVariadic() {
   // Rest consumes the tail positionally; multiple variadics fail closed.
   reset();
-  const rest = {type: 'tuple', elements: ['number', {type: 'rest', annotation: {type: 'array', elementType: 'string'}}]};
-  const multi = {type: 'tuple', elements: [{type: 'rest', annotation: {type: 'array', elementType: 'string'}}, {type: 'rest', annotation: {type: 'array', elementType: 'number'}}]};
+  const rest = {
+    type: 'tuple',
+    elements: ['number', {type: 'rest', annotation: {type: 'array', elementType: 'string'}}],
+  };
+  const multi = {
+    type: 'tuple',
+    elements: [{type: 'rest', annotation: {type: 'array', elementType: 'string'}}, {
+      type: 'rest',
+      annotation: {type: 'array', elementType: 'number'},
+    }],
+  };
   const {findings: bad} = explainMismatch(['a', 'b'], rest, 'v');
   return explainMismatch([1, 'a', 'b'], rest, 'v').findings.length === 0 &&
     bad.length === 1 && bad[0].path === 'v[0]' &&

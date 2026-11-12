@@ -8,7 +8,9 @@
  */
 function freshName(source, base) {
   let name = base;
-  while (source.includes('"name":"' + name + '"')) name += '_';
+  while (source.includes('"name":"' + name + '"')) {
+    name += '_';
+  }
   return name;
 }
 export {freshName};

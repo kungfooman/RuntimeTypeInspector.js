@@ -1,7 +1,9 @@
 import ts from 'typescript';
 import {isExpandedObject} from './isExpandedObject.js';
 import {isIndexSignatureNode} from './isIndexSignatureNode.js';
-/** @import {ExpandedType, ExpandConditionNode, ExpandMappingNode, ExpandParameterNode, ExpandTupleMemberNode, ExpandIndexSignatureNode, ExpandObjectNode} from './expandedType.js' */
+/** @import {ExpandedType, ExpandConditionNode, ExpandMappingNode} from './expandedType.js' */
+/** @import {ExpandParameterNode, ExpandTupleMemberNode} from './expandedType.js' */
+/** @import {ExpandIndexSignatureNode, ExpandObjectNode} from './expandedType.js' */
 /**
  * Transforms a type string into a structured type representation.
  *
@@ -16,12 +18,12 @@ import {isIndexSignatureNode} from './isIndexSignatureNode.js';
  * expandType('(123)                    '); // Outputs: '123'
  * expandType('  ( ( 123 ) )            '); // Outputs: '123'
  * expandType('Array<number>            '); // Outputs: {type: 'array', elementType: 'number'}
- * expandType('Array<(123) >            '); // Outputs: {type: 'array', elementType: '123'}
- * expandType('Array<"abc" | 123>       '); // Outputs: {type: 'array', elementType: {type: 'union', members: ['"abc"', '123']}}
- * expandType('  (string ) |(number )   '); // Outputs: {type: 'union', members: [ 'string', 'number']}
- * expandType(' "apples" | ( "bananas") '); // Outputs: {type: 'union', members: [ '"apples"', '"bananas"']}
- * expandType('123?                     '); // Outputs: {"type":"union","members":["123","null"]}
- * expandType('123|null                 '); // Outputs: {"type":"union","members":["123","null"]}
+ * expandType('Array<(123) >            '); // Outputs: {type: 'array', ...}
+ * expandType('Array<"abc" | 123>       '); // Outputs: {type: 'array', ...}
+ * expandType('  (string ) |(number )   '); // Outputs: {type: 'union', ...}
+ * expandType(' "apples" | ( "bananas") '); // Outputs: {type: 'union', ...}
+ * expandType('123?                     '); // Outputs: {"type":"union","members":...}
+ * expandType('123|null                 '); // Outputs: {"type":"union","members":...}
  * expandType('Map<string, any>         '); // Outputs:
  * expandType('typeof Number            '); // Outputs:
  * @param {string} type - The type string to be expanded into a structured representation.
@@ -37,7 +39,8 @@ function expandType(type) {
 }
 /**
  * @param {string} str - The type string.
- * @returns {ts.TypeNode|undefined} - The node containing all the information about the input type string.
+ * @returns {ts.TypeNode|undefined} The node with the information
+ * about the input type string.
  */
 function parseType(str) {  // TS doesn't like ... notation in this context
   if (str.startsWith('...')) {
@@ -47,7 +50,7 @@ function parseType(str) {  // TS doesn't like ... notation in this context
   // type tmp = (...string) => 123; to have a function context
   str = `type tmp = ${str};`;
   const ast = ts.createSourceFile('repl.ts', str, ts.ScriptTarget.Latest, true /*setParentNodes*/);
-  const firstStatement = ast.statements[0];
+  const [firstStatement] = ast.statements;
   if (!ts.isTypeAliasDeclaration(firstStatement)) {
     console.warn('parseType> Expected type alias declaration, got', firstStatement, 'instead.');
     return;
@@ -72,14 +75,17 @@ function toSourceTSOrAny(node) {
   return expanded === undefined || expanded === '' ? 'any' : expanded;
 }
 /**
- * Converts a TypeScript AST node to a source string representation or to an intermediate object describing the type.
+ * Converts a TypeScript AST node to a source string representation
+ * or to an intermediate object describing the type.
  *
  * This function handles various TypeScript AST node types and converts them into a string
  * or an object representing the type.
  *
- * @param {ts.TypeNode|ts.Identifier|ts.QualifiedName|undefined} node - The TypeScript AST node to convert.
+ * @param {ts.TypeNode|ts.Identifier|ts.QualifiedName|undefined} node - The type node.
+ * The function converts it into a string or an object describing the type.
  * @returns {ExpandedType | undefined} The source string/number,
- * or an object with type information based on the node, or `undefined` if the node kind is not handled.
+ * or an object with type information based on the node,
+ * or `undefined` if the node kind is not handled.
  */
 function toSourceTS(node) {
   if (!node) {
@@ -88,58 +94,58 @@ function toSourceTS(node) {
   const {typeArguments, typeName} = node;
   const kind_ = ts.SyntaxKind[node.kind];
   const {
-    AnyKeyword,          // parseType('any'                            ).kind                 === ts.SyntaxKind.AnyKeyword && toSourceTS(parseType('any')) === 'any'
-    ArrayType,           // parseType('number[]'                       ).kind                 === ts.SyntaxKind.ArrayType // todo toSourceTS(parseType('number[]')) === {type: 'array etc.
-    BooleanKeyword,      // parseType("boolean"                        ).kind                 === ts.SyntaxKind.BooleanKeyword
-    FunctionType,        // parseType("() => void"                     ).kind                 === ts.SyntaxKind.FunctionType
-    JSDocFunctionType,   // parseType("function (number, number): number").kind               === ts.SyntaxKind.JSDocFunctionType
-    Identifier,          // parseType("{a: 1, b: 2}"                   ).members[0].name.kind === ts.SyntaxKind.Identifier
-    IntersectionType,    // parseType("1 & 2"                          ).kind                 === ts.SyntaxKind.IntersectionType
-    JSDocAllType,        // parseType("*"                              ).kind                 === ts.SyntaxKind.JSDocAllType
-    ImportType,          // parseType('import("test").Test'            ).kind                 === ts.SyntaxKind.ImportType
-    LiteralType,         // parseType("123"                            ).kind                 === ts.SyntaxKind.LiteralType
-    NullKeyword,         // parseType("null"                           ).literal.kind         === ts.SyntaxKind.NullKeyword
-    NumberKeyword,       // parseType("number"                         ).kind                 === ts.SyntaxKind.NumberKeyword
-    NumericLiteral,      // parseType("123"                            ).literal.kind         === ts.SyntaxKind.NumericLiteral
-    ObjectKeyword,       // parseType("object"                         ).kind                 === ts.SyntaxKind.ObjectKeyword
-    Parameter,           // parseType("(a) => void"                    ).parameters[0].kind   === ts.SyntaxKind.Parameter
-    ParenthesizedType,   // parseType("(SomeType)"                     ).kind                 === ts.SyntaxKind.ParenthesizedType
-    PropertySignature,   // parseType("{a: 1, b: 2}"                   ).members[0].kind      === ts.SyntaxKind.PropertySignature
-    StringKeyword,       // parseType("string"                         ).kind                 === ts.SyntaxKind.StringKeyword
-    StringLiteral,       // parseType("'test'"                         ).literal.kind         === ts.SyntaxKind.StringLiteral
-    SymbolKeyword,       // parseType("symbol"                         ).kind                 === ts.SyntaxKind.SymbolKeyword
-    ThisType,            // parseType("this"                           ).kind                 === ts.SyntaxKind.ThisType
-    TupleType,           // parseType("[1, 2, 3]"                      ).kind                 === ts.SyntaxKind.TupleType
-    TypeLiteral,         // parseType("{a: 1, b: 2}"                   ).kind                 === ts.SyntaxKind.TypeLiteral
-    TypeReference,       // parseType("SomeOtherType"                  ).kind                 === ts.SyntaxKind.TypeReference
-    UndefinedKeyword,    // parseType("undefined"                      ).kind                 === ts.SyntaxKind.UndefinedKeyword
-    UnionType,           // parseType("1|2"                            ).kind                 === ts.SyntaxKind.UnionType
-    JSDocNullableType,   // parseType("?lol?"                          ).kind                 === ts.SyntaxKind.JSDocNullableType
-    TrueKeyword,         // parseType("true"                           ).literal.kind         === ts.SyntaxKind.TrueKeyword
-    FalseKeyword,        // parseType("false"                          ).literal.kind         === ts.SyntaxKind.FalseKeyword
-    VoidKeyword,         // parseType("void"                           ).kind                 === ts.SyntaxKind.VoidKeyword
-    UnknownKeyword,      // parseType("unknown"                        ).kind                 === ts.SyntaxKind.UnknownKeyword
-    NeverKeyword,        // parseType("never"                          ).kind                 === ts.SyntaxKind.NeverKeyword
-    BigIntKeyword,       // parseType("bigint"                         ).kind                 === ts.SyntaxKind.BigIntKeyword
-    BigIntLiteral,       // parseType("123n"                           ).literal.kind         === ts.SyntaxKind.BigIntLiteral
-    ConditionalType,     // parseType("1 extends number ? true : false").kind                 === ts.SyntaxKind.ConditionalType
-    IndexedAccessType,   // parseType('Test[123]'                      ).kind                 === ts.SyntaxKind.IndexedAccessType
-    IndexSignature,      // parseType('{[n: number]: string}'          ).members[0].kind      === ts.SyntaxKind.IndexSignature
-    RestType,            // parseType("[...number]"                    ).elements[0].kind     === ts.SyntaxKind.RestType
-    TypeQuery,           // parseType('typeof Number'                  ).kind                 === ts.SyntaxKind.TypeQuery
-    TypeOperator,        // parseType('keyof typeof obj'               ).kind                 === ts.SyntaxKind.TypeOperator
-    KeyOfKeyword,        // parseType('keyof typeof obj'               ).operator             === ts.SyntaxKind.KeyOfKeyword
-    ReadonlyKeyword,     // parseType('readonly number[]'              ).operator             === ts.SyntaxKind.ReadonlyKeyword
-    UniqueKeyword,       // parseType('unique symbol'                  ).operator             === ts.SyntaxKind.UniqueKeyword
-    ConstructorType,     // parseType('new (...args: any[]) => any'    ).kind                 === ts.SyntaxKind.ConstructorType
-    NamedTupleMember,    // parseType('[a: 1]'                         ).elements[0].kind     === ts.SyntaxKind.NamedTupleMember
-    MappedType,          // parseType('{[K in TaskType]: 123}'         ).kind                 ===  ts.SyntaxKind.MappedType
-    MinusToken,          // parseType('{[K in TaskType]-?: 123}'        ).questionToken.kind  === ts.SyntaxKind.MinusToken
-    PlusToken,           // parseType('{[K in TaskType]+?: 123}'        ).questionToken.kind  === ts.SyntaxKind.PlusToken
-    TypeParameter,       // parseType('{[K in TaskType]: 123}'         ).typeParameter.kind   ===  ts.SyntaxKind.TypeParameter
-    QualifiedName,       // parseType("import('abc').x.y"              ).qualifier.kind       === ts.SyntaxKind.QualifiedName
-    TemplateLiteralType, // parseType('`${A}_id`'                      ).kind                 === ts.SyntaxKind.TemplateLiteralType
-    NoSubstitutionTemplateLiteral, // parseType('`id`'                  ).literal.kind         === ts.SyntaxKind.NoSubstitutionTemplateLiteral
+    AnyKeyword,
+    ArrayType,
+    BooleanKeyword,
+    FunctionType,
+    JSDocFunctionType,
+    Identifier,
+    IntersectionType,
+    JSDocAllType,
+    ImportType,
+    LiteralType,
+    NullKeyword,
+    NumberKeyword,
+    NumericLiteral,
+    ObjectKeyword,
+    Parameter,
+    ParenthesizedType,
+    PropertySignature,
+    StringKeyword,
+    StringLiteral,
+    SymbolKeyword,
+    ThisType,
+    TupleType,
+    TypeLiteral,
+    TypeReference,
+    UndefinedKeyword,
+    UnionType,
+    JSDocNullableType,
+    TrueKeyword,
+    FalseKeyword,
+    VoidKeyword,
+    UnknownKeyword,
+    NeverKeyword,
+    BigIntKeyword,
+    BigIntLiteral,
+    ConditionalType,
+    IndexedAccessType,
+    IndexSignature,
+    RestType,
+    TypeQuery,
+    TypeOperator,
+    KeyOfKeyword,
+    ReadonlyKeyword,
+    UniqueKeyword,
+    ConstructorType,
+    NamedTupleMember,
+    MappedType,
+    MinusToken,
+    PlusToken,
+    TypeParameter,
+    QualifiedName,
+    TemplateLiteralType,
+    NoSubstitutionTemplateLiteral,
   } = ts.SyntaxKind;
   // console.log({typeArguments, typeName, kind_, node});
   switch (node.kind) {
@@ -155,23 +161,21 @@ function toSourceTS(node) {
       if (!ts.isConditionalTypeNode(node)) {
         throw Error("Impossible");
       }
-      // Keys on node:
-      // ['pos', 'end', 'flags', 'modifierFlagsCache', 'transformFlags', 'parent', 'kind', 'checkType',
-      // 'extendsType', 'trueType', 'falseType', 'locals', 'nextContainer']
+      // Keys on node: pos, end, flags, parent, kind,
+      // checkType, extendsType, trueType, falseType, locals.
       const checkType = toSourceTS(node.checkType);
       const extendsType = toSourceTS(node.extendsType);
       const trueType = toSourceTS(node.trueType);
       const falseType = toSourceTS(node.falseType);
-      if (checkType === undefined || extendsType === undefined || trueType === undefined || falseType === undefined) {
+      if (
+        checkType === undefined ||
+        extendsType === undefined ||
+        trueType === undefined ||
+        falseType === undefined
+      ) {
         return undefined;
       }
-      return ({
-        type: 'condition',
-        checkType,
-        extendsType,
-        trueType,
-        falseType,
-      });
+      return ({type: 'condition', checkType, extendsType, trueType, falseType});
     case ConstructorType: {
       if (!ts.isConstructorTypeNode(node)) {
         throw Error("Impossible");
@@ -202,7 +206,7 @@ function toSourceTS(node) {
       }
       // Unrepresentable parts become `any`, matching tsc leniency (`?` is
       // `any` there too): the shape stays validatable, never corrupt.
-      const index  = toSourceTS(node.indexType) ?? 'any';
+      const index = toSourceTS(node.indexType) ?? 'any';
       const object = toSourceTS(node.objectType) ?? 'any';
       return ({type: 'indexedAccess', index, object});
     case RestType:
@@ -239,12 +243,7 @@ function toSourceTS(node) {
           return 'transpiler-error';
         }
         /** @type {ExpandMappingNode} */
-        const out = {
-          type: 'mapping',
-          iterable,
-          element,
-          result,
-        };
+        const out = {type: 'mapping', iterable, element, result};
         if (node.nameType) {
           // `as` key remapping, e.g. {[K in keyof T as K extends string ? K : never]: ...}
           out.nameType = toSourceTS(node.nameType) ?? 'any';
@@ -253,10 +252,14 @@ function toSourceTS(node) {
         // `-readonly` strips readonly, `+readonly`/`readonly` force it.
         // Absent modifiers preserve the source behavior (see createTypeFromMapping).
         if (node.questionToken) {
-          out.question = node.questionToken.kind === MinusToken ? '-' : node.questionToken.kind === PlusToken ? '+' : '?';
+          const {kind} = node.questionToken;
+          const question = kind === MinusToken ? '-' : kind === PlusToken ? '+' : '?';
+          out.question = question;
         }
         if (node.readonlyToken) {
-          out.readonly = node.readonlyToken.kind === MinusToken ? '-' : node.readonlyToken.kind === PlusToken ? '+' : 'readonly';
+          const {kind} = node.readonlyToken;
+          const readonly = kind === MinusToken ? '-' : kind === PlusToken ? '+' : 'readonly';
+          out.readonly = readonly;
         }
         return out;
       }
@@ -310,14 +313,15 @@ function toSourceTS(node) {
       if (!ts.isTypeReferenceNode(node)) {
         throw Error("Impossible");
       }
-      if ((typeName.text === 'Object' || typeName.text === 'Record') && typeArguments?.length === 2) {
-        const key = toSourceTS(typeArguments[0]) ?? 'any';
-        const val = toSourceTS(typeArguments[1]) ?? 'any';
-        return ({
-          type: 'record',
-          key,
-          val,
-        });
+      const [firstArg, secondArg] = typeArguments ?? [];
+      if (
+        (typeName.text === 'Object' || typeName.text === 'Record') &&
+        firstArg !== undefined &&
+        secondArg !== undefined
+      ) {
+        const key = toSourceTS(firstArg) ?? 'any';
+        const val = toSourceTS(secondArg) ?? 'any';
+        return ({type: 'record', key, val});
       } else if (typeName.text === 'Object' && (!typeArguments || typeArguments?.length === 0)) {
         return {type: 'object', properties: {}};
       } else if (typeName.text === 'Map' && typeArguments?.length === 2) {
@@ -360,13 +364,13 @@ function toSourceTS(node) {
       // Preserve label for docs: [a: string, b: number] -> keep name
       // Use tupleMember shape so stringify can round-trip
       /** @type {ExpandTupleMemberNode} */
-      const mem = {
-        type: 'tupleMember',
-        name: nName,
-        elementType: nType,
-      };
-      if (opt) mem.optional = true;
-      if (dot) mem.dotDot = true;
+      const mem = {type: 'tupleMember', name: nName, elementType: nType};
+      if (opt) {
+        mem.optional = true;
+      }
+      if (dot) {
+        mem.dotDot = true;
+      }
       return mem;
     }
     case IntersectionType: {
@@ -394,7 +398,7 @@ function toSourceTS(node) {
             return {type: 'tupleMember', name: '', elementType: inner, optional: true};
           }
           return toSourceTS(el) ?? 'any';
-        }
+        },
       );
       return ({type: 'tuple', elements});
     case TemplateLiteralType: {
@@ -431,7 +435,11 @@ function toSourceTS(node) {
       const properties = {};
       /** @type {ExpandIndexSignatureNode[] | undefined} */
       let indexSignatures;
-      node.members.forEach(/** @param {ts.Node} member - The type literal member. @returns {void} */ (member) => {
+      /**
+       * @param {ts.Node} member - The type literal member.
+       * @returns {void} Nothing.
+       */
+      const visit = (member) => {
         if (member.kind === IndexSignature) {
           indexSignatures = indexSignatures ?? [];
           const indexSignature = toSourceTS(member);
@@ -446,13 +454,19 @@ function toSourceTS(node) {
           /** @type {ExpandedType} */
           let type = toSourceTS(member.type) ?? 'any';
           if (member.questionToken) {
-            if (isExpandedObject(type)) type.optional = true;
-            else type = {type: 'atom', atomType: type, optional: true};
+            if (isExpandedObject(type)) {
+              type.optional = true;
+            } else {
+              type = {type: 'atom', atomType: type, optional: true};
+            }
           }
           if (Array.isArray(member.modifiers) && member.modifiers.some(isReadonlyKeyword)) {
             // Tracked for IfEquals-style comparisons; ignored by validation.
-            if (isExpandedObject(type)) type.readonly = true;
-            else type = {type: 'atom', atomType: type, readonly: true};
+            if (isExpandedObject(type)) {
+              type.readonly = true;
+            } else {
+              type = {type: 'atom', atomType: type, readonly: true};
+            }
           }
           if (typeof name === 'string') {
             properties[name] = type;
@@ -460,7 +474,10 @@ function toSourceTS(node) {
         } else {
           console.warn('TypeLiteral: unhandled member', member);
         }
-      });
+      };
+      for (const member of node.members) {
+        visit(member);
+      }
       /** @type {ExpandObjectNode} */
       const ret = {type: 'object'};
       if (Object.keys(properties).length) {
@@ -503,19 +520,19 @@ function toSourceTS(node) {
         throw Error("Impossible");
       }
       return toSourceTS(node.literal);
-    case       AnyKeyword:
-    case   BooleanKeyword:
-    case    StringKeyword:
-    case    SymbolKeyword:
-    case     NeverKeyword:
-    case      NullKeyword:
-    case    NumberKeyword:
+    case AnyKeyword:
+    case BooleanKeyword:
+    case StringKeyword:
+    case SymbolKeyword:
+    case NeverKeyword:
+    case NullKeyword:
+    case NumberKeyword:
     case UndefinedKeyword:
-    case   UnknownKeyword:
-    case      VoidKeyword:
+    case UnknownKeyword:
+    case VoidKeyword:
     // ts.SyntaxKind[parseType("*").kind] === 'JSDocAllType'
     case JSDocAllType:
-    case     ThisType:
+    case ThisType:
     case StringLiteral:
       return node.getText();
     case TrueKeyword:
@@ -525,10 +542,7 @@ function toSourceTS(node) {
     case NumericLiteral:
       return Number(node.getText());
     case ObjectKeyword:
-      return {
-        type: 'object',
-        properties: {}
-      };
+      return {type: 'object', properties: {}};
     case ParenthesizedType:
       if (!ts.isParenthesizedTypeNode(node)) {
         throw Error("Impossible");
@@ -556,10 +570,10 @@ function toSourceTS(node) {
         //     test[id].push(name);
         // });
         // console.log(test);
-      console.warn('toSourceTS> unhandled kind - make sure to understand you cannot reverse TS enums');
-      console.warn('if they contain range aliases, for example:');
+      console.warn('toSourceTS> unhandled kind: TS enums cannot reverse');
+      console.warn('range aliases, for example:');
       console.warn('ts.SyntaxKind.NumericLiteral === ts.SyntaxKind.FirstLiteralToken');
-      console.warn('so this "kind" could be wrong, but requires handling anyway:', kind_, node);
+      console.warn('so this "kind" could be wrong, but requires handling:', kind_, node);
       debugger;
   }
 }

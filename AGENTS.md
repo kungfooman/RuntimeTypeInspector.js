@@ -60,6 +60,8 @@ throwaway files — never the system `/tmp` (it triggers permission flow
 blockers). `./tmp/` is git-ignored, so nothing there can leak into commits.
 Create it on demand (`mkdir -p tmp`); do not store anything permanent there.
 
+Never delete helper scripts in `./tmp/` (e.g. `tmp/collapse-objects.mjs`): a script that performed a mechanical change is the record of how the change was made and the tool for re-running it, so it stays in place after it has run.
+
 ## Checking JSDoc types like `tsc`
 
 `node run-jsdoc.js [--emit] <file.mjs>` transpiles `<file>` with the RTI
@@ -144,7 +146,7 @@ The reported repro is the starting line, never the finish: every fix or feature 
 Keep functions short enough to document in one JSDoc block: when a branch
 needs its own explanation plus its own edge cases, it is a helper in its own
 module (one function per file), with its own `@example` and its own spec.
-Always brace control bodies, even single-line ones: a bare `if (cond) return x;` hides the branch from the eye and from diffs, so a second statement lands on the wrong line. The `curly` eslint rule stays off (too noisy to enable globally), so review enforces this; the only exempt positions are `else` and `else if` heads, never bare bodies:
+Always brace control bodies, even single-line ones: a bare `if (cond) return x;` hides the branch from the eye and from diffs, so a second statement lands on the wrong line. Enforced by ESLint (see `## Code style`); the only exempt positions are `else` and `else if` heads, never bare bodies:
 ```js
 if (value[i] === undefined && tupleOptional(element)) {
   return true;
@@ -153,11 +155,11 @@ if (value[i] === undefined && tupleOptional(element)) {
 never `if (value[i] === undefined && tupleOptional(element)) return true;` on one line.
 Emitted code always rides the existing indentation flow: every injected statement starts on its own line at `this.spaces` after `numSpaces++`, closes dedent back through `numSpaces--`, and multi-line fragments join with `'\n' + this.spaces`, never with inline `' {'` or `'}'` glue. A single-line emission hides the nesting from the eye and from diffs, so a second statement lands on the wrong depth: split the wrapper into open, store, entry, and close parts and let the emitter place each on its own indented line.
 Inline ternaries and `?.`/`??` chains do not scale past one level: a nested
-ternary or a line that needs 130+ characters to say what it does is a branch
+ternary or a line that needs 100+ characters to say what it does is a branch
 the reader cannot see, so it becomes two named branches instead. The rule of
 thumb is one decision per line: if a line picks between three shapes or
 merges three flag sources, split it until each line does one thing a comment
-can name. `npm run lint` does not enforce this; review does.
+can name. `npm run lint` enforces this via `max-len`; review enforces the rest.
 
 Work with local scripts, never by shuttling file contents through the model: when a job is mechanical (rename every occurrence, reformat JSON, count matches, list files), compute the change with `node`/`python3` in `bash` and read back only the summary (counts, leftover matches, diff stat) — never the full files. Reading a file just to echo it back with a trivial transformation (parse JSON and rewrite indented, rename a token, sort keys) is token burning: the transformation belongs in a script, the model only writes the script and verifies its output. Reach for `read` only when a decision needs human eyes (an exact `oldString` for `edit`, an error message, a shape to name).
 
@@ -221,7 +223,7 @@ Import each shared typedef once per file with `@import` at the top and use the b
 /** @type {ExpandAnnotatedAtomNode} */ ({type: 'atom', atomType, optional})
 ```
 
-never `@type {import('./expandedType.js').ExpandAnnotatedAtomNode}` inline.
+never `@type {import('./expandedType.js').ExpandAnnotatedAtomNode}` inline. The `@import` line must never directly precede a function (an ESM `import` goes between): with no blank lines allowed, `eslint-plugin-jsdoc` reads the `@import` block as that function's JSDoc and demands a `@returns` tag that prose-comment test functions must not carry.
 
 See `JSDOC.md` for the full set of JSDoc typing tricks. The default
 pattern is `node is T` predicates: when a check must narrow a typedef
@@ -252,6 +254,27 @@ Runtime Type Inspector operates against trusted application code and is intended
 ## Fail closed
 
 Safety relevant flags (option switches, validation verdicts, capability checks) must fail closed: a missing, undefined or garbage value disables the behavior, never enables it. Read a flag with plain truthiness (`if (options.checkStats)`) when it flows straight into a branch, or compare `=== true` with a short comment when the verdict is stored in a local first. Never write `options.<flag> !== false`: that reads every non-`false` value, including `undefined` from a typo or a deleted key, as on, so a broken flag silently widens validation instead of narrowing it.
+
+## Code style
+
+- Document every exported function with JSDoc including `@param` and `@returns` tags. Enforced by ESLint (`jsdoc/require-param`, `jsdoc/require-returns`).
+- Keep `src/` free of type errors: verify with `npx tsc --noEmit` (`jsconfig.json` already sets `checkJs` and `strict`).
+- Write modern ESM: destructure instead of repeated property reads (`const {centerX, centerY, centerZ} = leaf;`, no spaces inside the braces, no renaming). Enforced by ESLint (`object-curly-spacing: never`, `array-bracket-spacing: never`, `prefer-destructuring`, `no-var`, `prefer-const`).
+- Always use shorthand properties (`{centerX}` never `{centerX: centerX}`) with trailing commas in multiline literals. Enforced by ESLint (`object-shorthand: always`, `comma-dangle: always-multiline`, fix with `npm run lint:fix`).
+- Never abbreviate identifiers (`texture` never `tex`, `vertices` never `verts`, `message` never `msg`): abbreviations collide (`tex` is text or texture?) and the reader cannot tell.
+- Never inline single-statement bodies (`if (x) return y;`): always use braces on their own lines. Enforced by ESLint (`curly` + `brace-style 1tbs allowSingleLine:false` + `nonblock-statement-body-position: below` + `indent`, fix with `npm run lint:fix`).
+- Never add long custom shell commands: add an `npm run ...` script entry instead (`npm test`, `npm run lint`).
+- One file = one class (`ByteReader.js` + `ByteReader.spec.js`, ESM) is equally fine. Nothing is private: every helper lives in its own module with its own spec. Every runtime module has a matching spec file (`expandedType.js` exempt: zero-runtime typedefs only).
+- HTML viewers stay dumb: every function a page needs lives in `src/` with its own spec; pages only wire DOM and canvases to those imports.
+- Never leave blank lines: `\n\n` always collapses to `\n`. Enforced by ESLint (`no-multiple-empty-lines: max 0`, fix with `npm run lint:fix`).
+- Max line width is 100 (`max-len: 100`, comments ignored via `ignoreComments`, break long code lines by hand). Spec files are exempt, fixture sources stay intact. Human-readable strings (diagnosis sentences, log hints, titles, one-line descriptions) never get reworded to fit: `max-len` ignores them via `ignoreStrings` + `ignoreTemplateLiterals`, so long prose stays on its own line untouched.
+- Long inline types become a typedef: when a `@type` no longer fits on one line (an object literal with several fields, a map of records, a union that needs wrapping), name it once with `@typedef {object} Name` plus one `@property` line per field at the point of first use, and reference the bare name everywhere else. Never wrap a type across lines inside `@type` braces: a wrapped literal is unreadable and ungreppable, while a typedef documents the shape and keeps every use site short.
+- Objects stay single-line while they fit, or split fully: `{expect: key, value: k}` is fine, but a line break after `{` forces every property onto its own line. Enforced by ESLint (`object-curly-newline: multiline + consistent`, `object-property-newline: allowAllPropertiesOnSameLine`, fix with `npm run lint:fix`).
+- Broken expressions put every operand on its own line, operators trailing, parens on their own lines: `if (` / `!inst ||` / `!x ||` / `!y` / `) {`. Enforced by ESLint for calls, arrays and objects (`function-call-argument-newline` + `function-paren-newline` + `array-element-newline` + `object-property-newline`, `operator-linebreak: after`); conditions and `+` chains shaped by hand.
+- Hanging first arguments are forbidden: when a call spans lines, the opening paren stands alone and every argument gets its own line. `return buildActualBranch(\n  header,\n  items,\n);` never `return buildActualBranch(header,\n  items,\n);`. ESLint `consistent` accepts both shapes, so the eye enforces this and `tmp/find-hanging-calls.mjs` lists every violation.
+- Never destructure-assign without a declaration: `findings = result.findings;` never `({findings} = result);`. The paren form hides the target from the eye and from diffs. Enforced by ESLint (`prefer-destructuring` with `AssignmentExpression: {object: false}` and `VariableDeclarator: {array: false, object: true}`: array index reads like `prev[0]` keep their index because the index carries meaning deeper in the loop, object declarations still destructure; fix with `npm run lint:fix` — but fix only reports, it never rewrites into the paren form).
+- Specs come after you 100 percent know it is right: everything else is an unverified helper function.
+- Never use subagents: do the work yourself in this session.
 
 ## One function per file
 
@@ -287,7 +310,7 @@ In every Markdown file you write, never hard-wrap prose with `\n`: each paragrap
 
 ```sh
 npm test  # test:update (gen_tests.js) + test.js + test_runtime.js + jsdoc-expect + jsdoc/ts2js/wat suites
-npm run lint  # eslint over src-transpiler, src-runtime and src-unittest
+npm run lint  # eslint over src-transpiler and src-runtime
 ```
 
 Note: `test.js` proves transpile parity only — a quiet `// warns` comment

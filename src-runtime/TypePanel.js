@@ -20,6 +20,15 @@ import {getCheckStats, resetCheckStats} from "./checkStats.js";
  * @typedef {MessageEvent<{action: string}>} MessageEventRTI
  */
 /**
+ * One floating compare window: the elements a compare view reads back
+ * (panel root, title bar, maximize toggle) plus its minimized flag.
+ * @typedef {object} CompareWin
+ * @property {HTMLDivElement} el - Panel root.
+ * @property {HTMLDivElement} titlebar - Title bar.
+ * @property {HTMLButtonElement} btnMax - Maximize toggle.
+ * @property {boolean} minimized - Minimized flag.
+ */
+/**
  * Refreshes a warning row with the latest failure. Rows are keyed by
  * `loc-name`, so one row absorbs every call site hit: value, expect,
  * message and strings must ALL follow the latest error, otherwise the
@@ -590,17 +599,75 @@ function niceDiv(div) {
  * @type {{id: string, head: string, title: string, windowed?: boolean, get: (row: object) => (string|number)}[]}
  */
 const CHECKS_COLS = [
-  {id: 'loc', head: 'Loc', title: 'Call site plus parameter name: one row per checked argument. Click a row to see the call stack captured for it.', get: (row) => row.loc},
-  {id: 'checks', head: 'Checks', title: 'Validations of this one parameter: one per call. A 2-parameter method records 2 rows, 1 check each per call.', get: (row) => row.checks},
-  {id: 'skipped', head: 'Skipped', title: 'Map checks skipped by riding the rescan window: the map was unchanged and had earned its scan spend (100ms default).', windowed: true, get: (row) => row.rides},
-  {id: 'suppressed', head: 'Suppressed', title: 'Checks the host suppressed via ignoredChecks: never validated, never timed, no spend implied.', windowed: true, get: (row) => row.skips},
-  {id: 'skipPct', head: 'Skipped %', title: 'Share of map checks skipped by riding the rescan window instead of scanning. The dash means no map checks ran here.', windowed: true, get: (row) => skipRatio(row)},
-  {id: 'kind', head: 'Kind', title: 'Which container this parameter walked: map, set, array or object. The dash means no container walk ran here.', get: (row) => containerKinds(row)},
-  {id: 'scans', head: 'Walks', title: 'Full container walks that actually ran over every entry or key. One parameter walks one kind; mixed kinds add up here.', get: (row) => containerWalks(row)},
-  {id: 'scanMs', head: 'Walk time', title: 'Total wall time in container walks. 0us means below what the clock can see, not broken; the slowest column bounds it.', get: (row) => containerWalkMs(row)},
-  {id: 'maxScanMs', head: 'Slowest walk', title: 'Slowest single container walk.', get: (row) => slowestWalkMs(row)},
-  {id: 'checkMs', head: 'Check time', title: 'Total wall time checking this call site, container walks included. Never below the sum of the kind columns.', get: (row) => row.checkMs},
-  {id: 'maxCheckMs', head: 'Slowest check', title: 'Slowest single check.', get: (row) => row.maxCheckMs},
+  {
+    id: 'loc',
+    head: 'Loc',
+    title: 'Call site plus parameter name: one row per checked argument. Click a row to see the call stack captured for it.',
+    get: (row) => row.loc,
+  },
+  {
+    id: 'checks',
+    head: 'Checks',
+    title: 'Validations of this one parameter: one per call. A 2-parameter method records 2 rows, 1 check each per call.',
+    get: (row) => row.checks,
+  },
+  {
+    id: 'skipped',
+    head: 'Skipped',
+    title: 'Map checks skipped by riding the rescan window: the map was unchanged and had earned its scan spend (100ms default).',
+    windowed: true,
+    get: (row) => row.rides,
+  },
+  {
+    id: 'suppressed',
+    head: 'Suppressed',
+    title: 'Checks the host suppressed via ignoredChecks: never validated, never timed, no spend implied.',
+    windowed: true,
+    get: (row) => row.skips,
+  },
+  {
+    id: 'skipPct',
+    head: 'Skipped %',
+    title: 'Share of map checks skipped by riding the rescan window instead of scanning. The dash means no map checks ran here.',
+    windowed: true,
+    get: (row) => skipRatio(row),
+  },
+  {
+    id: 'kind',
+    head: 'Kind',
+    title: 'Which container this parameter walked: map, set, array or object. The dash means no container walk ran here.',
+    get: (row) => containerKinds(row),
+  },
+  {
+    id: 'scans',
+    head: 'Walks',
+    title: 'Full container walks that actually ran over every entry or key. One parameter walks one kind; mixed kinds add up here.',
+    get: (row) => containerWalks(row),
+  },
+  {
+    id: 'scanMs',
+    head: 'Walk time',
+    title: 'Total wall time in container walks. 0us means below what the clock can see, not broken; the slowest column bounds it.',
+    get: (row) => containerWalkMs(row),
+  },
+  {
+    id: 'maxScanMs',
+    head: 'Slowest walk',
+    title: 'Slowest single container walk.',
+    get: (row) => slowestWalkMs(row),
+  },
+  {
+    id: 'checkMs',
+    head: 'Check time',
+    title: 'Total wall time checking this call site, container walks included. Never below the sum of the kind columns.',
+    get: (row) => row.checkMs,
+  },
+  {
+    id: 'maxCheckMs',
+    head: 'Slowest check',
+    title: 'Slowest single check.',
+    get: (row) => row.maxCheckMs,
+  },
 ];
 /**
  * Which containers a row walked, in fixed order. One parameter walks one
@@ -922,7 +989,7 @@ class TypePanel {
   popoutWin = null;
   /** @type {object | null} */
   panelMaxGeo = null;
-  /** @type {Map<string, {el: HTMLDivElement, titlebar: HTMLDivElement, btnMax: HTMLButtonElement, minimized: boolean}>} */
+  /** @type {Map<string, CompareWin>} */
   compareWins = new Map();
   /** @type {string[]} */
   compareFocus = [];

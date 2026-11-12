@@ -1,4 +1,4 @@
-import {capitalize   } from './capitalize.js';
+import {capitalize} from './capitalize.js';
 import {trimEndSpaces} from './trimEndSpaces.js';
 /**
  * @typedef {import("@babel/types").Node} Node
@@ -214,7 +214,7 @@ class Stringifier {
     }
     const {type} = node;
     const needCurly = type !== 'BlockStatement' && type !== 'EmptyStatement';
-    const spaces = this.spaces;
+    const {spaces} = this;
     let out = '';
     if (needCurly) {
       out += ' {\n';
@@ -250,7 +250,7 @@ class Stringifier {
   }
   get needSpaces() {
     const t = this.parentType;
-    return t !== "ForStatement"   &&
+    return t !== "ForStatement" &&
            t !== "ForInStatement" &&
            t !== "ForOfStatement";
   }
@@ -370,7 +370,7 @@ class Stringifier {
    */
   ClassDeclaration(node) {
     const {id, superClass, body, trailingComments, leadingComments} = node;
-    const spaces = this.spaces;
+    const {spaces} = this;
     let out = spaces + 'class ' + this.toSource(id);
     if (superClass) {
       out += ` extends ${this.toSource(superClass)}`;
@@ -565,7 +565,7 @@ class Stringifier {
    */
   BlockStatement(node) {
     const {body, directives} = node;
-    const spaces = this.spaces;
+    const {spaces} = this;
     let out = '';
     if (this.parentType !== 'Program') {
       out += ' ';
@@ -782,9 +782,9 @@ class Stringifier {
     if (method) {
       console.warn("ObjectProperty> unhandled method property:", {method, shorthand});
     }
-    const spaces = this.spaces;
-    let left   = this.toSource(key);
-    const right  = this.toSource(value);
+    const {spaces} = this;
+    let left = this.toSource(key);
+    const right = this.toSource(value);
     let out = spaces;
     if (computed) {
       left = `[${left}]`;
@@ -858,11 +858,12 @@ class Stringifier {
    */
   VariableDeclaration(node) {
     const {declarations, kind} = node;
+    const {needSpaces, spaces: indent} = this;
     let spaces = '';
     let semicolon = '';
-    if (this.needSpaces) {
+    if (needSpaces) {
       semicolon = ';';
-      spaces = this.spaces;
+      spaces = indent;
     }
     return `${spaces}${kind} ${this.mapToSource(declarations).join(', ')}${semicolon}`;
   }
@@ -911,7 +912,7 @@ class Stringifier {
    */
   ForStatement(node) {
     const {init, test, update, body} = node;
-    const spaces = this.spaces;
+    const {spaces} = this;
     const i = this.toSource(init);
     const t = this.toSource(test);
     const u = this.toSource(update);
@@ -950,7 +951,7 @@ class Stringifier {
   TemplateLiteral(node) {
     const {expressions, quasis} = node;
     let out = '`';
-    for (var i = 0; i < quasis.length; i++) {
+    for (let i = 0; i < quasis.length; i++) {
       out += this.toSource(quasis[i]);
       if (expressions[i]) {
         out += '${' + this.toSource(expressions[i]) + '}';
@@ -1208,8 +1209,8 @@ class Stringifier {
    */
   JSXNamespacedName(node) {
     const {namespace, name} = node;
-    const a =            this.toSource(namespace) ;
-    const b = capitalize(this.toSource(name     ));
+    const a = this.toSource(namespace) ;
+    const b = capitalize(this.toSource(name ));
     return a + b;
   }
   /**

@@ -179,7 +179,10 @@ class DisplayAnything {
    */
   render() {
     if (!this.el) {
-      this.el = Div({className: 'rti-line', style: {marginLeft: `${this.depth * 18}px`}});
+      this.el = Div({
+        className: 'rti-line',
+        style: {marginLeft: `${this.depth * 18}px`},
+      });
     }
     this.refreshContent();
     return this.el;
@@ -362,11 +365,17 @@ class DisplayAnything {
    */
   buildLeaf() {
     if (!this.parent) {
-      this.valueEl = Div({className: `rti-${this.safeType()}`, textContent: this.valueToString()});
+      this.valueEl = Div({
+        className: `rti-${this.safeType()}`,
+        textContent: this.valueToString(),
+      });
       this.el.append(this.valueEl);
       return;
     }
-    this.valueEl = Span({className: `rti-${this.safeType()}`, textContent: this.valueToString()});
+    this.valueEl = Span({
+      className: `rti-${this.safeType()}`,
+      textContent: this.valueToString(),
+    });
     if (String(this.key).startsWith('[...+') && !this.el.className.includes('rti-dimmed')) {
       this.el.className += ' rti-dimmed';
     }

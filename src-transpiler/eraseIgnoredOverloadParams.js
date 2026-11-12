@@ -11,8 +11,8 @@
  * eraseIgnoredOverloadParams({elements: []}, fnNode, new Set()); // {elements: []}
  */
 function eraseIgnoredOverloadParams(tuple, fnNode, ignored) {
-  const elements = tuple.elements;
-  const params = fnNode.params;
+  const {elements} = tuple;
+  const {params} = fnNode;
   for (const [index, param] of params.entries()) {
     let target = param;
     if (target.type === 'AssignmentPattern') {

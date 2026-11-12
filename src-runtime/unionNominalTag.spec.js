@@ -18,7 +18,10 @@ function unprepare() {
 function testBareNameMatchSkipsRegistry() {
   prepare();
   try {
-    return unionNominalTag({r: 1, $type: 'TagBox'}, ['TagBox', {type: 'array', elementType: 'number'}]) === true;
+    return unionNominalTag({r: 1, $type: 'TagBox'}, ['TagBox', {
+      type: 'array',
+      elementType: 'number',
+    }]) === true;
   } finally {
     unprepare();
   }
@@ -52,8 +55,15 @@ function testNonMatchesDecline() {
   try {
     const plain = unionNominalTag({r: 1}, ['TagBox']) === false;
     const stranger = unionNominalTag({r: 1, $type: 'TagGizmo'}, ['TagBox']) === false;
-    const shaped = unionNominalTag({r: 1, $type: 'TagBox'}, [{type: 'object', properties: {r: 'number'}}]) === false;
-    const opaque = unionNominalTag({r: 1, $type: 'TagBox'}, [{type: 'reference', name: 'Partial', args: ['TagBox']}]) === false;
+    const shaped = unionNominalTag({r: 1, $type: 'TagBox'}, [{
+      type: 'object',
+      properties: {r: 'number'},
+    }]) === false;
+    const opaque = unionNominalTag({r: 1, $type: 'TagBox'}, [{
+      type: 'reference',
+      name: 'Partial',
+      args: ['TagBox'],
+    }]) === false;
     const empty = unionNominalTag({r: 1, $type: 'TagBox'}, []) === false;
     return plain && stranger && shaped && opaque && empty;
   } finally {

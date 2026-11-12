@@ -1,5 +1,4 @@
 import {parseParamHead} from '../jsdoc-parsing-depfree/parseParamHead.js';
-
 /**
  * Recovers dotted sub-param rows TS merges into their container. TS
  * never surfaces `options.maxRetries` as a tag: it absorbs trailing
@@ -28,7 +27,7 @@ function tsDottedChildren(container, src, fromTag) {
     if (brace === null) {
       break;
     }
-    const head = brace[2];
+    const [, , head] = brace;
     // Bracketed children (`[options.x]`) lead with `[`; strip it for the
     // container match, the head grammar below recovers the flag.
     const bare = head.replace(/^\[/, '');

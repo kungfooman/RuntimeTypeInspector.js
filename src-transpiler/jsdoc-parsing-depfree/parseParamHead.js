@@ -1,6 +1,5 @@
 import {parseNamePath, parseBracketName} from './parseNamePath.js';
 import {makeJSDocCursor} from './makeJSDocCursor.js';
-
 /**
  * Reads one `@param` head into its name and optionality, like tsc's
  * `parseParameterOrPropertyTag`: an optional bracketed name (with its
@@ -48,7 +47,9 @@ function parseParamHead(headRaw) {
   let run = '';
   while (i < cursor.tokens.length) {
     const token = cursor.tokens[i];
-    if (token.kind === 'word' || token.kind === 'dots' || token.kind === 'lbracket' || token.kind === 'rbracket' || token.kind === 'punct') {
+    const isName = token.kind === 'word' || token.kind === 'dots' || token.kind === 'punct';
+    const isBracket = token.kind === 'lbracket' || token.kind === 'rbracket';
+    if (isName || isBracket) {
       run += token.value;
       i += 1;
       continue;

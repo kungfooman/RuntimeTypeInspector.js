@@ -15,7 +15,10 @@ function testSetUnchanged() {
 // We want: nested set element types substitute recursively, because
 // the element type may itself contain the search key at any depth.
 function testSetNested() {
-  return JSON.stringify(substituteSet({type: 'set', elementType: {type: 'array', elementType: 'K'}}, 'K', '"a"', noop)) ===
+  return JSON.stringify(substituteSet({
+    type: 'set',
+    elementType: {type: 'array', elementType: 'K'},
+  }, 'K', '"a"', noop)) ===
     JSON.stringify({type: 'set', elementType: {type: 'array', elementType: '"a"'}});
 }
 const tests = [

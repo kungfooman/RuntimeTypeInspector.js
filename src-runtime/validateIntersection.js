@@ -25,8 +25,9 @@ function validateIntersection(value, expect, loc, name, critical, warn, depth) {
   // instanceof verdicts must not degrade to structural ones);
   // otherwise keep today's per-member behavior instead of guessing.
   let checking = members;
-  if (options.exactObjects === true && value !== null && typeof value === 'object' && !Array.isArray(value) &&
-    members.every((member) => !(typeof member === 'string' && classes[member]))) {
+  const isObject = value !== null && typeof value === 'object' && !Array.isArray(value);
+  const isNominal = (member) => typeof member === 'string' && classes[member];
+  if (options.exactObjects === true && isObject && !members.some(isNominal)) {
     const shapes = members.map((member) => resolveObject(member, warn, depth + 1));
     if (shapes.every((shape) => shape && shape.type === 'object' && shape.properties)) {
       checking = shapes.map((shape, i) => {
@@ -38,7 +39,10 @@ function validateIntersection(value, expect, loc, name, critical, warn, depth) {
           for (const key of Object.keys(other.properties)) {
             if (!(key in shape.properties)) {
               const prop = other.properties[key];
-              extra[key] = prop && typeof prop === 'object' ? {...prop, optional: true} : {type: prop, optional: true};
+              extra[key] = prop && typeof prop === 'object' ? {...prop, optional: true} : {
+                type: prop,
+                optional: true,
+              };
             }
           }
         }

@@ -28,7 +28,8 @@ const validators = {};
 function recurse(value, expect, loc, name, critical, warn, depth) {
   const validate = validators.validateType;
   if (!validate) {
-    throw new Error('validators.validateType is not registered: import validateType.js (or the runtime index) first.');
+    const hint = 'import validateType.js (or the runtime index) first.';
+    throw new Error(`validators.validateType is not registered: ${hint}`);
   }
   return validate(value, expect, loc, name, critical, warn, depth);
 }

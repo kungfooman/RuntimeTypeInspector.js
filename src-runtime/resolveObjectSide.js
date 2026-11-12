@@ -40,7 +40,9 @@ function resolveObjectSide(object, warn, depth = 0) {
       break;
     }
     if (target && target.type === 'reference') {
-      if ((target.name === 'NonNullable' || target.name === 'Readonly' || target.name === 'NoInfer') && target.args?.length) {
+      const unboxed = target.name === 'NonNullable' || target.name === 'Readonly';
+      const transparent = unboxed || target.name === 'NoInfer';
+      if (transparent && target.args?.length) {
         return resolveObjectSide(target.args[0], warn, depth + 1);
       }
       if (target.name === 'Pick' || target.name === 'Omit' || target.name === 'Partial') {
@@ -70,7 +72,8 @@ function resolveObjectSide(object, warn, depth = 0) {
   if (target.type === 'mapping') {
     return createTypeFromMapping(target, warn) ?? undefined;
   }
-  if ((target.type === 'intersection' || target.type === 'union') && Array.isArray(target.members)) {
+  const isComposite = target.type === 'intersection' || target.type === 'union';
+  if (isComposite && Array.isArray(target.members)) {
     const properties = {};
     for (const member of target.members) {
       const resolved = resolveObjectSide(member, warn, depth + 1);

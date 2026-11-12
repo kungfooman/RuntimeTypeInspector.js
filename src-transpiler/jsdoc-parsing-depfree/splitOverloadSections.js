@@ -15,7 +15,7 @@
  * section under it (matching tsc, where the tag parses outside every
  * marker span) without splicing text into any section.
  * @param {string[]} blocks - Documentation blocks in source order.
- * @returns {{overloads: string[], impl: string|null, preMarker: string}} Sections, tail, and pre-marker scope.
+ * @returns {{overloads: string[], impl: string|null, preMarker: string}} Sections, tail, and scope.
  * @example
  * splitOverloadSections(['* @overload @param {number} x', '* @param {any} x']);
  * // {overloads: [' @param {number} x'], impl: '* @param {any} x'}
@@ -27,13 +27,16 @@ function splitOverloadSections(blocks) {
   for (const block of blocks) {
     const pieces = block.split(/@overload\b/);
     if (pieces.length === 1) {
-      if (/@param\b/.test(block)) impl = block;
+      if (/@param\b/.test(block)) {
+        impl = block;
+      }
       continue;
     }
-    if (/@param\b/.test(pieces[0])) {
-      impl = pieces[0];
+    const [head] = pieces;
+    if (/@param\b/.test(head)) {
+      impl = head;
     } else {
-      preMarker += pieces[0];
+      preMarker += head;
     }
     for (const part of pieces.slice(1)) {
       const piece = part;

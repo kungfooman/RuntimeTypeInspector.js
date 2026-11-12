@@ -2,7 +2,6 @@ import {expandTypeDepFree} from "../expandTypeDepFree.js";
 import {parseJSDocDocument} from "./parseJSDocDocument.js";
 /** @import {ExpandedType} from './expandedType.js' */
 /** @import {ExpandType, ExpandTypeReturnType, ParamTag} from './parseJSDoc.js' */
-
 /**
  * Reads one JSDoc text into parameter types plus the raw tags behind them.
  * Thin view over the single document parse: the returned record holds

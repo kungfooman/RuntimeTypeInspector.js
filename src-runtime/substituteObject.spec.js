@@ -3,7 +3,10 @@ const noop = () => undefined;
 // We want: object properties substitute, because each property value is a
 // type position.
 function testObjectProperties() {
-  return JSON.stringify(substituteObject({type: 'object', properties: {a: 'K'}}, 'K', '"a"', noop)) ===
+  return JSON.stringify(substituteObject({
+    type: 'object',
+    properties: {a: 'K'},
+  }, 'K', '"a"', noop)) ===
     JSON.stringify({type: 'object', properties: {a: '"a"'}});
 }
 // We want: index signatures substitute, because they are type positions

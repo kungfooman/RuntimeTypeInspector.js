@@ -1,5 +1,4 @@
 import {parseParamHead} from "./parseParamHead.js";
-
 /**
  * Builds one raw param node from brace and head text. The head reads
  * through the shared grammar (`parseParamHead`): the head keeps only its

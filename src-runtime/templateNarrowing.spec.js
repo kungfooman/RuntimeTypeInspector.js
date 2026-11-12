@@ -27,9 +27,12 @@ function captureWarns(fn) {
 function captureMessage(fn) {
   let posted;
   const origSelf = globalThis.self;
-  globalThis.self = {addEventListener: () => {}, postMessage: (msg) => {
-    posted = msg;
-  }};
+  globalThis.self = {
+    addEventListener: () => {},
+    postMessage: (msg) => {
+      posted = msg;
+    },
+  };
   try {
     fn();
     return posted;
@@ -80,7 +83,11 @@ function testIndexSignatureSubstitutes() {
   const type = {
     type: 'object',
     properties: {},
-    indexSignatures: [{type: 'indexSignature', indexType: 'T', indexParameters: [{type: 'parameter', paramType: 'string', name: 'k'}]}],
+    indexSignatures: [{
+      type: 'indexSignature',
+      indexType: 'T',
+      indexParameters: [{type: 'parameter', paramType: 'string', name: 'k'}],
+    }],
   };
   const out = substituteType(type, 'T', 'number', noisy);
   return warns === 0 && out.indexSignatures[0].indexType === 'number';
@@ -108,7 +115,10 @@ function testFirstPinWins() {
 // matching tsc.
 function testNestedFirstPins() {
   const templates = {T: 'any'};
-  const first = captureWarns(() => inspectTypeWithTemplates(['a'], {type: 'array', elementType: 'T'}, 'loc', 'x', templates));
+  const first = captureWarns(() => inspectTypeWithTemplates(['a'], {
+    type: 'array',
+    elementType: 'T',
+  }, 'loc', 'x', templates));
   if (!first.ret || templates.T !== '"a"') {
     return false;
   }
@@ -123,7 +133,10 @@ function testNestedAfterBareWidens() {
   if (!first.ret) {
     return false;
   }
-  const second = captureWarns(() => inspectTypeWithTemplates({sub: 'b'}, {type: 'object', properties: {sub: 'K'}}, 'loc', 'opts', templates));
+  const second = captureWarns(() => inspectTypeWithTemplates({sub: 'b'}, {
+    type: 'object',
+    properties: {sub: 'K'},
+  }, 'loc', 'opts', templates));
   return second.ret && second.warnings.length === 0 && templates.K === 'string';
 }
 // Literal-union constraints union instead of widening: `hD('a', 'b')` with
@@ -169,8 +182,14 @@ function testNoInferBlocksAndKeepsLiteral() {
 // later nested occurrences precise (the `addComponent` pattern).
 function testNestedStaysPrecise() {
   const templates = {T: '"camera"'};
-  const good = captureWarns(() => inspectTypeWithTemplates(['camera'], {type: 'array', elementType: 'T'}, 'loc', 'opts', templates));
-  const bad = captureWarns(() => inspectTypeWithTemplates(['light'], {type: 'array', elementType: 'T'}, 'loc', 'opts', templates));
+  const good = captureWarns(() => inspectTypeWithTemplates(['camera'], {
+    type: 'array',
+    elementType: 'T',
+  }, 'loc', 'opts', templates));
+  const bad = captureWarns(() => inspectTypeWithTemplates(['light'], {
+    type: 'array',
+    elementType: 'T',
+  }, 'loc', 'opts', templates));
   return good.ret === true && bad.ret === false;
 }
 // Failure messages are a superset of tsc's: they contain the actual type, the
@@ -184,7 +203,7 @@ function testMessageMatchesTscTriple() {
   if (!msg || !Array.isArray(msg.strings) || !msg.strings.length) {
     return false;
   }
-  const summary = msg.strings[0];
+  const [summary] = msg.strings;
   if (!/^Argument of type .* is not assignable to parameter of type .*$/u.test(summary)) {
     return false;
   }

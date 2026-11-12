@@ -64,7 +64,8 @@ function collectCandidates(value, expect, out = []) {
       }
       if (Array.isArray(expect.indexSignatures)) {
         for (const signature of expect.indexSignatures) {
-          if (signature && signature.type === 'indexSignature' && signature.indexType !== undefined) {
+          const isIndexed = signature && signature.type === 'indexSignature';
+          if (isIndexed && signature.indexType !== undefined) {
             for (const key of Object.keys(value)) {
               collectCandidates(value[key], signature.indexType, out);
             }

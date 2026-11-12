@@ -3,7 +3,11 @@ const noop = () => undefined;
 // We want: a parameter descriptor substitutes its .paramType position, because
 // that is the only type-bearing field of a descriptor.
 function testDescriptorsType() {
-  return JSON.stringify(substituteDescriptors([{type: 'parameter', paramType: 'K', name: 'x'}], 'K', '"a"', noop)) ===
+  return JSON.stringify(substituteDescriptors([{
+    type: 'parameter',
+    paramType: 'K',
+    name: 'x',
+  }], 'K', '"a"', noop)) ===
     JSON.stringify([{type: 'parameter', paramType: '"a"', name: 'x'}]);
 }
 // We want: a descriptor list with no matching key is returned by identity,
@@ -15,8 +19,16 @@ function testDescriptorsUnchanged() {
 // We want: multiple descriptors each substitute independently, because each
 // parameter is a separate type position.
 function testDescriptorsMultiple() {
-  return JSON.stringify(substituteDescriptors([{type: 'parameter', paramType: 'K', name: 'a'}, {type: 'parameter', paramType: 'K', name: 'b'}], 'K', '"a"', noop)) ===
-    JSON.stringify([{type: 'parameter', paramType: '"a"', name: 'a'}, {type: 'parameter', paramType: '"a"', name: 'b'}]);
+  return JSON.stringify(substituteDescriptors([{type: 'parameter', paramType: 'K', name: 'a'}, {
+    type: 'parameter',
+    paramType: 'K',
+    name: 'b',
+  }], 'K', '"a"', noop)) ===
+    JSON.stringify([{type: 'parameter', paramType: '"a"', name: 'a'}, {
+      type: 'parameter',
+      paramType: '"a"',
+      name: 'b',
+    }]);
 }
 // We want: a descriptor without a .paramType field is left untouched, because
 // there is no type position to substitute.

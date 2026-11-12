@@ -21,7 +21,9 @@ function installFallbackDom({execResult = true, failAt = null} = {}) {
   globalThis.document = {
     createElement: (tag) => {
       const area = {
-        tag, value: '', style: {},
+        tag,
+        value: '',
+        style: {},
         select() {},
         remove() {
           body.children = body.children.filter((_) => _ !== area);

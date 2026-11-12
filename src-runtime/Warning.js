@@ -197,7 +197,10 @@ function isPreviewLeaf(value) {
 function withCollectionPreviews(value, depth = 0, seen = new Map()) {
   let isPreview = false;
   try {
-    isPreview = value instanceof Map || value instanceof Set || isTypedArray(value) || isPreviewLeaf(value);
+    const isMap = value instanceof Map;
+    const isSet = value instanceof Set;
+    const isTyped = isTypedArray(value);
+    isPreview = isMap || isSet || isTyped || isPreviewLeaf(value);
   } catch {
     return '[Unreadable]';
   }
@@ -374,9 +377,11 @@ function actualRow(label, sep, content, failed) {
     row.append(content);
     return row;
   }
-  row.append(Span({className: 'rti-key', textContent: label}),
-             Span({className: 'rti-separator', textContent: sep}),
-             content);
+  row.append(
+    Span({className: 'rti-key', textContent: label}),
+    Span({className: 'rti-separator', textContent: sep}),
+    content,
+  );
   return row;
 }
 /**
@@ -406,8 +411,11 @@ function renderActualBatch(details, items, failPaths, depth, ancestors) {
   const paint = (node) => {
     node.textContent = `...(+${items.length - shown} more)`;
   };
-  const marker = Div({className: 'rti-more', dataset: {shown: String(shown), total: String(items.length)},
-    title: 'Show more rows'});
+  const marker = Div({
+    className: 'rti-more',
+    dataset: {shown: String(shown), total: String(items.length)},
+    title: 'Show more rows',
+  });
   /**
    * Loads the next batch of rows where the marker was clicked.
    */
@@ -459,8 +467,9 @@ function renderActualItem(item, depth, ancestors, failPaths) {
   } catch {
     val = '[Unreadable]';
   }
-  return actualRow(item.label, item.sep, buildActualContent(val, item.path, depth, ancestors, failPaths),
-                   failPaths.has(item.path));
+  const content = buildActualContent(val, item.path, depth, ancestors, failPaths);
+  const failed = failPaths.has(item.path);
+  return actualRow(item.label, item.sep, content, failed);
 }
 /**
  * Builds one branch: a disclosure with a tag header and batched child rows.
@@ -475,8 +484,10 @@ function renderActualItem(item, depth, ancestors, failPaths) {
  */
 function buildActualBranch(header, items, path, depth, ancestors, failPaths) {
   const failed = failPaths.has(path);
-  const details = Details({open: depth === 0 || actualCovers(path, failPaths) ? true : undefined,
-    className: failed ? 'rti-fail-hit' : undefined},
+  const details = Details({
+    open: depth === 0 || actualCovers(path, failPaths) ? true : undefined,
+    className: failed ? 'rti-fail-hit' : undefined,
+  },
                           Summary({textContent: header}));
   renderActualBatch(details, items, failPaths, depth + 1, ancestors);
   return details;
@@ -497,7 +508,8 @@ function actualMapEntries(value) {
   try {
     const tag = snapshotTag(value);
     if (tag === 'Map' && Array.isArray(value.entries)) {
-      return value.entries.map((entry) => (Array.isArray(entry) ? [entry[0], entry[1]] : [entry, undefined]));
+      const toPair = (entry) => (Array.isArray(entry) ? [entry[0], entry[1]] : [entry, undefined]);
+      return value.entries.map(toPair);
     }
   } catch {
     return null;
@@ -530,6 +542,21 @@ function actualSeqItems(value) {
     return null;
   }
   return null;
+}
+/**
+ * Reads the collection size off a value, falling back to the counted size.
+ * @param {*} value - The value to read.
+ * @param {number} fallback - Counted size when no `size`/`length` exists.
+ * @returns {{size: number}} The size to display.
+ */
+function valueSize(value, fallback) {
+  if (typeof value?.size === 'number') {
+    return {size: value.size};
+  }
+  if (typeof value?.length === 'number') {
+    return {size: value.length};
+  }
+  return {size: fallback};
 }
 /**
  * Own enumerable keys minus the snapshot envelope tag, or null when the
@@ -592,8 +619,10 @@ function buildActualContent(value, path, depth, ancestors, failPaths, markSelf =
    * One-line leaf for collapsed or unrenderable values.
    * @returns {HTMLElement} The leaf.
    */
-  const leaf = () => Span({className: `${actualLeafClass(value)}${failed ? ' rti-fail-hit' : ''}`,
-    textContent: shortPreview(value)});
+  const leaf = () => Span({
+    className: `${actualLeafClass(value)}${failed ? ' rti-fail-hit' : ''}`,
+    textContent: shortPreview(value),
+  });
   try {
     if (value !== null && typeof value === 'object') {
       if (ancestors.includes(value)) {
@@ -616,12 +645,19 @@ function buildActualContent(value, path, depth, ancestors, failPaths, markSelf =
         } catch {
           // Keep the counted size.
         }
-        return buildActualBranch(`Map(${size})`,
-                                 mapEntries.map(([key, entry]) => ({
-                                   label: shortPreview(key), sep: '=>',
-                                   path: actualMapPath(path, key), read: () => entry,
-                                 })),
-                                 path, depth, next, failPaths);
+        return buildActualBranch(
+          `Map(${size})`,
+          mapEntries.map(([key, entry]) => ({
+            label: shortPreview(key),
+            sep: '=>',
+            path: actualMapPath(path, key),
+            read: () => entry,
+          })),
+          path,
+          depth,
+          next,
+          failPaths,
+        );
       }
       // Sets, arrays and typed arrays (live or recorded): one row per index.
       const seqItems = actualSeqItems(value);
@@ -642,21 +678,24 @@ function buildActualContent(value, path, depth, ancestors, failPaths, markSelf =
           } else {
             tag = value.constructor?.name ?? 'ArrayBufferView';
           }
-          if (typeof value.size === 'number') {
-            size = value.size;
-          } else if (typeof value.length === 'number') {
-            size = value.length;
-          }
+          size = valueSize(value, size).size;
         } catch {
           // Keep the counted size.
         }
         const header = tag === 'array' ? `array [${size}]` : `${tag}(${size})`;
-        return buildActualBranch(header,
-                                 seqItems.map((item, i) => ({
-                                   label: `[${i}]`, sep: ':',
-                                   path: actualIndexPath(path, i), read: () => item,
-                                 })),
-                                 path, depth, next, failPaths);
+        return buildActualBranch(
+          header,
+          seqItems.map((item, i) => ({
+            label: `[${i}]`,
+            sep: ':',
+            path: actualIndexPath(path, i),
+            read: () => item,
+          })),
+          path,
+          depth,
+          next,
+          failPaths,
+        );
       }
       // Leaves DisplayAnything cannot expand: buffers, promises, weak
       // collections, dates, regexps, errors, URLs and host objects.
@@ -680,12 +719,19 @@ function buildActualContent(value, path, depth, ancestors, failPaths, markSelf =
         if (!open || collapse) {
           return leaf();
         }
-        return buildActualBranch(`${actualObjectTag(value)} {${keys.length}}`,
-                                 keys.map((key) => ({
-                                   label: key, sep: ':',
-                                   path: actualChildPath(path, key), read: () => actualSafeRead(value, key),
-                                 })),
-                                 path, depth, next, failPaths);
+        return buildActualBranch(
+          `${actualObjectTag(value)} {${keys.length}}`,
+          keys.map((key) => ({
+            label: key,
+            sep: ':',
+            path: actualChildPath(path, key),
+            read: () => actualSafeRead(value, key),
+          })),
+          path,
+          depth,
+          next,
+          failPaths,
+        );
       }
       return leaf();
     }
@@ -759,10 +805,10 @@ class Warning {
   _expectPretty = null;
   /** @type {HTMLDivElement | null} */
   _expectNotes = null;
-  _msg             = '';
-  _hits            = 0;
-  _hidden          = false;
-  _dbg             = false;
+  _msg = '';
+  _hits = 0;
+  _hidden = false;
+  _dbg = false;
   /** @type {any} */
   _value;
   /** @type {string[]} */
@@ -774,10 +820,24 @@ class Warning {
     this.name = name;
     this._expect = expect;
     this.onCompare = onCompare;
-    this.button_dbgInput = Button({textContent: '🧐', onclick: () => this.dbg = !this.dbg});
-    this.button_hideInput = Button({textContent: '👁️‍🗨️', onclick: () => this.hidden = !this.hidden});
-    this.button_inspect = Button({textContent: '🔍', title: 'Compare expected vs actual fullscreen', onclick: () => this.onCompare?.()});
-    this.button_copy = Button({textContent: '📋', title: 'Copy this message', onclick: () => this.copyMessage()});
+    this.button_dbgInput = Button({
+      textContent: '🧐',
+      onclick: () => this.dbg = !this.dbg,
+    });
+    this.button_hideInput = Button({
+      textContent: '👁️‍🗨️',
+      onclick: () => this.hidden = !this.hidden,
+    });
+    this.button_inspect = Button({
+      textContent: '🔍',
+      title: 'Compare expected vs actual fullscreen',
+      onclick: () => this.onCompare?.(),
+    });
+    this.button_copy = Button({
+      textContent: '📋',
+      title: 'Copy this message',
+      onclick: () => this.copyMessage(),
+    });
     this.td_hide = Td({}, this.button_hideInput);
     this.td_dbg = Td({}, this.button_dbgInput);
     this.td_count = Td({});
@@ -787,8 +847,9 @@ class Warning {
     this.td_value = Td({className: 'value'});
     this.td_desc = Td({className: 'desc', innerText: msg});
     this.td_inspect = Td({}, this.button_inspect, this.button_copy);
-    const {td_hide, td_dbg, td_count, td_location, td_name, td_expect, td_value, td_desc, td_inspect} = this;
-    this.tr = Tr({}, td_hide, td_dbg, td_count, td_location, td_name, td_expect, td_value, td_desc, td_inspect);
+    const row = [this.td_hide, this.td_dbg, this.td_count, this.td_location, this.td_name];
+    const tail = [this.td_expect, this.td_value, this.td_desc, this.td_inspect];
+    this.tr = Tr({}, ...row, ...tail);
     // todo hits setter/getter
     //td_expect.textContent = expect;
     this.expect = expect;
@@ -805,7 +866,7 @@ class Warning {
       type: 'rti',
       action: _ ? 'addBreakpoint' : 'deleteBreakpoint',
       destination: 'worker',
-      key: `${this.loc}-${this.name}`
+      key: `${this.loc}-${this.name}`,
     });
   }
   /**
@@ -959,12 +1020,16 @@ class Warning {
     this._expectSummary = Div({title: summary, textContent: summary});
     this._expectPretty = Pre({textContent: pretty});
     this._expectNotes = Div({});
+    const noteStyle = {fontSize: '11px', color: '#555'};
     for (const note of notes) {
-      this._expectNotes.append(Div({style: {fontSize: '11px', color: '#555'}}, note));
+      this._expectNotes.append(Div({style: noteStyle}, note));
     }
+    const fullType = Summary({textContent: 'full type'});
+    const parts = [this._expectPretty, rendered, this._expectNotes];
+    this._expectDetails = Details({}, fullType, ...parts);
     this.td_expect.append(
       this._expectSummary,
-      Details({}, Summary({textContent: 'full type'}), this._expectPretty, rendered, this._expectNotes),
+      this._expectDetails,
     );
   }
   get expect() {

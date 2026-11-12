@@ -15,7 +15,9 @@ function formatMapKey(key) {
   // Primitives render directly; the describeValue walk only pays off for
   // object-like keys, and `Map<number, T>` scales into the tens of
   // thousands of entries on hot paths where this label is failure-only.
-  if (key === null || typeof key === 'number' || typeof key === 'boolean' || typeof key === 'symbol') {
+  const isScalar = key === null || typeof key === 'number';
+  const isFlag = typeof key === 'boolean' || typeof key === 'symbol';
+  if (isScalar || isFlag) {
     return String(key);
   }
   try {

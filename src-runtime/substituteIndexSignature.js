@@ -11,8 +11,12 @@ import {substitutes, recurseSubstitute} from "./substitutes.js";
  * // {type: 'indexSignature', indexType: '"a"'}
  */
 function substituteIndexSignature(type, search, replace, warn) {
-  const indexType = type.indexType === undefined ? undefined : recurseSubstitute(type.indexType, search, replace, warn);
-  const indexParameters = substitutes.substituteDescriptors(type.indexParameters, search, replace, warn);
+  let {indexType} = type;
+  if (indexType !== undefined) {
+    indexType = recurseSubstitute(indexType, search, replace, warn);
+  }
+  const params = type.indexParameters;
+  const indexParameters = substitutes.substituteDescriptors(params, search, replace, warn);
   if (indexType === type.indexType && indexParameters === type.indexParameters) {
     return type;
   }

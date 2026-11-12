@@ -43,10 +43,7 @@ function prepare() {
   // Static shape used by the key machinery.
   registerTypedef('Entity', {
     type: 'object',
-    properties: {
-      camera: 'CameraComponent',
-      name: 'string',
-    },
+    properties: {camera: 'CameraComponent', name: 'string'},
   });
 }
 /**
@@ -251,8 +248,14 @@ function prepareCameraTower() {
   registerClass(Component);
   registerClass(Color);
   registerClass(CamComponent);
-  registerTypedef('Color', {type: 'object', properties: {r: 'number', g: 'number', b: 'number', a: 'number'}});
-  registerTypedef('CamComponent', {type: 'object', properties: {clearColor: 'Color', fov: 'number'}});
+  registerTypedef('Color', {
+    type: 'object',
+    properties: {r: 'number', g: 'number', b: 'number', a: 'number'},
+  });
+  registerTypedef('CamComponent', {
+    type: 'object',
+    properties: {clearColor: 'Color', fov: 'number'},
+  });
   registerTypedef('CamEntity', {
     type: 'object',
     properties: {
@@ -275,7 +278,11 @@ function prepareCameraTower() {
         type: 'object',
         properties: {
           calculateProjection: {type: 'Function', optional: true},
-          clearColor: {type: 'union', members: ['Color', {type: 'array', elementType: 'number'}], optional: true},
+          clearColor: {
+            type: 'union',
+            members: ['Color', {type: 'array', elementType: 'number'}],
+            optional: true,
+          },
         },
       },
     },
@@ -423,7 +430,10 @@ function testMergedIntersectionWholeExcess() {
   const expect = expandType('CamMerged<"camera">');
   const passing = [
     {clearColor: [0.5, 0.6, 0.9, 1]},
-    {clearColor: new Color(), calculateProjection: () => {}},
+    {
+      clearColor: new Color(),
+      calculateProjection: () => {},
+    },
   ];
   for (const value of passing) {
     if (!validateType(value, expect, 'loc', 'data', true, warn, 0)) {

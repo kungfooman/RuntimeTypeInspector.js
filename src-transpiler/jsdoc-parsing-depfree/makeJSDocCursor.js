@@ -1,5 +1,4 @@
 import {lexJSDoc} from './lexJSDoc.js';
-
 /**
  * Makes a cursor over one JSDoc text. The cursor owns the source, the
  * token stream, and the read position. `consumedUpTo` is the source offset

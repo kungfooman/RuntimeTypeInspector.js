@@ -203,7 +203,10 @@ function describeValueType(value, depth = 2) {
     }
     return `${tag}(${len}) [${shown.join(', ')}${len > count ? ', ...' : ''}]`;
   }
-  if (value instanceof ArrayBuffer || (typeof SharedArrayBuffer !== 'undefined' && value instanceof SharedArrayBuffer)) {
+  const isBuffer = value instanceof ArrayBuffer;
+  const hasShared = typeof SharedArrayBuffer !== 'undefined';
+  const isShared = hasShared && value instanceof SharedArrayBuffer;
+  if (isBuffer || isShared) {
     let tag = 'ArrayBuffer';
     try {
       tag = value.constructor?.name ?? tag;
@@ -267,7 +270,9 @@ function describeValueType(value, depth = 2) {
     return `[${shown.join(', ')}${value.length > 3 ? ', ...' : ''}]`;
   }
   const proto = Object.getPrototypeOf(value);
-  const prefix = proto !== null && proto !== Object.prototype && value.constructor?.name ? `${value.constructor.name} ` : '';
+  const hasProto = proto !== null && proto !== Object.prototype;
+  const tag = hasProto ? value.constructor?.name : '';
+  const prefix = tag ? `${tag} ` : '';
   if (prefix) {
     let keys;
     try {
@@ -281,7 +286,8 @@ function describeValueType(value, depth = 2) {
     if (keys.length > MAX_PRETTY_ENTRIES) {
       return prefix.trim();
     }
-    const shown = keys.slice(0, 5).map((key) => `${key}: ${describeValueType(value[key], depth - 1)}`);
+    const preview = (key) => `${key}: ${describeValueType(value[key], depth - 1)}`;
+    const shown = keys.slice(0, 5).map(preview);
     return `${prefix}{${shown.join(', ')}${keys.length > 5 ? ', ...' : ''}}`;
   }
   const snapshot = snapshotTag(value);
@@ -312,8 +318,8 @@ function describeSnapshot(snapshot, tag, depth) {
     if ((tag === 'Map' || tag === 'Set') && typeof snapshot.size === 'number') {
       return `${tag}(${snapshot.size})`;
     }
-    if ((tag === 'ArrayBuffer' || tag === 'SharedArrayBuffer' || tag === 'DataView') &&
-        typeof snapshot.byteLength === 'number') {
+    const isBufferTag = tag === 'ArrayBuffer' || tag === 'SharedArrayBuffer' || tag === 'DataView';
+    if (isBufferTag && typeof snapshot.byteLength === 'number') {
       return `${tag}(${snapshot.byteLength})`;
     }
     if ((tag.endsWith('Array') || tag === 'Buffer') && typeof snapshot.length === 'number') {
@@ -367,7 +373,9 @@ function prettySnapshot(snapshot, tag) {
       lines.push(']');
       return lines.join('\n');
     }
-    if (tag === 'bigint' || tag === 'ArrayBuffer' || tag === 'SharedArrayBuffer' || tag === 'DataView') {
+    const isBufferTag = tag === 'ArrayBuffer' || tag === 'SharedArrayBuffer';
+    const isViewTag = tag === 'DataView';
+    if (tag === 'bigint' || isBufferTag || isViewTag) {
       return describeSnapshot(snapshot, tag, 2);
     }
     const keys = Object.keys(snapshot).filter((key) => key !== '$type');
@@ -506,7 +514,10 @@ function prettyNonCollection(value) {
     }
     return prettyTypedArray(value, tag);
   }
-  if (value instanceof ArrayBuffer || (typeof SharedArrayBuffer !== 'undefined' && value instanceof SharedArrayBuffer)) {
+  const isBuffer = value instanceof ArrayBuffer;
+  const hasShared = typeof SharedArrayBuffer !== 'undefined';
+  const isShared = hasShared && value instanceof SharedArrayBuffer;
+  if (isBuffer || isShared) {
     return describeValueType(value, 2);
   }
   let proto;
@@ -571,7 +582,7 @@ function prettyValue(value) {
     return pretty;
   }
   try {
-    const size = value.size;
+    const {size} = value;
     const tag = isMap ? 'Map' : 'Set';
     if (size === 0) {
       return `${tag}(0) {}`;

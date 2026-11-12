@@ -32,7 +32,7 @@ function readUnbracedType(headRaw) {
   if (word === null) {
     return '';
   }
-  let out = word[1];
+  let [, out] = word;
   let rest = line.slice(word[0].length);
   // Braced heads slice differently by caller: `sliceHead` trims the cast
   // tail's outer ` }` (the head ends at the object's own `}`), while the
@@ -80,7 +80,9 @@ function readUnbracedType(headRaw) {
     // Spacing is the node's own: the operator joins with exactly the
     // whitespace the head carried (`Foo & Bar` joins spaced, `Foo&Bar`
     // joins tight), because tsc never re-typesets the clause.
-    const join = operator[0].startsWith(' ') || operator[0].endsWith(' ') || rest.startsWith(' ') ? ' ' + operator[1] + ' ' : operator[1];
+    const padded = operator[0].startsWith(' ') || operator[0].endsWith(' ') || rest.startsWith(' ');
+    const spaced = ` ${operator[1]} `;
+    const join = padded ? spaced : operator[1];
     const after = rest.slice(operator[0].length);
     const member = after.match(/^[A-Za-z_$][\w$]*/);
     const generic = after.match(/^[A-Za-z_$][\w$]*\s*(<[^<>\n]*>)/);
@@ -128,7 +130,7 @@ function readUnbracedType(headRaw) {
     // The orphan `;` is statement text on a closed clause (the svelte
     // cast tail `...; }` the head pre-strip dropped): the depfree side
     // reads the same as `stripTsBraces`.
-    const stripped = tail[1];
+    const [, stripped] = tail;
     const afterTail = tail[3].replace(/;\s*\}?\s*$/, '').trim();
     if (afterTail !== '' && /^[A-Za-z_$]/.test(afterTail)) {
       // Trailing prose the head sliced in: keep the stripped object

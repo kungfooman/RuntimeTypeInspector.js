@@ -1,27 +1,9 @@
 import {Stringifier} from './Stringifier.js';
 /** @typedef {import("@babel/types").Node} Node */
-const CONST_TYPE = {
-  f32: 'f32.const',
-  f64: 'f64.const',
-  i32: 'i32.const',
-  i64: 'i64.const',
-};
-const NEG_OP = {
-  f32: 'f32.neg',
-  f64: 'f64.neg',
-};
-const EQZ_OP = {
-  f32: 'f32.eqz',
-  f64: 'f64.eqz',
-  i32: 'i32.eqz',
-  i64: 'i64.eqz',
-};
-const NE_OP = {
-  f32: 'f32.ne',
-  f64: 'f64.ne',
-  i32: 'i32.ne',
-  i64: 'i64.ne',
-};
+const CONST_TYPE = {f32: 'f32.const', f64: 'f64.const', i32: 'i32.const', i64: 'i64.const'};
+const NEG_OP = {f32: 'f32.neg', f64: 'f64.neg'};
+const EQZ_OP = {f32: 'f32.eqz', f64: 'f64.eqz', i32: 'i32.eqz', i64: 'i64.eqz'};
+const NE_OP = {f32: 'f32.ne', f64: 'f64.ne', i32: 'i32.ne', i64: 'i64.ne'};
 const ARITH_OP = {
   f32: {add: 'f32.add', sub: 'f32.sub', mul: 'f32.mul', div: 'f32.div'},
   f64: {add: 'f64.add', sub: 'f64.sub', mul: 'f64.mul', div: 'f64.div'},
@@ -35,8 +17,24 @@ const CMP_OP = {
   i64: {lt: 'i64.lt_s', gt: 'i64.gt_s', le: 'i64.le_s', ge: 'i64.ge_s', eq: 'i64.eq', ne: 'i64.ne'},
 };
 const MATH_OP = {
-  f32: {abs: 'f32.abs', sqrt: 'f32.sqrt', min: 'f32.min', max: 'f32.max', floor: 'f32.floor', ceil: 'f32.ceil', trunc: 'f32.trunc'},
-  f64: {abs: 'f64.abs', sqrt: 'f64.sqrt', min: 'f64.min', max: 'f64.max', floor: 'f64.floor', ceil: 'f64.ceil', trunc: 'f64.trunc'},
+  f32: {
+    abs: 'f32.abs',
+    sqrt: 'f32.sqrt',
+    min: 'f32.min',
+    max: 'f32.max',
+    floor: 'f32.floor',
+    ceil: 'f32.ceil',
+    trunc: 'f32.trunc',
+  },
+  f64: {
+    abs: 'f64.abs',
+    sqrt: 'f64.sqrt',
+    min: 'f64.min',
+    max: 'f64.max',
+    floor: 'f64.floor',
+    ceil: 'f64.ceil',
+    trunc: 'f64.trunc',
+  },
 };
 const CMP_OPERATORS = ['<', '<=', '>', '>=', '==', '!='];
 /**
@@ -87,7 +85,7 @@ class WATConverter extends Stringifier {
     if (node === null) {
       return '';
     }
-    const { leadingComments, trailingComments } = node;
+    const {leadingComments, trailingComments} = node;
     if (node.type === 'File') {
       this.parents.length = 0;
     }
@@ -161,7 +159,7 @@ class WATConverter extends Stringifier {
       return '';
     }
     this.lastCommentBlockIndex = loc.start.index;
-    const spaces = this.spaces;
+    const {spaces} = this;
     let out = '';
     const dedicatedLine = spaces.length === loc.start.column;
     if (dedicatedLine) {
@@ -188,7 +186,7 @@ class WATConverter extends Stringifier {
       return '';
     }
     this.lastCommentLineIndex = loc.start.index;
-    const spaces = this.spaces;
+    const {spaces} = this;
     const dedicatedLine = spaces.length === loc.start.column;
     let out = dedicatedLine ? '\n' + spaces : ' ';
     out += `;;${value}\n`;
@@ -246,11 +244,11 @@ class WATConverter extends Stringifier {
    */
   registerModuleData(body) {
     let offset = 0;
-    body.forEach(stmt => {
+    body.forEach((stmt) => {
       if (stmt.type !== 'VariableDeclaration' || stmt.kind !== 'const') {
         return;
       }
-      const decl = stmt.declarations[0];
+      const [decl] = stmt.declarations;
       if (!decl || decl.id.type !== 'Identifier') {
         return;
       }
@@ -289,7 +287,7 @@ class WATConverter extends Stringifier {
     if (stmt.type !== 'VariableDeclaration' || stmt.kind !== 'const') {
       return false;
     }
-    const decl = stmt.declarations[0];
+    const [decl] = stmt.declarations;
     return !!decl && decl.id.type === 'Identifier' && !!this.arrays[decl.id.name];
   }
   /**
@@ -326,13 +324,7 @@ class WATConverter extends Stringifier {
    */
   registerClass(node) {
     const {id, body} = node;
-    const cls = {
-      fields: [],
-      offsets: {},
-      defaults: {},
-      methods: new Set(),
-      size: 0,
-    };
+    const cls = {fields: [], offsets: {}, defaults: {}, methods: new Set(), size: 0};
     body.body.forEach(member => {
       if (member.static) {
         return;
@@ -390,7 +382,8 @@ class WATConverter extends Stringifier {
       if (!isThis) {
         return;
       }
-      const name = target.property.type === 'Identifier' ? target.property.name : target.property.value;
+      const {property} = target;
+      const name = property.type === 'Identifier' ? property.name : property.value;
       this.addClassField(cls, name);
     });
   }
@@ -442,7 +435,8 @@ class WATConverter extends Stringifier {
     this.numSpaces++;
     out += `${this.spaces}(local $result i32)\n`;
     out += `${this.spaces}(local.set $result (global.get $heapPtr))\n`;
-    out += `${this.spaces}(global.set $heapPtr (i32.add (global.get $heapPtr) (local.get $size)))\n`;
+    const advance = '(global.set $heapPtr (i32.add (global.get $heapPtr) (local.get $size)))';
+    out += `${this.spaces}${advance}\n`;
     out += `${this.spaces}(local.get $result)\n`;
     this.numSpaces--;
     out += `${spaces})\n`;
@@ -534,7 +528,7 @@ class WATConverter extends Stringifier {
     localNames.forEach(localName => {
       out += `${this.spaces}(local $${localName} ${t})\n`;
     });
-    this.parents.push({ type: 'BlockStatement' });
+    this.parents.push({type: 'BlockStatement'});
     out += `${this.spaces}(block $exit (result ${t})\n`;
     this.numSpaces++;
     out += body.body.map(statement => this.toSource(statement)).join('');
@@ -961,7 +955,14 @@ class WATConverter extends Stringifier {
     }
     let opCode = '';
     if (CMP_OPERATORS.includes(operator)) {
-      const opName = ({'<': 'lt', '<=': 'le', '>': 'gt', '>=': 'ge', '==': 'eq', '!=': 'ne'})[operator];
+      const opName = ({
+        '<': 'lt',
+        '<=': 'le',
+        '>': 'gt',
+        '>=': 'ge',
+        '==': 'eq',
+        '!=': 'ne',
+      })[operator];
       opCode = CMP_OP[t][opName];
     } else {
       const opName = ({'+': 'add', '-': 'sub', '*': 'mul', '/': 'div'})[operator];
@@ -1094,7 +1095,8 @@ class WATConverter extends Stringifier {
     const {spaces} = this;
     const t = this.currentType;
     if (argument.type !== 'Identifier') {
-      return `${spaces}(${CONST_TYPE[t]} 0.0) ;; Unsupported UpdateExpression target ${argument.type}\n`;
+      const unsupported = `Unsupported UpdateExpression target ${argument.type}`;
+      return `${spaces}(${CONST_TYPE[t]} 0.0) ;; ${unsupported}\n`;
     }
     const op = operator === '++' ? ARITH_OP[t].add : ARITH_OP[t].sub;
     let out = `${spaces}(local.set $${argument.name}\n`;
@@ -1118,7 +1120,8 @@ class WATConverter extends Stringifier {
     const {left, operator, right} = node;
     const {spaces} = this;
     if (operator !== '=') {
-      return `${spaces}(${CONST_TYPE[this.currentType]} 0.0) ;; Unsupported assignment operator: ${operator}\n`;
+      const unsupported = `Unsupported assignment operator: ${operator}`;
+      return `${spaces}(${CONST_TYPE[this.currentType]} 0.0) ;; ${unsupported}\n`;
     }
     if (left.type === 'Identifier') {
       let out = `${spaces}(local.set $${left.name}\n`;
@@ -1131,7 +1134,8 @@ class WATConverter extends Stringifier {
     if (left.type === 'MemberExpression') {
       const member = left;
       const pointerName = this.instancePointerName(member.object);
-      const fieldName = member.property.type === 'Identifier' ? member.property.name : member.property.value;
+      const {property} = member;
+      const fieldName = property.type === 'Identifier' ? property.name : property.value;
       if (pointerName) {
         const clsName = this.resolveInstanceClass(member.object, fieldName);
         if (clsName && fieldName in this.classes[clsName].offsets) {
@@ -1149,10 +1153,13 @@ class WATConverter extends Stringifier {
         out += `${spaces})\n`;
         return out;
       }
-      const objectName = member.object.type === 'Identifier' ? member.object.name : member.object.type;
-      return `${spaces}(${CONST_TYPE[this.currentType]} 0.0) ;; Unsupported store target ${objectName}\n`;
+      const isKnown = member.object.type === 'Identifier';
+      const objectName = isKnown ? member.object.name : member.object.type;
+      const unsupported = `Unsupported store target ${objectName}`;
+      return `${spaces}(${CONST_TYPE[this.currentType]} 0.0) ;; ${unsupported}\n`;
     }
-    return `${spaces}(${CONST_TYPE[this.currentType]} 0.0) ;; Unsupported assignment target ${left.type}\n`;
+    const unsupported = `Unsupported assignment target ${left.type}`;
+    return `${spaces}(${CONST_TYPE[this.currentType]} 0.0) ;; ${unsupported}\n`;
   }
   /**
    * Produces an i32 source for the element index of an array/object member access.
@@ -1163,7 +1170,8 @@ class WATConverter extends Stringifier {
   arrayIndexSource(arr, member) {
     if (!arr.isObject) {
       if (!member.computed) {
-        return `${this.spaces};; Unsupported ${member.object.name}.${member.property.name} on array\n`;
+        const unsupported = `Unsupported ${member.object.name}.${member.property.name} on array`;
+        return `${this.spaces};; ${unsupported}\n`;
       }
       return this.toI32(member.property);
     }
@@ -1400,7 +1408,8 @@ class WATConverter extends Stringifier {
   LogicalExpression(node) {
     const {left, operator, right} = node;
     const {spaces} = this;
-    const resultType = this.isBooleanI32(left) && this.isBooleanI32(right) ? 'i32' : this.currentType;
+    const bothBoolean = this.isBooleanI32(left) && this.isBooleanI32(right);
+    const resultType = bothBoolean ? 'i32' : this.currentType;
     const thenOperand = operator === '&&' ? right : left;
     const elseOperand = operator === '&&' ? left : right;
     let out = `${spaces}(if (result ${resultType})\n`;
@@ -1486,11 +1495,14 @@ class WATConverter extends Stringifier {
     const {callee, arguments: args} = node;
     const {spaces} = this;
     if (callee.type === 'MemberExpression') {
-      const methodName = callee.property.type === 'Identifier' ? callee.property.name : callee.property.value;
+      const {property} = callee;
+      const isName = property.type === 'Identifier';
+      const methodName = isName ? property.name : property.value;
       if (callee.object.type === 'Identifier' && callee.object.name === 'Math') {
         const mathOp = MATH_OP[this.currentType]?.[methodName];
         if (!mathOp) {
-          return `${spaces}(f32.const 0.0) ;; Unsupported Math.${methodName} for ${this.currentType}\n`;
+          const unsupported = `Unsupported Math.${methodName} for ${this.currentType}`;
+          return `${spaces}(f32.const 0.0) ;; ${unsupported}\n`;
         }
         let out = `${spaces}(${mathOp}\n`;
         this.numSpaces++;

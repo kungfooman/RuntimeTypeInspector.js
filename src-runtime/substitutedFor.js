@@ -27,7 +27,8 @@ const substitutedCache = new Map();
  * // frozen {type: 'object', properties: {a: '"a"'}}
  */
 function substitutedFor(expect, loc, name, templates, warn) {
-  const dictKey = Object.keys(templates).sort().map((key) => `${key}:${JSON.stringify(templates[key])}`).join(',');
+  const entry = (key) => `${key}:${JSON.stringify(templates[key])}`;
+  const dictKey = Object.keys(templates).sort().map(entry).join(',');
   const key = `${loc}\n${name}\n${dictKey}`;
   let sub = substitutedCache.get(key);
   if (sub === undefined) {

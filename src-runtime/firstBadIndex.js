@@ -52,7 +52,9 @@ function firstBadIndex(value, length, elementType) {
     // The Infinity verdict is picked once per scan, so the hot loop runs
     // a plain predicate per element instead of evaluating a boolean flag
     // and the options object every element.
-    const isBad = options.checkInfinity ? isFailingNumberDisallowingInf : isFailingNumberAllowingInf;
+    const disallowing = isFailingNumberDisallowingInf;
+    const allowing = isFailingNumberAllowingInf;
+    const isBad = options.checkInfinity ? disallowing : allowing;
     for (let i = 0; i < length; i++) {
       if (isBad(value[i])) {
         return i;

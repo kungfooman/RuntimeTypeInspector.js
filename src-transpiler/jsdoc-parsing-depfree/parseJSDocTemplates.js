@@ -1,7 +1,6 @@
 import {expandTypeDepFree} from "../expandTypeDepFree.js";
 import {parseJSDocDocument} from "./parseJSDocDocument.js";
 /** @import {ExpandType, ExpandTypeReturnType} from './parseJSDoc.js' */
-
 /**
  * Parses JSDoc comments to extract template type information. Thin view
  * over the single document parse: the document feeds params, templates,

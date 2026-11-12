@@ -2,7 +2,6 @@ import {isTagToken} from './isTagToken.js';
 import {makeJSDocCursor} from './makeJSDocCursor.js';
 import {parseBraceType} from './parseBraceType.js';
 import {readUnbracedType} from './readUnbracedType.js';
-
 /**
  * Parses one JSDoc text into raw tag nodes in source order. A cursor owns
  * the source, the token stream, and the read position; each candidate tag
@@ -80,7 +79,7 @@ function sliceTemplateHead(cursor, start) {
   let next = cursor.index;
   let depth = 0;
   while (next < cursor.tokens.length) {
-    const kind = cursor.tokens[next].kind;
+    const {kind} = cursor.tokens[next];
     if (kind === 'paren') {
       if (cursor.tokens[next].value === '(') {
         depth += 1;
@@ -263,7 +262,8 @@ function parseJSDocNodes(src) {
       // source: only spaces/stars may sit between tag and brace, and no
       // newline may.
       let look = cursor.index + 1;
-      while (look < cursor.tokens.length && (cursor.tokens[look].kind === 'space' || cursor.tokens[look].kind === 'stars')) {
+      const skippable = (token) => token.kind === 'space' || token.kind === 'stars';
+      while (look < cursor.tokens.length && skippable(cursor.tokens[look])) {
         look += 1;
       }
       if (look < cursor.tokens.length && cursor.tokens[look].kind === 'lbrace') {
@@ -336,7 +336,8 @@ function parseJSDocNodes(src) {
     // past the consumed offset, so it opens (matching tsc, which attaches
     // it).
     let look = cursor.index + 1;
-    while (look < cursor.tokens.length && (cursor.tokens[look].kind === 'space' || cursor.tokens[look].kind === 'stars')) {
+    const skippable = (token) => token.kind === 'space' || token.kind === 'stars';
+    while (look < cursor.tokens.length && skippable(cursor.tokens[look])) {
       look += 1;
     }
     if (look < cursor.tokens.length && cursor.tokens[look].kind === 'lbrace') {
@@ -345,7 +346,8 @@ function parseJSDocNodes(src) {
       tags.push({tag, typeRaw, headRaw: sliceHead(cursor, headStart)});
       continue;
     }
-    cursor.consumedUpTo = Math.max(cursor.consumedUpTo, cursor.tokens[look]?.pos ?? cursor.src.length);
+    const fallback = cursor.tokens[look]?.pos ?? cursor.src.length;
+    cursor.consumedUpTo = Math.max(cursor.consumedUpTo, fallback);
     tags.push({tag, typeRaw: '', headRaw: ''});
     cursor.index += 1;
   }

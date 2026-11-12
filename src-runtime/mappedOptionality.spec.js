@@ -13,9 +13,16 @@ function clearTypedefs() {
 function prepare() {
   clearTypedefs();
   registerTypedef('Full', expandType('{count: number, pos: string}'));
-  registerTypedef('Over', {type: 'object', properties: {
-    pos: {type: 'union', members: ['string', {type: 'array', elementType: 'number'}], optional: true}
-  }});
+  registerTypedef('Over', {
+    type: 'object',
+    properties: {
+      pos: {
+        type: 'union',
+        members: ['string', {type: 'array', elementType: 'number'}],
+        optional: true,
+      },
+    },
+  });
   registerTypedef('Merged', expandType('Omit<Partial<Full>, keyof Over> & Over'));
   registerTypedef('Mapped', expandType('{[P in keyof Merged]: Merged[P]}'));
   registerTypedef('Strict', expandType('Omit<Full, keyof Over> & Over'));
@@ -27,12 +34,19 @@ function testSingleUnwrapKeepsFlags() {
   prepare();
   const created = createTypeFromIndexedAccess(expandType('Merged["pos"]'), warn);
   return created && created.type === 'union' && created.optional === true &&
-    JSON.stringify(created.members) === JSON.stringify(['string', {type: 'array', elementType: 'number'}]);
+    JSON.stringify(created.members) === JSON.stringify(['string', {
+      type: 'array',
+      elementType: 'number',
+    }]);
 }
 function testMultiStaysUnion() {
   // Multi-key select stays a union wrapper like before.
   prepare();
-  const created = createTypeFromIndexedAccess({type: 'indexedAccess', index: {type: 'union', members: ['"count"', '"pos"']}, object: 'Merged'}, warn);
+  const created = createTypeFromIndexedAccess({
+    type: 'indexedAccess',
+    index: {type: 'union', members: ['"count"', '"pos"']},
+    object: 'Merged',
+  }, warn);
   return created && created.type === 'union' && created.optional === false;
 }
 function testUnresolvableStaysUndefined() {

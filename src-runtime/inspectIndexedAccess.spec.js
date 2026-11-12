@@ -1,5 +1,5 @@
 import {inspectIndexedAccess} from './inspectIndexedAccess.js';
-import {options             } from './options.js';
+import {options} from './options.js';
 const tests = [
   () => inspectIndexedAccess([1, 2, 3], 1) === 2,
   () => inspectIndexedAccess('abc', 0) === 'a',

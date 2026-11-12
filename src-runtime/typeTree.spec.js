@@ -19,7 +19,7 @@ function testKeyofListsKeys() {
   if (tree.kind !== 'alias') {
     return false;
   }
-  const inter = tree.children[0];
+  const [inter] = tree.children;
   if (inter.kind !== 'intersection') {
     return false;
   }
@@ -49,7 +49,7 @@ function testAliasClimb() {
   if (tree.kind !== 'alias' || !tree.children?.length) {
     return false;
   }
-  const obj = tree.children[0];
+  const [obj] = tree.children;
   return obj.kind === 'object' && obj.children.some((_) => _.label.startsWith('camera:'));
 }
 function testUnionMarks() {
@@ -91,7 +91,7 @@ function testConditionDescends() {
   if (entered.entered !== true || skipped.entered !== false) {
     return false;
   }
-  const branch = tree.children[0];
+  const [branch] = tree.children;
   return branch.kind === 'object' && branch.passes === 'shape' &&
     branch.children.some((_) => _.label.startsWith('fov:') && _.passes === false);
 }
@@ -104,11 +104,11 @@ function testTransparentWrapperUnwraps() {
   if (tree.kind !== 'reference' || !tree.children?.length) {
     return false;
   }
-  const selected = tree.children[0];
+  const [selected] = tree.children;
   if (selected.kind !== 'indexedAccess' || !selected.children?.length) {
     return false;
   }
-  const shape = selected.children[0];
+  const [shape] = selected.children;
   return shape.kind === 'object' && shape.children.some((_) => _.label.startsWith('fov:'));
 }
 function testIndexedAccessDirect() {
@@ -125,7 +125,7 @@ function testPartialExpands() {
   if (tree.kind !== 'reference' || !tree.children?.length) {
     return false;
   }
-  const shape = tree.children[0];
+  const [shape] = tree.children;
   return shape.kind === 'object' &&
     shape.children.some((_) => _.label.startsWith('a:')) &&
     shape.children.some((_) => _.label.startsWith('b:'));
@@ -134,7 +134,7 @@ function testPickExpands() {
   reset();
   registerTypedef('Box', expandType('{a: number, b: string}'));
   const tree = buildTypeTree(expandType('Pick<Box, "a">'), {a: 1}, 'p');
-  const shape = tree.children?.[0];
+  const [shape] = tree.children ?? [];
   return tree.kind === 'reference' && shape?.kind === 'object' &&
     shape.children.length === 1 && shape.children[0].label.startsWith('a:');
 }
@@ -168,8 +168,11 @@ function testObjectChildrenProbeValues() {
   // their own value: name ✗, email ✓.
   reset();
   registerTypedef('User', expandType('{id: number, name: string, email: string, passwordHash: string}'));
-  const tree = buildTypeTree(expandType('Pick<User, "name" | "email">'), {name: 1, email: 'a@b.c'}, 'userInfo');
-  const shape = tree.children?.[0];
+  const tree = buildTypeTree(expandType('Pick<User, "name" | "email">'), {
+    name: 1,
+    email: 'a@b.c',
+  }, 'userInfo');
+  const [shape] = tree.children ?? [];
   if (tree.kind !== 'reference' || shape?.kind !== 'object') {
     return false;
   }
@@ -183,7 +186,7 @@ function testAbsentOptionalKeysPass() {
   reset();
   registerTypedef('Box', expandType('{a: number, b: string}'));
   const tree = buildTypeTree(expandType('Partial<Box>'), {}, 'p');
-  const shape = tree.children?.[0];
+  const [shape] = tree.children ?? [];
   return shape?.kind === 'object' &&
     shape.children.length === 2 &&
     shape.children.every((_) => _.passes === true);
@@ -193,8 +196,12 @@ function testTreeExtrasOmit() {
   // removal wording and a dotted fix path, not just in Diagnosis.
   reset();
   registerTypedef('User', expandType('{id: number, name: string, email: string}'));
-  const tree = buildTypeTree(expandType('Pick<User, "name" | "email">'), {name: 1, email: 'a', id: 2}, 'userInfo', undefined, 'userInfo');
-  const shape = tree.children?.[0];
+  const tree = buildTypeTree(expandType('Pick<User, "name" | "email">'), {
+    name: 1,
+    email: 'a',
+    id: 2,
+  }, 'userInfo', undefined, 'userInfo');
+  const [shape] = tree.children ?? [];
   const extra = shape?.children?.find((_) => _.kind === 'extra');
   return shape?.kind === 'object' && !!extra && extra.passes === false &&
     extra.detail.includes('not selected by') && extra.detail.includes('Pick') &&
@@ -202,7 +209,10 @@ function testTreeExtrasOmit() {
 }
 function testTreeExtrasPlain() {
   reset();
-  const tree = buildTypeTree(expandType('{fov: number}'), {fov: 60, fovv: 1}, 'options', undefined, 'options');
+  const tree = buildTypeTree(expandType('{fov: number}'), {
+    fov: 60,
+    fovv: 1,
+  }, 'options', undefined, 'options');
   const extra = tree.children?.find((_) => _.kind === 'extra');
   return !!extra && extra.passes === false && extra.detail.includes('check spelling');
 }
@@ -222,7 +232,10 @@ function testTreeExtrasUnmarkedWhenLenient() {
   const prev = options.exactObjects;
   options.exactObjects = false;
   try {
-    const tree = buildTypeTree(expandType('{fov: number}'), {fov: 60, fovv: 1}, 'options', undefined, 'options');
+    const tree = buildTypeTree(expandType('{fov: number}'), {
+      fov: 60,
+      fovv: 1,
+    }, 'options', undefined, 'options');
     const extra = tree.children?.find((_) => _.kind === 'extra');
     return !!extra && extra.passes === undefined && !extra.fix;
   } finally {

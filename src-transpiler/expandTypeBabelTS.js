@@ -60,7 +60,7 @@ function parseTypeBabelTS(str) {
   // type tmp = (...string) => 123; to have a function context
   str = `type tmp = ${str};`;
   const ast = parse(str, {plugins: ['typescript']});
-  const first = ast.program.body[0];
+  const [first] = ast.program.body;
   // Input is always the synthesized `type tmp = ...` alias above.
   if (first.type !== 'TSTypeAliasDeclaration') {
     throw Error('parseTypeBabelTS> expected synthesized type alias, got ' + first.type);
@@ -192,11 +192,7 @@ function toSourceBabelTS(node) {
         if (key === undefined || val === undefined) {
           return undefined;
         }
-        return ({
-          type: 'record',
-          key,
-          val,
-        });
+        return ({type: 'record', key, val});
       } else if (name === 'Object' && (!typeArguments || typeArguments?.length === 0)) {
         return {type: 'object', properties: {}};
       } else if (name === 'Map' && typeArguments?.length === 2) {
@@ -239,10 +235,7 @@ function toSourceBabelTS(node) {
       return 'number';
     case 'TSIntersectionType': {
       const members = node.types.map(toSourceBabelTSOrAny);
-      return ({
-        type: 'intersection',
-        members
-      });
+      return ({type: 'intersection', members});
     }
     case 'TSTupleType': {
       // Unnamed `?` elements (`[string, number?]`) become optional members
@@ -259,12 +252,9 @@ function toSourceBabelTS(node) {
             return {type: 'tupleMember', name: '', elementType: inner, optional: true};
           }
           return toSourceBabelTSOrAny(el);
-        }
+        },
       );
-      return ({
-        type: 'tuple',
-        elements
-      });
+      return ({type: 'tuple', elements});
     }
     case 'TSNamedTupleMember': {
       const nName = typeof node.label === 'string' ? node.label : node.label?.name;
@@ -273,12 +263,10 @@ function toSourceBabelTS(node) {
         return undefined;
       }
       /** @type {ExpandTupleMemberNode} */
-      const mem = {
-        type: 'tupleMember',
-        name: nName,
-        elementType: nType,
-      };
-      if (node.optional) mem.optional = true;
+      const mem = {type: 'tupleMember', name: nName, elementType: nType};
+      if (node.optional) {
+        mem.optional = true;
+      }
       return mem;
     }
     case 'TSRestType': {
@@ -292,12 +280,7 @@ function toSourceBabelTS(node) {
           return undefined;
         }
         /** @type {ExpandTupleMemberNode} */
-        const mem = {
-          type: 'tupleMember',
-          name: nName,
-          elementType: nType,
-          dotDot: true,
-        };
+        const mem = {type: 'tupleMember', name: nName, elementType: nType, dotDot: true};
         return mem;
       }
       const annotation = toSourceBabelTSOrAny(node.typeAnnotation);
@@ -305,10 +288,7 @@ function toSourceBabelTS(node) {
     }
     case 'TSUnionType': {
       const members = node.types.map(toSourceBabelTSOrAny);
-      return ({
-        type: 'union',
-        members
-      });
+      return ({type: 'union', members});
     }
     case 'TypeLiteral': {
       // Dead case: the Babel TS plugin emits `TSTypeLiteral`, never the
@@ -325,10 +305,7 @@ function toSourceBabelTS(node) {
       return node.name;
     case 'TSArrayType': {
       const elementType = toSourceBabelTSOrAny(node.elementType);
-      return ({
-        type: 'array',
-        elementType
-      });
+      return ({type: 'array', elementType});
     }
     case 'TSLiteralType':
       return toSourceBabelTS(node.literal);
@@ -371,10 +348,7 @@ function toSourceBabelTS(node) {
     case 'TSThisType':
       return 'this';
     case 'ObjectKeyword':
-      return {
-        type: 'object',
-        properties: {}
-      };
+      return {type: 'object', properties: {}};
     case 'ParenthesizedType':
       // fall-through for parentheses
       return toSourceBabelTS(node.type);
@@ -408,12 +382,7 @@ function toSourceBabelTS(node) {
         return undefined;
       }
       /** @type {ExpandMappingNode} */
-      const out = {
-        type: 'mapping',
-        iterable,
-        element,
-        result,
-      };
+      const out = {type: 'mapping', iterable, element, result};
       if (node.nameType) {
         out.nameType = toSourceBabelTSOrAny(node.nameType);
       }
@@ -444,12 +413,18 @@ function toSourceBabelTS(node) {
           /** @type {ExpandedType} */
           let type = toSourceBabelTSOrAny(member.typeAnnotation);
           if (member.optional) {
-            if (isExpandedObject(type)) type.optional = true;
-            else type = {type: 'atom', atomType: type, optional: true};
+            if (isExpandedObject(type)) {
+              type.optional = true;
+            } else {
+              type = {type: 'atom', atomType: type, optional: true};
+            }
           }
           if (member.readonly) {
-            if (isExpandedObject(type)) type.readonly = true;
-            else type = {type: 'atom', atomType: type, readonly: true};
+            if (isExpandedObject(type)) {
+              type.readonly = true;
+            } else {
+              type = {type: 'atom', atomType: type, readonly: true};
+            }
           }
           if (typeof name === 'string') {
             properties[name] = type;

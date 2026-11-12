@@ -21,7 +21,9 @@ export function compareText(warnObj) {
   lines.push('Diagnosis:');
   if (diagnosis.findings.length) {
     for (const finding of diagnosis.findings) {
-      lines.push(`- [${finding.kind}] ${finding.path}: ${finding.detail || ''} (expected ${finding.expected}, got ${finding.actual})`);
+      const shape = `(expected ${finding.expected}, got ${finding.actual})`;
+      const detail = finding.detail || '';
+      lines.push(`- [${finding.kind}] ${finding.path}: ${detail} ${shape}`);
     }
   } else {
     lines.push('- The value now passes (or the shape is opaque to the differ).');

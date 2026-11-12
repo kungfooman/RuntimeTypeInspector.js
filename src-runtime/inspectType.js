@@ -1,21 +1,21 @@
-import {crossContextPostMessage  } from './crossContextPostMessage.js';
-import {options                  } from './options.js';
-import {ignoredChecks            } from './ignoredChecks.js';
-import {customChecks             } from './customChecks.js';
-import {describeValueType        } from './describeValue.js';
-import {stringifyType            } from './stringifyType.js';
+import {crossContextPostMessage} from './crossContextPostMessage.js';
+import {options} from './options.js';
+import {ignoredChecks} from './ignoredChecks.js';
+import {customChecks} from './customChecks.js';
+import {describeValueType} from './describeValue.js';
+import {stringifyType} from './stringifyType.js';
 import {previewValue} from './previewValue.js';
 import {stringifyValue} from './stringifyValue.js';
-import {validateType             } from './validateType.js';
-import {partition                } from './partition.js';
+import {validateType} from './validateType.js';
+import {partition} from './partition.js';
 import {importNamespaceSpecifiers} from './registerImportNamespaceSpecifier.js';
-import {isClonable               } from './isClonable.js';
-import {tagSnapshot              } from './tagSnapshot.js';
-import {reportedKeys             } from './reportedKeys.js';
-import {tagValue                 } from './tagValue.js';
-import {captureStackLines        } from './captureStack.js';
-import {globalMessageHost        } from './globalMessageHost.js';
-import {recordCheck, recordSkip, nowMs       } from './checkStats.js';
+import {isClonable} from './isClonable.js';
+import {tagSnapshot} from './tagSnapshot.js';
+import {reportedKeys} from './reportedKeys.js';
+import {tagValue} from './tagValue.js';
+import {captureStackLines} from './captureStack.js';
+import {globalMessageHost} from './globalMessageHost.js';
+import {recordCheck, recordSkip, nowMs} from './checkStats.js';
 const breakpoints = new Set();
 /**
  * Snapshot budgets for panel-bound values: the tree batches rows on click,
@@ -129,9 +129,15 @@ function inspectType(value, expect, loc, name, critical = true) {
   if (typeof expect === 'string' && expect.includes('.')) {
     // Quoted literals (e.g. narrowed `"a.b.c"`) are values, not namespace
     // paths: rewriting them misfires `unhandled` noise on the next check.
-    const first = expect[0];
+    const [first] = expect;
     const last = expect[expect.length - 1];
-    const quoted = expect.length >= 2 && (first === '"' && last === '"' || first === "'" && last === "'");
+    const quotedStart = first === '"' && last === '"';
+    const quotedSingle = first === "'" && last === "'";
+    const quoted = expect.length >= 2 &&
+      (
+        quotedStart ||
+        quotedSingle
+      );
     if (!quoted) {
       // E.g. ['MathUtils', 'Quaternion']
       const parts = expect.split('.');
@@ -188,7 +194,13 @@ function inspectType(value, expect, loc, name, critical = true) {
     if (options.mode !== 'spam') {
       const tag = tagValue(value);
       if (reportedKeys.get(key) === tag) {
-        crossContextPostMessage({type: 'rti', action: 'addError', destination: 'ui', key, repeat: true});
+        crossContextPostMessage({
+          type: 'rti',
+          action: 'addError',
+          destination: 'ui',
+          key,
+          repeat: true,
+        });
         return ret;
       }
       reportedKeys.set(key, tag);
@@ -205,7 +217,10 @@ function inspectType(value, expect, loc, name, critical = true) {
     // Everything after it is RTI-only extra detail (kept, not replaced).
     let summary;
     try {
-      summary = `Argument of type ${describeValueType(value)} is not assignable to parameter of type ${stringifyType(expect)}.`;
+      const actual = describeValueType(value);
+      const wanted = stringifyType(expect);
+      summary = `Argument of type ${actual} is not assignable`;
+      summary += ` to parameter of type ${wanted}.`;
     } catch {
       summary = undefined;
     }
@@ -228,7 +243,10 @@ function inspectType(value, expect, loc, name, critical = true) {
     // content-free `[object Object]` string. Panel-sized budgets: the tree
     // batches on click, so capture roomy enough that batches yield data.
     if (!isClonable(value)) {
-      value = stringifyValue(value, {maxBreadth: PANEL_SNAPSHOT_BREADTH, maxNodes: PANEL_SNAPSHOT_NODES});
+      value = stringifyValue(value, {
+        maxBreadth: PANEL_SNAPSHOT_BREADTH,
+        maxNodes: PANEL_SNAPSHOT_NODES,
+      });
     } else {
       // Record class identity the post would otherwise strip: messaging
       // structured-clones, so instances arrive as plain data. Plain values
@@ -245,7 +263,20 @@ function inspectType(value, expect, loc, name, critical = true) {
         }
       }
     }
-    const msg = {type: 'rti', action: 'addError', destination: 'ui', value, expect, loc, name, valueToString, strings, extras, key, stack};
+    const msg = {
+      type: 'rti',
+      action: 'addError',
+      destination: 'ui',
+      value,
+      expect,
+      loc,
+      name,
+      valueToString,
+      strings,
+      extras,
+      key,
+      stack,
+    };
     try {
       crossContextPostMessage(msg);
     } catch (e) {

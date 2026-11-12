@@ -42,7 +42,10 @@ function testOverrideComposes() {
 function testOverrideRestored() {
   // The previous test left no trace: defaults are back in the table.
   return templateCandidates.resolveTemplateLiteralCandidates === resolveTemplateLiteralCandidates &&
-    JSON.stringify(resolveTemplateLiteralValues({quasis: ['a', 'b'], types: ['"x"']}, noop)) === '["axb"]';
+    JSON.stringify(resolveTemplateLiteralValues({
+      quasis: ['a', 'b'],
+      types: ['"x"'],
+    }, noop)) === '["axb"]';
 }
 const tests = [
   testTablePopulated,

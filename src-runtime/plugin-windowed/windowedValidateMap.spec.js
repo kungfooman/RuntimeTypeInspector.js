@@ -262,7 +262,9 @@ function testWindowsSpeedupRatio() {
     let best = Number.POSITIVE_INFINITY;
     for (let attempt = 0; attempt < 2; attempt++) {
       const start = performance.now();
-      for (let i = 0; i < iters; i++) round();
+      for (let i = 0; i < iters; i++) {
+        round();
+      }
       const perCheck = performance.now() - start;
       best = Math.min(best, perCheck / iters);
     }

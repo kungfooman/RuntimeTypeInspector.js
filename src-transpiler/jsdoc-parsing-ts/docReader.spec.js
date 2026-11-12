@@ -1,7 +1,6 @@
 import {canonicalDocEqual, canonicalDocCovers} from '../jsdoc-parsing-depfree/canonicalDocCompare.js';
 import {docReaderDepFree} from '../jsdoc-parsing-depfree/docReaderDepFree.js';
 import {docReaderTS} from './docReaderTS.js';
-
 // Every delimited harness input strips to bare tag text, which is the
 // readers' shared input shape. Delimiters stay at the call boundary:
 // the TS reader wraps them for `createSourceFile`, the depfree reader
@@ -80,7 +79,6 @@ const inputs = [
   '@overload\n@param {number[]} ...values\n@returns {number}',
   '@overload\n@param {string} label\n@param {...number[][]} [values]\n@returns {number}',
 ];
-
 // One function per input would be 25 near-identical functions; the loop
 // keeps the matrix in data while the label names the failing cell, so a
 // failure line still points at what broke. The parity harness runs the
@@ -96,5 +94,4 @@ function testReadersAgreeOnInputs() {
   }
   return true;
 }
-
 export const tests = [testReadersAgreeOnInputs];

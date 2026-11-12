@@ -1,5 +1,5 @@
 import {ast2jsonForComparison} from "./ast2jsonForComparison.js";
-import {parse                } from '@babel/parser';
+import {parse} from '@babel/parser';
 /**
  * @param {string} left - Left source code.
  * @param {string} right - Right source code.

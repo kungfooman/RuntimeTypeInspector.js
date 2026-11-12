@@ -82,7 +82,10 @@ function testIssue154PrettyNonNormalized() {
 }
 // Rest annotations in tuples print with spread syntax.
 function testRestKept() {
-  const str = stringifyType({type: 'tuple', elements: [1, {type: 'rest', annotation: {type: 'tuple', elements: [2, 3]}}]});
+  const str = stringifyType({
+    type: 'tuple',
+    elements: [1, {type: 'rest', annotation: {type: 'tuple', elements: [2, 3]}}],
+  });
   if (str !== '[1, ...[2, 3]]') {
     console.warn('stringifyType rest mismatch', {str});
     return false;
@@ -100,12 +103,31 @@ function testMapping() {
 }
 // Mapping modifiers and as-remaps print in TS notation.
 function testMappingModifiers() {
-  const str = stringifyType({type: 'mapping', iterable: 'T', element: 'K', result: 'X', question: '-', readonly: '-'});
+  const str = stringifyType({
+    type: 'mapping',
+    iterable: 'T',
+    element: 'K',
+    result: 'X',
+    question: '-',
+    readonly: '-',
+  });
   if (str !== '{-readonly [K in T]-?: X}') {
     console.warn('stringifyType mapping modifiers mismatch', {str});
     return false;
   }
-  const cond = stringifyType({type: 'mapping', iterable: 'T', element: 'K', result: 'X', nameType: {type: 'condition', checkType: 'K', extendsType: 'string', trueType: 'K', falseType: 'never'}});
+  const cond = stringifyType({
+    type: 'mapping',
+    iterable: 'T',
+    element: 'K',
+    result: 'X',
+    nameType: {
+      type: 'condition',
+      checkType: 'K',
+      extendsType: 'string',
+      trueType: 'K',
+      falseType: 'never',
+    },
+  });
   if (cond !== '{[K in T as K extends string?K:never]: X}') {
     console.warn('stringifyType mapping as mismatch', {cond});
     return false;
@@ -114,7 +136,10 @@ function testMappingModifiers() {
 }
 // Readonly props print with the readonly keyword.
 function testReadonlyProps() {
-  const str = stringifyType({type: 'object', properties: {id: {type: 'string', readonly: true}, x: 'number'}});
+  const str = stringifyType({
+    type: 'object',
+    properties: {id: {type: 'string', readonly: true}, x: 'number'},
+  });
   if (str !== '{readonly id: string, x: number}') {
     console.warn('stringifyType readonly mismatch', {str});
     return false;
@@ -178,7 +203,11 @@ function testIndexSignatureParams() {
 // printing as `name: type`: the discriminant rejects what the old
 // `_.name !== undefined` probe misprinted.
 function testIndexSignatureFallback() {
-  const str = stringifyType({type: 'indexSignature', indexType: 'number', indexParameters: ['string']});
+  const str = stringifyType({
+    type: 'indexSignature',
+    indexType: 'number',
+    indexParameters: ['string'],
+  });
   if (str !== '[string]: number') {
     console.warn('stringifyType index fallback mismatch', {str});
     return false;

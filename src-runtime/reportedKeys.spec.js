@@ -13,9 +13,12 @@ function capturePosts(fn) {
   const origParent = globalThis.parent;
   const origSelf = globalThis.self;
   globalThis.parent = undefined;
-  globalThis.self = {addEventListener: () => {}, postMessage: (msg) => {
-    posted.push(msg);
-  }};
+  globalThis.self = {
+    addEventListener: () => {},
+    postMessage: (msg) => {
+      posted.push(msg);
+    },
+  };
   try {
     fn();
     return posted;

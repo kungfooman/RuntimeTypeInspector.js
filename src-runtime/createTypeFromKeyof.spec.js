@@ -1,4 +1,5 @@
-import {createType     } from './createType.js';
+import {createType} from './createType.js';
+import {expandType} from '../src-transpiler/expandType.js';
 import {registerTypedef} from './registerTypedef.js';
 function prepare() {
   /**
@@ -11,19 +12,11 @@ function prepare() {
    * @typedef {ObjKeys} ObjKeysTypedef
    * @typedef {Unpack<ObjKeys>} ObjKeysUnpacked
    */
-  registerTypedef('Obj', {
-    "type": "object",
-    "properties": {
-      "a": "'aa'",
-      "b": "'bb'",
-      "c": "'cc'"
-    }
-  });
-  registerTypedef('ObjKeys', {
-    "type": "keyof",
-    "argument": "Obj"
-  });
-  registerTypedef('ObjKeysTypedef', "ObjKeys");
+  // input: {type: 'object', properties: {a: "'aa'", b: "'bb'", c: "'cc'"}}
+  registerTypedef('Obj', expandType('{a: \'aa\', b: \'bb\', c: \'cc\'}'));
+  // input: {type: 'keyof', argument: 'Obj'}
+  registerTypedef('ObjKeys', expandType('keyof Obj'));
+  registerTypedef('ObjKeysTypedef', 'ObjKeys');
 }
 function test1() {
   prepare();

@@ -4,7 +4,7 @@ import {expandType} from '../src-transpiler/expandType.js';
 // print as `name: type` exactly when the discriminant says `parameter`.
 function testParameterNodeTrue() {
   const parsed = expandType('{[k: string]: number}');
-  const input = parsed.indexSignatures[0].indexParameters[0];
+  const [input] = parsed.indexSignatures[0].indexParameters;
   return isParameterNode(input) === true;
 }
 // We want: an atom to fail, because atoms print through the atom branch,

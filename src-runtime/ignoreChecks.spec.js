@@ -10,9 +10,12 @@ import {getCheckStats, resetCheckStats} from './checkStats.js';
 function capturePost(fn) {
   let posted;
   const origSelf = globalThis.self;
-  globalThis.self = {addEventListener: () => {}, postMessage: (msg) => {
-    posted = msg;
-  }};
+  globalThis.self = {
+    addEventListener: () => {},
+    postMessage: (msg) => {
+      posted = msg;
+    },
+  };
   try {
     fn();
     return posted;
