@@ -12,7 +12,8 @@ import {compareText      } from "./compareText.js";
 import {copyText         } from "./copyText.js";
 import {logFilename      } from "./logFilename.js";
 import {collectFailPaths, explainMismatch} from "./explainMismatch.js";
-import {buildTypeTree} from "./typeTree.js";
+import {isElementValue} from "./isElementValue.js";
+import {buildTypeTree } from "./typeTree.js";
 import {Warning, renderActualValue, renderCellValue} from "./Warning.js";
 import {Div, Span, Button, Input, Select, Option, H3, Pre, Details, Summary, genJsx, Table, Tr, Td, Th} from "./jsx.js";
 import {getCheckStats, resetCheckStats} from "./checkStats.js";
@@ -1781,7 +1782,7 @@ class TypePanel {
     if (show) {
       this.menuCloser = (e) => {
         const {target} = e;
-        if (!(target instanceof HTMLElement)) {
+        if (!isElementValue(target)) {
           return;
         }
         if (!this.menu.hidden && !this.menu.contains(target) && !this.menuButton.contains(target)) {
@@ -2059,7 +2060,7 @@ class TypePanel {
       // follow their current home, not the one they were built in.
         const moveDoc = root?.ownerDocument || document;
         const {target} = e;
-        if (!(target instanceof HTMLElement) || target.closest('button')) {
+        if (!isElementValue(target) || target.closest('button')) {
           return;
         }
         if (isMaximized?.()) {
@@ -2101,11 +2102,11 @@ class TypePanel {
         'dblclick',
         (e) => {
           const {target} = e;
-          if (!(target instanceof Element)) {
+          if (!isElementValue(target)) {
             return;
           }
-          const tag = target.tagName;
-          const isButton = tag.toLowerCase() === 'button';
+          const tag = target.tagName ?? target.tag;
+          const isButton = typeof tag === 'string' && tag.toLowerCase() === 'button';
           if (target.closest('button') || isButton) {
             return;
           }

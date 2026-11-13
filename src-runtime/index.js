@@ -63,6 +63,7 @@ export * from './isArrayValue.js';
 export * from './isMapValue.js';
 export * from './isSetValue.js';
 export * from './isPromiseValue.js';
+export * from './isElementValue.js';
 export * from './unwrapTransparent.js';
 export * from './explainMismatch.js';
 export * from './typeTree.js';
