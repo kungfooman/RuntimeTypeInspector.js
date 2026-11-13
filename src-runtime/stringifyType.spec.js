@@ -268,12 +268,40 @@ function testFunctionPrintsReturn() {
   }
   return true;
 }
+// Every readonly/question spelling round-trips through parse and print:
+// the modifier branch must carry each of `-`, `+` and the bare form, not
+// just the `-`/`-` pair the older test pinned.
+function testMappingModifierMatrix() {
+  const cases = [
+    ['{ [K in T]: X }', '{[K in T]: X}'],
+    ['{ [K in T]-?: X }', '{[K in T]-?: X}'],
+    ['{ [K in T]+?: X }', '{[K in T]+?: X}'],
+    ['{ [K in T]?: X }', '{[K in T]?: X}'],
+    ['{ -readonly [K in T]: X }', '{-readonly [K in T]: X}'],
+    ['{ +readonly [K in T]: X }', '{+readonly [K in T]: X}'],
+    ['{ readonly [K in T]: X }', '{readonly [K in T]: X}'],
+    ['{ -readonly [K in T]-?: X }', '{-readonly [K in T]-?: X}'],
+    ['{ +readonly [K in T]+?: X }', '{+readonly [K in T]+?: X}'],
+    ['{ readonly [K in T]?: X }', '{readonly [K in T]?: X}'],
+    ['{ +readonly [K in T]?: X }', '{+readonly [K in T]?: X}'],
+    ['{ readonly [K in T]+?: X }', '{readonly [K in T]+?: X}'],
+  ];
+  for (const [input, expected] of cases) {
+    const str = stringifyType(expandType(input));
+    if (str !== expected) {
+      console.warn('stringifyType modifier matrix mismatch', {input, str, expected});
+      return false;
+    }
+  }
+  return true;
+}
 export const tests = [
   testIssue154,
   testIssue154PrettyNonNormalized,
   testRestKept,
   testMapping,
   testMappingModifiers,
+  testMappingModifierMatrix,
   testReadonlyProps,
   testOptionalAtomPayloads,
   testRequiredPrintsBare,
