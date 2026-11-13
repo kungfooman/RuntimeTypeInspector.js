@@ -167,16 +167,15 @@ function testGenericMappedInstantiation() {
       object: 'T',
     },
   });
-  if (!inspectTypeWithTemplates({
+  const passesRight = inspectTypeWithTemplates({
     a: 'x',
     b: 1,
-  }, mapping(), 'loc', 'name', templates)) {
-    return false;
-  }
-  if (inspectTypeWithTemplates({
+  }, mapping(), 'loc', 'name', templates);
+  const passesWrong = inspectTypeWithTemplates({
     a: 'y',
     b: 1,
-  }, mapping(), 'loc', 'name', templates)) {
+  }, mapping(), 'loc', 'name', templates);
+  if (passesRight === false || passesWrong) {
     return false;
   }
   return true;

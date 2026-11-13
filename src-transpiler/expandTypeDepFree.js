@@ -1013,11 +1013,9 @@ function expandTypeDepFree(type) {
     };
   }
   // (3) Object<...> or Record<...>
-  if (
-    (
-      type.startsWith("Object<") ||
-      type.startsWith("Record<")
-    ) && type.endsWith('>')) {
+  const isObjectSpelling = type.startsWith("Object<") || type.startsWith("Record<");
+  const isClosedGeneric = isObjectSpelling && type.endsWith('>');
+  if (isClosedGeneric) {
     const recordSlice = type.slice(7, -1);
     const commaIdx = findTopLevelChar(recordSlice, ',');
     if (commaIdx === -1) {

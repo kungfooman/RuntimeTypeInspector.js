@@ -39,7 +39,8 @@ function testNestedReferenceParity() {
 }
 function testExistingGenericsUnchanged() {
   // Array/Map/Set/Promise must keep their structured forms, not become references.
-  for (const type of ['Array<number>', 'Map<string, any>', 'Set<number>', 'Promise<number>']) {
+  const generics = ['Array<number>', 'Map<string, any>', 'Set<number>', 'Promise<number>'];
+  for (const type of generics) {
     if (!assertParity(type)) {
       return false;
     }
@@ -48,7 +49,8 @@ function testExistingGenericsUnchanged() {
 }
 function testTupleLiteralParity() {
   // Numeric/boolean literals must be numbers/booleans (not strings) on all three parsers.
-  for (const type of ['[1, 2, 3]', "['a', 'b']", '[true, false]', '123', 'true']) {
+  const literals = ['[1, 2, 3]', "['a', 'b']", '[true, false]', '123', 'true'];
+  for (const type of literals) {
     if (!assertParity(type)) {
       return false;
     }
@@ -57,7 +59,8 @@ function testTupleLiteralParity() {
 }
 function testTSQualifiedNameParity() {
   // Qualified names on all three parsers.
-  for (const type of ['some.name.space.Array', 'some.name.space.Array<number>', 'typeof some.name']) {
+  const qualified = ['some.name.space.Array', 'some.name.space.Array<number>', 'typeof some.name'];
+  for (const type of qualified) {
     if (!assertParity(type)) {
       return false;
     }
@@ -66,7 +69,8 @@ function testTSQualifiedNameParity() {
 }
 function testJSDocNullableParity() {
   // Nullable suffix/prefix on all three parsers.
-  for (const type of ['number?', '?number', 'Array<number>?', 'string?', 'ArrayLike<number>?']) {
+  const nullables = ['number?', '?number', 'Array<number>?', 'string?', 'ArrayLike<number>?'];
+  for (const type of nullables) {
     if (!assertParity(type)) {
       return false;
     }
@@ -75,7 +79,8 @@ function testJSDocNullableParity() {
 }
 function testReadonlyUniqueParity() {
   // Stresstest: readonly/`unique` erased, no throws.
-  for (const type of ['readonly number[]', 'readonly [1, 2]', 'unique symbol']) {
+  const erased = ['readonly number[]', 'readonly [1, 2]', 'unique symbol'];
+  for (const type of erased) {
     if (!assertParity(type)) {
       return false;
     }
@@ -109,7 +114,7 @@ function testBabelReferenceValidates() {
 }
 function testMappedModifierParity() {
   // All `-?`/`+?`/`?`/`readonly` spellings must match the TS parser on all three parsers.
-  for (const type of [
+  const modifiers = [
     '{[K in TaskType]: 123}',
     '{[K in "a"|"b"]: number}',
     '{[K in TaskType]?: 123}',
@@ -120,7 +125,8 @@ function testMappedModifierParity() {
     '{+readonly [K in TaskType]: 123}',
     '{readonly [K in TaskType]+?: 123}',
     '{-readonly [K in TaskType]-?: 123}',
-  ]) {
+  ];
+  for (const type of modifiers) {
     if (!assertParity(type)) {
       return false;
     }
@@ -129,11 +135,12 @@ function testMappedModifierParity() {
 }
 function testMappedAsRemapParity() {
   // `as` key remaps via `nameType`: conditions and intrinsic references.
-  for (const type of [
+  const remaps = [
     '{[K in keyof T as K extends string ? K : never]: number}',
     '{[K in keyof T as Uppercase<K & string>]: number}',
     '{[K in keyof T]: number}',
-  ]) {
+  ];
+  for (const type of remaps) {
     if (!assertParity(type)) {
       return false;
     }
@@ -142,7 +149,7 @@ function testMappedAsRemapParity() {
 }
 function testMappedNestedParity() {
   // Dependencies of mapped shapes: conditions, keyof, intersections, indexed access.
-  for (const type of [
+  const nested = [
     'K extends string ? K : never',
     'keyof T',
     'keyof typeof obj',
@@ -150,7 +157,8 @@ function testMappedNestedParity() {
     'string & number',
     'T[K]',
     'T["a"]',
-  ]) {
+  ];
+  for (const type of nested) {
     if (!assertParity(type)) {
       return false;
     }
@@ -160,13 +168,14 @@ function testMappedNestedParity() {
 function testFunctionNewParity() {
   // Function and constructor types: Babel builds tagged parameter nodes
   // and rest-array wrapping exactly like the TS parser.
-  for (const type of [
+  const signatures = [
     '(a: number) => string',
     '(a: number, ...rest: string[]) => void',
     '() => void',
     'new (a: number) => any',
     'new (...args: any[]) => any',
-  ]) {
+  ];
+  for (const type of signatures) {
     if (!assertParity(type)) {
       return false;
     }
@@ -175,10 +184,11 @@ function testFunctionNewParity() {
 }
 function testObjectFlagsParity() {
   // Optionality and readonly flags land on the property node, not the key.
-  for (const type of [
+  const flagged = [
     '{a?: string, readonly b: number}',
     '{a: string, b?: number}',
-  ]) {
+  ];
+  for (const type of flagged) {
     if (!assertParity(type)) {
       return false;
     }
@@ -188,10 +198,11 @@ function testObjectFlagsParity() {
 function testIndexSignatureParity() {
   // Index parameters are tagged `parameter` nodes, so the runtime can read
   // `params[0].paramType` for string/number matching.
-  for (const type of [
+  const signatures = [
     '{[n: number]: string}',
     '{[k: string]: number}',
-  ]) {
+  ];
+  for (const type of signatures) {
     if (!assertParity(type)) {
       return false;
     }
@@ -200,11 +211,12 @@ function testIndexSignatureParity() {
 }
 function testNamedTupleParity() {
   // Labels, optionality, and named rest become `tupleMember` nodes.
-  for (const type of [
+  const tuples = [
     '[a: string, b?: number]',
     '[first: string, ...rest: number[]]',
     '[...number[]]',
-  ]) {
+  ];
+  for (const type of tuples) {
     if (!assertParity(type)) {
       return false;
     }
@@ -213,10 +225,11 @@ function testNamedTupleParity() {
 }
 function testTemplateLiteralParity() {
   // Babel `TemplateLiteral` quasis/expressions become the shared node shape.
-  for (const type of [
+  const templates = [
     '`${A}_id`', // eslint-disable-line no-template-curly-in-string
     '`id`',
-  ]) {
+  ];
+  for (const type of templates) {
     if (!assertParity(type)) {
       return false;
     }
@@ -231,14 +244,15 @@ function testBabelIndexSignatureValidates() {
   // End-to-end: Babel-parsed `{[n: number]: string}` validates canonical
   // numeric keys and rejects non-numeric ones, like the TS-parsed shape.
   const expect = expandTypeBabelTS('{[n: number]: string}');
-  if (!validateType({
+  const rightEntry = {
     0: 'a',
-  }, expect, 'test', 'a', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({
+  };
+  const passesRight = validateType(rightEntry, expect, 'test', 'a', true, warn, 0);
+  const wrongEntry = {
     a: 'x',
-  }, expect, 'test', 'a', true, warn, 0)) {
+  };
+  const acceptsWrong = validateType(wrongEntry, expect, 'test', 'a', true, warn, 0);
+  if (passesRight === false || acceptsWrong) {
     return false;
   }
   return true;
@@ -247,13 +261,10 @@ function testBabelNamedTupleValidates() {
   // End-to-end: Babel-parsed `[first: string, ...rest: number[]]` accepts
   // the head plus any number tail, rejects mistyped elements.
   const expect = expandTypeBabelTS('[first: string, ...rest: number[]]');
-  if (!validateType(['a', 1, 2], expect, 'test', 'a', true, warn, 0)) {
-    return false;
-  }
-  if (!validateType(['a'], expect, 'test', 'a', true, warn, 0)) {
-    return false;
-  }
-  if (validateType(['a', 'b'], expect, 'test', 'a', true, warn, 0)) {
+  const passesFull = validateType(['a', 1, 2], expect, 'test', 'a', true, warn, 0);
+  const passesHead = validateType(['a'], expect, 'test', 'a', true, warn, 0);
+  const acceptsWrongTail = validateType(['a', 'b'], expect, 'test', 'a', true, warn, 0);
+  if (passesFull === false || passesHead === false || acceptsWrongTail) {
     return false;
   }
   return true;
@@ -266,16 +277,11 @@ function testUnnamedOptionalTupleParity() {
 function testUnnamedOptionalTupleValidates() {
   // End-to-end: the optional member accepts missing tails, rejects bad types.
   const expect = expandTypeDepFree('[string, number?]');
-  if (!validateType(['a', 1], expect, 'test', 'a', true, warn, 0)) {
-    return false;
-  }
-  if (!validateType(['a'], expect, 'test', 'a', true, warn, 0)) {
-    return false;
-  }
-  if (validateType(['a', 'b'], expect, 'test', 'a', true, warn, 0)) {
-    return false;
-  }
-  if (validateType('a', expect, 'test', 'a', true, warn, 0)) {
+  const passesPair = validateType(['a', 1], expect, 'test', 'a', true, warn, 0);
+  const passesSingle = validateType(['a'], expect, 'test', 'a', true, warn, 0);
+  const acceptsWrongTail = validateType(['a', 'b'], expect, 'test', 'a', true, warn, 0);
+  const acceptsBare = validateType('a', expect, 'test', 'a', true, warn, 0);
+  if (passesPair === false || passesSingle === false || acceptsWrongTail || acceptsBare) {
     return false;
   }
   return true;

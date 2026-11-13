@@ -38,9 +38,11 @@ function tagName(val) {
     // Brand checks (not `instanceof`): natively handled containers from
     // other realms still traverse by entries below instead of by (absent)
     // own keys, so nested instances keep their tags.
-    if (isMapValue(val) || isSetValue(val) || val instanceof WeakMap || val instanceof WeakSet ||
-      val instanceof Date || val instanceof RegExp || val instanceof ArrayBuffer ||
-      val instanceof Promise || val instanceof Error) {
+    const isWeakContainer = val instanceof WeakMap || val instanceof WeakSet;
+    const isDateLike = val instanceof Date || val instanceof RegExp || val instanceof ArrayBuffer;
+    const isPromiseLike = val instanceof Promise || val instanceof Error;
+    const isNativeContainer = isMapValue(val) || isSetValue(val) || isWeakContainer;
+    if (isNativeContainer || isDateLike || isPromiseLike) {
       return undefined;
     }
     if (typeof ArrayBuffer !== 'undefined' && ArrayBuffer.isView(val)) {

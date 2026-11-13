@@ -336,8 +336,9 @@ class WATConverter extends Stringifier {
         /** @type {number[]} */
         const values = [];
         init.properties.forEach((prop, i) => {
-          if (prop.type !== 'ObjectProperty' || prop.key.type !== 'Identifier' ||
-              prop.value.type !== 'NumericLiteral') {
+          const isNamed = prop.type === 'ObjectProperty' && prop.key.type === 'Identifier';
+          const isNumeric = prop.value.type === 'NumericLiteral';
+          if (isNamed === false || isNumeric === false) {
             return;
           }
           keys.set(prop.key.name, i);
@@ -483,8 +484,9 @@ class WATConverter extends Stringifier {
     }
     fn(node);
     for (const key of Object.keys(node)) {
-      if (key === 'leadingComments' || key === 'trailingComments' || key === 'loc' ||
-          key === 'start' || key === 'end') {
+      const isMetaKey = key === 'leadingComments' || key === 'trailingComments' || key === 'loc';
+      const isSpanKey = key === 'start' || key === 'end';
+      if (isMetaKey || isSpanKey) {
         continue;
       }
       const child = node[key];
@@ -734,8 +736,9 @@ class WATConverter extends Stringifier {
     }
     let out = this.classConstructorSource(node, cls);
     node.body.body.forEach(member => {
-      if ((member.type !== 'ClassMethod' && member.type !== 'MethodDefinition') ||
-          member.kind === 'constructor' || member.static) {
+      const isMethodShape = member.type === 'ClassMethod' || member.type === 'MethodDefinition';
+      const isSkipped = member.kind === 'constructor' || member.static;
+      if (isMethodShape === false || isSkipped) {
         return;
       }
       const savedClass = this.currentClass;
@@ -767,8 +770,9 @@ class WATConverter extends Stringifier {
         return;
       }
       for (const key of Object.keys(node)) {
-        if (key === 'leadingComments' || key === 'trailingComments' || key === 'loc' ||
-            key === 'start' || key === 'end') {
+        const isMetaKey = key === 'leadingComments' || key === 'trailingComments' || key === 'loc';
+        const isSpanKey = key === 'start' || key === 'end';
+        if (isMetaKey || isSpanKey) {
           continue;
         }
         const child = node[key];
@@ -1162,8 +1166,9 @@ class WATConverter extends Stringifier {
   VariableDeclarator(node) {
     const {id, init} = node;
     const {spaces} = this;
-    if (id.type === 'Identifier' && init && init.type === 'NewExpression' &&
-        init.callee.type === 'Identifier' && this.classes[init.callee.name]) {
+    const isTrackedNew = id.type === 'Identifier' && init && init.type === 'NewExpression';
+    const isTrackedClass = isTrackedNew && init.callee.type === 'Identifier' && this.classes[init.callee.name];
+    if (isTrackedClass) {
       this.instances[id.name] = init.callee.name;
     }
     let out = `${spaces}(local.set $${id.name}\n`;

@@ -779,8 +779,9 @@ function testActualOtherTypesRender() {
     ];
     for (const [value, want] of cases) {
       const node = renderActualValue(value, 'v', new Set());
-      if (!node || !textOf(node).includes(want) ||
-          findAllByClass(node, 'rti-fail-hit').length !== 0) {
+      const showsWant = node && textOf(node).includes(want);
+      const hits = node ? findAllByClass(node, 'rti-fail-hit').length : -1;
+      if (showsWant === false || hits !== 0) {
         return false;
       }
     }
@@ -914,8 +915,8 @@ function testMinimizeRestoreTaskbar() {
       return false;
     }
     const [minEntry] = panel.taskbarWins.children;
-    if (panel.taskbarWins.children.length !== 1 ||
-        minEntry.className.includes('rti-taskbar-active')) {
+    const isOnlyEntry = panel.taskbarWins.children.length === 1;
+    if (isOnlyEntry === false || minEntry.className.includes('rti-taskbar-active')) {
       return false;
     }
     panel.restoreCompare(key);

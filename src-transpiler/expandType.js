@@ -172,12 +172,9 @@ function toSourceTS(node) {
       const extendsType = toSourceTS(node.extendsType);
       const trueType = toSourceTS(node.trueType);
       const falseType = toSourceTS(node.falseType);
-      if (
-        checkType === undefined ||
-        extendsType === undefined ||
-        trueType === undefined ||
-        falseType === undefined
-      ) {
+      const isComplete = checkType !== undefined && extendsType !== undefined;
+      const branchesComplete = trueType !== undefined && falseType !== undefined;
+      if (isComplete === false || branchesComplete === false) {
         return undefined;
       }
       return ({
@@ -365,11 +362,9 @@ function toSourceTS(node) {
         throw Error("Impossible");
       }
       const [firstArg, secondArg] = typeArguments ?? [];
-      if (
-        (typeName.text === 'Object' || typeName.text === 'Record') &&
-        firstArg !== undefined &&
-        secondArg !== undefined
-      ) {
+      const isRecordName = typeName.text === 'Object' || typeName.text === 'Record';
+      const hasBothArgs = firstArg !== undefined && secondArg !== undefined;
+      if (isRecordName && hasBothArgs) {
         const key = toSourceTS(firstArg) ?? 'any';
         const val = toSourceTS(secondArg) ?? 'any';
         return ({

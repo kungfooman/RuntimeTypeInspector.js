@@ -28,24 +28,28 @@ function validateRecord(value, expect, loc, name, critical, warn, depth) {
     // validates each key like a value.
     if (key === 'number' || typeof key === 'number') {
       const ok = typeof key === 'number' ? prop === String(key) : String(Number(prop)) === prop;
-      if (!ok) {
+      if (ok === false) {
         warn(`> validateType> record> key '${prop}' is no number.`, {
           expect: key,
           value: prop,
         });
         return false;
       }
-    } else if (key !== undefined && key !== 'any' && key !== 'unknown' && key !== '*' &&
-      key !== 'string') {
-      if (!recurse(prop, key, loc, nameKey, critical, warn, depth + 1)) {
-        warn(
-          `> validateType> record> key '${prop}' has an invalid type.`,
-          {
-            expect: key,
-            value: prop,
-          },
-        );
-        return false;
+    } else {
+      const isAnyKey = key === undefined || key === 'any' || key === 'unknown' || key === '*';
+      const isStringKey = key === 'string';
+      if (isAnyKey === false && isStringKey === false) {
+        const keyOk = recurse(prop, key, loc, nameKey, critical, warn, depth + 1);
+        if (keyOk === false) {
+          warn(
+            `> validateType> record> key '${prop}' has an invalid type.`,
+            {
+              expect: key,
+              value: prop,
+            },
+          );
+          return false;
+        }
       }
     }
     const valueKey = value[prop];

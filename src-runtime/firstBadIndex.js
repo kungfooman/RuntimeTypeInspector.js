@@ -62,8 +62,9 @@ function firstBadIndex(value, length, elementType) {
     }
     return -1;
   }
-  if ((elementType === 'string' && validators.validateString === validateString) ||
-    (elementType === 'boolean' && validators.validateBoolean === validateBoolean)) {
+  const isStockString = elementType === 'string' && validators.validateString === validateString;
+  const isStockBoolean = elementType === 'boolean' && validators.validateBoolean === validateBoolean;
+  if (isStockString || isStockBoolean) {
     if (customTypes[elementType]) {
       return 0;
     }

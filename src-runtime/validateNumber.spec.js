@@ -115,9 +115,11 @@ function testInObjectIssueExample() {
   if (!validateNumberInObject(['1', 2, 3], 1, warn)) {
     return false;
   }
-  if (validateNumberInObject({
+  const nullHolder = {
     c: null,
-  }, 'c', warn)) {
+  };
+  const acceptsNullField = validateNumberInObject(nullHolder, 'c', warn);
+  if (acceptsNullField) {
     return false;
   }
   return true;

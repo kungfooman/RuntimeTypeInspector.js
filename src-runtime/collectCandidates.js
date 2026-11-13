@@ -29,8 +29,9 @@ function collectCandidates(value, expect, out = []) {
     // Bare position (`T`, `string`, `"a"`): only unquoted names can be keys,
     // quoted strings and primitives are literals. Membership in `templates`
     // is checked by the caller, not here.
-    if (expect.length >= 2 && (expect[0] === '"' && expect[expect.length - 1] === '"' ||
-        expect[0] === "'" && expect[expect.length - 1] === "'")) {
+    const startsDouble = expect[0] === '"' && expect[expect.length - 1] === '"';
+    const startsSingle = expect[0] === "'" && expect[expect.length - 1] === "'";
+    if (expect.length >= 2 && (startsDouble || startsSingle)) {
       return out;
     }
     const literal = literalOf(value);

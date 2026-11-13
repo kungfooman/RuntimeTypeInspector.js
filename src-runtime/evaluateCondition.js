@@ -12,8 +12,9 @@ validators.decideIfEquals = decideIfEquals;
  */
 function stripLiteral(type) {
   if (typeof type === 'string' && type.length >= 2) {
-    if ((type[0] === "'" && type[type.length - 1] === "'") ||
-        (type[0] === '"' && type[type.length - 1] === '"')) {
+    const isSingleQuoted = type[0] === "'" && type[type.length - 1] === "'";
+    const isDoubleQuoted = type[0] === '"' && type[type.length - 1] === '"';
+    if (isSingleQuoted || isDoubleQuoted) {
       return type.slice(1, -1);
     }
   }
@@ -262,9 +263,10 @@ function extendsCheck(check, target) {
         return false;
       }
     }
-    if (check && typeof check === 'object' && check.type !== undefined &&
-        check.type !== 'reference' && check.type !== 'typeof' && check.type !== 'condition' &&
-        check.type !== 'intersection' && check.type !== 'union') {
+    const isResolvedShape = check && typeof check === 'object' && check.type !== undefined;
+    const isUncallable = check.type !== 'reference' && check.type !== 'typeof' && check.type !== 'condition';
+    const isCompound = check.type !== 'intersection' && check.type !== 'union';
+    if (isResolvedShape && isUncallable && isCompound) {
       // Resolved shapes that aren't callable never extend Function. Unions
       // distribute through the member loop below; references and other
       // deferred forms stay undecidable rather than failing closed.
@@ -340,8 +342,9 @@ function extendsCheck(check, target) {
       }
       return false;
     }
-    if (target && target.type === 'object' &&
-        target.properties === undefined && !target.indexSignatures) {
+    const isBareObject = target && target.type === 'object';
+    const hasNoMembers = target.properties === undefined && !target.indexSignatures;
+    if (isBareObject && hasNoMembers) {
       // `{}` accepts every non-nullish type, like TS (`1 extends {}`).
       // Only the bare literal shape (no `properties` key): `object` keeps
       // rejecting primitives below, as before.

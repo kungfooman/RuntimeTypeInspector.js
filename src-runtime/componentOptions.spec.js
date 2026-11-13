@@ -125,20 +125,17 @@ function testPartial() {
   });
   const expect = expandType('Partial<Box>');
   // All props optional now: empty and partial pass, wrong types still fail.
-  if (!validateType({}, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (!validateType({
+  const passesEmpty = validateType({}, expect, 'loc', 'name', true, warn, 0);
+  const partialValue = {
     a: 1,
-  }, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({
+  };
+  const passesPartial = validateType(partialValue, expect, 'loc', 'name', true, warn, 0);
+  const wrongValue = {
     a: 'x',
-  }, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType(null, expect, 'loc', 'name', true, warn, 0)) {
+  };
+  const acceptsWrong = validateType(wrongValue, expect, 'loc', 'name', true, warn, 0);
+  const acceptsNull = validateType(null, expect, 'loc', 'name', true, warn, 0);
+  if (passesEmpty === false || passesPartial === false || acceptsWrong || acceptsNull) {
     return false;
   }
   return true;
@@ -154,18 +151,17 @@ function testPick() {
     },
   });
   const expect = expandType('Pick<Box, "a">');
-  if (!validateType({
+  const rightValue = {
     a: 1,
-  }, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({
+  };
+  const passesRight = validateType(rightValue, expect, 'loc', 'name', true, warn, 0);
+  const wrongValue = {
     a: 'x',
-  }, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
+  };
+  const acceptsWrong = validateType(wrongValue, expect, 'loc', 'name', true, warn, 0);
   // Picked keys stay required.
-  if (validateType({}, expect, 'loc', 'name', true, warn, 0)) {
+  const acceptsEmpty = validateType({}, expect, 'loc', 'name', true, warn, 0);
+  if (passesRight === false || acceptsWrong || acceptsEmpty) {
     return false;
   }
   return true;
@@ -181,18 +177,17 @@ function testOmit() {
     },
   });
   const expect = expandType('Omit<Box, "a">');
-  if (!validateType({
+  const rightValue = {
     b: 'x',
-  }, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({
+  };
+  const passesRight = validateType(rightValue, expect, 'loc', 'name', true, warn, 0);
+  const wrongValue = {
     b: 1,
-  }, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
+  };
+  const acceptsWrong = validateType(wrongValue, expect, 'loc', 'name', true, warn, 0);
   // Remaining keys stay required.
-  if (validateType({}, expect, 'loc', 'name', true, warn, 0)) {
+  const acceptsEmpty = validateType({}, expect, 'loc', 'name', true, warn, 0);
+  if (passesRight === false || acceptsWrong || acceptsEmpty) {
     return false;
   }
   return true;
@@ -269,14 +264,15 @@ function testGenericTypedefInstantiation() {
       content: 'T',
     },
   }, ['T']);
-  if (!validateType({
+  const rightValue = {
     content: 1,
-  }, expandType('Box<number>'), 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({
+  };
+  const passesRight = validateType(rightValue, expandType('Box<number>'), 'loc', 'name', true, warn, 0);
+  const wrongValue = {
     content: 'x',
-  }, expandType('Box<number>'), 'loc', 'name', true, warn, 0)) {
+  };
+  const acceptsWrong = validateType(wrongValue, expandType('Box<number>'), 'loc', 'name', true, warn, 0);
+  if (passesRight === false || acceptsWrong) {
     return false;
   }
   return true;
@@ -465,23 +461,21 @@ function testComponentMapDropsComplexMembers() {
 function testNestedPartialPickValidates() {
   prepareCameraTower();
   const expect = expandType('CamOptionsOf<CamComponent>');
-  if (!validateType({
+  const rightValue = {
     clearColor: new Color(),
     fov: 1,
-  }, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (!validateType({}, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({
+  };
+  const passesRight = validateType(rightValue, expect, 'loc', 'name', true, warn, 0);
+  const passesEmpty = validateType({}, expect, 'loc', 'name', true, warn, 0);
+  const wrongColor = {
     clearColor: 'x',
-  }, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({
+  };
+  const acceptsWrongColor = validateType(wrongColor, expect, 'loc', 'name', true, warn, 0);
+  const wrongFov = {
     fov: 'x',
-  }, expect, 'loc', 'name', true, warn, 0)) {
+  };
+  const acceptsWrongFov = validateType(wrongFov, expect, 'loc', 'name', true, warn, 0);
+  if (passesRight === false || passesEmpty === false || acceptsWrongColor || acceptsWrongFov) {
     return false;
   }
   return true;

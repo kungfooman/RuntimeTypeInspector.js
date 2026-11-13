@@ -73,25 +73,25 @@ function testOverridesOf() {
     },
   );
   const expect = () => expandType('K extends keyof Overrides ? Overrides[K] : {}');
-  if (!inspectTypeWithTemplates({
+  const rightValue = {
     x: 1,
-  }, expect(), 'loc', 'name', {
+  };
+  const passesRight = inspectTypeWithTemplates(rightValue, expect(), 'loc', 'name', {
     K: '"a"',
-  })) {
-    return false;
-  }
-  if (!inspectTypeWithTemplates({
+  });
+  const otherValue = {
     anything: 1,
-  }, expect(), 'loc', 'name', {
+  };
+  const passesOther = inspectTypeWithTemplates(otherValue, expect(), 'loc', 'name', {
     K: '"b"',
-  })) {
-    return false;
-  }
-  if (inspectTypeWithTemplates({
+  });
+  const wrongValue = {
     x: 'nope',
-  }, expect(), 'loc', 'name', {
+  };
+  const acceptsWrong = inspectTypeWithTemplates(wrongValue, expect(), 'loc', 'name', {
     K: '"a"',
-  })) {
+  });
+  if (passesRight === false || passesOther === false || acceptsWrong) {
     return false;
   }
   return true;

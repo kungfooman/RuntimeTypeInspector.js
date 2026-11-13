@@ -45,15 +45,13 @@ function testPromiseNumberInvalid() {
   if (validateType('123', expect, 'test', 'a', true, warn, 0)) {
     return false;
   }
-  if (validateType({
+  const thenable = {
     then: () => {},
-  }, expect, 'test', 'a', true, warn, 0)) {
-    return false;
-  }
-  if (validateType(null, expect, 'test', 'a', true, warn, 0)) {
-    return false;
-  }
-  if (validateType(undefined, expect, 'test', 'a', true, warn, 0)) {
+  };
+  const acceptsThenable = validateType(thenable, expect, 'test', 'a', true, warn, 0);
+  const acceptsNull = validateType(null, expect, 'test', 'a', true, warn, 0);
+  const acceptsUndefined = validateType(undefined, expect, 'test', 'a', true, warn, 0);
+  if (acceptsThenable || acceptsNull || acceptsUndefined) {
     return false;
   }
   return true;

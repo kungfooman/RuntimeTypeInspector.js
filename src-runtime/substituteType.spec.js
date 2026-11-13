@@ -33,25 +33,23 @@ function testPrimitivesAndAtoms() {
 }
 function testObjects() {
   // Properties substitute per key; index signatures follow.
-  const out = substituteType(
-    {
-      type: 'object',
-      properties: {
-        a: 'K',
-        b: 'number',
-      },
+  const objectInput = {
+    type: 'object',
+    properties: {
+      a: 'K',
+      b: 'number',
     },
-    'K',
-    '"a"',
-    () => {},
-  );
-  if (!same(out, {
+  };
+  const objectWarn = () => {};
+  const out = substituteType(objectInput, 'K', '"a"', objectWarn);
+  const objectWant = {
     type: 'object',
     properties: {
       a: '"a"',
       b: 'number',
     },
-  })) {
+  };
+  if (same(out, objectWant) === false) {
     return false;
   }
   const sig = substituteType({
@@ -65,88 +63,94 @@ function testObjects() {
 }
 function testSequences() {
   // Tuples, arrays and rest annotations substitute element-wise.
-  const tuple = substituteType({
+  const tupleInput = {
     type: 'tuple',
     elements: ['K', 'number'],
-  }, 'K', '"a"', () => {});
-  if (!same(tuple, {
+  };
+  const seqWarn = () => {};
+  const tuple = substituteType(tupleInput, 'K', '"a"', seqWarn);
+  const tupleWant = {
     type: 'tuple',
     elements: ['"a"', 'number'],
-  })) {
+  };
+  if (same(tuple, tupleWant) === false) {
     return false;
   }
-  const array = substituteType({
+  const arrayInput = {
     type: 'array',
     elementType: 'K',
-  }, 'K', '"a"', () => {});
-  if (!same(array, {
+  };
+  const array = substituteType(arrayInput, 'K', '"a"', seqWarn);
+  const arrayWant = {
     type: 'array',
     elementType: '"a"',
-  })) {
+  };
+  if (same(array, arrayWant) === false) {
     return false;
   }
-  const rest = substituteType({
+  const restInput = {
     type: 'rest',
     annotation: 'K',
-  }, 'K', '"a"', () => {});
-  if (!same(rest, {
+  };
+  const rest = substituteType(restInput, 'K', '"a"', seqWarn);
+  const restWant = {
     type: 'rest',
     annotation: '"a"',
-  })) {
+  };
+  if (same(rest, restWant) === false) {
     return false;
   }
-  const literal = substituteType(
-    {
-      type: 'templateLiteral',
-      types: ['K', 'x'],
-    },
-    'K',
-    '"a"',
-    () => {},
-  );
-  return same(literal, {
+  const literalInput = {
+    type: 'templateLiteral',
+    types: ['K', 'x'],
+  };
+  const literal = substituteType(literalInput, 'K', '"a"', seqWarn);
+  const literalWant = {
     type: 'templateLiteral',
     types: ['"a"', 'x'],
-  });
+  };
+  return same(literal, literalWant);
 }
 function testReferencesUnionsIntersections() {
   // Reference args, union/intersection members and template literals.
-  const ref = substituteType({
+  const refWarn = () => {};
+  const refInput = {
     type: 'reference',
     name: 'Box',
     args: ['K'],
-  }, 'K', '"a"', () => {});
-  if (!same(ref, {
+  };
+  const ref = substituteType(refInput, 'K', '"a"', refWarn);
+  const refWant = {
     type: 'reference',
     name: 'Box',
     args: ['"a"'],
-  })) {
+  };
+  if (same(ref, refWant) === false) {
     return false;
   }
-  const union = substituteType({
+  const unionInput = {
     type: 'union',
     members: ['K', 'number'],
-  }, 'K', '"a"', () => {});
-  if (!same(union, {
+  };
+  const union = substituteType(unionInput, 'K', '"a"', refWarn);
+  const unionWant = {
     type: 'union',
     members: ['"a"', 'number'],
-  })) {
+  };
+  if (same(union, unionWant) === false) {
     return false;
   }
   // The `'fixed' & K` case from the old todo: literal members stay put.
-  const inter = substituteType(
-    {
-      type: 'intersection',
-      members: ["'fixed'", 'K'],
-    },
-    'K',
-    '"a"',
-    () => {},
-  );
-  return same(inter, {
+  const interInput = {
+    type: 'intersection',
+    members: ["'fixed'", 'K'],
+  };
+  const inter = substituteType(interInput, 'K', '"a"', refWarn);
+  const interWant = {
     type: 'intersection',
     members: ["'fixed'", '"a"'],
-  });
+  };
+  return same(inter, interWant);
 }
 function testMappingsRecords() {
   // Mapping substitutes iterable/result (never the bound element), records
@@ -160,108 +164,101 @@ function testMappingsRecords() {
   if (substituteType(shadowed, 'K', '"a"', () => {}) !== shadowed) {
     return false;
   }
-  const mapped = substituteType(
-    {
-      type: 'mapping',
-      element: 'X',
-      iterable: 'K',
-      result: {
-        type: 'array',
-        elementType: 'K',
-      },
+  const mappingInput = {
+    type: 'mapping',
+    element: 'X',
+    iterable: 'K',
+    result: {
+      type: 'array',
+      elementType: 'K',
     },
-    'K',
-    '"a"',
-    () => {},
-  );
-  if (!same(
-    mapped,
-    {
-      type: 'mapping',
-      element: 'X',
-      iterable: '"a"',
-      result: {
-        type: 'array',
-        elementType: '"a"',
-      },
+  };
+  const mappingWarn = () => {};
+  const mapped = substituteType(mappingInput, 'K', '"a"', mappingWarn);
+  const mappedWant = {
+    type: 'mapping',
+    element: 'X',
+    iterable: '"a"',
+    result: {
+      type: 'array',
+      elementType: '"a"',
     },
-  )) {
+  };
+  if (same(mapped, mappedWant) === false) {
     return false;
   }
-  const record = substituteType({
+  const recordInput = {
     type: 'record',
     key: 'K',
     val: 'number',
-  }, 'K', '"a"', () => {});
-  if (!same(record, {
+  };
+  const record = substituteType(recordInput, 'K', '"a"', mappingWarn);
+  const recordWant = {
     type: 'record',
     key: '"a"',
     val: 'number',
-  })) {
+  };
+  if (same(record, recordWant) === false) {
     return false;
   }
-  const map = substituteType({
+  const mapInput = {
     type: 'map',
     key: 'string',
     val: 'K',
-  }, 'K', '"a"', () => {});
-  return same(map, {
+  };
+  const map = substituteType(mapInput, 'K', '"a"', mappingWarn);
+  const mapWant = {
     type: 'map',
     key: 'string',
     val: '"a"',
-  });
+  };
+  return same(map, mapWant);
 }
 function testConditionsIndexedKeyof() {
   // Conditions substitute all four branches; indexed access both sides.
-  const cond = substituteType(
-    {
-      type: 'condition',
-      checkType: 'K',
-      extendsType: 'string',
-      trueType: 'K',
-      falseType: 'never',
-    },
-    'K',
-    '"a"',
-    () => {},
-  );
-  if (!same(
-    cond,
-    {
-      type: 'condition',
-      checkType: '"a"',
-      extendsType: 'string',
-      trueType: '"a"',
-      falseType: 'never',
-    },
-  )) {
+  const branchWarn = () => {};
+  const condInput = {
+    type: 'condition',
+    checkType: 'K',
+    extendsType: 'string',
+    trueType: 'K',
+    falseType: 'never',
+  };
+  const cond = substituteType(condInput, 'K', '"a"', branchWarn);
+  const condWant = {
+    type: 'condition',
+    checkType: '"a"',
+    extendsType: 'string',
+    trueType: '"a"',
+    falseType: 'never',
+  };
+  if (same(cond, condWant) === false) {
     return false;
   }
-  const indexed = substituteType(
-    {
-      type: 'indexedAccess',
-      object: 'K',
-      index: '"a"',
-    },
-    'K',
-    'Box',
-    () => {},
-  );
-  if (!same(indexed, {
+  const indexedInput = {
+    type: 'indexedAccess',
+    object: 'K',
+    index: '"a"',
+  };
+  const indexed = substituteType(indexedInput, 'K', 'Box', branchWarn);
+  const indexedWant = {
     type: 'indexedAccess',
     object: 'Box',
     index: '"a"',
-  })) {
+  };
+  if (same(indexed, indexedWant) === false) {
     return false;
   }
-  const keyof = substituteType({
+  const keyofInput = {
     type: 'keyof',
     argument: 'K',
-  }, 'K', 'Box', () => {});
-  if (!same(keyof, {
+  };
+  const keyof = substituteType(keyofInput, 'K', 'Box', branchWarn);
+  const keyofWant = {
     type: 'keyof',
     argument: 'Box',
-  })) {
+  };
+  if (same(keyof, keyofWant) === false) {
     return false;
   }
   // `typeof X` names a value: never rewritten, silently.
@@ -273,50 +270,49 @@ function testConditionsIndexedKeyof() {
 }
 function testFunctions() {
   // Only `.type` positions of descriptors and returns substitute.
-  const fn = substituteType(
-    {
-      type: 'function',
-      parameters: [{
-        type: 'parameter',
-        paramType: 'K',
-        name: 'a',
-      }],
-    },
-    'K',
-    '"a"',
-    () => {},
-  );
-  if (!same(
-    fn,
-    {
-      type: 'function',
-      parameters: [{
-        type: 'parameter',
-        paramType: '"a"',
-        name: 'a',
-      }],
-    },
-  )) {
+  const fnWarn = () => {};
+  const fnInput = {
+    type: 'function',
+    parameters: [{
+      type: 'parameter',
+      paramType: 'K',
+      name: 'a',
+    }],
+  };
+  const fn = substituteType(fnInput, 'K', '"a"', fnWarn);
+  const fnWant = {
+    type: 'function',
+    parameters: [{
+      type: 'parameter',
+      paramType: '"a"',
+      name: 'a',
+    }],
+  };
+  if (same(fn, fnWant) === false) {
     return false;
   }
-  const tupleMember = substituteType({
+  const memberInput = {
     type: 'tupleMember',
     elementType: 'K',
-  }, 'K', '"a"', () => {});
-  if (!same(tupleMember, {
+  };
+  const tupleMember = substituteType(memberInput, 'K', '"a"', fnWarn);
+  const memberWant = {
     type: 'tupleMember',
     elementType: '"a"',
-  })) {
+  };
+  if (same(tupleMember, memberWant) === false) {
     return false;
   }
-  const cls = substituteType({
+  const clsInput = {
     type: 'class',
     elementType: 'K',
-  }, 'K', '"a"', () => {});
-  return same(cls, {
+  };
+  const cls = substituteType(clsInput, 'K', '"a"', fnWarn);
+  const clsWant = {
     type: 'class',
     elementType: '"a"',
-  });
+  };
+  return same(cls, clsWant);
 }
 function testSharingAndDefault() {
   // Unchanged subtrees keep identity (the memoization contract); unknown
@@ -347,18 +343,14 @@ function testSharingAndDefault() {
     return false;
   }
   let warned = 0;
+  const warnUnknown = () => {
+    warned++;
+  };
   const unknown = {
     type: 'frobnicate',
     inner: 'K',
   };
-  const kept = substituteType(
-    unknown,
-    'K',
-    '"a"',
-    () => {
-      warned++;
-    },
-  );
+  const kept = substituteType(unknown, 'K', '"a"', warnUnknown);
   return kept === unknown && warned === 1;
 }
 const tests = [

@@ -16,8 +16,9 @@ function substituteCondition(type, search, replace, warn) {
   const extendsType = recurseSubstitute(type.extendsType, search, replace, warn);
   const trueType = recurseSubstitute(type.trueType, search, replace, warn);
   const falseType = recurseSubstitute(type.falseType, search, replace, warn);
-  if (checkType === type.checkType && extendsType === type.extendsType &&
-    trueType === type.trueType && falseType === type.falseType) {
+  const checkSame = checkType === type.checkType && extendsType === type.extendsType;
+  const branchSame = trueType === type.trueType && falseType === type.falseType;
+  if (checkSame && branchSame) {
     return type;
   }
   return {

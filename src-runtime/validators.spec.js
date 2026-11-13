@@ -84,7 +84,16 @@ function testRecurseMatchesValidateType() {
 }
 // Primitive validators are overridable through the table, like validateNumber.
 function testPrimitiveOverrideTakesEffect() {
-  for (const [type, good, bad] of [
+  const keyByType = {
+    string: 'validateString',
+    boolean: 'validateBoolean',
+    null: 'validateNull',
+    undefined: 'validateUndefined',
+    symbol: 'validateSymbol',
+    bigint: 'validateBigint',
+    void: 'validateVoid',
+  };
+  const cases = [
     ['string', 'hi', 1],
     ['boolean', true, 1],
     ['null', null, 0],
@@ -92,29 +101,14 @@ function testPrimitiveOverrideTakesEffect() {
     ['symbol', Symbol('s'), 0],
     ['bigint', 1n, 1],
     ['void', undefined, 0],
-  ]) {
-    const orig = validators[{
-      string: 'validateString',
-      boolean: 'validateBoolean',
-      null: 'validateNull',
-      undefined: 'validateUndefined',
-      symbol: 'validateSymbol',
-      bigint: 'validateBigint',
-      void: 'validateVoid',
-    }[type]];
+  ];
+  for (const [type, good, bad] of cases) {
+    const orig = validators[keyByType[type]];
     if (typeof orig !== 'function') {
       return false;
     }
     let calls = 0;
-    validators[{
-      string: 'validateString',
-      boolean: 'validateBoolean',
-      null: 'validateNull',
-      undefined: 'validateUndefined',
-      symbol: 'validateSymbol',
-      bigint: 'validateBigint',
-      void: 'validateVoid',
-    }[type]] = () => {
+    validators[keyByType[type]] = () => {
       calls++;
       return true;
     };
@@ -122,15 +116,7 @@ function testPrimitiveOverrideTakesEffect() {
     try {
       ret = validateType(bad, type, 'loc', 'name', true, warn, 0);
     } finally {
-      validators[{
-        string: 'validateString',
-        boolean: 'validateBoolean',
-        null: 'validateNull',
-        undefined: 'validateUndefined',
-        symbol: 'validateSymbol',
-        bigint: 'validateBigint',
-        void: 'validateVoid',
-      }[type]] = orig;
+      validators[keyByType[type]] = orig;
     }
     if (ret !== true || calls !== 1) {
       return false;

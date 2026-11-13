@@ -36,12 +36,10 @@ function canonicalDocCovers(actual, expected) {
   const actualTemplates = JSON.stringify(canonicalize(actual.templates));
   const expectedTemplates = JSON.stringify(canonicalize(expected.templates));
   const sameTemplates = actualTemplates === expectedTemplates;
-  if (
-    sameTemplates === false ||
-    actual.returns !== expected.returns ||
-    actual.overloads.length !== expected.overloads.length ||
-    actual.callbacks.length !== expected.callbacks.length
-  ) {
+  const returnsMatch = actual.returns === expected.returns;
+  const overloadsMatch = actual.overloads.length === expected.overloads.length;
+  const shapesMatch = overloadsMatch && actual.callbacks.length === expected.callbacks.length;
+  if (sameTemplates === false || returnsMatch === false || shapesMatch === false) {
     return false;
   }
   const walk = (actualParams, expectedParams) => {
@@ -54,10 +52,7 @@ function canonicalDocCovers(actual, expected) {
       if (tsRow.merged === true) {
         const sameName = param !== undefined && param.name === tsRow.name;
         const sameBrackets = param !== undefined && param.bracketed === tsRow.bracketed;
-        if (
-          sameName === false ||
-          sameBrackets === false
-        ) {
+        if (sameName === false || sameBrackets === false) {
           return false;
         }
         continue;

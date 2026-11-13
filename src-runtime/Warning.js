@@ -587,8 +587,11 @@ function actualSeqItems(value) {
   }
   try {
     const tag = snapshotTag(value);
-    if ((tag === 'Set' && Array.isArray(value.values)) ||
-        ((tag?.endsWith('Array') || tag === 'Buffer') && Array.isArray(value.values))) {
+    const hasValueList = Array.isArray(value.values);
+    const isSetLike = tag === 'Set' && hasValueList;
+    const endsArray = tag?.endsWith('Array') || tag === 'Buffer';
+    const isArrayLike = endsArray === true && hasValueList;
+    if (isSetLike || isArrayLike) {
       return [...value.values];
     }
   } catch {
@@ -761,8 +764,9 @@ function buildActualContent(value, path, depth, ancestors, failPaths, markSelf =
       }
       // Leaves DisplayAnything cannot expand: buffers, promises, weak
       // collections, dates, regexps, errors, URLs and host objects.
-      if (isPreviewLeaf(value) || value instanceof Date || value instanceof RegExp ||
-          value instanceof Error || (typeof Element !== 'undefined' && value instanceof Element)) {
+      const isLeafValue = isPreviewLeaf(value) || value instanceof Date || value instanceof RegExp;
+      const isHostLeaf = value instanceof Error || (typeof Element !== 'undefined' && value instanceof Element);
+      if (isLeafValue || isHostLeaf) {
         return leaf();
       }
       // Plain objects, class instances and recorded snapshots: one row per key.

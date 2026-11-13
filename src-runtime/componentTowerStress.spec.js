@@ -132,12 +132,12 @@ function testStripQuestionStillStrips() {
   if (typedefs.TwOptBox.optional !== true) {
     return false;
   }
-  if (validateType(undefined, prop, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (!validateType({
+  const acceptsUndefined = validateType(undefined, prop, 'loc', 'name', true, warn, 0);
+  const rightValue = {
     v: 1,
-  }, prop, 'loc', 'name', true, warn, 0)) {
+  };
+  const passesRight = validateType(rightValue, prop, 'loc', 'name', true, warn, 0);
+  if (acceptsUndefined || passesRight === false) {
     return false;
   }
   return true;
@@ -297,17 +297,16 @@ function testNullSlotJoinsMap() {
 function testDoublyNestedPartial() {
   prepareStress();
   const expect = expandType('Partial<Partial<TwBox>>');
-  if (!validateType({}, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (!validateType({
+  const passesEmpty = validateType({}, expect, 'loc', 'name', true, warn, 0);
+  const rightValue = {
     a: 1,
-  }, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({
+  };
+  const passesRight = validateType(rightValue, expect, 'loc', 'name', true, warn, 0);
+  const wrongValue = {
     a: 'x',
-  }, expect, 'loc', 'name', true, warn, 0)) {
+  };
+  const acceptsWrong = validateType(wrongValue, expect, 'loc', 'name', true, warn, 0);
+  if (passesEmpty === false || passesRight === false || acceptsWrong) {
     return false;
   }
   return true;
@@ -316,13 +315,13 @@ function testDoublyNestedPartial() {
 function testRequiredReimposes() {
   prepareStress();
   const expect = expandType('Required<Partial<TwBox>>');
-  if (validateType({}, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (!validateType({
+  const acceptsEmpty = validateType({}, expect, 'loc', 'name', true, warn, 0);
+  const rightValue = {
     a: 1,
     b: 's',
-  }, expect, 'loc', 'name', true, warn, 0)) {
+  };
+  const passesRight = validateType(rightValue, expect, 'loc', 'name', true, warn, 0);
+  if (acceptsEmpty || passesRight === false) {
     return false;
   }
   return true;
@@ -331,17 +330,16 @@ function testRequiredReimposes() {
 function testGenericUtilityWrapper() {
   prepareStress();
   registerTypedef('TwOpts', expandType('Partial<Pick<T, "a">>'), ['T']);
-  if (!validateType({
+  const rightValue = {
     a: 1,
-  }, expandType('TwOpts<TwBox>'), 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (!validateType({}, expandType('TwOpts<TwBox>'), 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({
+  };
+  const passesRight = validateType(rightValue, expandType('TwOpts<TwBox>'), 'loc', 'name', true, warn, 0);
+  const passesEmpty = validateType({}, expandType('TwOpts<TwBox>'), 'loc', 'name', true, warn, 0);
+  const wrongValue = {
     a: 'x',
-  }, expandType('TwOpts<TwBox>'), 'loc', 'name', true, warn, 0)) {
+  };
+  const acceptsWrong = validateType(wrongValue, expandType('TwOpts<TwBox>'), 'loc', 'name', true, warn, 0);
+  if (passesRight === false || passesEmpty === false || acceptsWrong) {
     return false;
   }
   return true;
@@ -350,20 +348,20 @@ function testGenericUtilityWrapper() {
 function testUtilityUnionDistribution() {
   prepareStress();
   const expect = expandType('Partial<TwBox|TwBox2>');
-  if (!validateType({
+  const boxValue = {
     b: 's',
-  }, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (!validateType({
+  };
+  const passesBox = validateType(boxValue, expect, 'loc', 'name', true, warn, 0);
+  const box2Value = {
     c: true,
-  }, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({
+  };
+  const passesBox2 = validateType(box2Value, expect, 'loc', 'name', true, warn, 0);
+  const wrongValue = {
     a: 'x',
     c: 'x',
-  }, expect, 'loc', 'name', true, warn, 0)) {
+  };
+  const acceptsWrong = validateType(wrongValue, expect, 'loc', 'name', true, warn, 0);
+  if (passesBox === false || passesBox2 === false || acceptsWrong) {
     return false;
   }
   const keys = getTypeKeys(expandType('Omit<Partial<TwBox>, "a">'), warn);
@@ -373,24 +371,23 @@ function testUtilityUnionDistribution() {
   // `Omit` over a nested union utility validates member-wise: omitted keys
   // are rejected while surviving keys still type-check.
   const omitUnion = expandType('Omit<Partial<TwBox|TwBox2>, "a">');
-  if (!validateType({
+  const omitBox = {
     b: 's',
-  }, omitUnion, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (!validateType({
+  };
+  const passesOmitBox = validateType(omitBox, omitUnion, 'loc', 'name', true, warn, 0);
+  const omitBox2 = {
     c: true,
-  }, omitUnion, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({
+  };
+  const passesOmitBox2 = validateType(omitBox2, omitUnion, 'loc', 'name', true, warn, 0);
+  const omittedValue = {
     a: 1,
-  }, omitUnion, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({
+  };
+  const acceptsOmitted = validateType(omittedValue, omitUnion, 'loc', 'name', true, warn, 0);
+  const wrongOmit = {
     b: 1,
-  }, omitUnion, 'loc', 'name', true, warn, 0)) {
+  };
+  const acceptsWrongOmit = validateType(wrongOmit, omitUnion, 'loc', 'name', true, warn, 0);
+  if (passesOmitBox === false || passesOmitBox2 === false || acceptsOmitted || acceptsWrongOmit) {
     return false;
   }
   return true;
@@ -400,17 +397,16 @@ function testUtilityUnionDistribution() {
 function testNonNullableUtility() {
   prepareStress();
   const expect = expandType('NonNullable<Partial<TwBox>|undefined>');
-  if (!validateType({
+  const rightValue = {
     a: 1,
-  }, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType(null, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({
+  };
+  const passesRight = validateType(rightValue, expect, 'loc', 'name', true, warn, 0);
+  const acceptsNull = validateType(null, expect, 'loc', 'name', true, warn, 0);
+  const wrongValue = {
     a: 'x',
-  }, expect, 'loc', 'name', true, warn, 0)) {
+  };
+  const acceptsWrong = validateType(wrongValue, expect, 'loc', 'name', true, warn, 0);
+  if (passesRight === false || acceptsNull || acceptsWrong) {
     return false;
   }
   const keys = getTypeKeys(expandType('NonNullable<Partial<TwBox>|undefined>'), warn);
@@ -630,15 +626,13 @@ function testBigMapSilent() {
 // instance, while real instances pass both layers.
 function testStaticRuntimeAgreement() {
   prepareStress();
-  if (validateType({
+  const plainValue = {
     r: 1,
-  }, 'TwColor', 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType([1], 'TwColor', 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (!validateType(new TwColor(), 'TwColor', 'loc', 'name', true, warn, 0)) {
+  };
+  const acceptsPlain = validateType(plainValue, 'TwColor', 'loc', 'name', true, warn, 0);
+  const acceptsArray = validateType([1], 'TwColor', 'loc', 'name', true, warn, 0);
+  const passesInstance = validateType(new TwColor(), 'TwColor', 'loc', 'name', true, warn, 0);
+  if (acceptsPlain || acceptsArray || passesInstance === false) {
     return false;
   }
   const plainShape = {
@@ -711,10 +705,12 @@ function testSubclassSatisfiesBase() {
   if (!validateType(new TwSubCam(), 'TwCam', 'loc', 'name', true, warn, 0)) {
     return false;
   }
-  if (!validateType({
+  const taggedValue = {
     fov: 1,
     $type: 'TwSubCam',
-  }, 'TwCam', 'loc', 'name', true, warn, 0)) {
+  };
+  const passesTagged = validateType(taggedValue, 'TwCam', 'loc', 'name', true, warn, 0);
+  if (passesTagged === false) {
     return false;
   }
   const stranger = {

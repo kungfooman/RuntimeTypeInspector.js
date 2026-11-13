@@ -1409,8 +1409,11 @@ class Asserter extends Stringifier {
           return null;
         }
         const {left} = parent;
-        if (left.type === 'MemberExpression' && !left.computed &&
-            left.property.type === 'Identifier' && left.property.name === 'prototype') {
+        const isMemberTarget = left.type === 'MemberExpression';
+        const isPlainAssign = isMemberTarget && left.computed === false;
+        const prop = isPlainAssign ? left.property : undefined;
+        const namesPrototype = prop !== undefined && prop.type === 'Identifier' && prop.name === 'prototype';
+        if (namesPrototype) {
           return {
             owner: this.toSource(left.object),
             prefix,

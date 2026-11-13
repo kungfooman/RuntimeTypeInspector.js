@@ -41,8 +41,9 @@ let contentClassVersion = -1;
  */
 function stripQuotes(str) {
   if (typeof str === 'string' && str.length >= 2) {
-    if ((str[0] === "'" && str[str.length - 1] === "'") ||
-        (str[0] === '"' && str[str.length - 1] === '"')) {
+    const isSingleQuoted = str[0] === "'" && str[str.length - 1] === "'";
+    const isDoubleQuoted = str[0] === '"' && str[str.length - 1] === '"';
+    if (isSingleQuoted || isDoubleQuoted) {
       return str.slice(1, -1);
     }
   }

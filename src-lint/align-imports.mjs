@@ -112,6 +112,58 @@ function collect(node, out) {
     }
   }
 }
+// A multiline condition needs a readable rewrite by hand (a named
+// boolean local), never an autofix: it only errors here. Covers every
+// conditional clause: if/while/do-while tests, for headers, for-in/of
+// rights, ternary tests and switch discriminants.
+function checkConditions(file, ast) {
+  const problems = [];
+  const found = [];
+  const targets = {
+    IfStatement: ['test'],
+    WhileStatement: ['test'],
+    DoWhileStatement: ['test'],
+    ForStatement: ['init', 'test', 'update'],
+    ForInStatement: ['right'],
+    ForOfStatement: ['right'],
+    ConditionalExpression: ['test'],
+    SwitchStatement: ['discriminant'],
+  };
+  const walk = (node) => {
+    if (node === null || typeof node !== 'object') {
+      return;
+    }
+    if (Array.isArray(node)) {
+      for (const child of node) {
+        walk(child);
+      }
+      return;
+    }
+    if (typeof node.type === 'string') {
+      const keys = targets[node.type];
+      if (keys !== undefined) {
+        for (const key of keys) {
+          const cond = node[key];
+          if (cond !== null && cond !== undefined && typeof cond.loc === 'object' &&
+            cond.loc.start.line !== cond.loc.end.line) {
+            found.push({node, key, cond});
+          }
+        }
+      }
+      for (const key of Object.keys(node)) {
+        if (key === 'parent') {
+          continue;
+        }
+        walk(node[key]);
+      }
+    }
+  };
+  walk(ast);
+  for (const {node, key, cond} of found) {
+    problems.push(file + ':' + cond.loc.start.line + ': multiline ' + node.type + '.' + key + ' needs a named boolean, not a split condition');
+  }
+  return problems;
+}
 // A multiline `===` needs a readable rewrite by hand (named variables),
 // never an autofix: it only errors here.
 function checkComparisons(file, ast) {
@@ -233,6 +285,12 @@ for (const file of files) {
   // variables. No autofix path exists on purpose.
   for (const problem of checkComparisons(file, ast)) {
     console.log(problem + ' (no-tail-split-comparison)');
+    problems += 1;
+  }
+  // Error-only: a multiline condition needs a hand rewrite with a named
+  // boolean. No autofix path exists on purpose.
+  for (const problem of checkConditions(file, ast)) {
+    console.log(problem + ' (no-split-condition)');
     problems += 1;
   }
   const owned = [];

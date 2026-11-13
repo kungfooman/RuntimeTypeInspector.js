@@ -493,10 +493,15 @@ function prettyNonCollection(value) {
   if (snapshot !== undefined) {
     return prettySnapshot(value, snapshot);
   }
-  if (value instanceof Date || value instanceof RegExp || value instanceof Error ||
-      value instanceof Promise || value instanceof WeakMap || value instanceof WeakSet ||
-      (typeof URL !== 'undefined' && value instanceof URL) ||
-      (typeof Element !== 'undefined' && value instanceof Element)) {
+  const isBuiltinLeaf = value instanceof Date || value instanceof RegExp;
+  const isErrorLeaf = value instanceof Error;
+  const isPromiseLeaf = value instanceof Promise;
+  const isWeakLeaf = value instanceof WeakMap || value instanceof WeakSet;
+  const isContainerLeaf = isPromiseLeaf || isWeakLeaf;
+  const isUrlLeaf = typeof URL !== 'undefined' && value instanceof URL;
+  const isDomLeaf = typeof Element !== 'undefined' && value instanceof Element;
+  const isLeaf = isBuiltinLeaf || isErrorLeaf || isContainerLeaf || isUrlLeaf || isDomLeaf;
+  if (isLeaf) {
     return describeValueType(value, 2);
   }
   if (value instanceof DataView) {

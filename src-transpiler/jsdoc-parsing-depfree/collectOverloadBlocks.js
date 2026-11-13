@@ -46,8 +46,10 @@ function collectOverloadBlocks(node, parents) {
     if (comment.type !== 'CommentBlock' || !comment.value.startsWith('*')) {
       break;
     }
-    if (i < comments.length - 1 && comments[i + 1].loc && comment.loc &&
-        comments[i + 1].loc.start.line > comment.loc.end.line + 1) {
+    const nextRow = comments[i + 1];
+    const jumpsBlock = i < comments.length - 1 && nextRow.loc && comment.loc;
+    const hasGap = jumpsBlock && nextRow.loc.start.line > comment.loc.end.line + 1;
+    if (hasGap) {
       break;
     }
     blocks.unshift(comment.value);
