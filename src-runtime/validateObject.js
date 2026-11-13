@@ -1,6 +1,6 @@
-import {recurse} from "./validators.js";
-import {options     } from "./options.js";
-import {isObject    } from "./isObject.js";
+import {recurse            } from "./validators.js";
+import {options            } from "./options.js";
+import {isObject           } from "./isObject.js";
 import {matchIndexSignature} from "./matchIndexSignature.js";
 /**
  * @param {*} value - The actual value that we need to validate.
@@ -16,10 +16,16 @@ function validateObject(value, expect, loc, name, critical, warn, depth) {
   // Object nodes only: a bare properties bag means a stale direct call
   // under the old contract — fail loudly instead of misreading it.
   if (!expect || expect.type !== 'object') {
-    warn('unchecked', {value, type: 'object', loc, name, expect});
+    warn('unchecked', {
+      value,
+      type: 'object',
+      loc,
+      name,
+      expect,
+    });
     return false;
   }
-  const properties = expect.properties;
+  const {properties} = expect;
   if (properties === undefined && !expect.indexSignatures) {
     // Bare `{}`/`object`: accepts every non-nullish value, like TS
     // (`1 extends {}`). Nullish values fall into the guard below for
@@ -45,14 +51,31 @@ function validateObject(value, expect, loc, name, critical, warn, depth) {
           // type instead of counting as excess.
           const signature = matchIndexSignature(expect, key);
           if (signature) {
-            if (!recurse(value[key], signature.indexType, loc, `${name}.${key}`, critical, warn, depth + 1)) {
-              warn(`Element ${name}.${key} has wrong type.`, {expect: signature.indexType, value: value[key]});
+            const leafDepth = depth + 1;
+            const leafOk = recurse(
+              value[key],
+              signature.indexType,
+              loc,
+              `${name}.${key}`,
+              critical,
+              warn,
+              leafDepth,
+            );
+            if (!leafOk) {
+              warn(
+                `Element ${name}.${key} has wrong type.`,
+                {
+                  expect: signature.indexType,
+                  value: value[key],
+                },
+              );
               failed = true;
             }
             return;
           }
           if (options.exactObjects) {
-            warn(`Excess property '${name}.${key}' is not allowed (exact object check).`, {properties, value});
+            const excess = `Excess property '${name}.${key}' is not allowed`;
+            warn(`${excess} (exact object check).`, {properties, value});
           } else if (options.logSuperfluousProperty) {
             warn(`Superfluous property: ${name}.${key}`, {properties, value});
           }
@@ -80,15 +103,32 @@ function validateObject(value, expect, loc, name, critical, warn, depth) {
         const signature = matchIndexSignature(expect, key);
         if (!signature) {
           if (options.exactObjects) {
-            warn(`Excess property '${name}.${key}' is not allowed (exact object check).`, {properties, value});
+            const excess = `Excess property '${name}.${key}' is not allowed`;
+            warn(`${excess} (exact object check).`, {properties, value});
           } else if (options.logSuperfluousProperty) {
             warn(`Superfluous property: ${name}.${key}`, {properties, value});
           }
           bare = true;
           continue;
         }
-        if (!recurse(value[key], signature.indexType, loc, `${name}.${key}`, critical, warn, depth + 1)) {
-          warn(`Element ${name}.${key} has wrong type.`, {expect: signature.indexType, value: value[key]});
+        const leafDepth = depth + 1;
+        const leafOk = recurse(
+          value[key],
+          signature.indexType,
+          loc,
+          `${name}.${key}`,
+          critical,
+          warn,
+          leafDepth,
+        );
+        if (!leafOk) {
+          warn(
+            `Element ${name}.${key} has wrong type.`,
+            {
+              expect: signature.indexType,
+              value: value[key],
+            },
+          );
           failed = true;
         }
       }
@@ -106,7 +146,10 @@ function validateObject(value, expect, loc, name, critical, warn, depth) {
     const nameKey = `${name}.${key}`;
     const ret = recurse(innerValue, innerType, loc, nameKey, critical, warn, depth + 1);
     if (!ret) {
-      const info = {expect: innerType, value: innerValue};
+      const info = {
+        expect: innerType,
+        value: innerValue,
+      };
       warn(`Element ${nameKey} has wrong type.`, info);
       return false;
     }

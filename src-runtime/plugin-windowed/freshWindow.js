@@ -21,6 +21,11 @@ function freshWindow() {
   // conservative "changed" branch whenever a record is read before its
   // first scan wrote a real size. Spend starts at 0, so fresh maps are
   // locked out of rides until they have paid real scan time.
-  return {sinceLast: 0, window: 1, lastSize: -1, spentMs: 0};
+  return {
+    sinceLast: 0,
+    window: 1,
+    lastSize: -1,
+    spentMs: 0,
+  };
 }
 export {freshWindow};

@@ -1,7 +1,7 @@
-import {parse} from '@babel/parser';
+import {parse        } from '@babel/parser';
 import {parserOptions} from './parserOptions.js';
-import {Asserter} from './Asserter.js';
-import {expandType} from './expandType.js';
+import {Asserter     } from './Asserter.js';
+import {expandType   } from './expandType.js';
 /**
  * Transpiles one snippet without the runtime header, silencing warnings.
  * @param {string} src - Source code with one function to convert.
@@ -11,7 +11,11 @@ function convert(src) {
   const origWarn = console.warn;
   console.warn = () => undefined;
   try {
-    const asserter = new Asserter({expandType, addHeader: false, filename: 'test.js'});
+    const asserter = new Asserter({
+      expandType,
+      addHeader: false,
+      filename: 'test.js',
+    });
     return asserter.toSource(parse(src, parserOptions));
   } finally {
     console.warn = origWarn;

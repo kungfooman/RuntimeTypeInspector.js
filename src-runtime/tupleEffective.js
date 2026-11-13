@@ -8,7 +8,9 @@
  * tupleEffective({type: 'tupleMember', elementType: 'number'}); // 'number'
  */
 function tupleEffective(el) {
-  if (el && typeof el === 'object' && el.type === 'tupleMember') return el.elementType;
+  if (el && typeof el === 'object' && el.type === 'tupleMember') {
+    return el.elementType;
+  }
   return el;
 }
 export {tupleEffective};

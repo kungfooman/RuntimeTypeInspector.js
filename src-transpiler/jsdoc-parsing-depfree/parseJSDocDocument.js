@@ -1,14 +1,13 @@
-import {parseJSDocNodes} from "./parseJSDocNodes.js";
-import {parseParamHead} from "./parseParamHead.js";
-import {expandTypeDepFree} from "../expandTypeDepFree.js";
+import {parseJSDocNodes          } from "./parseJSDocNodes.js";
+import {parseParamHead           } from "./parseParamHead.js";
+import {expandTypeDepFree        } from "../expandTypeDepFree.js";
 import {extractNameAndOptionality} from "./extractNameAndOptionality.js";
-import {annotateOptional} from "../annotateOptional.js";
-import {makeParamTag} from "./makeParamTag.js";
-import {parseBareTemplate} from "./parseBareTemplate.js";
-import {foldParam} from "./foldParam.js";
+import {annotateOptional         } from "../annotateOptional.js";
+import {makeParamTag             } from "./makeParamTag.js";
+import {parseBareTemplate        } from "./parseBareTemplate.js";
+import {foldParam                } from "./foldParam.js";
 /** @import {ExpandedType} from './expandedType.js' */
 /** @import {ExpandType, ExpandTypeReturnType, ParamTag} from './parseJSDoc.js' */
-
 /**
  * Lowers one JSDoc comment from parsed tag nodes into every node at once:
  * parameter types with the raw tags behind them (rest markers survive the
@@ -47,8 +46,12 @@ function parseJSDocDocument(src, expandType = expandTypeDepFree) {
       if (rawType === undefined) {
         tags.push(makeParamTag(brace, head));
         console.warn(
-          "parseJSDoc> Skipping @param, type is unrepresentable. Please check if your JSDoc is valid or open an issue about this!",
-          {src, match: brace}
+          'parseJSDoc> Skipping @param, type is unrepresentable. ' +
+            'Please check if your JSDoc is valid or open an issue about this!',
+          {
+            src,
+            match: brace,
+          },
         );
         continue;
       }

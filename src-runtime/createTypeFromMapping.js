@@ -1,12 +1,13 @@
 import {substituteType} from "./substituteType.js";
-import {deepFreeze} from "./deepFreeze.js";
+import {deepFreeze    } from "./deepFreeze.js";
 import {versionedCache} from "./memoize.js";
-import {canonicalKey} from "./canonicalKey.js";
-import {getTypeKeys} from "./getTypeKeys.js";
-import {typedefs, typedefVersion   } from "./registerTypedef.js";
+import {canonicalKey  } from "./canonicalKey.js";
+import {getTypeKeys   } from "./getTypeKeys.js";
+import {typedefs, typedefVersion} from "./registerTypedef.js";
 import {classVersion} from "./registerClass.js";
-import {evaluateCondition, extendsCheck, literalType, resolveForExtends} from "./evaluateCondition.js";
-import {validators} from "./validators.js";
+import {evaluateCondition, extendsCheck, literalType} from "./evaluateCondition.js";
+import {resolveForExtends    } from "./evaluateCondition.js";
+import {validators           } from "./validators.js";
 import {applyQuestionModifier} from "./applyQuestionModifier.js";
 import {applyReadonlyModifier} from "./applyReadonlyModifier.js";
 validators.materializeMapping = createTypeFromMapping;
@@ -40,8 +41,9 @@ let contentClassVersion = -1;
  */
 function stripQuotes(str) {
   if (typeof str === 'string' && str.length >= 2) {
-    if ((str[0] === "'" && str[str.length - 1] === "'") ||
-        (str[0] === '"' && str[str.length - 1] === '"')) {
+    const isSingleQuoted = str[0] === "'" && str[str.length - 1] === "'";
+    const isDoubleQuoted = str[0] === '"' && str[str.length - 1] === '"';
+    if (isSingleQuoted || isDoubleQuoted) {
       return str.slice(1, -1);
     }
   }
@@ -89,7 +91,10 @@ function flattenRest(type) {
           flat.push(...flattenRest(ann).elements);
         } else if (ann) {
           const flatAnn = flattenRest(ann);
-          flat.push(flatAnn === ann ? el : {...el, annotation: flatAnn});
+          flat.push(flatAnn === ann ? el : {
+            ...el,
+            annotation: flatAnn,
+          });
           if (flatAnn !== ann) {
             changed = true;
           }
@@ -104,7 +109,10 @@ function flattenRest(type) {
         }
       }
     }
-    return changed ? {...type, elements: flat} : type;
+    return changed ? {
+      ...type,
+      elements: flat,
+    } : type;
   } else if (type.type === 'object' && type.properties) {
     let changed = false;
     const properties = {};
@@ -115,23 +123,48 @@ function flattenRest(type) {
         changed = true;
       }
     }
-    return changed ? {...type, properties} : type;
-  } else if ((type.type === 'union' || type.type === 'intersection') && Array.isArray(type.members)) {
+    return changed ? {
+      ...type,
+      properties,
+    } : type;
+  } else if (type.type === 'union' && Array.isArray(type.members)) {
     let changed = false;
-    const members = type.members.map((m) => {
-      const next = flattenRest(m);
-      if (next !== m) {
+    const members = type.members.map((member) => {
+      const next = flattenRest(member);
+      if (next !== member) {
         changed = true;
       }
       return next;
     });
-    return changed ? {...type, members} : type;
+    return changed ? {
+      ...type,
+      members,
+    } : type;
+  } else if (type.type === 'intersection' && Array.isArray(type.members)) {
+    let changed = false;
+    const members = type.members.map((member) => {
+      const next = flattenRest(member);
+      if (next !== member) {
+        changed = true;
+      }
+      return next;
+    });
+    return changed ? {
+      ...type,
+      members,
+    } : type;
   } else if (type.type === 'array' && type.elementType) {
     const next = flattenRest(type.elementType);
-    return next === type.elementType ? type : {...type, elementType: next};
+    return next === type.elementType ? type : {
+      ...type,
+      elementType: next,
+    };
   } else if (type.type === 'rest' && type.annotation) {
     const next = flattenRest(type.annotation);
-    return next === type.annotation ? type : {...type, annotation: next};
+    return next === type.annotation ? type : {
+      ...type,
+      annotation: next,
+    };
   }
   return type;
 }
@@ -218,8 +251,10 @@ function instantiateMapping(expect, warn) {
       if (!substitutedCond || substitutedCond.type !== 'condition') {
         // Idiomatic `Exclude` filters (`as Exclude<K, 'drop'>`) decide per
         // key directly: excluded keys drop, the rest keep their name.
-        if (substitutedCond && substitutedCond.type === 'reference' && substitutedCond.name === 'Exclude' &&
-          Array.isArray(substitutedCond.args) && substitutedCond.args.length === 2) {
+        const isRef = substitutedCond?.type === 'reference';
+        const isExclude = isRef && substitutedCond?.name === 'Exclude';
+        const hasArgs = Array.isArray(substitutedCond?.args) && substitutedCond.args.length === 2;
+        if (isExclude && hasArgs) {
           const excluded = extendsCheck(keyType, substitutedCond.args[1], warn);
           if (excluded === true) {
             continue;
@@ -231,7 +266,8 @@ function instantiateMapping(expect, warn) {
           warn('validateMapping: nameType is not a condition after substitution', substitutedCond);
         }
       } else {
-        const decision = evaluateCondition(substitutedCond.checkType, substitutedCond.extendsType, warn);
+        const {checkType, extendsType} = substitutedCond;
+        const decision = evaluateCondition(checkType, extendsType, warn);
         if (decision === true || decision === false) {
           const branch = decision === true ? substitutedCond.trueType : substitutedCond.falseType;
           if (branch === 'never') {
@@ -250,6 +286,10 @@ function instantiateMapping(expect, warn) {
     }
     properties[propKey] = propType;
   }
-  return {type: 'object', properties, optional: false};
+  return {
+    type: 'object',
+    properties,
+    optional: false,
+  };
 }
 export {createTypeFromMapping};

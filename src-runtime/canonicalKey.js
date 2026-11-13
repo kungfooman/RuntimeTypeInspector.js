@@ -64,7 +64,9 @@ function canonicalKey(value, seen) {
     }
     key = `[${parts.join(',')}]`;
   } else {
-    if (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) {
+    const proto = Object.getPrototypeOf(value);
+    const isPlain = proto === Object.prototype || proto === null;
+    if (!isPlain) {
       return undefined;
     }
     const parts = [];

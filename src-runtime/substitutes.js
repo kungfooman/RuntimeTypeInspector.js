@@ -29,7 +29,8 @@ const substitutes = {};
 function recurseSubstitute(type, search, replace, warn) {
   const substitute = substitutes.substituteType;
   if (!substitute) {
-    throw new Error('substitutes.substituteType is not registered: import substituteType.js (or the runtime index) first.');
+    const hint = 'import substituteType.js (or the runtime index) first.';
+    throw new Error(`substitutes.substituteType is not registered: ${hint}`);
   }
   return substitute(type, search, replace, warn);
 }

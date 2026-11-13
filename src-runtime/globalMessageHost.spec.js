@@ -7,7 +7,10 @@ import {globalMessageHost} from './globalMessageHost.js';
  * @returns {*} The closure result.
  */
 function withHosts(windowValue, selfValue, fn) {
-  const saved = {window: globalThis.window, self: globalThis.self};
+  const saved = {
+    window: globalThis.window,
+    self: globalThis.self,
+  };
   const apply = (key, value) => {
     if (value === undefined) {
       delete globalThis[key];
@@ -26,11 +29,17 @@ function withHosts(windowValue, selfValue, fn) {
 }
 function testPrefersWindow() {
   // Pages have both: the window bus wins.
-  return withHosts({name: 'win'}, {name: 'self'}, () => globalMessageHost()?.name === 'win');
+  return withHosts({
+    name: 'win',
+  }, {
+    name: 'self',
+  }, () => globalMessageHost()?.name === 'win');
 }
 function testFallsBackToSelf() {
   // Workers have no window: self carries the traffic.
-  return withHosts(undefined, {name: 'self'}, () => globalMessageHost()?.name === 'self');
+  return withHosts(undefined, {
+    name: 'self',
+  }, () => globalMessageHost()?.name === 'self');
 }
 function testBareNodeIsUndefined() {
   // Bare Node has neither: undefined instead of a ReferenceError.

@@ -18,9 +18,11 @@ function unwrapTransparent(expect) {
   if (typeof expect === 'string') {
     return expect;
   }
-  if (expect && typeof expect === 'object' && expect.type === 'reference' &&
-    (expect.name === 'Readonly' || expect.name === 'NonNullable' || expect.name === 'NoInfer') &&
-    Array.isArray(expect.args) && expect.args.length === 1) {
+  const isReference = expect && typeof expect === 'object' && expect.type === 'reference';
+  const typeName = isReference ? expect.name : undefined;
+  const isTransparentName = typeName === 'Readonly' || typeName === 'NonNullable' || typeName === 'NoInfer';
+  const hasSingleArg = isReference && Array.isArray(expect.args) && expect.args.length === 1;
+  if (isReference && isTransparentName && hasSingleArg) {
     return unwrapTransparent(expect.args[0]);
   }
   return undefined;

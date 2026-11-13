@@ -1,14 +1,14 @@
 import vm from 'node:vm';
-import {registerClass} from './registerClass.js';
-import {registerTypedef} from './registerTypedef.js';
-import {validateType} from './validateType.js';
+import {registerClass    } from './registerClass.js';
+import {registerTypedef  } from './registerTypedef.js';
+import {validateType     } from './validateType.js';
 import {collectCandidates} from './collectCandidates.js';
-import {tagSnapshot} from './tagSnapshot.js';
-import {stringifyValue} from './stringifyValue.js';
-import {explainMismatch} from './explainMismatch.js';
+import {tagSnapshot      } from './tagSnapshot.js';
+import {stringifyValue   } from './stringifyValue.js';
+import {explainMismatch  } from './explainMismatch.js';
 import {describeValueType} from './describeValue.js';
-import {isPromiseValue} from './isPromiseValue.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {isPromiseValue   } from './isPromiseValue.js';
+import {expandType       } from '../src-transpiler/expandType.js';
 import {setOptions, options} from './options.js';
 import './validateType.js';
 class LiveBox {
@@ -21,7 +21,10 @@ class LiveBox {
 }
 class LiveVec {
   constructor() {
-    Object.assign(this, {x: 0, y: 0});
+    Object.assign(this, {
+      x: 0,
+      y: 0,
+    });
   }
 }
 function prepareLiveTower() {
@@ -85,19 +88,29 @@ function testForeignMapsValidate() {
   const goodForeignMap = validateType(foreignMap, mapExpect, 'loc', 'name', true, silent, 0);
   const goodLocalSet = validateType(new Set([1, 2]), setExpect, 'loc', 'name', true, silent, 0);
   const goodForeignSet = validateType(foreignSet, setExpect, 'loc', 'name', true, silent, 0);
-  return goodLocalMap === true && goodForeignMap === true &&
-    goodLocalSet === true && goodForeignSet === true;
+  return (
+    goodLocalMap === true &&
+    goodForeignMap === true &&
+    goodLocalSet === true &&
+    goodForeignSet === true
+  );
 }
 // Foreign promises are promises (brand, not constructor); thenables are
 // not promises in any realm. Awaiting behavior is unobservable either way.
 function testForeignPromisePassesThenableFails() {
   const foreignPromise = vm.runInNewContext('Promise.resolve(1)');
-  const thenable = {then() {}};
+  const thenable = {
+    then() {},
+  };
   const promiseExpect = expandType('Promise<number>');
   const goodForeign = validateType(foreignPromise, promiseExpect, 'loc', 'name', true, silent, 0);
   const badThenable = validateType(thenable, promiseExpect, 'loc', 'name', true, silent, 0);
-  return isPromiseValue(foreignPromise) === true && isPromiseValue(thenable) === false &&
-    goodForeign === true && badThenable === false;
+  return (
+    isPromiseValue(foreignPromise) === true &&
+    isPromiseValue(thenable) === false &&
+    goodForeign === true &&
+    badThenable === false
+  );
 }
 // A genuine foreign iterable passes the Iterable branch; a plain object
 // fails it in both realms. The foreign generator function exercises the
@@ -111,7 +124,9 @@ function testForeignIterablePasses() {
   })`;
   const foreign = vm.runInNewContext(src);
   const goodForeign = validateType(foreign, iterableExpect, 'loc', 'name', true, silent, 0);
-  return goodForeign === true && checkBothFail(() => ({nope: 1}), iterableExpect);
+  return goodForeign === true && checkBothFail(() => ({
+    nope: 1,
+  }), iterableExpect);
 }
 // Template inference collects from foreign arrays element-wise: one
 // candidate per element, each naming the same template key.
@@ -119,8 +134,11 @@ function testForeignArrayCandidates() {
   const arrayOfT = expandType('Array<T>');
   const outLocal = collectCandidates([1, 2], arrayOfT);
   const outForeign = collectCandidates(vm.runInNewContext('[1, 2]'), arrayOfT);
-  return outLocal.length === 2 && outForeign.length === 2 &&
-    outForeign.every((candidate) => candidate.key === 'T');
+  return (
+    outLocal.length === 2 &&
+    outForeign.length === 2 &&
+    outForeign.every((candidate) => candidate.key === 'T')
+  );
 }
 // Instances nested in foreign maps keep their tags through traversal:
 // the map itself is a container (no tag), the instance inside is tagged.
@@ -128,7 +146,9 @@ function testForeignMapNestingTagged() {
   prepareLiveTower();
   const foreignMap = vm.runInNewContext('new Map()');
   foreignMap.set('box', new LiveBox());
-  const tagged = tagSnapshot({m: foreignMap});
+  const tagged = tagSnapshot({
+    m: foreignMap,
+  });
   return tagged.m.$type === undefined && tagged.m.get('box').$type === 'LiveBox';
 }
 // Foreign map entries survive log serialization as entries, not `{}`:
@@ -137,18 +157,31 @@ function testForeignMapStringified() {
   const src = `new Map([
     ["a", 1],
   ])`;
-  const snap = stringifyValue({m: vm.runInNewContext(src)});
-  return snap.m.$type === 'Map' && Array.isArray(snap.m.entries) && snap.m.entries.length === 1 &&
-    snap.m.entries[0][0] === 'a' && snap.m.entries[0][1] === 1;
+  const snap = stringifyValue({
+    m: vm.runInNewContext(src),
+  });
+  return (
+    snap.m.$type === 'Map' &&
+    Array.isArray(snap.m.entries) &&
+    snap.m.entries.length === 1 &&
+    snap.m.entries[0][0] === 'a' &&
+    snap.m.entries[0][1] === 1
+  );
 }
 // Mistyped foreign values still fail everywhere: data mismatch, wrong
 // prop type, and missing required key each fail in both realms.
 function testForeignMistypedStillFails() {
   prepareLiveTower();
   const boxExpect = expandType('{w: number}');
-  return checkBothFail(() => [1, 'x'], expandType('number[]')) &&
-    checkBothFail(() => ({w: 'x'}), boxExpect) &&
-    checkBothFail(() => ({x: 0}), expandType('{x: number, y: number}'));
+  return (
+    checkBothFail(() => [1, 'x'], expandType('number[]')) &&
+    checkBothFail(() => ({
+      w: 'x',
+    }), boxExpect) &&
+    checkBothFail(() => ({
+      x: 0,
+    }), expandType('{x: number, y: number}'))
+  );
 }
 // A foreign tagged snapshot with the wrong tag fails nominal checks:
 // tag trust is exact-match only, never fuzzy.
@@ -215,7 +248,11 @@ function testDeepForeignNestingPinpoints() {
   badForeign.rows.push(badMap);
   const badVerdict = validateType(badForeign, rowsExpect, 'loc', 'name', true, silent, 0);
   const {findings} = explainMismatch(badForeign, rowsExpect, 'data');
-  return badVerdict === true && findings.length === 1 && findings[0].path === "data.rows[0].get('a').w";
+  return (
+    badVerdict === true &&
+    findings.length === 1 &&
+    findings[0].path === "data.rows[0].get('a').w"
+  );
 }
 // A genuinely mistyped PLAIN value still reports exactly its path: no
 // nominal trust applies without an instance or tag, so the structural
@@ -233,7 +270,11 @@ function testDeepForeignPlainPinpoints() {
   const badForeign = vm.runInNewContext(src);
   const badVerdict = validateType(badForeign, rowsExpect, 'loc', 'name', true, silent, 0);
   const {findings} = explainMismatch(badForeign, rowsExpect, 'data');
-  return badVerdict === false && findings.length === 1 && findings[0].path === "data.rows[0].get('a').w";
+  return (
+    badVerdict === false &&
+    findings.length === 1 &&
+    findings[0].path === "data.rows[0].get('a').w"
+  );
 }
 // Frozen foreign arrays validate like frozen local ones; sparse arrays
 // fail identically in both realms (holes are not valid elements).
@@ -248,12 +289,20 @@ a`;
   const badSparseForeign = validateType(sparseForeign, arrayExpect, 'loc', 'name', true, silent, 0);
   const sparseLocal = [1, 2, ...new Array(2)];
   const badSparseLocal = validateType(sparseLocal, arrayExpect, 'loc', 'name', true, silent, 0);
-  return goodFrozen === true && badSparseForeign === false && badSparseLocal === false;
+  return (
+    goodFrozen === true &&
+    badSparseForeign === false &&
+    badSparseLocal === false
+  );
 }
 // Array-like foreign objects validate by shape: a length-carrier with
 // numeric indices and no Array brand still satisfies ArrayLike.
 function testForeignArrayLike() {
-  return checkBoth(() => ({0: 1, 1: 2, length: 2}), expandType('ArrayLike<number>'));
+  return checkBoth(() => ({
+    0: 1,
+    1: 2,
+    length: 2,
+  }), expandType('ArrayLike<number>'));
 }
 // Proxies forward brands: a proxy around a foreign array is an array,
 // since Array.isArray sees through the proxy to the target.
@@ -295,14 +344,24 @@ function testForeignDisplaysSurvive() {
 function testExcessUnionStaysClean() {
   const unionExpect = expandType('{a: number} | {b: string}');
   const prev = options.exactObjects;
-  setOptions({exactObjects: false});
+  setOptions({
+    exactObjects: false,
+  });
   let verdict;
   let rows;
   try {
-    verdict = validateType({a: 1, typo: 2}, unionExpect, 'loc', 'name', true, silent, 0);
-    rows = explainMismatch({a: 1, typo: 2}, unionExpect, 'v').findings.length;
+    verdict = validateType({
+      a: 1,
+      typo: 2,
+    }, unionExpect, 'loc', 'name', true, silent, 0);
+    rows = explainMismatch({
+      a: 1,
+      typo: 2,
+    }, unionExpect, 'v').findings.length;
   } finally {
-    setOptions({exactObjects: prev});
+    setOptions({
+      exactObjects: prev,
+    });
   }
   return verdict === true && rows === 0;
 }
@@ -319,8 +378,13 @@ function testForeignArraySkipsObjectBranch() {
 // element pairs with its positional template, like locals do.
 function testForeignTupleCandidates() {
   const out = collectCandidates(vm.runInNewContext('[1, "a"]'), expandType('[T, U]'));
-  return out.length === 2 && out[0].key === 'T' && out[0].literal === 1 &&
-    out[1].key === 'U' && out[1].literal === '"a"';
+  return (
+    out.length === 2 &&
+    out[0].key === 'T' &&
+    out[0].literal === 1 &&
+    out[1].key === 'U' &&
+    out[1].literal === '"a"'
+  );
 }
 // IArguments accepts foreign arguments-likes: iterator protocol plus
 // integer length plus callee, like tsc's contract. The `typeof` iterator
@@ -346,7 +410,9 @@ function testForeignIArguments() {
 function testForeignTypedArrayValidates() {
   const foreign = vm.runInNewContext('new Float32Array(2)');
   const good = validateType(foreign, 'Float32Array', 'loc', 'name', true, silent, 0);
-  const bad = validateType({length: 2}, 'Float32Array', 'loc', 'name', true, silent, 0);
+  const bad = validateType({
+    length: 2,
+  }, 'Float32Array', 'loc', 'name', true, silent, 0);
   return good === true && bad === false;
 }
 export const tests = [

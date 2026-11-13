@@ -1,10 +1,10 @@
-import {registerTypedef} from './registerTypedef.js';
-import {expandType} from '../src-transpiler/expandType.js';
-import {createType} from './createType.js';
+import {registerTypedef            } from './registerTypedef.js';
+import {expandType                 } from '../src-transpiler/expandType.js';
+import {createType                 } from './createType.js';
 import {createTypeFromIndexedAccess} from './createTypeFromIndexedAccess.js';
-import {validateType} from './validateType.js';
-import {explainMismatch} from './explainMismatch.js';
-import {validators} from './validators.js';
+import {validateType               } from './validateType.js';
+import {explainMismatch            } from './explainMismatch.js';
+import {validators                 } from './validators.js';
 import {typedefs, typedefTemplates} from './registerTypedef.js';
 function clearTypedefs() {
   Object.keys(typedefs).forEach((_) => delete typedefs[_]);
@@ -13,9 +13,22 @@ function clearTypedefs() {
 function prepare() {
   clearTypedefs();
   registerTypedef('Full', expandType('{count: number, pos: string}'));
-  registerTypedef('Over', {type: 'object', properties: {
-    pos: {type: 'union', members: ['string', {type: 'array', elementType: 'number'}], optional: true}
-  }});
+  registerTypedef(
+    'Over',
+    {
+      type: 'object',
+      properties: {
+        pos: {
+          type: 'union',
+          members: ['string', {
+            type: 'array',
+            elementType: 'number',
+          }],
+          optional: true,
+        },
+      },
+    },
+  );
   registerTypedef('Merged', expandType('Omit<Partial<Full>, keyof Over> & Over'));
   registerTypedef('Mapped', expandType('{[P in keyof Merged]: Merged[P]}'));
   registerTypedef('Strict', expandType('Omit<Full, keyof Over> & Over'));
@@ -26,14 +39,36 @@ function testSingleUnwrapKeepsFlags() {
   // Single-member indexed access returns the member itself, flags intact.
   prepare();
   const created = createTypeFromIndexedAccess(expandType('Merged["pos"]'), warn);
-  return created && created.type === 'union' && created.optional === true &&
-    JSON.stringify(created.members) === JSON.stringify(['string', {type: 'array', elementType: 'number'}]);
+  const unionMembers = {
+    type: 'array',
+    elementType: 'number',
+  };
+  return (
+    created &&
+    created.type === 'union' &&
+    created.optional === true &&
+    JSON.stringify(created.members) === JSON.stringify(['string', unionMembers])
+  );
 }
 function testMultiStaysUnion() {
   // Multi-key select stays a union wrapper like before.
   prepare();
-  const created = createTypeFromIndexedAccess({type: 'indexedAccess', index: {type: 'union', members: ['"count"', '"pos"']}, object: 'Merged'}, warn);
-  return created && created.type === 'union' && created.optional === false;
+  const created = createTypeFromIndexedAccess(
+    {
+      type: 'indexedAccess',
+      index: {
+        type: 'union',
+        members: ['"count"', '"pos"'],
+      },
+      object: 'Merged',
+    },
+    warn,
+  );
+  return (
+    created &&
+    created.type === 'union' &&
+    created.optional === false
+  );
 }
 function testUnresolvableStaysUndefined() {
   // Unknown bases still fail closed without throwing.
@@ -45,8 +80,13 @@ function testMaterializedKeepsOptional() {
   prepare();
   const mapped = createType(expandType('{[P in keyof Merged]: Merged[P]}'), warn);
   const props = mapped && mapped.properties;
-  return !!props && props.count && props.count.optional === true &&
-    props.pos && props.pos.optional === true;
+  return (
+    !!props &&
+    props.count &&
+    props.count.optional === true &&
+    props.pos &&
+    props.pos.optional === true
+  );
 }
 function testMaterializedKeepsRequired() {
   // Same chain without Partial stays required, while the optional override
@@ -54,7 +94,11 @@ function testMaterializedKeepsRequired() {
   prepare();
   const mapped = createType(expandType('{[P in keyof Strict]: Strict[P]}'), warn);
   const props = mapped && mapped.properties;
-  return !!props && !props.count.optional && props.pos.optional === true;
+  return (
+    !!props &&
+    !props.count.optional &&
+    props.pos.optional === true
+  );
 }
 function testAbsentOptionalsPass() {
   // Partial data validates and explains clean: no false missing findings.
@@ -82,9 +126,21 @@ function testPresentUnionsPass() {
   // Override unions validate through the materialized map, both members.
   prepare();
   const mapped = createType(expandType('{[P in keyof Merged]: Merged[P]}'), warn);
-  return validateType({pos: [1, 2]}, mapped, 'loc', 'name', true, warn, 0) === true &&
-    validateType({pos: 'x', count: 1}, mapped, 'loc', 'name', true, warn, 0) === true &&
-    validateType({pos: true}, mapped, 'loc', 'name', true, warn, 0) === false;
+  const tuple = {
+    pos: [1, 2],
+  };
+  const text = {
+    pos: 'x',
+    count: 1,
+  };
+  const mismatch = {
+    pos: true,
+  };
+  return (
+    validateType(tuple, mapped, 'loc', 'name', true, warn, 0) === true &&
+    validateType(text, mapped, 'loc', 'name', true, warn, 0) === true &&
+    validateType(mismatch, mapped, 'loc', 'name', true, warn, 0) === false
+  );
 }
 function testTableFallback() {
   // Without the table entry the eager probe stays out: props stay lazy.
@@ -94,7 +150,11 @@ function testTableFallback() {
     delete validators.createTypeFromIndexedAccess;
     const mapped = createType(expandType('{[P in keyof Merged]: Merged[P]}'), warn);
     const props = mapped && mapped.properties;
-    return !!props && props.count && props.count.type === 'indexedAccess';
+    return (
+      !!props &&
+      props.count &&
+      props.count.type === 'indexedAccess'
+    );
   } finally {
     validators.createTypeFromIndexedAccess = prev;
   }

@@ -1,5 +1,4 @@
 import {runChecks} from './runChecks.js';
-
 // A field arrow colliding with the dummy head keeps its own binding: the
 // generator renames carriers, so the parameter shadows nothing and the
 // wrapper still reports length one with the coerced key name.
@@ -20,7 +19,6 @@ function testComputedFieldSurvivesParamCarrierCollision() {
     posted[0].loc === 'Fields#String(\'param\')'
   ));
 }
-
 // A rest parameter colliding with the stored-call carrier still records
 // every argument: the wrapper renames its own rest binding instead.
 function testComputedFieldSurvivesRestCarrierCollision() {
@@ -38,7 +36,6 @@ function testComputedFieldSurvivesRestCarrierCollision() {
     hits.length === 1
   ));
 }
-
 // Outer bindings named like the carriers survive: the captured key is a
 // parameter-local binding, so the module-level names are untouched and the
 // field still checks and names itself after the outer key value.
@@ -60,7 +57,6 @@ function testComputedFieldSurvivesOuterCarrierCollision() {
     hits.length === 1
   ));
 }
-
 // Two computed fields in one class keep independent captures: each key
 // feeds only its own wrapper, so both names, results, and locs stay split.
 function testComputedFieldsKeepIndependentCaptures() {
@@ -85,7 +81,6 @@ function testComputedFieldsKeepIndependentCaptures() {
     posted[1].loc === 'Fields#String(\'two\')'
   ));
 }
-
 // A shadowed carrier name in an unrelated scope stays put: the capture
 // parameter is function-local, so reusing the spelled name elsewhere does
 // not leak or rename anything observable.
@@ -105,7 +100,6 @@ function testComputedFieldCaptureStaysFunctionLocal() {
     hits.length === 1
   ));
 }
-
 export const tests = [
   testComputedFieldSurvivesParamCarrierCollision,
   testComputedFieldSurvivesRestCarrierCollision,

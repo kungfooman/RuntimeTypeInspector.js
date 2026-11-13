@@ -1,7 +1,7 @@
 import {unionMembers} from "./unionMembers.js";
 import {widenLiteral} from "./widenLiteral.js";
 import {extendsCheck} from "./evaluateCondition.js";
-import {recurse} from "./validators.js";
+import {recurse     } from "./validators.js";
 /**
  * Merges one candidate into the call's bindings. The first candidate pins the
  * literal; a later distinct literal widens the pin to the first pin's base
@@ -63,7 +63,10 @@ function mergeCandidate(templates, state, key, literal, value, loc, name, probin
     // values the constraint accepts, e.g. `hD('a', 'b')` passes like tsc.
     if (!probing || recurse(value, constraint, loc, name, true, warn, 0)) {
       members.push(literal);
-      templates[key] = members.length === 1 ? members[0] : {type: 'union', members};
+      templates[key] = members.length === 1 ? members[0] : {
+        type: 'union',
+        members,
+      };
     }
   }
   // Undecidable: keep the pin (fail-closed precision).

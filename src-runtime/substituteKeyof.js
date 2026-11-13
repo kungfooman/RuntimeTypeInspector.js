@@ -12,6 +12,9 @@ import {recurseSubstitute} from "./substitutes.js";
  */
 function substituteKeyof(type, search, replace, warn) {
   const argument = recurseSubstitute(type.argument, search, replace, warn);
-  return argument === type.argument ? type : {...type, argument};
+  return argument === type.argument ? type : {
+    ...type,
+    argument,
+  };
 }
 export {substituteKeyof};

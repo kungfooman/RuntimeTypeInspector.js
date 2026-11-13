@@ -1,5 +1,5 @@
-import {parse} from '@babel/parser';
-import {isExpandedObject} from './isExpandedObject.js';
+import {parse               } from '@babel/parser';
+import {isExpandedObject    } from './isExpandedObject.js';
 import {isIndexSignatureNode} from './isIndexSignatureNode.js';
 /** @import {ExpandedType, ExpandParameterNode, ExpandTupleMemberNode, ExpandMappingNode, ExpandIndexSignatureNode, ExpandObjectNode} from './expandedType.js' */
 /**
@@ -35,14 +35,20 @@ function expandTypeBabelTS(type) {
     if (inner === undefined) {
       return undefined;
     }
-    return ({type: 'union', members: [inner, 'null']});
+    return ({
+      type: 'union',
+      members: [inner, 'null'],
+    });
   }
   if (type.startsWith('?') && type.length > 1) {
     const inner = expandTypeBabelTS(type.slice(1).trim());
     if (inner === undefined) {
       return undefined;
     }
-    return ({type: 'union', members: [inner, 'null']});
+    return ({
+      type: 'union',
+      members: [inner, 'null'],
+    });
   }
   const ast = parseTypeBabelTS(type);
   return toSourceBabelTS(ast);
@@ -59,8 +65,10 @@ function parseTypeBabelTS(str) {
   //}
   // type tmp = (...string) => 123; to have a function context
   str = `type tmp = ${str};`;
-  const ast = parse(str, {plugins: ['typescript']});
-  const first = ast.program.body[0];
+  const ast = parse(str, {
+    plugins: ['typescript'],
+  });
+  const [first] = ast.program.body;
   // Input is always the synthesized `type tmp = ...` alias above.
   if (first.type !== 'TSTypeAliasDeclaration') {
     throw Error('parseTypeBabelTS> expected synthesized type alias, got ' + first.type);
@@ -81,12 +89,23 @@ function toBabelParameter(param) {
     const type = toSourceBabelTSOrAny(param.typeAnnotation?.typeAnnotation);
     const name = param.argument?.name ?? 'args';
     /** @type {ExpandParameterNode} */
-    const inner = {type: 'parameter', paramType: type, name};
-    return ({type: 'array', elementType: inner});
+    const inner = {
+      type: 'parameter',
+      paramType: type,
+      name,
+    };
+    return ({
+      type: 'array',
+      elementType: inner,
+    });
   }
   const type = toSourceBabelTSOrAny(param?.typeAnnotation?.typeAnnotation);
   const name = param?.name ?? 'arg';
-  return ({type: 'parameter', paramType: type, name});
+  return ({
+    type: 'parameter',
+    paramType: type,
+    name,
+  });
 }
 /**
  * Converts a Babel index signature parameter (`[n: number]`) to a
@@ -98,7 +117,11 @@ function toBabelParameter(param) {
 function toBabelIndexParameter(param) {
   const type = toSourceBabelTSOrAny(param?.typeAnnotation?.typeAnnotation);
   const name = param?.name ?? 'arg';
-  return {type: 'parameter', paramType: type, name};
+  return {
+    type: 'parameter',
+    paramType: type,
+    name,
+  };
 }
 /**
  * Expands a Babel index signature parameter, defaulting unrepresentable
@@ -156,27 +179,43 @@ function toBabelParameterOrAny(param) {
 function toSourceBabelTS(node) {
   switch (node.type) {
     case 'TSBigIntKeyword':
-      return {type: 'bigint'};
+      return {
+        type: 'bigint',
+      };
     case 'BigIntLiteral':
       const literal = node.value;
-      return {type: 'bigint', literal};
+      return {
+        type: 'bigint',
+        literal,
+      };
     // expandTypeBabelTS("(a: number, b: number) => number")
     case 'TSFunctionType': {
       const parameters = node.parameters.map(toBabelParameterOrAny);
       const ret = toSourceBabelTSOrAny(node.typeAnnotation?.typeAnnotation);
-      return ({type: 'function', parameters, ret});
+      return ({
+        type: 'function',
+        parameters,
+        ret,
+      });
     }
     case 'TSConstructorType': {
       const parameters = node.parameters.map(toBabelParameterOrAny);
       const ret = toSourceBabelTSOrAny(node.typeAnnotation?.typeAnnotation);
-      return ({type: 'new', parameters, ret});
+      return ({
+        type: 'new',
+        parameters,
+        ret,
+      });
     }
     case 'TSTypeReference': {
       const name = toSourceBabelTS(node.typeName);
       if (!node.typeParameters) {
         // Bare `Object` is the empty object type, matching expandType().
         if (name === 'Object') {
-          return {type: 'object', properties: {}};
+          return {
+            type: 'object',
+            properties: {},
+          };
         }
         // Bare reference: Identifier gives name, TSQualifiedName gives dotted path.
         return name;
@@ -198,38 +237,58 @@ function toSourceBabelTS(node) {
           val,
         });
       } else if (name === 'Object' && (!typeArguments || typeArguments?.length === 0)) {
-        return {type: 'object', properties: {}};
+        return {
+          type: 'object',
+          properties: {},
+        };
       } else if (name === 'Map' && typeArguments?.length === 2) {
         const key = toSourceBabelTS(typeArguments[0]);
         const val = toSourceBabelTS(typeArguments[1]);
         if (key === undefined || val === undefined) {
           return undefined;
         }
-        return ({type: 'map', key, val});
+        return ({
+          type: 'map',
+          key,
+          val,
+        });
       } else if (name === 'Array' && typeArguments?.length === 1) {
         const elementType = toSourceBabelTS(typeArguments[0]);
         if (elementType === undefined) {
           return undefined;
         }
-        return ({type: 'array', elementType});
+        return ({
+          type: 'array',
+          elementType,
+        });
       } else if (name === 'Promise' && typeArguments?.length === 1) {
         const elementType = toSourceBabelTS(typeArguments[0]);
         if (elementType === undefined) {
           return undefined;
         }
-        return ({type: 'promise', elementType});
+        return ({
+          type: 'promise',
+          elementType,
+        });
       } else if (name === 'Set' && typeArguments?.length === 1) {
         const elementType = toSourceBabelTS(typeArguments[0]);
         if (elementType === undefined) {
           return undefined;
         }
-        return ({type: 'set', elementType});
+        return ({
+          type: 'set',
+          elementType,
+        });
       }
       // Parity with expandType(): generic references like ArrayLike<T>,
       // ReadonlyArray<T>, NodeListOf<T> or user typedefs like MyBox<T>.
       // Unrepresentable args become `any`, matching tsc leniency.
       const args = typeArguments.map(toSourceBabelTSOrAny);
-      return ({type: 'reference', name, args});
+      return ({
+        type: 'reference',
+        name,
+        args,
+      });
     }
     case 'TSStringKeyword':
       return 'string';
@@ -241,7 +300,7 @@ function toSourceBabelTS(node) {
       const members = node.types.map(toSourceBabelTSOrAny);
       return ({
         type: 'intersection',
-        members
+        members,
       });
     }
     case 'TSTupleType': {
@@ -256,14 +315,19 @@ function toSourceBabelTS(node) {
         (el) => {
           if (el && el.type === 'TSOptionalType') {
             const inner = toSourceBabelTSOrAny(el.typeAnnotation);
-            return {type: 'tupleMember', name: '', elementType: inner, optional: true};
+            return {
+              type: 'tupleMember',
+              name: '',
+              elementType: inner,
+              optional: true,
+            };
           }
           return toSourceBabelTSOrAny(el);
-        }
+        },
       );
       return ({
         type: 'tuple',
-        elements
+        elements,
       });
     }
     case 'TSNamedTupleMember': {
@@ -278,7 +342,9 @@ function toSourceBabelTS(node) {
         name: nName,
         elementType: nType,
       };
-      if (node.optional) mem.optional = true;
+      if (node.optional) {
+        mem.optional = true;
+      }
       return mem;
     }
     case 'TSRestType': {
@@ -301,13 +367,16 @@ function toSourceBabelTS(node) {
         return mem;
       }
       const annotation = toSourceBabelTSOrAny(node.typeAnnotation);
-      return ({type: 'rest', annotation});
+      return ({
+        type: 'rest',
+        annotation,
+      });
     }
     case 'TSUnionType': {
       const members = node.types.map(toSourceBabelTSOrAny);
       return ({
         type: 'union',
-        members
+        members,
       });
     }
     case 'TypeLiteral': {
@@ -327,7 +396,7 @@ function toSourceBabelTS(node) {
       const elementType = toSourceBabelTSOrAny(node.elementType);
       return ({
         type: 'array',
-        elementType
+        elementType,
       });
     }
     case 'TSLiteralType':
@@ -335,7 +404,11 @@ function toSourceBabelTS(node) {
     case 'TemplateLiteral': {
       const quasis = node.quasis.map(cookedQuasi);
       const types = (node.expressions ?? []).map(toSourceBabelTSOrAny);
-      return ({type: 'templateLiteral', quasis, types});
+      return ({
+        type: 'templateLiteral',
+        quasis,
+        types,
+      });
     }
     // expandTypeBabelTS("any")
     case 'TSAnyKeyword':
@@ -373,7 +446,7 @@ function toSourceBabelTS(node) {
     case 'ObjectKeyword':
       return {
         type: 'object',
-        properties: {}
+        properties: {},
       };
     case 'ParenthesizedType':
       // fall-through for parentheses
@@ -384,19 +457,32 @@ function toSourceBabelTS(node) {
       return toSourceBabelTS(node.qualifier);
     case 'TSTypeQuery': {
       const argument = toSourceBabelTSOrAny(node.exprName);
-      return ({type: 'typeof', argument});
+      return ({
+        type: 'typeof',
+        argument,
+      });
     }
     case 'TSConditionalType': {
       const checkType = toSourceBabelTSOrAny(node.checkType);
       const extendsType = toSourceBabelTSOrAny(node.extendsType);
       const trueType = toSourceBabelTSOrAny(node.trueType);
       const falseType = toSourceBabelTSOrAny(node.falseType);
-      return ({type: 'condition', checkType, extendsType, trueType, falseType});
+      return ({
+        type: 'condition',
+        checkType,
+        extendsType,
+        trueType,
+        falseType,
+      });
     }
     case 'TSIndexedAccessType': {
       const index = toSourceBabelTSOrAny(node.indexType);
       const object = toSourceBabelTSOrAny(node.objectType);
-      return ({type: 'indexedAccess', index, object});
+      return ({
+        type: 'indexedAccess',
+        index,
+        object,
+      });
     }
     case 'TSMappedType': {
       const param = node.typeParameter;
@@ -444,12 +530,26 @@ function toSourceBabelTS(node) {
           /** @type {ExpandedType} */
           let type = toSourceBabelTSOrAny(member.typeAnnotation);
           if (member.optional) {
-            if (isExpandedObject(type)) type.optional = true;
-            else type = {type: 'atom', atomType: type, optional: true};
+            if (isExpandedObject(type)) {
+              type.optional = true;
+            } else {
+              type = {
+                type: 'atom',
+                atomType: type,
+                optional: true,
+              };
+            }
           }
           if (member.readonly) {
-            if (isExpandedObject(type)) type.readonly = true;
-            else type = {type: 'atom', atomType: type, readonly: true};
+            if (isExpandedObject(type)) {
+              type.readonly = true;
+            } else {
+              type = {
+                type: 'atom',
+                atomType: type,
+                readonly: true,
+              };
+            }
           }
           if (typeof name === 'string') {
             properties[name] = type;
@@ -459,7 +559,9 @@ function toSourceBabelTS(node) {
         }
       }
       /** @type {ExpandObjectNode} */
-      const ret = {type: 'object'};
+      const ret = {
+        type: 'object',
+      };
       if (Object.keys(properties).length) {
         ret.properties = properties;
       }
@@ -471,7 +573,11 @@ function toSourceBabelTS(node) {
     case 'TSIndexSignature': {
       const indexType = toSourceBabelTSOrAny(node.typeAnnotation);
       const indexParameters = (node.parameters ?? []).map(toBabelIndexParameterOrAny);
-      return ({type: 'indexSignature', indexType, indexParameters});
+      return ({
+        type: 'indexSignature',
+        indexType,
+        indexParameters,
+      });
     }
     case 'TSTypeOperator':
       if (node.operator === 'readonly') {
@@ -480,7 +586,10 @@ function toSourceBabelTS(node) {
       }
       if (node.operator === 'keyof') {
         const keyofArg = toSourceBabelTSOrAny(node.typeAnnotation);
-        return ({type: 'keyof', argument: keyofArg});
+        return ({
+          type: 'keyof',
+          argument: keyofArg,
+        });
       }
       if (node.operator === 'unique') {
         // `unique symbol` is a symbol at runtime; uniqueness refers to a

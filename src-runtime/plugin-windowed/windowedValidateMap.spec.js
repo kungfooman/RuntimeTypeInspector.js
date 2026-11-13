@@ -1,7 +1,7 @@
 import '../validateType.js';
 import {options, setOptions} from '../options.js';
 import {validateMap} from '../validateMap.js';
-import {validators} from '../validators.js';
+import {validators } from '../validators.js';
 import {windowedValidateMap, mapCheckWindowRecord, resetMapCheckWindows} from './windowedValidateMap.js';
 import {recordCheck, recordMapScan, getCheckStats, resetCheckStats} from '../checkStats.js';
 /**
@@ -26,10 +26,18 @@ const virginCheckStats = options.checkStats;
 function check(map, expect, depth = 0) {
   const infos = [];
   const messages = [];
-  const good = windowedValidateMap(map, expect, 'TestSite#method', 'mapProperty', true, (msg, info) => {
-    messages.push(msg);
-    infos.push(info);
-  }, depth);
+  const good = windowedValidateMap(
+    map,
+    expect,
+    'TestSite#method',
+    'mapProperty',
+    true,
+    (msg, info) => {
+      messages.push(msg);
+      infos.push(info);
+    },
+    depth,
+  );
   return {good, infos, messages};
 }
 /**
@@ -44,19 +52,33 @@ function check(map, expect, depth = 0) {
 function checkPedantic(map, expect) {
   const infos = [];
   const messages = [];
-  const good = validateMap(map, expect, 'TestSite#method', 'mapProperty', true, (msg, info) => {
-    messages.push(msg);
-    infos.push(info);
-  }, 0);
+  const good = validateMap(
+    map,
+    expect,
+    'TestSite#method',
+    'mapProperty',
+    true,
+    (msg, info) => {
+      messages.push(msg);
+      infos.push(info);
+    },
+    0,
+  );
   return {good, infos, messages};
 }
 function testFirstCheckScansAndDoubles() {
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   resetMapCheckWindows();
   // The first clean check is a full scan and seeds the doubling: the
   // window becomes 2 right away, so the next check may skip.
   const map = new Map([[1, 'a'], [2, 'b']]);
-  const expect = {type: 'map', key: 'number', val: 'string'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  };
   if (!check(map, expect).good) {
     return false;
   }
@@ -72,10 +94,16 @@ function snap(record) {
   if (record === undefined) {
     return undefined;
   }
-  return {sinceLast: record.sinceLast, window: record.window, lastSize: record.lastSize};
+  return {
+    sinceLast: record.sinceLast,
+    window: record.window,
+    lastSize: record.lastSize,
+  };
 }
 function testRepeatsSkipUntilWindowHits() {
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   // Budget 0: this test pins the window mechanics (when a due scan
   // lands), and the spend gate's own behavior is pinned by its dedicated
   // tests below, where the accumulated spend is fed deterministically.
@@ -84,24 +112,41 @@ function testRepeatsSkipUntilWindowHits() {
   // Same call, unchanged map: checks inside the window take the O(1)
   // exit, every due check scans and doubles the window again.
   const map = new Map([[1, 'a']]);
-  const expect = {type: 'map', key: 'number', val: 'string'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  };
   check(map, expect); // scan 1: window 2, sinceLast 0
   const second = check(map, expect); // sinceLast 1 < 2: inside window, no scan
   const secondRecord = snap(mapCheckWindowRecord(map));
   const third = check(map, expect); // sinceLast 2 >= 2: due, scan 2: window 4
   const thirdRecord = snap(mapCheckWindowRecord(map));
   const fourth = check(map, expect); // sinceLast 1 < 4: inside window again
-  return second.good === true && secondRecord.window === 2 && secondRecord.sinceLast === 1 &&
-    third.good === true && thirdRecord.window === 4 && thirdRecord.sinceLast === 0 &&
-    fourth.good === true && snap(mapCheckWindowRecord(map)).window === 4;
+  return (
+    second.good === true &&
+    secondRecord.window === 2 &&
+    secondRecord.sinceLast === 1 &&
+    third.good === true &&
+    thirdRecord.window === 4 &&
+    thirdRecord.sinceLast === 0 &&
+    fourth.good === true &&
+    snap(mapCheckWindowRecord(map)).window === 4
+  );
 }
 function testDoublingStaysBoundedByCap() {
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   resetMapCheckWindows();
   // Doubling reaches the cap after 1+2+4+... Windows then hold at the
   // cap: the longest a persistent drift can hide is one cap.
   const map = new Map([[1, 'a']]);
-  const expect = {type: 'map', key: 'number', val: 'string'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  };
   for (let i = 0; i < 2100; i++) {
     check(map, expect);
   }
@@ -110,15 +155,25 @@ function testDoublingStaysBoundedByCap() {
     check(map, expect);
   }
   const stillCapped = snap(mapCheckWindowRecord(map));
-  return capped.window === 1024 && stillCapped.window === 1024 && capped.window === stillCapped.window;
+  return (
+    capped.window === 1024 &&
+    stillCapped.window === 1024 &&
+    capped.window === stillCapped.window
+  );
 }
 function testSizeChangeRestartsWindow() {
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   resetMapCheckWindows();
   // Adding entries drops the interval back to the start: the next check
   // scans the new content instead of riding an outdated window.
   const map = new Map([[1, 'a']]);
-  const expect = {type: 'map', key: 'number', val: 'string'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  };
   check(map, expect);
   map.set(2, 'b');
   const after = check(map, expect);
@@ -132,26 +187,41 @@ function testSizeChangeRestartsWindow() {
     bad.infos.some((info) => info && info.expect === 'string' && info.value === 42);
 }
 function testDirtyMapsRescanEveryTime() {
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   resetMapCheckWindows();
   // A failing scan resets the interval: unchanged dirty data is reported
   // on every check, keeping persistent bugs loud instead of 1-of-N.
   const map = new Map([[1, 'a'], [2, 3]]);
-  const expect = {type: 'map', key: 'number', val: 'string'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  };
   const first = check(map, expect);
   const second = check(map, expect);
-  return first.good === false && second.good === false &&
+  return (
+    first.good === false &&
+    second.good === false &&
     first.infos.some((info) => info && info.expect === 'string' && info.value === 3) &&
-    second.infos.some((info) => info && info.expect === 'string' && info.value === 3);
+    second.infos.some((info) => info && info.expect === 'string' && info.value === 3)
+  );
 }
 function testContentDriftCaughtWithinWindow() {
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   options.mapCheckWindowMinTotalMs = 0; // window mechanics, see testRepeatsSkipUntilWindowHits
   resetMapCheckWindows();
   // Content mutation without size change may skip one check (documented
   // sampling), but the next window boundary scans and reports it.
   const map = new Map([[1, 'a']]);
-  const expect = {type: 'map', key: 'number', val: 'string'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  };
   check(map, expect);
   map.set(1, 42);
   const skipped = check(map, expect);
@@ -159,7 +229,9 @@ function testContentDriftCaughtWithinWindow() {
   return skipped.good === true && caught.good === false;
 }
 function testRecordsArePerInstance() {
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   // Budget 0: the window===2 asserts below say "the second check of a
   // map rode instead of scanning" (a rescan would double to 4), so the
   // spend gate has to be open for the mechanism this test isolates.
@@ -169,7 +241,11 @@ function testRecordsArePerInstance() {
   // the scanning state again.
   const a = new Map([[1, 'a']]);
   const b = new Map([[1, 'a']]);
-  const expect = {type: 'map', key: 'number', val: 'string'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  };
   check(a, expect);
   check(a, expect);
   check(b, expect);
@@ -177,41 +253,63 @@ function testRecordsArePerInstance() {
     mapCheckWindowRecord(b).window === 2;
 }
 function testUnknownMapHasNoRecord() {
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   resetMapCheckWindows();
   // Asking before any check exists returns nothing.
   return mapCheckWindowRecord(new Map()) === undefined;
 }
 function testResetForgetsHistory() {
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   resetMapCheckWindows();
   // Resetting makes the next check behave like the first one again.
   const map = new Map([[1, 'a']]);
-  const expect = {type: 'map', key: 'number', val: 'string'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  };
   check(map, expect);
   check(map, expect);
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   resetMapCheckWindows();
   return mapCheckWindowRecord(map) === undefined && check(map, expect).good === true;
 }
 function testRecordTracksLastSize() {
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   resetMapCheckWindows();
   // The record shares the scan result: fresh history keeps the size the
   // scan saw, enabling the size based restart.
   const map = new Map([[1, 'a'], [2, 'b']]);
-  const expect = {type: 'map', key: 'number', val: 'string'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  };
   check(map, expect);
   return mapCheckWindowRecord(map).lastSize === map.size;
 }
 function testNumberEdgeKeysStayChecked() {
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   resetMapCheckWindows();
   // Number keys with Infinity and NaN keep their verdicts under the
   // window scheme: failures reset the interval, so repeat checks of the
   // same dirty map keep reporting instead of riding a window.
   const map = new Map([[Infinity, 'x'], [Number.NaN, 'y']]);
-  const expect = {type: 'map', key: 'number', val: 'string'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  };
   const first = check(map, expect, 0);
   const second = check(map, expect, 0);
   return first.good === false && second.good === false;
@@ -240,14 +338,20 @@ function testWindowsSpeedupRatio() {
   // ceiling documents main's real scan cost, not a regression: nothing
   // installs when windowing stays off, the pedantic side is main's
   // loop verbatim.
-  setOptions({windowedChecks: false});
+  setOptions({
+    windowedChecks: false,
+  });
   resetMapCheckWindows();
   const entries = [];
   for (let i = 0; i < 20000; i++) {
     entries.push([i, i]);
   }
   const map = new Map(entries);
-  const expect = {type: 'map', key: 'number', val: 'number'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'number',
+  };
   const warn = () => undefined;
   const scanOnce = () => validateMap(map, expect, 'RatioTest#check', 'mapProperty', true, warn, 0);
   /**
@@ -262,14 +366,18 @@ function testWindowsSpeedupRatio() {
     let best = Number.POSITIVE_INFINITY;
     for (let attempt = 0; attempt < 2; attempt++) {
       const start = performance.now();
-      for (let i = 0; i < iters; i++) round();
+      for (let i = 0; i < iters; i++) {
+        round();
+      }
       const perCheck = performance.now() - start;
       best = Math.min(best, perCheck / iters);
     }
     return best * 1000;
   };
   const forcedScanUs = perCheckUs(scanOnce, 30);
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   // Budget 0: this pins the window mechanics (steady state amortization),
   // which must stay machine independent. The shipped 100ms budget would
   // force this map through ~100ms of scans before any ride unlocks, so
@@ -284,7 +392,9 @@ function testWindowsSpeedupRatio() {
   // installed the plugin, not that the plugin works when called direct.
   const rideOnce = () => validators.validateMap(map, expect, 'RatioTest#check', 'mapProperty', true, warn, 0);
   const windowedUs = perCheckUs(rideOnce, 4096);
-  setOptions({windowedChecks: false});
+  setOptions({
+    windowedChecks: false,
+  });
   options.mapCheckWindowMinTotalMs = virginMapCheckWindowMinTotalMs;
   const demanded = 100;
   const sanity = 20000;
@@ -305,10 +415,16 @@ function testDefaultChecksEverythingEveryCheck() {
   if (virginWindowedChecks !== false) {
     return false;
   }
-  setOptions({windowedChecks: false});
+  setOptions({
+    windowedChecks: false,
+  });
   resetMapCheckWindows();
   const map = new Map([[1, 'a']]);
-  const expect = {type: 'map', key: 'number', val: 'string'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  };
   if (!checkPedantic(map, expect).good) {
     return false;
   }
@@ -325,10 +441,16 @@ function testWindowedChecksCanMissDriftAtTenthCheck() {
   // 10: with windows 2/4/8 the due checks land at 1, 3, 7, 15...). The
   // catch at the next due check stays covered by
   // testContentDriftCaughtWithinWindow.
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   options.mapCheckWindowMinTotalMs = 0; // window mechanics, see testRepeatsSkipUntilWindowHits
   const map = new Map([[1, 'a']]);
-  const expect = {type: 'map', key: 'number', val: 'string'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  };
   if (!check(map, expect).good) {
     return false;
   }
@@ -345,18 +467,30 @@ function testSetOptionsPatchesAndRejectsUnknown() {
   // keys plus wrong value types, so typos cannot silently pretend
   // success. The numeric spend budget goes through the same door, type
   // checked against its number default.
-  setOptions({windowedChecks: false});
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: false,
+  });
+  setOptions({
+    windowedChecks: true,
+  });
   const patched = options.windowedChecks === true;
-  setOptions({windowedChecks: false});
+  setOptions({
+    windowedChecks: false,
+  });
   const restored = options.windowedChecks === false;
-  setOptions({mapCheckWindowMinTotalMs: 50});
+  setOptions({
+    mapCheckWindowMinTotalMs: 50,
+  });
   const patchedMin = options.mapCheckWindowMinTotalMs === 50;
-  setOptions({mapCheckWindowMinTotalMs: virginMapCheckWindowMinTotalMs});
+  setOptions({
+    mapCheckWindowMinTotalMs: virginMapCheckWindowMinTotalMs,
+  });
   const restoredMin = options.mapCheckWindowMinTotalMs === virginMapCheckWindowMinTotalMs;
   const minWrongTypeThrew = (() => {
     try {
-      setOptions({mapCheckWindowMinTotalMs: 'slow'});
+      setOptions({
+        mapCheckWindowMinTotalMs: 'slow',
+      });
       return false;
     } catch (unused) {
       return true;
@@ -364,7 +498,9 @@ function testSetOptionsPatchesAndRejectsUnknown() {
   })();
   const unknownThrew = (() => {
     try {
-      setOptions({windowedCheckz: true});
+      setOptions({
+        windowedCheckz: true,
+      });
       return false;
     } catch (unused) {
       return true;
@@ -372,23 +508,39 @@ function testSetOptionsPatchesAndRejectsUnknown() {
   })();
   const wrongTypeThrew = (() => {
     try {
-      setOptions({windowedChecks: 'yes'});
+      setOptions({
+        windowedChecks: 'yes',
+      });
       return false;
     } catch (unused) {
       return true;
     }
   })();
-  return patched && restored && patchedMin && restoredMin && minWrongTypeThrew && unknownThrew && wrongTypeThrew;
+  return (
+    patched &&
+    restored &&
+    patchedMin &&
+    restoredMin &&
+    minWrongTypeThrew &&
+    unknownThrew &&
+    wrongTypeThrew
+  );
 }
 function testMapCheckWindowCapIsOptionAndLiveEditable() {
   // The doubling cap is not a magic constant: a small cap stops growth
   // at that interval (bounded detection latency), and lowering it
   // mid-flight applies at the next doubling without a reset or reload.
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   options.mapCheckWindowCap = 2;
   resetMapCheckWindows();
   const map = new Map([[1, 'a']]);
-  const expect = {type: 'map', key: 'number', val: 'string'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  };
   check(map, expect);
   let record = mapCheckWindowRecord(map);
   let ok = record.window === 2;
@@ -406,18 +558,26 @@ function testMapCheckWindowCapIsOptionAndLiveEditable() {
   record = mapCheckWindowRecord(map);
   ok = ok && record.window === 32;
   options.mapCheckWindowCap = virginMapCheckWindowCap;
-  setOptions({windowedChecks: false});
+  setOptions({
+    windowedChecks: false,
+  });
   return ok;
 }
 function testMapCheckCapFloorsAtOne() {
   // A cap below 1 (or fractional input from the panel) must not stall
   // the scheme: every check then checks per scan, which is the safest
   // misconfiguration.
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   options.mapCheckWindowCap = 0.5;
   resetMapCheckWindows();
   const map = new Map([[1, 'a']]);
-  const expect = {type: 'map', key: 'number', val: 'string'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  };
   check(map, expect);
   let record = mapCheckWindowRecord(map);
   let ok = record.window === 1;
@@ -427,7 +587,9 @@ function testMapCheckCapFloorsAtOne() {
   record = mapCheckWindowRecord(map);
   ok = ok && record.window === 1;
   options.mapCheckWindowCap = virginMapCheckWindowCap;
-  setOptions({windowedChecks: false});
+  setOptions({
+    windowedChecks: false,
+  });
   return ok;
 }
 function testCheckStatsCountsRidesAndScans() {
@@ -435,13 +597,19 @@ function testCheckStatsCountsRidesAndScans() {
   // checks, scans for full scans, and the scan wall time lands on the
   // same loc row. Direct `validateMap` calls never touch `checks`;
   // that ledger belongs to top level `inspectType` entries.
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   options.mapCheckWindowMinTotalMs = 0; // rides are the subject here, so the spend gate stays wide open
   options.checkStats = true;
   resetMapCheckWindows();
   resetCheckStats();
   const map = new Map([[1, 'a']]);
-  const expect = {type: 'map', key: 'number', val: 'string'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  };
   // Scans land at checks 1, 3, 7 (windows 1/2/4): rides at 2, 4, 5, 6.
   for (let i = 0; i < 7; i++) {
     check(map, expect);
@@ -452,18 +620,26 @@ function testCheckStatsCountsRidesAndScans() {
     row.checks === 0 && row.rides === 4 && row.scans === 3 &&
     row.scanMs >= 0;
   resetCheckStats();
-  setOptions({windowedChecks: false});
+  setOptions({
+    windowedChecks: false,
+  });
   return ok;
 }
 function testCheckStatsOffMeansMapChecksCostOneBit() {
   // With stats off, map checks (here: full pedantic scans) record
   // nothing, so the recording can never become part of the cost users
   // did not ask for.
-  setOptions({windowedChecks: false});
+  setOptions({
+    windowedChecks: false,
+  });
   options.checkStats = false;
   resetMapCheckWindows();
   resetCheckStats();
-  check(new Map([[1, 'a']]), {type: 'map', key: 'number', val: 'string'});
+  check(new Map([[1, 'a']]), {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  });
   const empty = getCheckStats().length === 0;
   options.checkStats = virginCheckStats;
   resetCheckStats();
@@ -473,12 +649,22 @@ function testStatsScansRecordUnderPedanticToo() {
   // The pedantic default is the expensive mode: its scans must show up
   // in the stats, or the hotspot table would hide the very mode users
   // start from.
-  setOptions({windowedChecks: false});
+  setOptions({
+    windowedChecks: false,
+  });
   options.checkStats = true;
   resetMapCheckWindows();
   resetCheckStats();
-  check(new Map([[1, 'a']]), {type: 'map', key: 'number', val: 'string'});
-  check(new Map([[1, 'a']]), {type: 'map', key: 'number', val: 'string'});
+  check(new Map([[1, 'a']]), {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  });
+  check(new Map([[1, 'a']]), {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  });
   const rows = getCheckStats();
   const row = rows.find(_ => _.loc === 'TestSite#method mapProperty');
   const ok = rows.length === 1 && row !== undefined &&
@@ -495,7 +681,12 @@ function testRecordCheckLedgerUsesScanLedgerSeparately() {
   recordCheck('Ledger#x', 'v', 2);
   recordMapScan('Ledger#x', 'v', 20);
   const row = getCheckStats().find(_ => _.loc === 'Ledger#x v');
-  return row !== undefined && row.checks === 1 && row.scans === 1 && row.rides === 0;
+  return (
+    row !== undefined &&
+    row.checks === 1 &&
+    row.scans === 1 &&
+    row.rides === 0
+  );
 }
 function testSpendGateShipsAtHundredMs() {
   // The spend gate must be on out of the box: a shipped 0 would mean
@@ -511,18 +702,26 @@ function testScanSpendAccumulatesInRecord() {
   // measurement belongs to the gate, the stats ledger only rides along.
   // Fresh spend is 0, so a fresh map can earn no ride before it has paid
   // real scan time.
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   options.checkStats = false;
   options.mapCheckWindowMinTotalMs = 0;
   resetMapCheckWindows();
   const map = new Map([[1, 'a']]);
-  const expect = {type: 'map', key: 'number', val: 'string'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  };
   check(map, expect);
   const record = mapCheckWindowRecord(map);
   const accumulated = record.spentMs >= 0 && Number.isFinite(record.spentMs);
   options.checkStats = virginCheckStats;
   options.mapCheckWindowMinTotalMs = virginMapCheckWindowMinTotalMs;
-  setOptions({windowedChecks: false});
+  setOptions({
+    windowedChecks: false,
+  });
   return accumulated;
 }
 function testUnearnedSpendForcesFullRescan() {
@@ -533,13 +732,19 @@ function testUnearnedSpendForcesFullRescan() {
   // cost flaky) and then reads the observable outcome: a full rescan
   // happened (sinceLast reset, window doubled again) and the stats show
   // zero rides, so no real check was skipped before the map earned it.
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   options.checkStats = true;
   options.mapCheckWindowMinTotalMs = 100;
   resetMapCheckWindows();
   resetCheckStats();
   const map = new Map([[1, 'a']]);
-  const expect = {type: 'map', key: 'number', val: 'string'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  };
   check(map, expect); // scan 1: window 2, some real spend accumulated
   mapCheckWindowRecord(map).spentMs = 0.001; // per spec: almost nothing spent yet
   const second = check(map, expect); // gate stays closed: full rescan
@@ -551,7 +756,9 @@ function testUnearnedSpendForcesFullRescan() {
   resetCheckStats();
   options.checkStats = virginCheckStats;
   options.mapCheckWindowMinTotalMs = virginMapCheckWindowMinTotalMs;
-  setOptions({windowedChecks: false});
+  setOptions({
+    windowedChecks: false,
+  });
   return ok;
 }
 function testEarnedSpendUnlocksRides() {
@@ -560,13 +767,19 @@ function testEarnedSpendUnlocksRides() {
   // unchanged) and the stats count one ride next to the single warmup
   // scan. Poked spend again, so the verdict depends on the gate, not on
   // the machine.
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   options.checkStats = true;
   options.mapCheckWindowMinTotalMs = 100;
   resetMapCheckWindows();
   resetCheckStats();
   const map = new Map([[1, 'a']]);
-  const expect = {type: 'map', key: 'number', val: 'string'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  };
   check(map, expect); // scan 1: window 2
   mapCheckWindowRecord(map).spentMs = 150; // per spec: the budget is earned
   const second = check(map, expect); // gate open: ride
@@ -578,7 +791,9 @@ function testEarnedSpendUnlocksRides() {
   resetCheckStats();
   options.checkStats = virginCheckStats;
   options.mapCheckWindowMinTotalMs = virginMapCheckWindowMinTotalMs;
-  setOptions({windowedChecks: false});
+  setOptions({
+    windowedChecks: false,
+  });
   return ok;
 }
 function testSpendGrowsWithEveryScan() {
@@ -587,7 +802,9 @@ function testSpendGrowsWithEveryScan() {
   // monotonically. The comparison is relative (later total strictly
   // above the earlier one on a map big enough to measure), so no wall
   // clock threshold can flake it on fast or slow machines.
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   options.checkStats = true;
   options.mapCheckWindowMinTotalMs = 1000000; // never unlocks here
   resetMapCheckWindows();
@@ -597,7 +814,11 @@ function testSpendGrowsWithEveryScan() {
     entries.push([i, i]);
   }
   const map = new Map(entries);
-  const expect = {type: 'map', key: 'number', val: 'number'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'number',
+  };
   check(map, expect);
   const first = mapCheckWindowRecord(map).spentMs;
   for (let i = 0; i < 3; i++) {
@@ -609,20 +830,28 @@ function testSpendGrowsWithEveryScan() {
   resetCheckStats();
   options.checkStats = virginCheckStats;
   options.mapCheckWindowMinTotalMs = virginMapCheckWindowMinTotalMs;
-  setOptions({windowedChecks: false});
+  setOptions({
+    windowedChecks: false,
+  });
   return ok;
 }
 function testContentChangeBurnsAccumulatedSpend() {
   // The spend validated the old content, so new content must earn its
   // rides from scratch: a size change resets the total even on a map
   // that had already unlocked rides.
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   options.checkStats = true;
   options.mapCheckWindowMinTotalMs = 100;
   resetMapCheckWindows();
   resetCheckStats();
   const map = new Map([[1, 'a']]);
-  const expect = {type: 'map', key: 'number', val: 'string'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  };
   check(map, expect); // scan 1: window 2
   mapCheckWindowRecord(map).spentMs = 150; // unlocked
   map.set(2, 'b'); // new content: spend must burn, window restarts
@@ -636,7 +865,9 @@ function testContentChangeBurnsAccumulatedSpend() {
   resetCheckStats();
   options.checkStats = virginCheckStats;
   options.mapCheckWindowMinTotalMs = virginMapCheckWindowMinTotalMs;
-  setOptions({windowedChecks: false});
+  setOptions({
+    windowedChecks: false,
+  });
   return ok;
 }
 function testSpendBudgetIsLiveEditable() {
@@ -645,13 +876,19 @@ function testSpendBudgetIsLiveEditable() {
   // still scans; dropping the budget to 0 mid flight makes the very
   // next eligible check ride. Real (poked-free) spend is safe here
   // because both assertions compare budget extremes (a million vs zero).
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   options.checkStats = true;
   options.mapCheckWindowMinTotalMs = 1000000; // nothing accumulates that much
   resetMapCheckWindows();
   resetCheckStats();
   const map = new Map([[1, 'a']]);
-  const expect = {type: 'map', key: 'number', val: 'string'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  };
   check(map, expect); // scan 1: window 2, real spend far below the budget
   const gated = check(map, expect); // gate closed: full rescan
   const gatedOk = snap(mapCheckWindowRecord(map)).sinceLast === 0 &&
@@ -666,7 +903,9 @@ function testSpendBudgetIsLiveEditable() {
   resetCheckStats();
   options.checkStats = virginCheckStats;
   options.mapCheckWindowMinTotalMs = virginMapCheckWindowMinTotalMs;
-  setOptions({windowedChecks: false});
+  setOptions({
+    windowedChecks: false,
+  });
   return ok;
 }
 function testUnusableSpendBudgetStaysOpen() {
@@ -675,12 +914,18 @@ function testUnusableSpendBudgetStaysOpen() {
   // no budget instead of silently disabling windowing: windowedChecks
   // was asked for, so rides keep happening like before the option
   // existed. Both spellings of garbage are fed live between checks.
-  setOptions({windowedChecks: true});
+  setOptions({
+    windowedChecks: true,
+  });
   options.checkStats = true;
   resetMapCheckWindows();
   resetCheckStats();
   const map = new Map([[1, 'a']]);
-  const expect = {type: 'map', key: 'number', val: 'string'};
+  const expect = {
+    type: 'map',
+    key: 'number',
+    val: 'string',
+  };
   options.mapCheckWindowMinTotalMs = Number.NaN;
   check(map, expect); // scan 1: window 2
   const nanRide = check(map, expect); // fallback open: ride
@@ -698,7 +943,9 @@ function testUnusableSpendBudgetStaysOpen() {
   resetCheckStats();
   options.checkStats = virginCheckStats;
   options.mapCheckWindowMinTotalMs = virginMapCheckWindowMinTotalMs;
-  setOptions({windowedChecks: false});
+  setOptions({
+    windowedChecks: false,
+  });
   return ok;
 }
 const tests = [

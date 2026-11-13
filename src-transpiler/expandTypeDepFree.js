@@ -30,21 +30,36 @@ function splitTopLevel(str, delimiter) {
   for (let i = 0; i < str.length; i++) {
     const c = str[i];
     const prev = i > 0 ? str[i - 1] : '';
-    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') inSingle = !inSingle;
-    else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') inDouble = !inDouble;
-    else if (c === '`' && !inSingle && !inDouble && prev !== '\\') inBacktick = !inBacktick;
+    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') {
+      inSingle = !inSingle;
+    } else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') {
+      inDouble = !inDouble;
+    } else if (c === '`' && !inSingle && !inDouble && prev !== '\\') {
+      inBacktick = !inBacktick;
+    }
     const inQuote = inSingle || inDouble || inBacktick;
     if (!inQuote) {
-      if (c === '<') depthAngle++;
-      else if (c === '>') depthAngle--;
-      else if (c === '{') depthCurly++;
-      else if (c === '}') depthCurly--;
-      else if (c === '[') depthSquare++;
-      else if (c === ']') depthSquare--;
-      else if (c === '(') depthParen++;
-      else if (c === ')') depthParen--;
+      if (c === '<') {
+        depthAngle++;
+      } else if (c === '>') {
+        depthAngle--;
+      } else if (c === '{') {
+        depthCurly++;
+      } else if (c === '}') {
+        depthCurly--;
+      } else if (c === '[') {
+        depthSquare++;
+      } else if (c === ']') {
+        depthSquare--;
+      } else if (c === '(') {
+        depthParen++;
+      } else if (c === ')') {
+        depthParen--;
+      }
     }
-    if (c === delimiter && !inQuote && depthAngle === 0 && depthCurly === 0 && depthSquare === 0 && depthParen === 0) {
+    const isSplit = c === delimiter && !inQuote;
+    const atTop = depthAngle === 0 && depthCurly === 0 && depthSquare === 0 && depthParen === 0;
+    if (isSplit && atTop) {
       parts.push(current);
       current = '';
     } else {
@@ -71,21 +86,42 @@ function depthsAt(str, upto) {
   for (let i = 0; i < upto; i++) {
     const c = str[i];
     const prev = i > 0 ? str[i - 1] : '';
-    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') inSingle = !inSingle;
-    else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') inDouble = !inDouble;
-    else if (c === '`' && !inSingle && !inDouble && prev !== '\\') inBacktick = !inBacktick;
+    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') {
+      inSingle = !inSingle;
+    } else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') {
+      inDouble = !inDouble;
+    } else if (c === '`' && !inSingle && !inDouble && prev !== '\\') {
+      inBacktick = !inBacktick;
+    }
     const inQuote = inSingle || inDouble || inBacktick;
-    if (inQuote) continue;
-    if (c === '<') angle++;
-    else if (c === '>') angle--;
-    else if (c === '{') curly++;
-    else if (c === '}') curly--;
-    else if (c === '[') square++;
-    else if (c === ']') square--;
-    else if (c === '(') paren++;
-    else if (c === ')') paren--;
+    if (inQuote) {
+      continue;
+    }
+    if (c === '<') {
+      angle++;
+    } else if (c === '>') {
+      angle--;
+    } else if (c === '{') {
+      curly++;
+    } else if (c === '}') {
+      curly--;
+    } else if (c === '[') {
+      square++;
+    } else if (c === ']') {
+      square--;
+    } else if (c === '(') {
+      paren++;
+    } else if (c === ')') {
+      paren--;
+    }
   }
-  return {angle, curly, square, paren, quote: inSingle || inDouble || inBacktick};
+  return {
+    angle,
+    curly,
+    square,
+    paren,
+    quote: inSingle || inDouble || inBacktick,
+  };
 }
 /**
  * Finds a keyword (e.g. `in`, `as`, `extends`) at top level, outside brackets/quotes.
@@ -96,15 +132,21 @@ function depthsAt(str, upto) {
 function findTopLevelKeyword(str, keyword) {
   const isWord = (/** @type {string} */ c) => /[A-Za-z0-9_$]/.test(c);
   for (let i = 0; i <= str.length - keyword.length; i++) {
-    if (str.slice(i, i + keyword.length) !== keyword) continue;
+    if (str.slice(i, i + keyword.length) !== keyword) {
+      continue;
+    }
     const before = i > 0 ? str[i - 1] : ' ';
     const after = i + keyword.length < str.length ? str[i + keyword.length] : ' ';
-    if (isWord(before) || isWord(after)) continue;
+    if (isWord(before) || isWord(after)) {
+      continue;
+    }
     const d = depthsAt(str, i);
     if (d.angle === 0 && d.curly === 0 && d.square === 0 && d.paren === 0 && !d.quote) {
       // Ensure remainder after keyword is also top-level (keyword itself not quoted).
       const d2 = depthsAt(str, i + keyword.length);
-      if (!d2.quote) return i;
+      if (!d2.quote) {
+        return i;
+      }
     }
   }
   return -1;
@@ -128,23 +170,37 @@ function findTopLevelChar(str, delimiter, from = 0) {
     const c = str[i];
     // Check at depths *before* the current char, so `[` itself is findable.
     const inQuoteBefore = inSingle || inDouble || inBacktick;
-    if (i >= from && c === delimiter && !inQuoteBefore && angle === 0 && curly === 0 && square === 0 && paren === 0) {
+    const atTop = angle === 0 && curly === 0 && square === 0 && paren === 0;
+    if (i >= from && c === delimiter && !inQuoteBefore && atTop) {
       return i;
     }
     const prev = i > 0 ? str[i - 1] : '';
-    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') inSingle = !inSingle;
-    else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') inDouble = !inDouble;
-    else if (c === '`' && !inSingle && !inDouble && prev !== '\\') inBacktick = !inBacktick;
+    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') {
+      inSingle = !inSingle;
+    } else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') {
+      inDouble = !inDouble;
+    } else if (c === '`' && !inSingle && !inDouble && prev !== '\\') {
+      inBacktick = !inBacktick;
+    }
     const inQuote = inSingle || inDouble || inBacktick;
     if (!inQuote) {
-      if (c === '<') angle++;
-      else if (c === '>') angle--;
-      else if (c === '{') curly++;
-      else if (c === '}') curly--;
-      else if (c === '[') square++;
-      else if (c === ']') square--;
-      else if (c === '(') paren++;
-      else if (c === ')') paren--;
+      if (c === '<') {
+        angle++;
+      } else if (c === '>') {
+        angle--;
+      } else if (c === '{') {
+        curly++;
+      } else if (c === '}') {
+        curly--;
+      } else if (c === '[') {
+        square++;
+      } else if (c === ']') {
+        square--;
+      } else if (c === '(') {
+        paren++;
+      } else if (c === ')') {
+        paren--;
+      }
     }
   }
   return -1;
@@ -165,11 +221,14 @@ function stripOuterParens(type) {
       let inDouble = false;
       for (let i = 0; i < type.length; i++) {
         const c = type[i];
-        if (c === "'" && !inDouble && type[i - 1] !== '\\') inSingle = !inSingle;
-        else if (c === '"' && !inSingle && type[i - 1] !== '\\') inDouble = !inDouble;
-        else if (!inSingle && !inDouble) {
-          if (c === '(') depth++;
-          else if (c === ')') {
+        if (c === "'" && !inDouble && type[i - 1] !== '\\') {
+          inSingle = !inSingle;
+        } else if (c === '"' && !inSingle && type[i - 1] !== '\\') {
+          inDouble = !inDouble;
+        } else if (!inSingle && !inDouble) {
+          if (c === '(') {
+            depth++;
+          } else if (c === ')') {
             depth--;
             if (depth === 0 && i !== type.length - 1) {
               balanced = false;
@@ -205,8 +264,9 @@ function parseGenericReference(type) {
   let depth = 0;
   let closeIndex = -1;
   for (let i = openIndex; i < type.length; i++) {
-    if (type[i] === '<') depth++;
-    else if (type[i] === '>') {
+    if (type[i] === '<') {
+      depth++;
+    } else if (type[i] === '>') {
       depth--;
       if (depth === 0) {
         closeIndex = i;
@@ -260,12 +320,16 @@ function parseMappedRaw(type) {
   for (let i = 0; i < inner.length; i++) {
     const c = inner[i];
     const prev = i > 0 ? inner[i - 1] : '';
-    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') inSingle = !inSingle;
-    else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') inDouble = !inDouble;
-    else if (c === '`' && !inSingle && !inDouble && prev !== '\\') inBacktick = !inBacktick;
-    else if (!inSingle && !inDouble && !inBacktick) {
-      if (c === '[') square++;
-      else if (c === ']') {
+    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') {
+      inSingle = !inSingle;
+    } else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') {
+      inDouble = !inDouble;
+    } else if (c === '`' && !inSingle && !inDouble && prev !== '\\') {
+      inBacktick = !inBacktick;
+    } else if (!inSingle && !inDouble && !inBacktick) {
+      if (c === '[') {
+        square++;
+      } else if (c === ']') {
         square--;
         if (square === 0) {
           close = i;
@@ -381,12 +445,16 @@ function parseIndexedAccessRaw(type) {
   for (let i = openIdx; i < type.length; i++) {
     const c = type[i];
     const prev = i > 0 ? type[i - 1] : '';
-    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') inSingle = !inSingle;
-    else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') inDouble = !inDouble;
-    else if (c === '`' && !inSingle && !inDouble && prev !== '\\') inBacktick = !inBacktick;
-    else if (!inSingle && !inDouble && !inBacktick) {
-      if (c === '[') square++;
-      else if (c === ']') {
+    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') {
+      inSingle = !inSingle;
+    } else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') {
+      inDouble = !inDouble;
+    } else if (c === '`' && !inSingle && !inDouble && prev !== '\\') {
+      inBacktick = !inBacktick;
+    } else if (!inSingle && !inDouble && !inBacktick) {
+      if (c === '[') {
+        square++;
+      } else if (c === ']') {
         square--;
         if (square === 0 && i !== type.length - 1) {
           return;
@@ -437,8 +505,15 @@ function parseFunctionParams(paramsRaw) {
       if (!name || !typeRaw) {
         return;
       }
-      plainParam = {type: 'parameter', paramType: expandTypeDepFreeOrAny(typeRaw), name};
-      parameters.push({type: 'array', elementType: plainParam});
+      plainParam = {
+        type: 'parameter',
+        paramType: expandTypeDepFreeOrAny(typeRaw),
+        name,
+      };
+      parameters.push({
+        type: 'array',
+        elementType: plainParam,
+      });
       continue;
     }
     const colonIdx = findTopLevelChar(trimmed, ':');
@@ -453,7 +528,11 @@ function parseFunctionParams(paramsRaw) {
       return;
     }
     const paramType = expandTypeDepFreeOrAny(typeRaw);
-    plainParam = {type: 'parameter', paramType, name: cleanName};
+    plainParam = {
+      type: 'parameter',
+      paramType,
+      name: cleanName,
+    };
     parameters.push(plainParam);
   }
   return parameters;
@@ -487,12 +566,16 @@ function parseFunctionRaw(type) {
   for (let i = 0; i < rest.length; i++) {
     const c = rest[i];
     const prev = i > 0 ? rest[i - 1] : '';
-    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') inSingle = !inSingle;
-    else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') inDouble = !inDouble;
-    else if (c === '`' && !inSingle && !inDouble && prev !== '\\') inBacktick = !inBacktick;
-    else if (!inSingle && !inDouble && !inBacktick) {
-      if (c === '(') paren++;
-      else if (c === ')') {
+    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') {
+      inSingle = !inSingle;
+    } else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') {
+      inDouble = !inDouble;
+    } else if (c === '`' && !inSingle && !inDouble && prev !== '\\') {
+      inBacktick = !inBacktick;
+    } else if (!inSingle && !inDouble && !inBacktick) {
+      if (c === '(') {
+        paren++;
+      } else if (c === ')') {
         paren--;
         if (paren === 0) {
           close = i;
@@ -539,12 +622,16 @@ function parseIndexSignatureEntry(entry) {
   for (let i = 0; i < trimmed.length; i++) {
     const c = trimmed[i];
     const prev = i > 0 ? trimmed[i - 1] : '';
-    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') inSingle = !inSingle;
-    else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') inDouble = !inDouble;
-    else if (c === '`' && !inSingle && !inDouble && prev !== '\\') inBacktick = !inBacktick;
-    else if (!inSingle && !inDouble && !inBacktick) {
-      if (c === '[') square++;
-      else if (c === ']') {
+    if (c === "'" && !inDouble && !inBacktick && prev !== '\\') {
+      inSingle = !inSingle;
+    } else if (c === '"' && !inSingle && !inBacktick && prev !== '\\') {
+      inDouble = !inDouble;
+    } else if (c === '`' && !inSingle && !inDouble && prev !== '\\') {
+      inBacktick = !inBacktick;
+    } else if (!inSingle && !inDouble && !inBacktick) {
+      if (c === '[') {
+        square++;
+      } else if (c === ']') {
         square--;
         if (square === 0) {
           closeIdx = i;
@@ -574,7 +661,11 @@ function parseIndexSignatureEntry(entry) {
   const indexType = expandTypeDepFreeOrAny(valueRaw);
   const indexParamType = expandTypeDepFreeOrAny(paramTypeRaw);
   /** @type {ExpandParameterNode} */
-  const indexParam = {type: 'parameter', paramType: indexParamType, name: paramName};
+  const indexParam = {
+    type: 'parameter',
+    paramType: indexParamType,
+    name: paramName,
+  };
   return {
     type: 'indexSignature',
     indexType,
@@ -607,8 +698,9 @@ function parseTemplateLiteralRaw(type) {
     let closed = false;
     while (j < inner.length) {
       const c = inner[j];
-      if (c === '{') depth++;
-      else if (c === '}') {
+      if (c === '{') {
+        depth++;
+      } else if (c === '}') {
         if (depth === 0) {
           closed = true;
           break;
@@ -668,7 +760,10 @@ function expandTupleElement(raw) {
       };
     }
     const annotation = expandTypeDepFreeOrAny(rest);
-    return {type: 'rest', annotation};
+    return {
+      type: 'rest',
+      annotation,
+    };
   }
   const colonIdx = findTopLevelChar(raw, ':');
   if (colonIdx === -1) {
@@ -676,7 +771,12 @@ function expandTupleElement(raw) {
     // with an empty label, matching tsc and the TS/Babel parsers.
     if (raw.endsWith('?') && raw.length > 1) {
       const inner = expandTypeDepFreeOrAny(raw.slice(0, -1).trim());
-      return {type: 'tupleMember', name: '', elementType: inner, optional: true};
+      return {
+        type: 'tupleMember',
+        name: '',
+        elementType: inner,
+        optional: true,
+      };
     }
     return expandTypeDepFree(raw);
   }
@@ -695,7 +795,11 @@ function expandTupleElement(raw) {
   }
   const member = expandTypeDepFreeOrAny(typeRaw);
   /** @type {ExpandTupleMemberNode} */
-  const mem = {type: 'tupleMember', name, elementType: member};
+  const mem = {
+    type: 'tupleMember',
+    name,
+    elementType: member,
+  };
   if (optional) {
     mem.optional = true;
   }
@@ -761,7 +865,9 @@ function expandTypeDepFree(type) {
     const extendsType = expandTypeDepFree(earlyCond.extends_);
     const trueType = expandTypeDepFree(earlyCond.true_);
     const falseType = expandTypeDepFree(earlyCond.false_);
-    if (checkType === undefined || extendsType === undefined || trueType === undefined || falseType === undefined) {
+    const complete = checkType !== undefined && extendsType !== undefined;
+    const resolved = trueType !== undefined && falseType !== undefined;
+    if (!complete || !resolved) {
       return;
     }
     return {
@@ -805,7 +911,10 @@ function expandTypeDepFree(type) {
   if (type.startsWith('keyof ') || type.startsWith('keyof(')) {
     const after = type.startsWith('keyof(') ? type.slice(5).trim() : type.slice(6).trim();
     if (after) {
-      return {type: 'keyof', argument: expandTypeDepFreeOrAny(after)};
+      return {
+        type: 'keyof',
+        argument: expandTypeDepFreeOrAny(after),
+      };
     }
   }
   // JSDocNullableType (`T?` / `?T`): union with null, matching expandType().
@@ -814,11 +923,17 @@ function expandTypeDepFree(type) {
   // matching tsc leniency).
   if (type.endsWith('?')) {
     const inner = expandTypeDepFreeOrAny(type.slice(0, -1).trim());
-    return {type: 'union', members: [inner, 'null']};
+    return {
+      type: 'union',
+      members: [inner, 'null'],
+    };
   }
   if (type.startsWith('?')) {
     const inner = expandTypeDepFreeOrAny(type.slice(1).trim());
-    return {type: 'union', members: [inner, 'null']};
+    return {
+      type: 'union',
+      members: [inner, 'null'],
+    };
   }
   // (0) Function and constructor types `(a: T, ...) => R`, `new (a: T) => R`.
   const func = parseFunctionRaw(type);
@@ -827,9 +942,17 @@ function expandTypeDepFree(type) {
     if (parameters !== undefined) {
       const ret = expandTypeDepFreeOrAny(func.retRaw);
       if (func.isNew) {
-        return {type: 'new', parameters, ret};
+        return {
+          type: 'new',
+          parameters,
+          ret,
+        };
       }
-      return {type: 'function', parameters, ret};
+      return {
+        type: 'function',
+        parameters,
+        ret,
+      };
     }
   }
   // (1) Rest parameters like `...string`: the top level of the gathered
@@ -856,30 +979,43 @@ function expandTypeDepFree(type) {
     if (split !== -1) {
       const first = expandTypeDepFreeOrAny(rest.slice(0, split).trim());
       const tail = expandTypeDepFreeOrAny(rest.slice(split + 1).trim());
-      return {type: 'union', members: [{type: 'array', elementType: first}, tail]};
+      return {
+        type: 'union',
+        members: [{
+          type: 'array',
+          elementType: first,
+        }, tail],
+      };
     }
     const elementType = expandTypeDepFreeOrAny(rest);
-    return {type: 'array', elementType};
+    return {
+      type: 'array',
+      elementType,
+    };
   }
   // (2)
   // Array<...>
   if (type.startsWith("Array<") && type.endsWith('>')) {
     const typeSlice = type.slice(6, -1);
     const elementType = expandTypeDepFreeOrAny(typeSlice);
-    return {type: "array", elementType};
+    return {
+      type: "array",
+      elementType,
+    };
   }
   // Promise<...>
   if (type.startsWith("Promise<") && type.endsWith('>')) {
     const typeSlice = type.slice(8, -1);
     const elementType = expandTypeDepFreeOrAny(typeSlice);
-    return {type: "promise", elementType};
+    return {
+      type: "promise",
+      elementType,
+    };
   }
   // (3) Object<...> or Record<...>
-  if (
-    (
-      type.startsWith("Object<") ||
-      type.startsWith("Record<")
-    ) && type.endsWith('>')) {
+  const isObjectSpelling = type.startsWith("Object<") || type.startsWith("Record<");
+  const isClosedGeneric = isObjectSpelling && type.endsWith('>');
+  if (isClosedGeneric) {
     const recordSlice = type.slice(7, -1);
     const commaIdx = findTopLevelChar(recordSlice, ',');
     if (commaIdx === -1) {
@@ -919,7 +1055,11 @@ function expandTypeDepFree(type) {
   const genericRef = parseGenericReference(type);
   if (genericRef) {
     const {name, args} = genericRef;
-    return {type: 'reference', name, args: args.map((_) => expandTypeDepFreeOrAny(_))};
+    return {
+      type: 'reference',
+      name,
+      args: args.map((_) => expandTypeDepFreeOrAny(_)),
+    };
   }
   // (4) Mapped types `{[K in X as Y]?: Z}` before the object-literal fallback.
   if (type[0] === '{' && type[type.length - 1] === '}') {
@@ -995,7 +1135,9 @@ function expandTypeDepFree(type) {
       let expanded = expandTypeDepFreeOrAny(propTypeRaw);
       if (propOptional || propReadonly) {
         if (isExpandedObject(expanded)) {
-          if (propOptional) expanded.optional = true;
+          if (propOptional) {
+            expanded.optional = true;
+          }
           if (propReadonly) {
             // The mapping modifier union absorbs `true`; tuple members and
             // other flag shapes take the plain boolean. Both stay total.
@@ -1003,9 +1145,16 @@ function expandTypeDepFree(type) {
           }
         } else {
           /** @type {ExpandAnnotatedAtomNode} */
-          const wrapped = {type: 'atom', atomType: expanded};
-          if (propOptional) wrapped.optional = true;
-          if (propReadonly) wrapped.readonly = true;
+          const wrapped = {
+            type: 'atom',
+            atomType: expanded,
+          };
+          if (propOptional) {
+            wrapped.optional = true;
+          }
+          if (propReadonly) {
+            wrapped.readonly = true;
+          }
           expanded = wrapped;
         }
       }
@@ -1014,10 +1163,14 @@ function expandTypeDepFree(type) {
     // Bare `{}` carries no `properties` key, matching the TS/Babel parsers
     // (and distinguishing it from the `object` keyword, which does).
     if (!Object.keys(properties).length && indexSignatures === undefined) {
-      return {type: 'object'};
+      return {
+        type: 'object',
+      };
     }
     /** @type {ExpandObjectNode} */
-    const out = {type: 'object'};
+    const out = {
+      type: 'object',
+    };
     if (Object.keys(properties).length) {
       out.properties = properties;
     }
@@ -1041,14 +1194,17 @@ function expandTypeDepFree(type) {
     const typeSlice = type.slice(0, -2);
     return {
       type: 'array',
-      elementType: expandTypeDepFreeOrAny(typeSlice)
+      elementType: expandTypeDepFreeOrAny(typeSlice),
     };
   }
   // (10) expand tuples
   if (type[0] === '[' && type[type.length - 1] === ']') {
     const inner = type.slice(1, -1);
     if (inner.trim() === '') {
-      return {type: 'tuple', elements: []};
+      return {
+        type: 'tuple',
+        elements: [],
+      };
     }
     const elements = splitTopLevel(inner, ','); // ['null', ' Texture', ...]
     return {
@@ -1080,14 +1236,23 @@ function expandTypeDepFree(type) {
   // A bare `typeof` (no operand, only reachable as a nullable-strip
   // artifact like `typeof ?`) is typeof-unknown, matching the TS parser.
   if (type === 'typeof') {
-    return {type: 'typeof', argument: 'any'};
+    return {
+      type: 'typeof',
+      argument: 'any',
+    };
   }
   if (type.startsWith('typeof ')) {
     const after = type.substring(7).trim();
     if (after) {
-      return {type: 'typeof', argument: expandTypeDepFreeOrAny(after)};
+      return {
+        type: 'typeof',
+        argument: expandTypeDepFreeOrAny(after),
+      };
     }
-    return {type: 'typeof', argument: 'any'};
+    return {
+      type: 'typeof',
+      argument: 'any',
+    };
   }
   // Literal normalization for parity with expandType():
   // numeric literals become numbers, true/false become booleans.
@@ -1102,10 +1267,15 @@ function expandTypeDepFree(type) {
   }
   // Bigint: `bigint` keyword and `123n` literals, matching expandType().
   if (type === 'bigint') {
-    return {type: 'bigint'};
+    return {
+      type: 'bigint',
+    };
   }
   if (/^\d+n$/.test(type)) {
-    return {type: 'bigint', literal: type.slice(0, -1)};
+    return {
+      type: 'bigint',
+      literal: type.slice(0, -1),
+    };
   }
   return type;
 }

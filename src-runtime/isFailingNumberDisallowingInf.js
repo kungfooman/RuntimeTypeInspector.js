@@ -20,6 +20,10 @@
  * isFailingNumberDisallowingInf(new Number(1)); // true (boxed numbers are not numbers)
  */
 function isFailingNumberDisallowingInf(x) {
-  return typeof x !== 'number' || Number.isNaN(x) || !Number.isFinite(x);
+  return (
+    typeof x !== 'number' ||
+    Number.isNaN(x) ||
+    !Number.isFinite(x)
+  );
 }
 export {isFailingNumberDisallowingInf};

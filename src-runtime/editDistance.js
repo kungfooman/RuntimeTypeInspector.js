@@ -7,7 +7,9 @@
  * editDistance('camera', 'camra'); // 1
  */
 function editDistance(a, b) {
-  const prev = Array.from({length: b.length + 1}, (_, j) => j);
+  const prev = Array.from({
+    length: b.length + 1,
+  }, (_, j) => j);
   for (let i = 1; i <= a.length; i++) {
     let diag = prev[0];
     prev[0] = i;

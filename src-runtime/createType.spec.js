@@ -7,22 +7,28 @@ function prepare() {
    * @typedef {ObjValues} ObjValuesTypedef
    * @typedef {ObjValuesTypedef} ObjValuesTypedef2
    */
-  registerTypedef('Obj', {
-    "type": "object",
-    "properties": {
-      "a": "'aa'",
-      "b": "\"bb\"",
-      "c": "'cc'"
-    }
-  });
-  registerTypedef('ObjValues', {
-    "type": "indexedAccess",
-    "index": {
-      "type": "keyof",
-      "argument": "Obj"
+  registerTypedef(
+    'Obj',
+    {
+      "type": "object",
+      "properties": {
+        "a": "'aa'",
+        "b": "\"bb\"",
+        "c": "'cc'",
+      },
     },
-    "object": "Obj"
-  });
+  );
+  registerTypedef(
+    'ObjValues',
+    {
+      "type": "indexedAccess",
+      "index": {
+        "type": "keyof",
+        "argument": "Obj",
+      },
+      "object": "Obj",
+    },
+  );
   registerTypedef('ObjValuesTypedef', "ObjValues");
   registerTypedef('ObjValuesTypedef2', "ObjValuesTypedef");
 }

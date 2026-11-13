@@ -13,6 +13,10 @@ import {recurseSubstitute} from "./substitutes.js";
 function substituteRecordNode(type, search, replace, warn) {
   const key = recurseSubstitute(type.key, search, replace, warn);
   const val = recurseSubstitute(type.val, search, replace, warn);
-  return key === type.key && val === type.val ? type : {...type, key, val};
+  return key === type.key && val === type.val ? type : {
+    ...type,
+    key,
+    val,
+  };
 }
 export {substituteRecordNode};

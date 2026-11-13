@@ -1,9 +1,9 @@
 import {collectCandidates} from "./collectCandidates.js";
-import {inspectType} from "./inspectType.js";
-import {mergeCandidate} from "./mergeCandidate.js";
-import {options} from "./options.js";
-import {substitutedFor} from "./substitutedFor.js";
-import {recurse} from "./validators.js";
+import {inspectType      } from "./inspectType.js";
+import {mergeCandidate   } from "./mergeCandidate.js";
+import {options          } from "./options.js";
+import {substitutedFor   } from "./substitutedFor.js";
+import {recurse          } from "./validators.js";
 /**
  * Per-call inference state, keyed by the per-invocation templates dict (fresh
  * object per call, so entries die with it). `pinned` records keys this call
@@ -38,12 +38,20 @@ function inspectInferred(value, expect, rawExpect, loc, name, templates) {
   const noop = () => undefined;
   let state = inferenceState.get(templates);
   if (!state) {
-    state = {pinned: new Set(), constraints: {}};
+    state = {
+      pinned: new Set(),
+      constraints: {},
+    };
     inferenceState.set(templates, state);
   }
   if (recurse(value, expect, loc, name, true, noop, 0)) {
     for (const candidate of collectCandidates(value, rawExpect)) {
-      mergeCandidate(templates, state, candidate.key, candidate.literal, candidate.value, loc, name, false, noop);
+      const {
+        key,
+        literal,
+        value: sample,
+      } = candidate;
+      mergeCandidate(templates, state, key, literal, sample, loc, name, false, noop);
     }
     return true;
   }
@@ -51,7 +59,12 @@ function inspectInferred(value, expect, rawExpect, loc, name, templates) {
   // union a pin (joint inference) before reporting. Widen decisions persist
   // like tsc's fixing, even when this value still reports.
   for (const candidate of collectCandidates(value, rawExpect)) {
-    mergeCandidate(templates, state, candidate.key, candidate.literal, candidate.value, loc, name, true, noop);
+    const {
+      key,
+      literal,
+      value: sample,
+    } = candidate;
+    mergeCandidate(templates, state, key, literal, sample, loc, name, true, noop);
   }
   const sub = substitutedFor(rawExpect, loc, name, templates, noop);
   if (recurse(value, sub, loc, name, true, noop, 0)) {
@@ -67,6 +80,7 @@ function inspectTypeWithTemplates(value, expect, loc, name, templates) {
   // Substitute into a clone: the pristine tree is needed below for candidate
   // collection (template refs intact) and for rebuilding after widening.
   // Memoized by site plus bindings (see substitutedCache).
-  return inspectInferred(value, substitutedFor(expect, loc, name, templates, console.warn), expect, loc, name, templates);
+  const sub = substitutedFor(expect, loc, name, templates, console.warn);
+  return inspectInferred(value, sub, expect, loc, name, templates);
 }
 export {inspectTypeWithTemplates};

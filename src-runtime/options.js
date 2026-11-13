@@ -75,8 +75,8 @@ const options = {
    */
   ...windowedOptions,
 };
-import {validators} from "./validators.js";
-import {validateMap} from "./validateMap.js";
+import {validators         } from "./validators.js";
+import {validateMap        } from "./validateMap.js";
 import {windowedValidateMap} from "./plugin-windowed/windowedValidateMap.js";
 /**
  * Patches RTI's runtime options from a consumer (engine bootstrap, app
@@ -90,7 +90,9 @@ function setOptions(patch) {
       throw new Error(`setOptions> unknown option '${key}'`);
     }
     if (typeof options[key] !== typeof patch[key]) {
-      throw new Error(`setOptions> option '${key}' expects a value of type ${typeof options[key]}, got a ${typeof patch[key]}`);
+      const want = typeof options[key];
+      const got = typeof patch[key];
+      throw new Error(`setOptions> option '${key}' expects a value of type ${want}, got a ${got}`);
     }
   }
   Object.assign(options, patch);
@@ -106,7 +108,8 @@ function setOptions(patch) {
   // installer at load time; disabling needs no work, each wrapper gates
   // on the flag at call time.
   if (patch.checkStats === true) {
-    import("./plugin-walk-timers/installWalkTimers.js").then((timers) => timers.installWalkTimers());
+    const timersPath = './plugin-walk-timers/installWalkTimers.js';
+    import(timersPath).then((timers) => timers.installWalkTimers());
   }
 }
 /**

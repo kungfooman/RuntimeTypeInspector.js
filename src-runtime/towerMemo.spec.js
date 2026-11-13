@@ -1,12 +1,12 @@
-import {mergedClassShape} from './classShape.js';
+import {mergedClassShape    } from './classShape.js';
 import {instantiateReference} from './instantiateReference.js';
 import {registerClass, classes, bumpClassVersion} from './registerClass.js';
 import {registerTypedef, typedefs, bumpTypedefVersion} from './registerTypedef.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType              } from '../src-transpiler/expandType.js';
 import {inspectTypeWithTemplates} from './inspectTypeWithTemplates.js';
-import {createTypeFromMapping} from './createTypeFromMapping.js';
-import {validateType} from './validateType.js';
-import {substitutedCache} from './substitutedFor.js';
+import {createTypeFromMapping   } from './createTypeFromMapping.js';
+import {validateType            } from './validateType.js';
+import {substitutedCache        } from './substitutedFor.js';
 const noop = () => undefined;
 function dropClass(name) {
   delete classes[name];
@@ -34,7 +34,12 @@ function testMergedShapeSharesIdentity() {
   try {
     const first = mergedClassShape('MergeChild');
     const second = mergedClassShape('MergeChild');
-    return first === second && Object.isFrozen(first) && 'base' in first.properties && 'sub' in first.properties;
+    return (
+      first === second &&
+      Object.isFrozen(first) &&
+      'base' in first.properties &&
+      'sub' in first.properties
+    );
   } finally {
     dropClass('MergeBase');
     dropClass('MergeChild');
@@ -46,11 +51,26 @@ function testMergedShapeReflectsTypedefChange() {
   class HarvestedBox {}
   registerClass(HarvestedBox);
   try {
-    registerTypedef('HarvestedBox', {type: 'object', properties: {a: 'number'}});
+    registerTypedef('HarvestedBox', {
+      type: 'object',
+      properties: {
+        a: 'number',
+      },
+    });
     const before = mergedClassShape('HarvestedBox');
-    registerTypedef('HarvestedBox', {type: 'object', properties: {a: 'number', b: 'string'}});
+    registerTypedef('HarvestedBox', {
+      type: 'object',
+      properties: {
+        a: 'number',
+        b: 'string',
+      },
+    });
     const after = mergedClassShape('HarvestedBox');
-    return before !== after && !('b' in before.properties) && 'b' in after.properties;
+    return (
+      before !== after &&
+      !('b' in before.properties) &&
+      'b' in after.properties
+    );
   } finally {
     dropClass('HarvestedBox');
     dropTypedef('HarvestedBox');
@@ -62,11 +82,43 @@ function testReferenceSharesIdentityPerArgs() {
   // calls resolve the options tower once.
   const prev = typedefs.ArgumentsBox;
   try {
-    registerTypedef('ArgumentsBox', {type: 'object', properties: {value: 'T'}}, ['T']);
-    const first = instantiateReference({type: 'reference', name: 'ArgumentsBox', args: ['"a"']}, noop);
-    const second = instantiateReference({type: 'reference', name: 'ArgumentsBox', args: ['"a"']}, noop);
-    const other = instantiateReference({type: 'reference', name: 'ArgumentsBox', args: ['"b"']}, noop);
-    return first === second && Object.isFrozen(first) && first !== other && first.properties.value === '"a"' && other.properties.value === '"b"';
+    registerTypedef('ArgumentsBox', {
+      type: 'object',
+      properties: {
+        value: 'T',
+      },
+    }, ['T']);
+    const first = instantiateReference(
+      {
+        type: 'reference',
+        name: 'ArgumentsBox',
+        args: ['"a"'],
+      },
+      noop,
+    );
+    const second = instantiateReference(
+      {
+        type: 'reference',
+        name: 'ArgumentsBox',
+        args: ['"a"'],
+      },
+      noop,
+    );
+    const other = instantiateReference(
+      {
+        type: 'reference',
+        name: 'ArgumentsBox',
+        args: ['"b"'],
+      },
+      noop,
+    );
+    return (
+      first === second &&
+      Object.isFrozen(first) &&
+      first !== other &&
+      first.properties.value === '"a"' &&
+      other.properties.value === '"b"'
+    );
   } finally {
     if (prev === undefined) {
       delete typedefs.ArgumentsBox;
@@ -81,11 +133,40 @@ function testReferenceReflectsReregistration() {
   // instead of serving the stale substitution.
   const prev = typedefs.ReregisteredBox;
   try {
-    registerTypedef('ReregisteredBox', {type: 'object', properties: {v: 'T'}}, ['T']);
-    const before = instantiateReference({type: 'reference', name: 'ReregisteredBox', args: ['"a"']}, noop);
-    registerTypedef('ReregisteredBox', {type: 'object', properties: {v: 'T', w: 'number'}}, ['T']);
-    const after = instantiateReference({type: 'reference', name: 'ReregisteredBox', args: ['"a"']}, noop);
-    return before !== after && !('w' in before.properties) && 'w' in after.properties;
+    registerTypedef('ReregisteredBox', {
+      type: 'object',
+      properties: {
+        v: 'T',
+      },
+    }, ['T']);
+    const before = instantiateReference(
+      {
+        type: 'reference',
+        name: 'ReregisteredBox',
+        args: ['"a"'],
+      },
+      noop,
+    );
+    registerTypedef('ReregisteredBox', {
+      type: 'object',
+      properties: {
+        v: 'T',
+        w: 'number',
+      },
+    }, ['T']);
+    const after = instantiateReference(
+      {
+        type: 'reference',
+        name: 'ReregisteredBox',
+        args: ['"a"'],
+      },
+      noop,
+    );
+    return (
+      before !== after &&
+      !('w' in before.properties) &&
+      'w' in after.properties
+    );
   } finally {
     if (prev === undefined) {
       delete typedefs.ReregisteredBox;
@@ -114,20 +195,50 @@ function testRepeatValidationStaysCorrect() {
   const prevName = typedefs.TowerName;
   const prevOpts = typedefs.TowerOptions;
   try {
-    registerTypedef('TowerCamera', {type: 'object', properties: {fov: 'number'}});
-    registerTypedef('TowerEntity', {type: 'object', properties: {camera: 'TowerCamera', name: 'string'}});
+    registerTypedef('TowerCamera', {
+      type: 'object',
+      properties: {
+        fov: 'number',
+      },
+    });
+    registerTypedef(
+      'TowerEntity',
+      {
+        type: 'object',
+        properties: {
+          camera: 'TowerCamera',
+          name: 'string',
+        },
+      },
+    );
     registerTypedef('TowerMap', expandType('{ [K in keyof TowerEntity as NonNullable<TowerEntity[K]> extends TowerComponent ? K : never]: NonNullable<TowerEntity[K]> }'));
     registerTypedef('TowerName', expandType('keyof TowerMap & string'));
     registerTypedef('TowerOptions', expandType('Partial<Pick<TowerMap[K], "fov">>'), ['K']);
     const check = (type, data) => {
-      const templates = {K: 'TowerName'};
+      const templates = {
+        K: 'TowerName',
+      };
       if (!inspectTypeWithTemplates(type, 'K', 'TowerEntity#add', 'type', templates)) {
         return false;
       }
-      return inspectTypeWithTemplates(data, {type: 'reference', name: 'TowerOptions', args: ['K']}, 'TowerEntity#add', 'data', templates);
+      return inspectTypeWithTemplates(
+        data,
+        {
+          type: 'reference',
+          name: 'TowerOptions',
+          args: ['K'],
+        },
+        'TowerEntity#add',
+        'data',
+        templates,
+      );
     };
-    const good = {fov: 1};
-    const bad = {fov: 'x'};
+    const good = {
+      fov: 1,
+    };
+    const bad = {
+      fov: 'x',
+    };
     if (!check('camera', good)) {
       return false;
     }
@@ -168,10 +279,31 @@ function testReferenceKeepsNegZeroDistinct() {
   // instantiate distinctly, mirroring how inference pins them distinctly.
   const prev = typedefs.NegativeZeroBox;
   try {
-    registerTypedef('NegativeZeroBox', {type: 'object', properties: {v: 'T'}}, ['T']);
-    const neg = instantiateReference({type: 'reference', name: 'NegativeZeroBox', args: [-0]}, noop);
-    const pos = instantiateReference({type: 'reference', name: 'NegativeZeroBox', args: [0]}, noop);
-    return neg !== pos && Object.is(neg.properties.v, -0) && Object.is(pos.properties.v, 0) && !Object.is(pos.properties.v, -0);
+    registerTypedef('NegativeZeroBox', {
+      type: 'object',
+      properties: {
+        v: 'T',
+      },
+    }, ['T']);
+    const neg = instantiateReference(
+      {
+        type: 'reference',
+        name: 'NegativeZeroBox',
+        args: [-0],
+      },
+      noop,
+    );
+    const pos = instantiateReference({
+      type: 'reference',
+      name: 'NegativeZeroBox',
+      args: [0],
+    }, noop);
+    return (
+      neg !== pos &&
+      Object.is(neg.properties.v, -0) &&
+      Object.is(pos.properties.v, 0) &&
+      !Object.is(pos.properties.v, -0)
+    );
   } finally {
     if (prev === undefined) {
       delete typedefs.NegativeZeroBox;
@@ -198,8 +330,20 @@ function testHundredRepeatsCheaperThanOneCold() {
     for (let i = 0; i < 50; i++) {
       props[`p${i}`] = 'number';
     }
-    registerTypedef('ThroughputElement', {type: 'object', properties: props});
-    registerTypedef('ThroughputEntity', {type: 'object', properties: {element: 'ThroughputElement', name: 'string'}});
+    registerTypedef('ThroughputElement', {
+      type: 'object',
+      properties: props,
+    });
+    registerTypedef(
+      'ThroughputEntity',
+      {
+        type: 'object',
+        properties: {
+          element: 'ThroughputElement',
+          name: 'string',
+        },
+      },
+    );
     registerTypedef('ThroughputMap', expandType('{ [K in keyof ThroughputEntity as NonNullable<ThroughputEntity[K]> extends ThroughputComponent ? K : never]: NonNullable<ThroughputEntity[K]> }'));
     registerTypedef('ThroughputName', expandType('keyof ThroughputMap & string'));
     registerTypedef('ThroughputWritable', expandType('{ [P in keyof T]-?: IfEquals<{ [Q in P]: T[P] }, { -readonly [Q in P]: T[P] }, P> }[keyof T]'), ['T']);
@@ -208,13 +352,27 @@ function testHundredRepeatsCheaperThanOneCold() {
     registerTypedef('ThroughputMerged', expandType('ThroughputOptionsOf<ThroughputMap[K]>'), ['K']);
     registerTypedef('ThroughputOptions', expandType('{ [P in keyof ThroughputMerged<K>]: ThroughputMerged<K>[P] }'), ['K']);
     const check = (type, data) => {
-      const templates = {K: 'ThroughputName'};
+      const templates = {
+        K: 'ThroughputName',
+      };
       if (!inspectTypeWithTemplates(type, 'K', 'Throughput#add', 'type', templates)) {
         return false;
       }
-      return inspectTypeWithTemplates(data, {type: 'reference', name: 'ThroughputOptions', args: ['K']}, 'Throughput#add', 'data', templates);
+      return inspectTypeWithTemplates(
+        data,
+        {
+          type: 'reference',
+          name: 'ThroughputOptions',
+          args: ['K'],
+        },
+        'Throughput#add',
+        'data',
+        templates,
+      );
     };
-    const value = {p0: 1};
+    const value = {
+      p0: 1,
+    };
     const coldStart = performance.now();
     if (!check('element', value)) {
       return false;
@@ -248,21 +406,50 @@ function testFrozenSharedTupleMaterializes() {
   // alone instead of throwing, desugaring into a fresh flattened copy, and
   // validation still accepts and rejects the same values because tuple
   // validation expands rest elements itself.
-  registerTypedef('SharedTupleBox', {
-    type: 'object',
-    properties: {
-      t: {type: 'tuple', elements: [
-        {type: 'rest', annotation: {type: 'tuple', elements: ['number']}},
-        'string',
-      ]},
+  registerTypedef(
+    'SharedTupleBox',
+    {
+      type: 'object',
+      properties: {
+        t: {
+          type: 'tuple',
+          elements: [
+            {
+              type: 'rest',
+              annotation: {
+                type: 'tuple',
+                elements: ['number'],
+              },
+            },
+            'string',
+          ],
+        },
+      },
     },
-  }, ['X']);
+    ['X'],
+  );
   try {
-    const inst = instantiateReference({type: 'reference', name: 'SharedTupleBox', args: ['any']}, noop);
+    const inst = instantiateReference(
+      {
+        type: 'reference',
+        name: 'SharedTupleBox',
+        args: ['any'],
+      },
+      noop,
+    );
     const shared = inst.properties.t;
     const freshNode = () => ({
       type: 'mapping',
-      iterable: {type: 'keyof', argument: {type: 'object', properties: {a: 'number', b: 'number'}}},
+      iterable: {
+        type: 'keyof',
+        argument: {
+          type: 'object',
+          properties: {
+            a: 'number',
+            b: 'number',
+          },
+        },
+      },
       element: 'K',
       result: shared,
     });
@@ -275,9 +462,21 @@ function testFrozenSharedTupleMaterializes() {
     const untouched = shared.elements[0].type === 'rest';
     const flat = mat.properties.a;
     const desugared = flat !== shared && flat.elements.length === 2 && flat.elements[0] === 'number' && flat.elements[1] === 'string';
-    const ok = validateType({a: [1, 'x'], b: [2, 'y']}, mat, 'loc', 'name', true, noop, 0);
-    const bad = validateType({a: [1, 2, 'x']}, mat, 'loc', 'name', true, noop, 0) === false;
-    return untouched && desugared && ok && bad;
+    const good = {
+      a: [1, 'x'],
+      b: [2, 'y'],
+    };
+    const ok = validateType(good, mat, 'loc', 'name', true, noop, 0);
+    const mismatch = {
+      a: [1, 2, 'x'],
+    };
+    const bad = validateType(mismatch, mat, 'loc', 'name', true, noop, 0) === false;
+    return (
+      untouched &&
+      desugared &&
+      ok &&
+      bad
+    );
   } finally {
     dropTypedef('SharedTupleBox');
   }

@@ -1,9 +1,8 @@
-import {stripTsBraces} from './stripTsBraces.js';
-import {tsParamTag} from './tsParamTag.js';
-import {tsDottedChildren} from './tsDottedChildren.js';
+import {stripTsBraces     } from './stripTsBraces.js';
+import {tsParamTag        } from './tsParamTag.js';
+import {tsDottedChildren  } from './tsDottedChildren.js';
 import {balancedBraceInner} from './balancedBraceInner.js';
-import {recoverTildeTag} from './recoverTildeTag.js';
-
+import {recoverTildeTag   } from './recoverTildeTag.js';
 /**
  * Reads one TS `@overload` marker to the shared schema entry: TS emits
  * one `JSDocOverloadTag` per marker, each with its own signature, exactly
@@ -40,7 +39,11 @@ function tsOverloadTag(tag) {
     const tail = signature.parameters[index]?.getText?.() ?? '';
     const inner = '@param ' + tail.split('@param').slice(1).join('@param');
     const nested = tsDottedChildren(parameter.name, inner, 2);
-    params.push({...parameter, type: '', merged: true}, ...nested);
+    params.push({
+      ...parameter,
+      type: '',
+      merged: true,
+    }, ...nested);
   }
   let returns = '';
   if (signature.type && signature.type.typeExpression) {

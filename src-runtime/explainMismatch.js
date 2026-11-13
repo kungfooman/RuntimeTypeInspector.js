@@ -1,28 +1,28 @@
-import {typedefs} from './registerTypedef.js';
+import {typedefs             } from './registerTypedef.js';
 import {createTypeFromMapping} from './createTypeFromMapping.js';
 import {keyNames, resolveObject, resolveUtilityShape} from './getTypeKeys.js';
-import {classes} from './registerClass.js';
-import {mergedClassShape} from './classShape.js';
+import {classes             } from './registerClass.js';
+import {mergedClassShape    } from './classShape.js';
 import {instantiateReference} from './instantiateReference.js';
 import {recurse, validators} from './validators.js';
-import {tupleEffective} from './tupleEffective.js';
-import {tupleOptional} from './tupleOptional.js';
+import {tupleEffective     } from './tupleEffective.js';
+import {tupleOptional      } from './tupleOptional.js';
 import {expandTupleElements} from './expandTupleElements.js';
-import {options} from './options.js';
+import {options            } from './options.js';
 import './validateType.js';
 import './evaluateCondition.js';
-import {stringifyType} from './stringifyType.js';
+import {stringifyType } from './stringifyType.js';
 import {stringifyValue} from './stringifyValue.js';
-import {previewValue} from './previewValue.js';
+import {previewValue  } from './previewValue.js';
 import {describeValueType, prettyValue} from './describeValue.js';
-import {formatMapKey} from './formatMapKey.js';
-import {snapshotTag} from './snapshotTag.js';
+import {formatMapKey        } from './formatMapKey.js';
+import {snapshotTag         } from './snapshotTag.js';
 import {snapshotNominalMatch} from './snapshotNominalMatch.js';
-import {unionNominalTag} from './unionNominalTag.js';
-import {unionValidatorPass} from './unionValidatorPass.js';
-import {isArrayValue} from './isArrayValue.js';
-import {isMapValue} from './isMapValue.js';
-import {isSetValue} from './isSetValue.js';
+import {unionNominalTag     } from './unionNominalTag.js';
+import {unionValidatorPass  } from './unionValidatorPass.js';
+import {isArrayValue        } from './isArrayValue.js';
+import {isMapValue          } from './isMapValue.js';
+import {isSetValue          } from './isSetValue.js';
 const MAX_DEPTH = 6;
 const MAX_UNION_MEMBERS = 12;
 const MAX_MAP_ENTRIES = 20;
@@ -139,7 +139,9 @@ function materializeExpect(expect) {
       }
       if (current.type === 'reference') {
         const {name, args} = current;
-        if ((name === 'Partial' || name === 'Pick' || name === 'Omit' || name === 'Required') && args?.length) {
+        const isPartial = name === 'Partial' || name === 'Pick';
+        const isOmit = name === 'Omit' || name === 'Required';
+        if ((isPartial || isOmit) && args?.length) {
           let shape;
           try {
             shape = resolveUtilityShape(name, args, noop, 0);
@@ -241,10 +243,16 @@ function removalInfo(expect, key, seen = []) {
         source = `${source.slice(0, 77)}...`;
       }
       if (name === 'Omit' && listed) {
-        return {removed: true, source};
+        return {
+          removed: true,
+          source,
+        };
       }
       if (name === 'Pick' && !listed) {
-        return {removed: false, source};
+        return {
+          removed: false,
+          source,
+        };
       }
       return null;
     }
@@ -338,8 +346,14 @@ function diffMapValue(value, mat, path, depth) {
   }
   const findings = [];
   let shown = 0;
-  const memberOf = {container: expectSnip(mat), noun: 'entry'};
-  const keyOf = {container: expectSnip(mat), noun: 'key'};
+  const memberOf = {
+    container: expectSnip(mat),
+    noun: 'entry',
+  };
+  const keyOf = {
+    container: expectSnip(mat),
+    noun: 'key',
+  };
   try {
     for (const [key, val] of value) {
       if (shown >= MAX_MAP_ENTRIES) {
@@ -414,7 +428,10 @@ function diffSetValue(value, mat, path, depth) {
   }
   const findings = [];
   let i = 0;
-  const memberOf = {container: expectSnip(mat), noun: 'member'};
+  const memberOf = {
+    container: expectSnip(mat),
+    noun: 'member',
+  };
   try {
     for (const item of value) {
       if (i >= MAX_MAP_ENTRIES) {
@@ -479,7 +496,10 @@ function diffArrayValue(value, mat, path, depth) {
   }
   const findings = [];
   let shown = 0;
-  const memberOf = {container: expectSnip(mat), noun: 'element'};
+  const memberOf = {
+    container: expectSnip(mat),
+    noun: 'element',
+  };
   try {
     for (let i = 0; i < value.length; i++) {
       if (shown >= MAX_MAP_ENTRIES) {
@@ -554,7 +574,10 @@ function diffTupleValue(value, mat, path, depth) {
   }
   const findings = [];
   let shown = 0;
-  const memberOf = {container: expectSnip(mat), noun: 'element'};
+  const memberOf = {
+    container: expectSnip(mat),
+    noun: 'element',
+  };
   const push = (val, type, idx) => {
     if (shown >= MAX_MAP_ENTRIES) {
       return false;
@@ -567,7 +590,8 @@ function diffTupleValue(value, mat, path, depth) {
     if (variadic) {
       const before = expanded.slice(0, variadicPos);
       const after = expanded.slice(variadicPos);
-      const minLength = before.filter((el) => !tupleOptional(el)).length + after.filter((el) => !tupleOptional(el)).length;
+      const isRequired = (el) => !tupleOptional(el);
+      const minLength = before.filter(isRequired).length + after.filter(isRequired).length;
       if (value.length < minLength) {
         return [{
           path,
@@ -607,12 +631,15 @@ function diffTupleValue(value, mat, path, depth) {
         required--;
       }
       if (value.length < required || value.length > expanded.length) {
+        const fixed = required === expanded.length;
+        const want = fixed ? `${required}` : `${required} to ${expanded.length}`;
+        const detail = `Expected a tuple of length ${want}, got length ${value.length}.`;
         return [{
           path,
           kind: 'wrong',
           expected: expectSnip(mat),
           actual: snip(value),
-          detail: `Expected a tuple of length ${required === expanded.length ? required : `${required} to ${expanded.length}`}, got length ${value.length}.`,
+          detail,
         }];
       }
       for (let i = 0; i < expanded.length; i++) {
@@ -681,14 +708,20 @@ function diffValue(value, expect, path, depth, memberOf) {
       return [];
     }
     let best = null;
-    const score = (/** @type {object[]} */ list) => list.length + (list.length === 1 && list[0].kind === 'wrong' && !list[0].children ? 0.5 : 0);
+    const isSingleWrong = (list) => list.length === 1 && list[0].kind === 'wrong';
+    const isLeaf = (list) => !list[0].children;
+    const singleWrong = (list) => isSingleWrong(list) && isLeaf(list);
+    const score = (/** @type {object[]} */ list) => list.length + (singleWrong(list) ? 0.5 : 0);
     for (const member of members) {
       const sub = diffValue(value, member, path, depth + 1, memberOf);
       if (!sub.length) {
         return [];
       }
       if (!best || score(sub) < score(best.findings)) {
-        best = {member, findings: sub};
+        best = {
+          member,
+          findings: sub,
+        };
       }
     }
     if (!best) {
@@ -700,15 +733,21 @@ function diffValue(value, expect, path, depth, memberOf) {
     const actual = snip(value);
     const closest = expectSnip(best.member);
     const count = best.findings.length;
-    const tail = `closest is ${closest} with ${count} problem${count === 1 ? '' : 's'}.`;
+    const plural = count === 1 ? '' : 's';
+    const tail = `closest is ${closest} with ${count} problem${plural}.`;
+    const unionDetail = `\`${actual}\` at \`${path}\` matches no union member; ${tail}`;
+    let detail = unionDetail;
+    if (memberOf) {
+      const memberHead = `${memberOf.container} has the right shape, `;
+      const where = `but ${memberOf.noun} \`${path}\` (\`${actual}\`)`;
+      detail = `${memberHead}${where} matches no union member; ${tail}`;
+    }
     const finding = {
       path,
       kind: 'union',
       expected: expectSnip(mat),
       actual,
-      detail: memberOf ?
-        `${memberOf.container} has the right shape, but ${memberOf.noun} \`${path}\` (\`${actual}\`) matches no union member; ${tail}` :
-        `\`${actual}\` at \`${path}\` matches no union member; ${tail}`,
+      detail,
       children: best.findings,
     };
     if (memberOf) {
@@ -730,12 +769,13 @@ function diffValue(value, expect, path, depth, memberOf) {
   }
   if (mat && typeof mat === 'object' && mat.type === 'object' && mat.properties) {
     if (value === null || typeof value !== 'object') {
+      const known = Object.keys(mat.properties).join(', ') || '(none)';
       return [{
         path,
         kind: 'not-object',
         expected: expectSnip(mat),
         actual: snip(value),
-        detail: `Expected an object with keys ${Object.keys(mat.properties).join(', ') || '(none)'}.`,
+        detail: `Expected an object with keys ${known}.`,
       }];
     }
     if (depth >= MAX_DEPTH) {
@@ -762,7 +802,10 @@ function diffValue(value, expect, path, depth, memberOf) {
             findings.push({
               path: subPath,
               kind: 'missing',
-              expected: expectSnip(prop && typeof prop === 'object' && prop.optional ? {...prop, optional: false} : prop),
+              expected: expectSnip(prop && typeof prop === 'object' && prop.optional ? {
+                ...prop,
+                optional: false,
+              } : prop),
               actual: '(absent)',
               detail: `Required key \`${subPath}\` is missing.`,
               fix: `Add \`${key}: <${expectSnip(prop)}>\`.`,
@@ -773,7 +816,10 @@ function diffValue(value, expect, path, depth, memberOf) {
       }
       // Present: presence already established, so strip the optional wrapper
       // — findings read `'draft' | 'published'`, not `(…)|undefined`.
-      const present = prop && typeof prop === 'object' ? {...prop, optional: false} : prop;
+      const present = prop && typeof prop === 'object' ? {
+        ...prop,
+        optional: false,
+      } : prop;
       findings.push(...diffValue(value[key], present, subPath, depth + 1));
     }
     for (const key of Object.keys(value)) {
@@ -788,13 +834,15 @@ function diffValue(value, expect, path, depth, memberOf) {
         // flag must not silently widen validation to accept excess keys.
         const strict = options.exactObjects === true;
         const subPath = path ? `${path}.${key}` : key;
+        const knownKeys = Object.keys(mat.properties);
         const info = mat.__provenance ?? removalInfo(expect, key);
-        const rendered = describeExcess(subPath, key, snip(value[key]), Object.keys(mat.properties), info);
+        const rendered = describeExcess(subPath, key, snip(value[key]), knownKeys, info);
+        const offNote = ' (informational: passes validation with Exact objects off)';
         findings.push({
           path: subPath,
           ...rendered,
-          detail: strict ? rendered.detail : `${rendered.detail} (informational: passes validation with Exact objects off)`,
           fix: strict ? rendered.fix : undefined,
+          detail: strict ? rendered.detail : `${rendered.detail}${offNote}`,
           info: strict ? undefined : true,
         });
       }
@@ -803,7 +851,11 @@ function diffValue(value, expect, path, depth, memberOf) {
   }
   if (depth > MAX_DEPTH) {
     return passes(value, mat) ? [] : [{
-      path, kind: 'wrong', expected: expectSnip(mat), actual: snip(value), detail: 'Value does not satisfy the type.',
+      path,
+      kind: 'wrong',
+      expected: expectSnip(mat),
+      actual: snip(value),
+      detail: 'Value does not satisfy the type.',
     }];
   }
   return passes(value, mat) ? [] : [{
@@ -839,9 +891,8 @@ function explainMismatch(value, expect, rootPath) {
     }
   };
   collect(findings);
-  const stub = missing.length ?
-    `{\n${missing.map((finding) => `  ${finding.path.split('.').pop()}: <${finding.expected}>,`).join('\n')}\n}` :
-    '';
+  const stubLine = (finding) => `  ${finding.path.split('.').pop()}: <${finding.expected}>,`;
+  const stub = missing.length ? `{\n${missing.map(stubLine).join('\n')}\n}` : '';
   return {findings, stub};
 }
 /**
@@ -874,4 +925,5 @@ function collectFailPaths(findings) {
   }
   return out;
 }
-export {materializeExpect, diffValue, explainMismatch, expectSnip, snip, describeExcess, collectFailPaths};
+export {materializeExpect, diffValue, explainMismatch, expectSnip, snip};
+export {describeExcess, collectFailPaths};

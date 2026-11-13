@@ -1,9 +1,9 @@
 import {typedefs} from './registerTypedef.js';
 import {getTypeKeys, resolveObject, resolveUtilityShape} from './getTypeKeys.js';
-import {instantiateReference} from "./instantiateReference.js";
-import {stripKey} from "./stripKey.js";
-import {classes} from './registerClass.js';
-import {mergedClassShape} from './classShape.js';
+import {instantiateReference } from "./instantiateReference.js";
+import {stripKey             } from "./stripKey.js";
+import {classes              } from './registerClass.js';
+import {mergedClassShape     } from './classShape.js';
 import {createTypeFromMapping} from './createTypeFromMapping.js';
 import {recurse, validators} from './validators.js';
 import {options} from './options.js';
@@ -12,8 +12,8 @@ import {formatMapKey} from './formatMapKey.js';
 import './validateType.js';
 import './evaluateCondition.js';
 import {stringifyType} from './stringifyType.js';
-import {editDistance} from "./editDistance.js";
-import {suggestKey} from "./suggestKey.js";
+import {editDistance } from "./editDistance.js";
+import {suggestKey   } from "./suggestKey.js";
 const MAX_MEMBERS = 12;
 const MAX_PROPS = 20;
 const MAX_ENTRIES = 20;
@@ -68,7 +68,6 @@ function probe(value, expect) {
   try {
     return recurse(value, expect, 'tree', 'value', false, noop, 0);
   } catch {
-
   }
 }
 /**
@@ -111,15 +110,30 @@ function objectShapeMatches(value) {
  * @param {string} path - Dotted argument path for excess-key fix hints.
  * @returns {object} Tree node.
  */
-function buildTypeTree(expect, value, label, budget = {nodes: 0, names: [], objs: []}, path = '') {
-  const node = {label, path, kind: 'leaf', summary: treeSnip(expect), full: treeFull(expect), passes: probe(value, expect)};
+function buildTypeTree(expect, value, label, budget = {
+  nodes: 0,
+  names: [],
+  objs: [],
+}, path = '') {
+  const node = {
+    label,
+    path,
+    kind: 'leaf',
+    summary: treeSnip(expect),
+    full: treeFull(expect),
+    passes: probe(value, expect),
+  };
   if (++budget.nodes > MAX_NODES) {
     node.truncated = true;
     return node;
   }
   // Rest-args (not defaults): explicit `undefined` sub-values must survive.
-  const sub = (type, name, ...rest) => buildTypeTree(type, rest.length ? rest[0] : value, name, budget,
-                                                     rest.length > 1 ? rest[1] : path);
+  const peek = (rest, index, fallback) => (rest.length > index ? rest[index] : fallback);
+  const sub = (type, name, ...rest) => {
+    const subValue = peek(rest, 0, value);
+    const subPath = peek(rest, 1, path);
+    return buildTypeTree(type, subValue, name, budget, subPath);
+  };
   if (typeof expect === 'string') {
     if (!typedefs[expect] && !classes[expect]) {
       return node;
@@ -200,7 +214,8 @@ function buildObjectNode(expect, value, node, sub) {
         keys = undefined;
       }
       if (Array.isArray(keys)) {
-        const names = keys.map(stripKey).filter((_) => typeof _ === 'string' || typeof _ === 'number');
+        const isKey = (_) => typeof _ === 'string' || typeof _ === 'number';
+        const names = keys.map(stripKey).filter(isKey);
         node.keys = names.slice(0, MAX_KEYS);
         node.moreKeys = names.length - node.keys.length;
         if (typeof value === 'string' || typeof value === 'number') {
@@ -237,16 +252,23 @@ function buildObjectNode(expect, value, node, sub) {
     }
     case 'reference': {
       node.kind = 'reference';
+      const refName = expect.name;
+      const isNonNull = refName === 'NonNullable';
+      const isReadonly = refName === 'Readonly';
+      const isNoInfer = refName === 'NoInfer';
+      const transparent = isNonNull || isReadonly || isNoInfer;
       // Transparent wrappers don't change the runtime shape (same unwrap
       // `validateReference` performs) — descend instead of dead-ending.
-      if ((expect.name === 'NonNullable' || expect.name === 'Readonly' || expect.name === 'NoInfer') && expect.args?.length) {
-        node.detail = `${expect.name}<…> passes the shape through; unwraps to:`;
+      if (transparent && expect.args?.length) {
+        node.detail = `${refName}<…> passes the shape through; unwraps to:`;
         node.children = [sub(expect.args[0], treeSnip(expect.args[0]))];
         return node;
       }
+      const mapped = refName === 'Partial' || refName === 'Pick';
+      const omitted = refName === 'Omit' || refName === 'Required';
       // Utility wrappers materialize to concrete shapes (same semantics as
       // validation); anything else instantiates generic typedefs.
-      if ((expect.name === 'Partial' || expect.name === 'Pick' || expect.name === 'Omit' || expect.name === 'Required') && expect.args?.length) {
+      if ((mapped || omitted) && expect.args?.length) {
         let shape;
         try {
           shape = resolveUtilityShape(expect.name, expect.args, noop, 0);
@@ -305,7 +327,7 @@ function buildObjectNode(expect, value, node, sub) {
       }
       return node;
     }
-    case 'mapping': {      node.kind = 'mapping';
+    case 'mapping': { node.kind = 'mapping';
       let made;
       try {
         made = createTypeFromMapping(expect, noop);
@@ -331,10 +353,18 @@ function buildObjectNode(expect, value, node, sub) {
         node.detail = 'Value is not a Map — nothing deeper to climb.';
         return node;
       }
-      node.detail = `Map with ${entries.length} entr${entries.length === 1 ? 'y' : 'ies'} (✗ marks the failing entries).`;
+      const plural = entries.length === 1 ? 'y' : 'ies';
+      node.detail = `Map with ${entries.length} entr${plural} (✗ marks the failing entries).`;
       const shown = entries.slice(0, MAX_ENTRIES);
-      const childPath = (key) => (node.path ? `${node.path}.get(${formatMapKey(key)})` : `get(${formatMapKey(key)})`);
-      node.children = shown.map(([key, val]) => sub(expect.val, `get(${formatMapKey(key)}): ${treeSnip(expect.val)}`, val, childPath(key)));
+      const keyPath = (key) => formatMapKey(key);
+      const atKey = (key) => (node.path ? `${node.path}.get(` : 'get(');
+      const closeKey = (key) => `${keyPath(key)})`;
+      const childPathOf = (key) => `${atKey(key)}${closeKey(key)}`;
+      const childNode = ([key, val]) => {
+        const snip = `get(${keyPath(key)}): ${treeSnip(expect.val)}`;
+        return sub(expect.val, snip, val, childPathOf(key));
+      };
+      node.children = shown.map(childNode);
       if (entries.length > shown.length) {
         node.truncated = true;
       }
@@ -356,9 +386,16 @@ function buildObjectNode(expect, value, node, sub) {
         node.detail = 'Value is not a Set — nothing deeper to climb.';
         return node;
       }
-      node.detail = `Set with ${items.length} member${items.length === 1 ? '' : 's'} (✗ marks the failing members).`;
+      const plural = items.length === 1 ? '' : 's';
+      const markNote = '(✗ marks the failing members).';
+      node.detail = `Set with ${items.length} member${plural} ${markNote}`;
       const shown = items.slice(0, MAX_ENTRIES);
-      node.children = shown.map((item, i) => sub(expect.elementType, `[${i}]: ${treeSnip(expect.elementType)}`, item, node.path ? `${node.path}[${i}]` : `[${i}]`));
+      const childNode = (item, i) => {
+        const snip = `[${i}]: ${treeSnip(expect.elementType)}`;
+        const subPath = node.path ? `${node.path}[${i}]` : `[${i}]`;
+        return sub(expect.elementType, snip, item, subPath);
+      };
+      node.children = shown.map(childNode);
       if (items.length > shown.length) {
         node.truncated = true;
       }
@@ -378,27 +415,34 @@ function buildObjectNode(expect, value, node, sub) {
       // Probe each property against ITS value, not the whole parent object.
       const childValue = value != null && typeof value === 'object' ? value : {};
       const childPath = (key) => (node.path ? `${node.path}.${key}` : key);
-      node.children = keys.map((_) => sub(expect.properties[_], `${_}: ${treeSnip(expect.properties[_])}`, childValue[_], childPath(_)));
+      const childNode = (_) => {
+        const snip = `${_}: ${treeSnip(expect.properties[_])}`;
+        return sub(expect.properties[_], snip, childValue[_], childPath(_));
+      };
+      node.children = keys.map(childNode);
       // Excess actual keys render too — otherwise the tree hides half the
       // errors the Diagnosis lists. Marks follow Exact objects: unmarked
       // when excess passes validation.
       // Fail closed when the option is missing: a deleted or undefined
       // flag must not silently widen validation to accept excess keys.
       const exact = options.exactObjects === true;
+      const offNote = '(informational: Exact objects is off, so this passes validation)';
       for (const key of Object.keys(childValue)) {
         if (expect.properties[key] !== undefined || typeof key !== 'string') {
           continue;
         }
         const actual = snip(childValue[key]);
-        const rendered = describeExcess(childPath(key), key, actual, Object.keys(expect.properties), expect.__provenance ?? null);
+        const knownKeys = Object.keys(expect.properties);
+        const origin = expect.__provenance ?? null;
+        const rendered = describeExcess(childPath(key), key, actual, knownKeys, origin);
         node.children.push({
           label: `${key}: ${actual}`,
           kind: 'extra',
           summary: actual,
           full: actual,
           passes: exact ? false : undefined,
-          detail: rendered.detail + (exact ? '' : ' (informational: Exact objects is off, so this passes validation)'),
           fix: exact ? rendered.fix : undefined,
+          detail: exact ? rendered.detail : `${rendered.detail} ${offNote}`,
         });
       }
       // A real object with failing properties: right shape, bad contents.

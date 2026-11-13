@@ -6,8 +6,14 @@ import {copyText} from './copyText.js';
  * @param {string|null} [opts.failAt] - Stage that throws (`append`), if any.
  * @returns {{restore: Function, areas: object[]}} Restore plus created textareas.
  */
-function installFallbackDom({execResult = true, failAt = null} = {}) {
-  const saved = {document: globalThis.document, navigator: globalThis.navigator};
+function installFallbackDom({
+  execResult = true,
+  failAt = null,
+} = {}) {
+  const saved = {
+    document: globalThis.document,
+    navigator: globalThis.navigator,
+  };
   const areas = [];
   const body = {
     children: [],
@@ -21,7 +27,9 @@ function installFallbackDom({execResult = true, failAt = null} = {}) {
   globalThis.document = {
     createElement: (tag) => {
       const area = {
-        tag, value: '', style: {},
+        tag,
+        value: '',
+        style: {},
         select() {},
         remove() {
           body.children = body.children.filter((_) => _ !== area);
@@ -49,17 +57,26 @@ function installFallbackDom({execResult = true, failAt = null} = {}) {
 }
 function testFallbackCopiesSync() {
   // No Clipboard API: the textarea round-trip resolves synchronously.
-  const {restore, areas, body} = installFallbackDom({execResult: true});
+  const {restore, areas, body} = installFallbackDom({
+    execResult: true,
+  });
   try {
     const result = copyText('hello');
-    return result === true && areas.length === 1 && areas[0].value === 'hello' && body.children.length === 0;
+    return (
+      result === true &&
+      areas.length === 1 &&
+      areas[0].value === 'hello' &&
+      body.children.length === 0
+    );
   } finally {
     restore();
   }
 }
 function testFallbackFailureIsFalse() {
   // A failed execCommand reports false instead of throwing.
-  const {restore} = installFallbackDom({execResult: false});
+  const {restore} = installFallbackDom({
+    execResult: false,
+  });
   try {
     return copyText('hello') === false;
   } finally {
@@ -68,7 +85,9 @@ function testFallbackFailureIsFalse() {
 }
 function testFallbackThrowIsFalse() {
   // A hostile DOM (append throws) still resolves to false, never throws.
-  const {restore} = installFallbackDom({failAt: 'append'});
+  const {restore} = installFallbackDom({
+    failAt: 'append',
+  });
   try {
     return copyText('hello') === false;
   } finally {
@@ -78,7 +97,13 @@ function testFallbackThrowIsFalse() {
 function testClipboardApiSuccess() {
   // With the Clipboard API the write delegates and maps resolve to true.
   const saved = globalThis.navigator;
-  globalThis.navigator = {clipboard: {writeText: (text) => ({then: (onOk) => onOk(text)})}};
+  globalThis.navigator = {
+    clipboard: {
+      writeText: (text) => ({
+        then: (onOk) => onOk(text),
+      }),
+    },
+  };
   try {
     return copyText('via-api') === true;
   } finally {
@@ -88,7 +113,13 @@ function testClipboardApiSuccess() {
 function testClipboardApiFailure() {
   // A rejected write maps to false through the error branch.
   const saved = globalThis.navigator;
-  globalThis.navigator = {clipboard: {writeText: () => ({then: (_, onErr) => onErr(new Error('denied') )})}};
+  globalThis.navigator = {
+    clipboard: {
+      writeText: () => ({
+        then: (_, onErr) => onErr(new Error('denied') ),
+      }),
+    },
+  };
   try {
     return copyText('via-api') === false;
   } finally {

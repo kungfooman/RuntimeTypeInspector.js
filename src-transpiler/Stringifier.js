@@ -214,7 +214,7 @@ class Stringifier {
     }
     const {type} = node;
     const needCurly = type !== 'BlockStatement' && type !== 'EmptyStatement';
-    const spaces = this.spaces;
+    const {spaces} = this;
     let out = '';
     if (needCurly) {
       out += ' {\n';
@@ -250,9 +250,11 @@ class Stringifier {
   }
   get needSpaces() {
     const t = this.parentType;
-    return t !== "ForStatement"   &&
-           t !== "ForInStatement" &&
-           t !== "ForOfStatement";
+    return (
+      t !== "ForStatement" &&
+      t !== "ForInStatement" &&
+      t !== "ForOfStatement"
+    );
   }
   /**
    * @param {Node[]} arr - Array of nodes to convert.
@@ -313,7 +315,17 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   ClassMethod(node) {
-    const {static: static_, key, computed, kind, id, generator, async, params, body} = node;
+    const {
+      static: static_,
+      key,
+      computed,
+      kind,
+      id,
+      generator,
+      async,
+      params,
+      body,
+    } = node;
     let out = this.spaces;
     if (generator) {
       out += '*';
@@ -370,7 +382,7 @@ class Stringifier {
    */
   ClassDeclaration(node) {
     const {id, superClass, body, trailingComments, leadingComments} = node;
-    const spaces = this.spaces;
+    const {spaces} = this;
     let out = spaces + 'class ' + this.toSource(id);
     if (superClass) {
       out += ` extends ${this.toSource(superClass)}`;
@@ -388,7 +400,16 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   ClassPrivateMethod(node) {
-    const {static: static_, key, kind, id, generator, async, params, body} = node;
+    const {
+      static: static_,
+      key,
+      kind,
+      id,
+      generator,
+      async,
+      params,
+      body,
+    } = node;
     let out = this.spaces;
     if (generator) {
       out += '*';
@@ -450,7 +471,11 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   ClassPrivateProperty(node) {
-    const {static: static_, key, value} = node;
+    const {
+      static: static_,
+      key,
+      value,
+    } = node;
     let out = this.spaces;
     if (static_) {
       out += 'static ';
@@ -565,7 +590,7 @@ class Stringifier {
    */
   BlockStatement(node) {
     const {body, directives} = node;
-    const spaces = this.spaces;
+    const {spaces} = this;
     let out = '';
     if (this.parentType !== 'Program') {
       out += ' ';
@@ -737,7 +762,11 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   CallExpression(node) {
-    const {callee, arguments: args, extra} = node;
+    const {
+      callee,
+      arguments: args,
+      extra,
+    } = node;
     let out = this.toSource(callee);
     out += "(";
     out += this.mapToSource(args).join(', ');
@@ -782,9 +811,9 @@ class Stringifier {
     if (method) {
       console.warn("ObjectProperty> unhandled method property:", {method, shorthand});
     }
-    const spaces = this.spaces;
-    let left   = this.toSource(key);
-    const right  = this.toSource(value);
+    const {spaces} = this;
+    let left = this.toSource(key);
+    const right = this.toSource(value);
     let out = spaces;
     if (computed) {
       left = `[${left}]`;
@@ -858,11 +887,15 @@ class Stringifier {
    */
   VariableDeclaration(node) {
     const {declarations, kind} = node;
+    const {
+      needSpaces,
+      spaces: indent,
+    } = this;
     let spaces = '';
     let semicolon = '';
-    if (this.needSpaces) {
+    if (needSpaces) {
       semicolon = ';';
-      spaces = this.spaces;
+      spaces = indent;
     }
     return `${spaces}${kind} ${this.mapToSource(declarations).join(', ')}${semicolon}`;
   }
@@ -911,7 +944,7 @@ class Stringifier {
    */
   ForStatement(node) {
     const {init, test, update, body} = node;
-    const spaces = this.spaces;
+    const {spaces} = this;
     const i = this.toSource(init);
     const t = this.toSource(test);
     const u = this.toSource(update);
@@ -936,7 +969,10 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   NewExpression(node) {
-    const {callee, arguments: args_} = node;
+    const {
+      callee,
+      arguments: args_,
+    } = node;
     const c = this.toSource(callee);
     const args = this.mapToSource(args_).join(', ');
     return `new ${c}(${args})`;
@@ -950,7 +986,7 @@ class Stringifier {
   TemplateLiteral(node) {
     const {expressions, quasis} = node;
     let out = '`';
-    for (var i = 0; i < quasis.length; i++) {
+    for (let i = 0; i < quasis.length; i++) {
       out += this.toSource(quasis[i]);
       if (expressions[i]) {
         out += '${' + this.toSource(expressions[i]) + '}';
@@ -1208,8 +1244,8 @@ class Stringifier {
    */
   JSXNamespacedName(node) {
     const {namespace, name} = node;
-    const a =            this.toSource(namespace) ;
-    const b = capitalize(this.toSource(name     ));
+    const a = this.toSource(namespace) ;
+    const b = capitalize(this.toSource(name ));
     return a + b;
   }
   /**
@@ -1302,7 +1338,12 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   ForOfStatement(node) {
-    const {await: await_, left, right, body} = node;
+    const {
+      await: await_,
+      left,
+      right,
+      body,
+    } = node;
     const {spaces} = this;
     const l = this.toSource(left);
     const r = this.toSource(right);
@@ -1488,7 +1529,11 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   OptionalCallExpression(node) {
-    const {callee, optional, arguments: args} = node;
+    const {
+      callee,
+      optional,
+      arguments: args,
+    } = node;
     const a = this.toSource(callee);
     const b = this.mapToSource(args);
     if (optional) {

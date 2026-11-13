@@ -1,5 +1,5 @@
-import {validateType} from './validateType.js';
-import {customValidations} from './customValidations.js';
+import {validateType          } from './validateType.js';
+import {customValidations     } from './customValidations.js';
 import {validateNumberInObject} from './validateNumberInObject.js';
 const silent = () => undefined;
 function testNumberInObjectBypassesCustomValidations() {
@@ -13,7 +13,9 @@ function testNumberInObjectBypassesCustomValidations() {
   };
   customValidations.push(counter);
   try {
-    const ret = validateNumberInObject({x: 1}, 'x', silent);
+    const ret = validateNumberInObject({
+      x: 1,
+    }, 'x', silent);
     return ret === true && calls === 0;
   } finally {
     customValidations.length = 0;

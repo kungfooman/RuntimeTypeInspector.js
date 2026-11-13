@@ -8,6 +8,14 @@
  * stripKey('a'); // 'a'
  */
 function stripKey(key) {
-  return typeof key === 'string' && key.length >= 2 && (key[0] === "'" && key[key.length - 1] === "'" || key[0] === '"' && key[key.length - 1] === '"') ? key.slice(1, -1) : key;
+  if (typeof key !== 'string' || key.length < 2) {
+    return key;
+  }
+  const single = key[0] === "'" && key[key.length - 1] === "'";
+  const quoted = key[0] === '"' && key[key.length - 1] === '"';
+  if (single || quoted) {
+    return key.slice(1, -1);
+  }
+  return key;
 }
 export {stripKey};

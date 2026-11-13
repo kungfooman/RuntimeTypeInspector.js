@@ -1,7 +1,7 @@
 import {createTypeFromMapping} from './createTypeFromMapping.js';
 import {registerTypedef, typedefs, bumpTypedefVersion} from './registerTypedef.js';
 import {validateType} from './validateType.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType  } from '../src-transpiler/expandType.js';
 const warn = () => undefined;
 /**
  * Drops a typedef registration the test added.
@@ -18,7 +18,11 @@ function testFreshNodesShareMaterialization() {
   const freshNode = () => expandType('{[K in "a"|"b"]: number}');
   const a = createTypeFromMapping(freshNode(), warn);
   const b = createTypeFromMapping(freshNode(), warn);
-  return a === b && a.properties.a === 'number' && a.properties.b === 'number';
+  return (
+    a === b &&
+    a.properties.a === 'number' &&
+    a.properties.b === 'number'
+  );
 }
 // A stable node (registry typedef or substituted tree) takes the identity
 // path and returns the very same materialization on every call.
@@ -38,22 +42,48 @@ function testMaterializationFrozen() {
   } catch {
     loud = true;
   }
-  return Object.isFrozen(mat) && Object.isFrozen(mat.properties) && loud && mat.properties.x === 'number';
+  return (
+    Object.isFrozen(mat) &&
+    Object.isFrozen(mat.properties) &&
+    loud &&
+    mat.properties.x === 'number'
+  );
 }
 // Re-registering the mapped source bumps the registry version: equal
 // mapping content must recompute its keys against the new registry instead
 // of serving the stale materialization from before the update.
 function testRegistryUpdateInvalidates() {
-  registerTypedef('MapSource', {type: 'object', properties: {a: 'number'}});
+  registerTypedef('MapSource', {
+    type: 'object',
+    properties: {
+      a: 'number',
+    },
+  });
   try {
-    const freshNode = () => ({type: 'mapping', iterable: {type: 'keyof', argument: 'MapSource'}, element: 'K', result: 'K'});
+    const freshNode = () => ({
+      type: 'mapping',
+      iterable: {
+        type: 'keyof',
+        argument: 'MapSource',
+      },
+      element: 'K',
+      result: 'K',
+    });
     const before = createTypeFromMapping(freshNode(), warn);
-    registerTypedef('MapSource', {type: 'object', properties: {a: 'number', b: 'boolean'}});
+    registerTypedef('MapSource', {
+      type: 'object',
+      properties: {
+        a: 'number',
+        b: 'boolean',
+      },
+    });
     const after = createTypeFromMapping(freshNode(), warn);
-    return before !== after &&
+    return (
+      before !== after &&
       before.properties.b === undefined &&
       after.properties.a === '"a"' &&
-      after.properties.b === '"b"';
+      after.properties.b === '"b"'
+    );
   } finally {
     dropTypedef('MapSource');
   }
@@ -75,13 +105,35 @@ function testStringNameResolvesTypedef() {
 // in-place flattener replaced its elements array on first materialization.
 // The registry keeps its exact array afterwards.
 function testRegistryTypedefUntouched() {
-  registerTypedef('RegistryMapping', {type: 'mapping',
-    iterable: {type: 'keyof', argument: {type: 'object', properties: {a: 'number'}}},
-    element: 'K',
-    result: {type: 'tuple', elements: [
-      {type: 'rest', annotation: {type: 'tuple', elements: ['number', 'boolean']}},
-      'string',
-    ]}});
+  registerTypedef(
+    'RegistryMapping',
+    {
+      type: 'mapping',
+      iterable: {
+        type: 'keyof',
+        argument: {
+          type: 'object',
+          properties: {
+            a: 'number',
+          },
+        },
+      },
+      element: 'K',
+      result: {
+        type: 'tuple',
+        elements: [
+          {
+            type: 'rest',
+            annotation: {
+              type: 'tuple',
+              elements: ['number', 'boolean'],
+            },
+          },
+          'string',
+        ],
+      },
+    },
+  );
   try {
     const elementsBefore = typedefs.RegistryMapping.result.elements;
     const mat = createTypeFromMapping('RegistryMapping', warn);

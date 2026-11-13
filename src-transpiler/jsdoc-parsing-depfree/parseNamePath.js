@@ -21,7 +21,10 @@ function parseNamePath(path) {
   let i = 0;
   while (true) {
     if (!isIdentStart(path[i])) {
-      return {segments, valid: false};
+      return {
+        segments,
+        valid: false,
+      };
     }
     let j = i + 1;
     while (isIdentChar(path[j])) {
@@ -35,22 +38,30 @@ function parseNamePath(path) {
         k += 1;
       }
       if (path[k] !== ']') {
-        return {segments, valid: false};
+        return {
+          segments,
+          valid: false,
+        };
       }
       array = true;
       j = k + 1;
     }
     segments.push({name, array});
     if (j >= path.length) {
-      return {segments, valid: true};
+      return {
+        segments,
+        valid: true,
+      };
     }
     if (path[j] !== '.') {
-      return {segments, valid: false};
+      return {
+        segments,
+        valid: false,
+      };
     }
     i = j + 1;
   }
 }
-
 /**
  * Parses one bracketed `@param` name on the cursor, like tsc's
  * `parseBracketNameInPropertyAndParamTag`: optional `[`, optional default,
@@ -72,12 +83,16 @@ function parseNamePath(path) {
  */
 function parseBracketName(cursor) {
   if (cursor.tokens[cursor.index].kind !== 'lbracket') {
-    return {name: '', optional: false, next: cursor.index};
+    return {
+      name: '',
+      optional: false,
+      next: cursor.index,
+    };
   }
   let i = cursor.index + 1;
   let depth = 1;
   while (i < cursor.tokens.length) {
-    const kind = cursor.tokens[i].kind;
+    const {kind} = cursor.tokens[i];
     if (kind === 'lbracket') {
       depth += 1;
     } else if (kind === 'rbracket') {
@@ -86,12 +101,20 @@ function parseBracketName(cursor) {
         break;
       }
     } else if (kind === 'eof' || kind === 'newline') {
-      return {name: '', optional: false, next: cursor.index};
+      return {
+        name: '',
+        optional: false,
+        next: cursor.index,
+      };
     }
     i += 1;
   }
   if (i >= cursor.tokens.length || cursor.tokens[i].kind !== 'rbracket') {
-    return {name: '', optional: false, next: cursor.index};
+    return {
+      name: '',
+      optional: false,
+      next: cursor.index,
+    };
   }
   // The name is the token run inside, like tsc's entity name: words join
   // on dots, `[]` groups glue onto the segment before them, and `=`
@@ -99,7 +122,9 @@ function parseBracketName(cursor) {
   // scan moves here, onto tokens instead of text.
   const inner = cursor.tokens.slice(cursor.index + 1, i);
   const run = inner.map((token) => {
-    if (token.kind === 'word' || token.kind === 'dots' || token.kind === 'punct' || token.kind === 'lbracket' || token.kind === 'rbracket') {
+    const isWord = token.kind === 'word' || token.kind === 'dots' || token.kind === 'punct';
+    const isBracket = token.kind === 'lbracket' || token.kind === 'rbracket';
+    if (isWord || isBracket) {
       return token.value;
     }
     if (token.kind === 'equals') {
@@ -110,9 +135,18 @@ function parseBracketName(cursor) {
   const head = run.split('=')[0].trim();
   const {segments, valid} = parseNamePath(head);
   if (valid === false) {
-    return {name: '', optional: true, next: i + 1};
+    return {
+      name: '',
+      optional: true,
+      next: i + 1,
+    };
   }
-  const name = segments.map((segment) => segment.name + (segment.array === true ? '[]' : '')).join('.');
-  return {name, optional: true, next: i + 1};
+  const render = (segment) => segment.name + (segment.array === true ? '[]' : '');
+  const name = segments.map(render).join('.');
+  return {
+    name,
+    optional: true,
+    next: i + 1,
+  };
 }
 export {parseNamePath, parseBracketName};

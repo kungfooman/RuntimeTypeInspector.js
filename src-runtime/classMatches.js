@@ -16,6 +16,8 @@ function classMatches(tag, className) {
   if (typeof tag !== 'string') {
     return false;
   }
-  return snapshotMatches({$type: tag}, className);
+  return snapshotMatches({
+    $type: tag,
+  }, className);
 }
 export {classMatches};

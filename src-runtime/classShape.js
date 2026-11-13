@@ -1,7 +1,7 @@
 import {classes, classVersion} from "./registerClass.js";
 import {typedefs, typedefVersion} from "./registerTypedef.js";
 import {registeredNameOf} from "./registeredNameOf.js";
-import {deepFreeze} from "./deepFreeze.js";
+import {deepFreeze      } from "./deepFreeze.js";
 // Prototype enumeration is the expensive bit: once per constructor for its
 // lifetime, never in a validation hot path. Harvested shapes (transpiled
 // classes) never touch this map.
@@ -44,14 +44,20 @@ function prototypeShape(ctor) {
         if (typeof desc.value === 'function') {
           properties[key] = 'Function';
         } else if (desc.get || desc.set) {
-          properties[key] = desc.get && !desc.set ? {type: 'any', readonly: true} : 'any';
+          properties[key] = desc.get && !desc.set ? {
+            type: 'any',
+            readonly: true,
+          } : 'any';
         } else if ('value' in desc) {
           properties[key] = 'any';
         }
       }
       proto = Object.getPrototypeOf(proto);
     }
-    shape = {type: 'object', properties};
+    shape = {
+      type: 'object',
+      properties,
+    };
     methodShapes.set(ctor, shape);
   }
   return shape;
@@ -66,7 +72,8 @@ function prototypeShape(ctor) {
 function mergedClassShape(name) {
   const head = classes[name];
   const cached = mergedShapes.get(name);
-  if (cached && cached.classV === classVersion && cached.typedefV === typedefVersion && cached.head === head) {
+  const fresh = cached && cached.classV === classVersion && cached.typedefV === typedefVersion;
+  if (fresh && cached.head === head) {
     return cached.shape;
   }
   const properties = {};
@@ -91,8 +98,16 @@ function mergedClassShape(name) {
       Object.assign(properties, prototypeShape(chain[i]).properties);
     }
   }
-  const shape = deepFreeze({type: 'object', properties});
-  mergedShapes.set(name, {classV: classVersion, typedefV: typedefVersion, head, shape});
+  const shape = deepFreeze({
+    type: 'object',
+    properties,
+  });
+  mergedShapes.set(name, {
+    classV: classVersion,
+    typedefV: typedefVersion,
+    head,
+    shape,
+  });
   return shape;
 }
 export {mergedClassShape, prototypeShape};

@@ -6,15 +6,22 @@
  * @param {import('@babel/types').File|import('@babel/types').Program} ast - The parsed program.
  * @returns {Set<string>} Already-imported runtime names.
  * @example
- * runtimeImportNames(parse("import {registerTypedef} from '@runtime-type-inspector/runtime';")); // Set {'registerTypedef'}
+ * const ast = parse("import {registerTypedef} from '@runtime-type-inspector/runtime';");
+ * runtimeImportNames(ast); // Set {'registerTypedef'}
  */
 function runtimeImportNames(ast) {
   const found = new Set();
   const program = ast?.type === 'File' ? ast.program : ast;
   for (const node of program?.body ?? []) {
-    if (node.type === 'ImportDeclaration' && node.source?.value === '@runtime-type-inspector/runtime') {
+    const isRuntimeImport = node.type === 'ImportDeclaration' &&
+      node.source?.value === '@runtime-type-inspector/runtime';
+    if (isRuntimeImport) {
       for (const spec of node.specifiers ?? []) {
-        if (spec.type === 'ImportSpecifier' && spec.imported?.type === 'Identifier' && spec.local?.type === 'Identifier' && spec.imported.name === spec.local.name) {
+        const isSameName = spec.type === 'ImportSpecifier' &&
+          spec.imported?.type === 'Identifier' &&
+          spec.local?.type === 'Identifier' &&
+          spec.imported.name === spec.local.name;
+        if (isSameName) {
           found.add(spec.local.name);
         }
       }

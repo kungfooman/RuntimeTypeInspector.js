@@ -88,6 +88,10 @@
     "output": "./test/typechecking/computed-ClassMethod-output.mjs"
   },
   {
+    "input": "./test/typechecking/conditional-indexed-input.mjs",
+    "output": "./test/typechecking/conditional-indexed-output.mjs"
+  },
+  {
     "input": "./test/typechecking/defaults-inference-input.mjs",
     "output": "./test/typechecking/defaults-inference-output.mjs"
   },

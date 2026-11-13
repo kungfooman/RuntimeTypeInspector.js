@@ -1,5 +1,4 @@
 import {tsParamTag} from './tsParamTag.js';
-
 /**
  * Reads one TS `@callback` tag to the shared schema entry. Callback
  * params nest in the signature; the schema carries them as a callback

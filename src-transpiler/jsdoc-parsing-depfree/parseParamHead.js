@@ -1,6 +1,5 @@
 import {parseNamePath, parseBracketName} from './parseNamePath.js';
 import {makeJSDocCursor} from './makeJSDocCursor.js';
-
 /**
  * Reads one `@param` head into its name and optionality, like tsc's
  * `parseParameterOrPropertyTag`: an optional bracketed name (with its
@@ -24,16 +23,31 @@ function parseParamHead(headRaw) {
   // head word for the caller's invalidRest flag instead of scanning it.
   const trimmed = headRaw.trim();
   if (trimmed.startsWith('...')) {
-    return {name: trimmed.split(/\s+/)[0] ?? '', optional: false, segments: [], valid: true};
+    return {
+      name: trimmed.split(/\s+/)[0] ?? '',
+      optional: false,
+      segments: [],
+      valid: true,
+    };
   }
   const cursor = makeJSDocCursor(trimmed);
   const bracketed = parseBracketName(cursor);
   if (cursor.tokens[cursor.index].kind === 'lbracket' || bracketed.next !== cursor.index) {
     const {segments, valid} = parseNamePath(bracketed.name);
     if (valid === false) {
-      return {name: '', optional: true, segments: [], valid: false};
+      return {
+        name: '',
+        optional: true,
+        segments: [],
+        valid: false,
+      };
     }
-    return {name: bracketed.name, optional: true, segments, valid: true};
+    return {
+      name: bracketed.name,
+      optional: true,
+      segments,
+      valid: true,
+    };
   }
   // Bare head: the token run up to the first stop (space, newline, tag
   // mention, comment end). Words, dots, and bracket groups join; anything
@@ -43,12 +57,19 @@ function parseParamHead(headRaw) {
   // `*`, matching tsc's empty name.
   let i = cursor.index;
   if (cursor.tokens[i].kind === 'stars') {
-    return {name: '', optional: false, segments: [], valid: false};
+    return {
+      name: '',
+      optional: false,
+      segments: [],
+      valid: false,
+    };
   }
   let run = '';
   while (i < cursor.tokens.length) {
     const token = cursor.tokens[i];
-    if (token.kind === 'word' || token.kind === 'dots' || token.kind === 'lbracket' || token.kind === 'rbracket' || token.kind === 'punct') {
+    const isName = token.kind === 'word' || token.kind === 'dots' || token.kind === 'punct';
+    const isBracket = token.kind === 'lbracket' || token.kind === 'rbracket';
+    if (isName || isBracket) {
       run += token.value;
       i += 1;
       continue;
@@ -58,8 +79,18 @@ function parseParamHead(headRaw) {
   const head = run.split('=')[0].trim();
   const {segments, valid} = parseNamePath(head);
   if (valid === false) {
-    return {name: '', optional: false, segments: [], valid: false};
+    return {
+      name: '',
+      optional: false,
+      segments: [],
+      valid: false,
+    };
   }
-  return {name: head, optional: false, segments, valid: true};
+  return {
+    name: head,
+    optional: false,
+    segments,
+    valid: true,
+  };
 }
 export {parseParamHead};

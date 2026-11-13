@@ -20,7 +20,9 @@ function substituteRecord(record, search, replace, warn) {
     const next = recurseSubstitute(record[prop], search, replace, warn);
     if (next !== record[prop]) {
       if (out === record) {
-        out = {...record};
+        out = {
+          ...record,
+        };
       }
       out[prop] = next;
     }

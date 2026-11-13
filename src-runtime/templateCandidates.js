@@ -29,7 +29,9 @@ const templateCandidates = {};
 function recurseCandidates(expect, warn, depth = 0) {
   const resolve = templateCandidates.resolveTemplateLiteralCandidates;
   if (!resolve) {
-    throw new Error('templateCandidates.resolveTemplateLiteralCandidates is not registered: import resolveTemplateLiteralCandidates.js (or the runtime index) first.');
+    const hint = 'import resolveTemplateLiteralCandidates.js (or the runtime index) first.';
+    const key = 'templateCandidates.resolveTemplateLiteralCandidates';
+    throw new Error(`${key} is not registered: ${hint}`);
   }
   return resolve(expect, warn, depth);
 }

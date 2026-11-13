@@ -1,5 +1,5 @@
 import {resolveTemplateLiteralCandidates} from './resolveTemplateLiteralCandidates.js';
-import {resolveTemplateLiteralValues} from './resolveTemplateLiteralValues.js';
+import {resolveTemplateLiteralValues    } from './resolveTemplateLiteralValues.js';
 import {templateCandidates, recurseCandidates} from './templateCandidates.js';
 const noop = () => undefined;
 function testTablePopulated() {
@@ -9,8 +9,14 @@ function testTablePopulated() {
 }
 function testDispatcherDelegates() {
   // The dispatcher enumerates exactly like a direct call, including unions.
-  const direct = resolveTemplateLiteralCandidates({type: 'union', members: ['"a"', '"b"']}, noop);
-  const viaTable = recurseCandidates({type: 'union', members: ['"a"', '"b"']}, noop);
+  const direct = resolveTemplateLiteralCandidates({
+    type: 'union',
+    members: ['"a"', '"b"'],
+  }, noop);
+  const viaTable = recurseCandidates({
+    type: 'union',
+    members: ['"a"', '"b"'],
+  }, noop);
   return JSON.stringify(viaTable) === JSON.stringify(direct) && JSON.stringify(viaTable) === '["a","b"]';
 }
 function testDispatcherThrowsWhenUnregistered() {
@@ -33,7 +39,10 @@ function testOverrideComposes() {
   const keep = templateCandidates.resolveTemplateLiteralCandidates;
   templateCandidates.resolveTemplateLiteralCandidates = () => ['OZ'];
   try {
-    const values = resolveTemplateLiteralValues({quasis: ['a', 'b'], types: ['"x"']}, noop);
+    const values = resolveTemplateLiteralValues({
+      quasis: ['a', 'b'],
+      types: ['"x"'],
+    }, noop);
     return JSON.stringify(values) === '["aOZb"]';
   } finally {
     templateCandidates.resolveTemplateLiteralCandidates = keep;
@@ -41,8 +50,12 @@ function testOverrideComposes() {
 }
 function testOverrideRestored() {
   // The previous test left no trace: defaults are back in the table.
-  return templateCandidates.resolveTemplateLiteralCandidates === resolveTemplateLiteralCandidates &&
-    JSON.stringify(resolveTemplateLiteralValues({quasis: ['a', 'b'], types: ['"x"']}, noop)) === '["axb"]';
+  const probe = {
+    quasis: ['a', 'b'],
+    types: ['"x"'],
+  };
+  const values = JSON.stringify(resolveTemplateLiteralValues(probe, noop)) === '["axb"]';
+  return templateCandidates.resolveTemplateLiteralCandidates === resolveTemplateLiteralCandidates && values;
 }
 const tests = [
   testTablePopulated,

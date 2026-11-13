@@ -1,5 +1,5 @@
 import {validateArrayLikeSparse} from './validateArrayLikeSparse.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType             } from '../src-transpiler/expandType.js';
 const warn = () => undefined;
 const numbers = () => expandType('Array<number>');
 const likeNumbers = () => expandType('ArrayLike<number>');
@@ -23,9 +23,15 @@ function testHolesSkipped() {
   // object-shaped ArrayLikes with holes all pass.
   const grown = [1];
   grown.length = 3;
-  return validateArrayLikeSparse(grown, numbers(), 'loc', 'name', true, warn, 0) === true &&
+  const holeyLike = {
+    length: 2,
+    0: 1,
+  };
+  return (
+    validateArrayLikeSparse(grown, numbers(), 'loc', 'name', true, warn, 0) === true &&
     validateArrayLikeSparse(new Array(3), numbers(), 'loc', 'name', true, warn, 0) === true &&
-    validateArrayLikeSparse({length: 2, 0: 1}, likeNumbers(), 'loc', 'name', true, warn, 0) === true;
+    validateArrayLikeSparse(holeyLike, likeNumbers(), 'loc', 'name', true, warn, 0) === true
+  );
 }
 function testElementTypeGeneric() {
   // Any element type works: holey string arrays pass, mixed fail.
@@ -36,15 +42,26 @@ function testElementTypeGeneric() {
 }
 function testBadShapesFail() {
   // Non-containers, bad lengths and non-container expects fail closed.
-  return validateArrayLikeSparse(null, numbers(), 'loc', 'name', true, warn, 0) === false &&
+  const bare = {
+    type: 'array',
+  };
+  return (
+    validateArrayLikeSparse(null, numbers(), 'loc', 'name', true, warn, 0) === false &&
     validateArrayLikeSparse(42, likeNumbers(), 'loc', 'name', true, warn, 0) === false &&
     validateArrayLikeSparse([1], 'number', 'loc', 'name', true, warn, 0) === false &&
-    validateArrayLikeSparse([1], {type: 'array'}, 'loc', 'name', true, warn, 0) === false;
+    validateArrayLikeSparse([1], bare, 'loc', 'name', true, warn, 0) === false
+  );
 }
 function testBareArrayLikeIsShapeOnly() {
   // Bare `ArrayLike` (no args) checks shape only, like the strict branch.
-  return validateArrayLikeSparse([1, '2'], {type: 'reference', name: 'ArrayLike', args: []}, 'loc', 'name', true, warn, 0) === true &&
-    validateArrayLikeSparse({}, {type: 'reference', name: 'ArrayLike', args: []}, 'loc', 'name', true, warn, 0) === false;
+  const bareLike = {
+    type: 'reference',
+    name: 'ArrayLike',
+    args: [],
+  };
+  const pairPasses = validateArrayLikeSparse([1, '2'], bareLike, 'loc', 'name', true, warn, 0) === true;
+  const emptyFails = validateArrayLikeSparse({}, bareLike, 'loc', 'name', true, warn, 0) === false;
+  return pairPasses && emptyFails;
 }
 const tests = [
   testDensePasses,

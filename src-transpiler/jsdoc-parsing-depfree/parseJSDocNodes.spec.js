@@ -1,5 +1,4 @@
 import {parseJSDocNodes} from './parseJSDocNodes.js';
-
 // The parser emits one node per tag row: same-line tags stay separate.
 function testParserSplitsRows() {
   const actual = parseJSDocNodes('@param {number} a @param {string} b');
@@ -9,18 +8,15 @@ function testParserSplitsRows() {
     actual[1].headRaw === 'b'
   );
 }
-
 // Mid-line prose never opens a tag.
 function testParserSkipsProse() {
   return parseJSDocNodes('* call foo(@param bar) here').length === 0;
 }
-
 // Inline synthetic sections parse: `@overload @param` rows stay visible.
 function testParserKeepsOverloadRows() {
   const actual = parseJSDocNodes('@overload @param {number} value');
   return actual.length === 2 && actual[1].headRaw === 'value';
 }
-
 // Bare `@template K` chains into the following `@param`: the consumed
 // head offset opens the next row.
 function testParserChainsBareTemplate() {
@@ -31,7 +27,6 @@ function testParserChainsBareTemplate() {
     actual[1].typeRaw === 'K'
   );
 }
-
 // Braceless `@typedef`/`@type` declensions: `@typedef` without braces
 // carries structure the row schema cannot hold, so only a following tag
 // still scans. A braceless `@type` reads the head word as the type (like
@@ -46,7 +41,6 @@ function testParserDeclinesBareTypes() {
     bareType[1].headRaw === 'x'
   );
 }
-
 // An unclosed brace recovers the head word and the following tag still
 // opens its own row, matching tsc recovery.
 function testParserRecoversUnbalanced() {
@@ -60,7 +54,6 @@ function testParserRecoversUnbalanced() {
     two[1].headRaw === 'b'
   );
 }
-
 // Mid-line `@returns {T}` after a param keeps its brace type, matching
 // tsc which binds the return whatever line it sits on.
 function testParserKeepsMidlineReturnType() {
@@ -71,7 +64,6 @@ function testParserKeepsMidlineReturnType() {
     actual[2].typeRaw === 'number[]'
   );
 }
-
 // A braceless `@param` keeps its head word (prose rides after): tsc
 // binds the name and carries the rest as comment text, so the node must
 // read the whole head for the shared grammar to split.
@@ -84,7 +76,6 @@ function testParserKeepsBracelessParamHead() {
     actual[0].headRaw === 'value Wrapped native hook.'
   );
 }
-
 // A swapped type-after-name head keeps the group for the reader split:
 // tsc binds the head's first word as the name and the group as the type
 // (matter-js `@param ...plugin {Function} The plugins`), so the node
@@ -98,20 +89,17 @@ function testParserKeepsPostBraceHead() {
     actual[0].headRaw === '...plugin {Function} The plugin(s)'
   );
 }
-
 // A bare `@template O, P` keeps the whole head: the comma list binds
 // two names downstream, and truncation at the comma would amputate one.
 function testParserKeepsTemplateCommaHead() {
   const actual = parseJSDocNodes('@template O, P The obj and props types');
   return actual.length === 1 && actual[0].headRaw === 'O, P The obj and props types';
 }
-
 // A template head still chains into the next row: the follower tag opens.
 function testParserChainsTemplateIntoFollower() {
   const actual = parseJSDocNodes('@template K email me @foo.com');
   return actual.length === 1 && actual[0].headRaw === 'K email me @foo.com';
 }
-
 // A mention between two known tags attaches on its own: tsc binds all
 // three rows (the mention's head stops at the next tag), so the parser
 // keeps all three too.
@@ -124,7 +112,6 @@ function testParserSpendsChainOnMention() {
     actual[2].headRaw === 'c'
   );
 }
-
 export const tests = [
   testParserSplitsRows,
   testParserSkipsProse,

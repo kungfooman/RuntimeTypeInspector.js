@@ -1,6 +1,5 @@
 import {splitTemplateBindings} from './splitTemplateBindings.js';
-import {readTemplateBinding} from './readTemplateBinding.js';
-
+import {readTemplateBinding  } from './readTemplateBinding.js';
 /**
  * Lowers one template node to shared schema rows, one per binding: tsc
  * splits `@template O, P` into two type parameters (each a binding, each
@@ -23,8 +22,15 @@ import {readTemplateBinding} from './readTemplateBinding.js';
 function docTemplateNode(node) {
   const rows = [];
   for (const binding of splitTemplateBindings(node.headRaw)) {
-    const {name, default: def} = readTemplateBinding(binding);
-    rows.push({name, constraint: node.typeRaw, default: def});
+    const {
+      name,
+      default: def,
+    } = readTemplateBinding(binding);
+    rows.push({
+      name,
+      constraint: node.typeRaw,
+      default: def,
+    });
   }
   return rows;
 }

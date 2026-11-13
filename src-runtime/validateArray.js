@@ -1,6 +1,6 @@
-import {recurse} from "./validators.js";
+import {recurse      } from "./validators.js";
 import {firstBadIndex} from "./firstBadIndex.js";
-import {isArrayValue} from "./isArrayValue.js";
+import {isArrayValue } from "./isArrayValue.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -32,7 +32,10 @@ function validateArray(value, expect, loc, name, critical, warn, depth) {
     const nameIndex = `${name}[${i}]`;
     const ret = recurse(valueIndex, elementType, loc, nameIndex, critical, warn, depth + 1);
     if (!ret) {
-      const info = {expect: elementType, value: valueIndex};
+      const info = {
+        expect: elementType,
+        value: valueIndex,
+      };
       warn(`Element at index ${i} has a wrong type.`, info);
       return false;
     }

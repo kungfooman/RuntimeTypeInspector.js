@@ -1,5 +1,4 @@
 import {runChecks} from './runChecks.js';
-
 // A computed string-literal key keeps the static name: the emitter only
 // captures dynamic keys, so the field stays plain and V8 infers the literal.
 function testComputedStringLiteralKeepsName() {
@@ -17,7 +16,6 @@ function testComputedStringLiteralKeepsName() {
     posted[0].loc === 'Fields#\'literal\''
   ));
 }
-
 // A numeric key coerces through the object wrapper: the field reports the
 // numeric name and validates, with the class-prefixed tuple loc.
 function testComputedNumericKeyReportsTupleLoc() {
@@ -35,7 +33,6 @@ function testComputedNumericKeyReportsTupleLoc() {
     posted[0].loc === 'Fields#0'
   ));
 }
-
 // A side-effecting key expression keeps evaluation order: the expression
 // runs once per definition and per instance, and the captured key names
 // the stored wrapper after its coerced value.
@@ -61,7 +58,6 @@ function testComputedCallKeyCoercesPerInstance() {
     hits.length === 1
   ));
 }
-
 // A template-literal key names the wrapper after its cooked value while the
 // violation loc still spells the raw key expression for debuggability.
 function testComputedTemplateKeyKeepsCookedName() {
@@ -81,7 +77,6 @@ function testComputedTemplateKeyKeepsCookedName() {
     posted[0].loc === expectedLoc
   ));
 }
-
 // A member-expression key reads the property once per evaluation and still
 // reports the resolved name on the stored wrapper.
 function testComputedMemberKeyResolvesName() {
@@ -100,7 +95,6 @@ function testComputedMemberKeyResolvesName() {
     posted[0].loc === 'Fields#box.prop'
   ));
 }
-
 export const tests = [
   testComputedStringLiteralKeepsName,
   testComputedNumericKeyReportsTupleLoc,

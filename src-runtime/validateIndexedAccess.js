@@ -1,5 +1,5 @@
 import {createTypeFromIndexedAccess} from "./createTypeFromIndexedAccess.js";
-import {recurse} from "./validators.js";
+import {recurse                    } from "./validators.js";
 /**
  * @typedef {object} IndexedAccess
  * @property {'indexedAccess'} type - The type.

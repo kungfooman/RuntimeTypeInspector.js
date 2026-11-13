@@ -17,7 +17,9 @@ function substituteObject(type, search, replace, warn) {
   if (next === properties && signatures === type.indexSignatures) {
     return type;
   }
-  const out = {...type};
+  const out = {
+    ...type,
+  };
   if (next !== properties) {
     out.properties = next;
   }

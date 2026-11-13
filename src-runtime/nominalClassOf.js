@@ -1,5 +1,5 @@
 import {typedefs} from "./registerTypedef.js";
-import {classes} from "./registerClass.js";
+import {classes } from "./registerClass.js";
 /**
  * Registered constructor behind a type name, following typedef aliases to
  * it. Class names win over same-named typedefs (harvested shapes share the

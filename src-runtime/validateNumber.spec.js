@@ -1,5 +1,5 @@
-import {validateType} from './validateType.js';
-import {validateNumber} from './validateNumber.js';
+import {validateType          } from './validateType.js';
+import {validateNumber        } from './validateNumber.js';
 import {validateNumberInObject} from './validateNumberInObject.js';
 const warn = () => undefined;
 const expectNumber = 'number';
@@ -58,9 +58,17 @@ function testBoxedNumber() {
 }
 function testFailuresWarn() {
   const warnings = [];
-  const ret = validateType('1', expectNumber, 'test', 'a', true, (...args) => {
-    warnings.push(args[0]);
-  }, 0);
+  const ret = validateType(
+    '1',
+    expectNumber,
+    'test',
+    'a',
+    true,
+    (...args) => {
+      warnings.push(args[0]);
+    },
+    0,
+  );
   if (ret !== false || warnings.length === 0) {
     return false;
   }
@@ -68,17 +76,29 @@ function testFailuresWarn() {
 }
 function testInObjectValid() {
   const warnings = [];
-  const ret = validateNumberInObject({a: 1}, 'a', (...args) => {
-    warnings.push(args);
-  });
+  const ret = validateNumberInObject(
+    {
+      a: 1,
+    },
+    'a',
+    (...args) => {
+      warnings.push(args);
+    },
+  );
   return ret === true && warnings.length === 0;
 }
 function testInObjectKeepsKeys() {
   // Old `validateNumber(obj, prop)` generated `type#prop` warning keys.
   const warnings = [];
-  const ret = validateNumberInObject({b: '1'}, 'b', (...args) => {
-    warnings.push(args);
-  });
+  const ret = validateNumberInObject(
+    {
+      b: '1',
+    },
+    'b',
+    (...args) => {
+      warnings.push(args);
+    },
+  );
   if (ret !== false) {
     return false;
   }
@@ -95,7 +115,11 @@ function testInObjectIssueExample() {
   if (!validateNumberInObject(['1', 2, 3], 1, warn)) {
     return false;
   }
-  if (validateNumberInObject({c: null}, 'c', warn)) {
+  const nullHolder = {
+    c: null,
+  };
+  const acceptsNullField = validateNumberInObject(nullHolder, 'c', warn);
+  if (acceptsNullField) {
     return false;
   }
   return true;

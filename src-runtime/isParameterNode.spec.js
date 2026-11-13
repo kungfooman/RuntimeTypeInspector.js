@@ -1,10 +1,10 @@
 import {isParameterNode} from './isParameterNode.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType     } from '../src-transpiler/expandType.js';
 // We want: a tagged parameter node to pass, because index-signature params
 // print as `name: type` exactly when the discriminant says `parameter`.
 function testParameterNodeTrue() {
   const parsed = expandType('{[k: string]: number}');
-  const input = parsed.indexSignatures[0].indexParameters[0];
+  const [input] = parsed.indexSignatures[0].indexParameters;
   return isParameterNode(input) === true;
 }
 // We want: an atom to fail, because atoms print through the atom branch,
@@ -28,7 +28,11 @@ function testParameterNodeNullishFalse() {
 // structural probe misprinted any such object as `name: type` while the
 // discriminant lets it fall through to the generic path.
 function testParameterNodeMistaggedFalse() {
-  return isParameterNode({type: 'string', name: 'k'}) === false;
+  const mistagged = {
+    type: 'string',
+    name: 'k',
+  };
+  return isParameterNode(mistagged) === false;
 }
 const tests = [
   testParameterNodeTrue,

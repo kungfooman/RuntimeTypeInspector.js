@@ -1,5 +1,5 @@
-import {getTypeKeys} from "./getTypeKeys.js";
-import {stripKey} from "./stripKey.js";
+import {getTypeKeys      } from "./getTypeKeys.js";
+import {stripKey         } from "./stripKey.js";
 import {resolveObjectSide} from "./resolveObjectSide.js";
 /**
  * @param {import('./validateIndexedAccess.js').IndexedAccess} expect - The supposed type information of said value.
@@ -43,6 +43,10 @@ function createTypeFromIndexedAccess(expect, warn) {
     // `readonly`) survive instead of hiding behind a required wrapper.
     return members[0];
   }
-  return {type: 'union', members, optional: false};
+  return {
+    type: 'union',
+    members,
+    optional: false,
+  };
 }
 export {createTypeFromIndexedAccess};

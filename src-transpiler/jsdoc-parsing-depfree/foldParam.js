@@ -1,10 +1,9 @@
 import {annotateOptional} from "../annotateOptional.js";
-import {isUnionNode} from "../isUnionNode.js";
-import {isArrayNode} from "../isArrayNode.js";
-import {isObjectNode} from "../isObjectNode.js";
+import {isUnionNode     } from "../isUnionNode.js";
+import {isArrayNode     } from "../isArrayNode.js";
+import {isObjectNode    } from "../isObjectNode.js";
 /** @import {ExpandedType} from './expandedType.js' */
 /** @import {ParamTag} from './parseJSDoc.js' */
-
 /**
  * Folds one expanded param into the record: bracket names mark optionality
  * and dotted names nest into object properties (`options.stats`). Consumes
@@ -44,18 +43,20 @@ function foldParam(params, src, tag, rawType) {
       const typeObject = toptype.members.find(isObjectNode);
       if (typeObject === undefined || typeObject.properties === undefined) {
         console.warn(
-          "parseJSDoc> Skipping @param, union has no object member to navigate into. Please check if your JSDoc is valid or open an issue about this!",
-          {src, toptype, parts, annotatedType}
+          'parseJSDoc> Skipping @param, union has no object member to navigate into. ' +
+            'Please check if your JSDoc is valid or open an issue about this!',
+          {src, toptype, parts, annotatedType},
         );
       } else {
         properties = typeObject.properties;
       }
     } else if (isArrayNode(toptype)) {
-      const elementType = toptype.elementType;
+      const {elementType} = toptype;
       if (!isObjectNode(elementType) || elementType.properties === undefined) {
         console.warn(
-          "parseJSDoc> Skipping @param, array element has no properties to navigate into. Please check if your JSDoc is valid or open an issue about this!",
-          {src, toptype, parts, annotatedType}
+          'parseJSDoc> Skipping @param, array element has no properties to navigate into. ' +
+            'Please check if your JSDoc is valid or open an issue about this!',
+          {src, toptype, parts, annotatedType},
         );
       } else {
         properties = elementType.properties;
@@ -68,8 +69,9 @@ function foldParam(params, src, tag, rawType) {
       }
     } else {
       console.warn(
-        "parseJSDoc> Skipping @param, unseen syntax detected. Please check if your JSDoc is valid or open an issue about this!",
-        {src, toptype, parts, annotatedType}
+        'parseJSDoc> Skipping @param, unseen syntax detected. ' +
+          'Please check if your JSDoc is valid or open an issue about this!',
+        {src, toptype, parts, annotatedType},
       );
     }
   }

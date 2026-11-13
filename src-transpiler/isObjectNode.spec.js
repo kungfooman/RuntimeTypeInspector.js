@@ -1,5 +1,5 @@
 import {isObjectNode} from './isObjectNode.js';
-import {expandType} from './expandType.js';
+import {expandType  } from './expandType.js';
 // We want: object nodes recognized, so navigation needs no cast.
 function testObjectPasses() {
   return isObjectNode(expandType('{a: string}')) === true;

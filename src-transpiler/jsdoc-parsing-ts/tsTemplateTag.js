@@ -1,8 +1,7 @@
-import {stripTsBraces} from './stripTsBraces.js';
-import {docTemplateNode} from '../jsdoc-parsing-depfree/docTemplateNode.js';
+import {stripTsBraces      } from './stripTsBraces.js';
+import {docTemplateNode    } from '../jsdoc-parsing-depfree/docTemplateNode.js';
 import {readTemplateBinding} from '../jsdoc-parsing-depfree/readTemplateBinding.js';
-import {recoverTildeTag} from './recoverTildeTag.js';
-
+import {recoverTildeTag    } from './recoverTildeTag.js';
 /**
  * Reads one TS `@template` tag to shared schema rows, one per binding:
  * tsc splits `@template O, P` into two type parameters (each carrying the
@@ -21,13 +20,23 @@ function tsTemplateTag(tag) {
   if (tilde !== null && (tag.typeParameters ?? []).length === 0) {
     // tsc drops the binding along with a tilde constraint, so the head
     // after the constraint reads the depfree way: same builder, same rows.
-    return docTemplateNode({typeRaw: tilde.typeRaw, headRaw: tilde.headRaw});
+    return docTemplateNode({
+      typeRaw: tilde.typeRaw,
+      headRaw: tilde.headRaw,
+    });
   }
   const constraint = tilde !== null ? tilde.typeRaw : rawConstraint;
   const rows = [];
   for (const param of tag.typeParameters ?? []) {
-    const {name, default: def} = readTemplateBinding(param.getText());
-    rows.push({name, constraint, default: def});
+    const {
+      name,
+      default: def,
+    } = readTemplateBinding(param.getText());
+    rows.push({
+      name,
+      constraint,
+      default: def,
+    });
   }
   return rows;
 }

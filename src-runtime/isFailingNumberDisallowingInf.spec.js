@@ -10,9 +10,13 @@ function testRejectsNonNumber() {
   // rejects without coercion and therefore also rejects boxed numbers.
   // Non-number types must fail: the check mirrors validateNumber, which
   // rejects without coercion and therefore also rejects boxed numbers.
-  return isFailingNumberDisallowingInf('1') && isFailingNumberDisallowingInf(null) &&
-    isFailingNumberDisallowingInf(undefined) && isFailingNumberDisallowingInf(Object(1)) &&
-    isFailingNumberDisallowingInf({}) === true;
+  return (
+    isFailingNumberDisallowingInf('1') &&
+    isFailingNumberDisallowingInf(null) &&
+    isFailingNumberDisallowingInf(undefined) &&
+    isFailingNumberDisallowingInf(Object(1)) &&
+    isFailingNumberDisallowingInf({}) === true
+  );
 }
 function testRejectsNaN() {
   // NaN never passes the number check: it is the classic precursor bug.
@@ -25,9 +29,12 @@ function testRejectsInfinity() {
 }
 function testAcceptsFinite() {
   // Ordinary finite numbers, including signed zero and big values, pass.
-  return isFailingNumberDisallowingInf(0) === false && isFailingNumberDisallowingInf(-0) === false &&
+  return (
+    isFailingNumberDisallowingInf(0) === false &&
+    isFailingNumberDisallowingInf(-0) === false &&
     isFailingNumberDisallowingInf(Number.MAX_SAFE_INTEGER) === false &&
-    isFailingNumberDisallowingInf(1.5) === false;
+    isFailingNumberDisallowingInf(1.5) === false
+  );
 }
 const tests = [
   testRejectsNonNumber,

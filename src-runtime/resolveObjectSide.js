@@ -1,12 +1,12 @@
-import {getTypeKeys} from './getTypeKeys.js';
-import {instantiateReference} from './instantiateReference.js';
-import {classes} from './registerClass.js';
-import {typedefs} from './registerTypedef.js';
-import {validators} from './validators.js';
-import {mergedClassShape} from './classShape.js';
+import {getTypeKeys          } from './getTypeKeys.js';
+import {instantiateReference } from './instantiateReference.js';
+import {classes              } from './registerClass.js';
+import {typedefs             } from './registerTypedef.js';
+import {validators           } from './validators.js';
+import {mergedClassShape     } from './classShape.js';
 import {createTypeFromMapping} from './createTypeFromMapping.js';
-import {materializeUtility} from './materializeUtility.js';
-import {resolveObject} from './getTypeKeys.js';
+import {materializeUtility   } from './materializeUtility.js';
+import {resolveObject        } from './getTypeKeys.js';
 /**
  * Resolves the object side of an indexed access to a property map.
  * Chases typedef names, instantiates generic references, materializes
@@ -40,7 +40,9 @@ function resolveObjectSide(object, warn, depth = 0) {
       break;
     }
     if (target && target.type === 'reference') {
-      if ((target.name === 'NonNullable' || target.name === 'Readonly' || target.name === 'NoInfer') && target.args?.length) {
+      const unboxed = target.name === 'NonNullable' || target.name === 'Readonly';
+      const transparent = unboxed || target.name === 'NoInfer';
+      if (transparent && target.args?.length) {
         return resolveObjectSide(target.args[0], warn, depth + 1);
       }
       if (target.name === 'Pick' || target.name === 'Omit' || target.name === 'Partial') {
@@ -61,16 +63,23 @@ function resolveObjectSide(object, warn, depth = 0) {
     return;
   }
   if (target.type === 'object') {
-    return target.properties ? target : {type: 'object', properties: {}};
+    return target.properties ? target : {
+      type: 'object',
+      properties: {},
+    };
   }
   if (target.type === undefined) {
     // Bare `{}` (e.g. a conditional false-branch) is the empty object type.
-    return {type: 'object', properties: target.properties ?? {}};
+    return {
+      type: 'object',
+      properties: target.properties ?? {},
+    };
   }
   if (target.type === 'mapping') {
     return createTypeFromMapping(target, warn) ?? undefined;
   }
-  if ((target.type === 'intersection' || target.type === 'union') && Array.isArray(target.members)) {
+  const isComposite = target.type === 'intersection' || target.type === 'union';
+  if (isComposite && Array.isArray(target.members)) {
     const properties = {};
     for (const member of target.members) {
       const resolved = resolveObjectSide(member, warn, depth + 1);
@@ -79,7 +88,10 @@ function resolveObjectSide(object, warn, depth = 0) {
       }
       Object.assign(properties, resolved.properties);
     }
-    return {type: 'object', properties};
+    return {
+      type: 'object',
+      properties,
+    };
   }
   if (target.type === 'indexedAccess') {
     return resolveObject(target, warn);

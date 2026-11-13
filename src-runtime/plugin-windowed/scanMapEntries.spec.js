@@ -2,9 +2,18 @@ import '../validateType.js';
 import {scanMapEntries} from './scanMapEntries.js';
 function scan(map, key, val) {
   const messages = [];
-  const good = scanMapEntries(map, key, val, 'TestSite#method', 'mapProperty', true, (msg) => {
-    messages.push(msg);
-  }, 0);
+  const good = scanMapEntries(
+    map,
+    key,
+    val,
+    'TestSite#method',
+    'mapProperty',
+    true,
+    (msg) => {
+      messages.push(msg);
+    },
+    0,
+  );
   return {good, messages};
 }
 function testCleanScanPasses() {

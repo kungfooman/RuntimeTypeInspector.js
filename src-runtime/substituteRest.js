@@ -12,6 +12,9 @@ import {recurseSubstitute} from "./substitutes.js";
  */
 function substituteRest(type, search, replace, warn) {
   const annotation = recurseSubstitute(type.annotation, search, replace, warn);
-  return annotation === type.annotation ? type : {...type, annotation};
+  return annotation === type.annotation ? type : {
+    ...type,
+    annotation,
+  };
 }
 export {substituteRest};

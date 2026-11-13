@@ -1,11 +1,11 @@
-import {expandTypeDepFree} from './expandTypeDepFree.js';
+import {expandTypeDepFree    } from './expandTypeDepFree.js';
 import {collectOverloadBlocks} from './jsdoc-parsing-depfree/collectOverloadBlocks.js';
 import {splitOverloadSections} from './jsdoc-parsing-depfree/splitOverloadSections.js';
-import {nodeChildren} from './nodeChildren.js';
-import {nodeIsFunctionLike} from './nodeIsFunctionLike.js';
-import {parseJSDocDocument} from './jsdoc-parsing-depfree/parseJSDocDocument.js';
-import {parseJSDocTypedef} from './jsdoc-parsing-depfree/parseJSDocTypedef.js';
-import {docReaderBoth} from './jsdoc-parsing-ts/docReaderBoth.js';
+import {nodeChildren         } from './nodeChildren.js';
+import {nodeIsFunctionLike   } from './nodeIsFunctionLike.js';
+import {parseJSDocDocument   } from './jsdoc-parsing-depfree/parseJSDocDocument.js';
+import {parseJSDocTypedef    } from './jsdoc-parsing-depfree/parseJSDocTypedef.js';
+import {docReaderBoth        } from './jsdoc-parsing-ts/docReaderBoth.js';
 class JSDocAnnotator {
   /** @type {import('@babel/types').Node[]} */
   parents = [];
@@ -54,7 +54,9 @@ class JSDocAnnotator {
    * @param {import('@babel/types').Node} node - The node to traverse.
    */
   traverse(node) {
-    if (!node) return;
+    if (!node) {
+      return;
+    }
     this.parents.push(node);
     if (nodeIsFunctionLike(node)) {
       const jsdoc = this.getJSDoc(node);
@@ -66,7 +68,7 @@ class JSDocAnnotator {
         }
       }
     }
-    const type = node.type;
+    const {type} = node;
     const childrenKeys = nodeChildren[type] || [];
     for (const key of childrenKeys) {
       const child = node[key];
@@ -114,7 +116,9 @@ class JSDocAnnotator {
       map[paramNode.name] = typeInfo;
     } else if (type === 'ObjectPattern') {
       if (typeof typeInfo !== 'object' || typeInfo.type !== 'object' || !typeInfo.properties) {
-        console.warn("typeof typeInfo !== 'object' || typeInfo.type !== 'object' || !typeInfo.properties", {paramNode, typeInfo});
+        const missing = "typeof typeInfo !== 'object'";
+        const detail = `${missing} || typeInfo.type !== 'object' || !typeInfo.properties`;
+        console.warn(detail, {paramNode, typeInfo});
         return;
       }
       const propTypes = typeInfo.properties;
@@ -144,10 +148,13 @@ class JSDocAnnotator {
       switch (typeInfo.type) {
         case 'array':
           if (!typeInfo.elementType) {
-            console.warn("Expected array type, but missing 'elementType' property.", {paramNode, typeInfo});
+            console.warn("Expected array type, but missing 'elementType' property.", {
+              paramNode,
+              typeInfo,
+            });
             return;
           }
-          const elementType = typeInfo.elementType;
+          const {elementType} = typeInfo;
           paramNode.elements.forEach(el => {
             if (!el) {
               console.warn("!el", {paramNode, typeInfo});
@@ -159,10 +166,13 @@ class JSDocAnnotator {
         case 'tuple':
           // console.log("TUPLE PATTERN", {type, typeInfo});
           if (!typeInfo.elements) {
-            console.warn("Expected tuple type, but missing 'elements' property.", {paramNode, typeInfo});
+            console.warn("Expected tuple type, but missing 'elements' property.", {
+              paramNode,
+              typeInfo,
+            });
             return;
           }
-          const elements = typeInfo.elements;
+          const {elements} = typeInfo;
           paramNode.elements.forEach((el, i) => {
             const elType = elements[i];
             if (el === null) {
@@ -245,7 +255,7 @@ class JSDocAnnotator {
    * @returns {string|undefined} The comment value.
    */
   getLeadingComment(node) {
-    let leadingComments = node.leadingComments;
+    let {leadingComments} = node;
     if (!leadingComments) {
       if (node.type === 'FunctionDeclaration') {
         const exportNamedDeclaration = this.findParentOfType(node, 'ExportNamedDeclaration');
@@ -273,7 +283,9 @@ class JSDocAnnotator {
   getJSDoc(node) {
     let comment = this.getLeadingComment(node);
     const sections = splitOverloadSections(collectOverloadBlocks(node, this.parents));
-    if (sections.overloads.length) comment = sections.impl || '';
+    if (sections.overloads.length) {
+      comment = sections.impl || '';
+    }
     if (!comment) {
       return;
     }
@@ -295,8 +307,13 @@ class JSDocAnnotator {
         return;
       }
       const paramName = node.params[0].type === 'Identifier' ? node.params[0].name : 'value';
-      const params = {[paramName]: setter};
-      return {templates: undefined, params};
+      const params = {
+        [paramName]: setter,
+      };
+      return {
+        templates: undefined,
+        params,
+      };
     }
     const {templates, params} = parseJSDocDocument(comment, this.expandType);
     if (!templates && !params) {

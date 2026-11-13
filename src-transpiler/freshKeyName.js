@@ -1,5 +1,4 @@
 import {freshName} from './freshName.js';
-
 /**
  * Names the parameter-local carrier of a computed property key.
  * @param {object} node - Property node to scan for collisions.

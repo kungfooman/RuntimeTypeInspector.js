@@ -13,7 +13,7 @@ const jsdocCache = {};
 function makeJSDoc(loc, names, values) {
   const n = names.length;
   let jsdoc = '    /**\n';
-  for (var i = 0; i < n; i++) {
+  for (let i = 0; i < n; i++) {
     const name = names[i];
     const value = values[i];
     /** @type {string} */

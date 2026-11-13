@@ -14,9 +14,15 @@ function identity1(x) {
   return x;
 }
 identity1({
-  aa: {testkey: 'aa'},
-  bb: {testkey: 'bb'},
-  cc: {testkey: 'cc'},
+  aa: {
+        testkey: 'aa'
+      },
+  bb: {
+        testkey: 'bb'
+      },
+  cc: {
+        testkey: 'cc'
+      },
 });
 /**
  * @param {ObjTest2} x - First argument.
@@ -26,7 +32,13 @@ function identity2(x) {
   return x;
 }
 identity2({
-  aa: {testkey: 'aa'},
-  bb: {testkey: 'bb'},
-  cc: {testkey: 'cc'},
+  aa: {
+        testkey: 'aa'
+      },
+  bb: {
+        testkey: 'bb'
+      },
+  cc: {
+        testkey: 'cc'
+      },
 });

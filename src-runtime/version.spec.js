@@ -1,5 +1,5 @@
 import {readFileSync} from 'fs';
-import {RTI_INFO} from './version.js';
+import {RTI_INFO    } from './version.js';
 /**
  * Commit/subject are stamped by `node sync-version.js` during
  * `npm run build:publish`, `null` from unstamped source.
@@ -10,8 +10,11 @@ function validInfo() {
     return false;
   }
   const field = (_) => _ === null || typeof _ === 'string';
-  return typeof RTI_INFO.version === 'string' &&
-    field(RTI_INFO.commit) && field(RTI_INFO.subject);
+  return (
+    typeof RTI_INFO.version === 'string' &&
+    field(RTI_INFO.commit) &&
+    field(RTI_INFO.subject)
+  );
 }
 const tests = [
   // `sync-version.js` mirrors package.json into version.js — never hand-edit.

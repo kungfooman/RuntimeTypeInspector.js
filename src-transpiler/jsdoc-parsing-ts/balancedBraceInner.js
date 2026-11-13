@@ -25,7 +25,10 @@ function balancedBraceInner(source) {
     } else if (source[index] === '}') {
       depth -= 1;
       if (depth === 0) {
-        return {text: source.slice(open + 1, index), end: index + 1};
+        return {
+          text: source.slice(open + 1, index),
+          end: index + 1,
+        };
       }
     }
   }

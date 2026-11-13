@@ -1,14 +1,13 @@
-import {docReaderDepFree} from '../jsdoc-parsing-depfree/docReaderDepFree.js';
-import {docReaderTS} from './docReaderTS.js';
-import {canonicalDocEqual, canonicalDocCovers} from '../jsdoc-parsing-depfree/canonicalDocCompare.js';
-
+import {docReaderDepFree  } from '../jsdoc-parsing-depfree/docReaderDepFree.js';
+import {docReaderTS       } from './docReaderTS.js';
+import {canonicalDocEqual } from '../jsdoc-parsing-depfree/canonicalDocCompare.js';
+import {canonicalDocCovers} from '../jsdoc-parsing-depfree/canonicalDocCompare.js';
 /**
  * Injectable doc-reader probe: runs over one bare comment at transpile
  * time. The pipeline ignores the return value; warn inside when the case
  * is worth keeping (`docReaderBoth` warns on DRIFT only).
  * @typedef {(comment: string) => unknown} DocReader
  */
-
 /**
  * Injectable doc-reader probe: runs over one bare comment at transpile
  * time. The pipeline ignores the return value; warn inside when the case

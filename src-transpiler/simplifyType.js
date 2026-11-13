@@ -1,6 +1,6 @@
-import {isExpandedObject} from './isExpandedObject.js';
+import {isExpandedObject    } from './isExpandedObject.js';
 import {isIndexSignatureNode} from './isIndexSignatureNode.js';
-import {mapValues} from './mapValues.js';
+import {mapValues           } from './mapValues.js';
 /** @import {ExpandedType} from './expandedType.js' */
 /**
  * Recursively clones and simplifies a type for emission into source code.
@@ -20,7 +20,9 @@ function simplifyType(type) {
   if (!(type instanceof Object)) {
     return type;
   }
-  const out = {...type};
+  const out = {
+    ...type,
+  };
   if (!isExpandedObject(out)) {
     return out;
   }

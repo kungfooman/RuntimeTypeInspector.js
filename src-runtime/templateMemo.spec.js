@@ -1,8 +1,8 @@
 import {inspectTypeWithTemplates} from './inspectTypeWithTemplates.js';
-import {substitutedCache} from './substitutedFor.js';
-import {substituteType} from './substituteType.js';
-import {createTypeFromMapping} from './createTypeFromMapping.js';
-import {mergedClassShape} from './classShape.js';
+import {substitutedCache        } from './substitutedFor.js';
+import {substituteType          } from './substituteType.js';
+import {createTypeFromMapping   } from './createTypeFromMapping.js';
+import {mergedClassShape        } from './classShape.js';
 import {registerTypedef, typedefs} from './registerTypedef.js';
 import {registerClass, classes} from './registerClass.js';
 import {expandType} from '../src-transpiler/expandType.js';
@@ -11,12 +11,18 @@ function testMemoStableAcrossRepeats() {
   // identical call adds no cache entry and decides identically.
   substitutedCache.clear();
   try {
-    const templates = () => ({T: 'string'});
+    const templates = () => ({
+      T: 'string',
+    });
     const first = inspectTypeWithTemplates('a', 'T', 'memoSite', 'v', templates());
     const sizeAfterFirst = substitutedCache.size;
     const second = inspectTypeWithTemplates('b', 'T', 'memoSite', 'v', templates());
-    return first === true && second === true && sizeAfterFirst >= 1 &&
-      substitutedCache.size === sizeAfterFirst;
+    return (
+      first === true &&
+      second === true &&
+      sizeAfterFirst >= 1 &&
+      substitutedCache.size === sizeAfterFirst
+    );
   } finally {
     substitutedCache.clear();
   }
@@ -27,11 +33,22 @@ function testBindingsDistinguishEntries() {
   substitutedCache.clear();
   try {
     const expect = expandType('K extends "a" | "b" ? K : never');
-    const a = inspectTypeWithTemplates('a', expect, 'memoPins', 'v', {K: '"a"'});
+    const a = inspectTypeWithTemplates('a', expect, 'memoPins', 'v', {
+      K: '"a"',
+    });
     const sizeAfterA = substitutedCache.size;
-    const b = inspectTypeWithTemplates('b', expect, 'memoPins', 'v', {K: '"b"'});
-    const c = inspectTypeWithTemplates('c', expect, 'memoPins', 'v', {K: '"a"'});
-    return a === true && b === true && c === false && substitutedCache.size === sizeAfterA + 1;
+    const b = inspectTypeWithTemplates('b', expect, 'memoPins', 'v', {
+      K: '"b"',
+    });
+    const c = inspectTypeWithTemplates('c', expect, 'memoPins', 'v', {
+      K: '"a"',
+    });
+    return (
+      a === true &&
+      b === true &&
+      c === false &&
+      substitutedCache.size === sizeAfterA + 1
+    );
   } finally {
     substitutedCache.clear();
   }
@@ -42,12 +59,27 @@ function testMappingReflectsReregistration() {
   // guard) instead of serving the stale shape.
   const prev = typedefs.Box;
   try {
-    registerTypedef('Box', {type: 'object', properties: {w: 'number'}});
+    registerTypedef('Box', {
+      type: 'object',
+      properties: {
+        w: 'number',
+      },
+    });
     const node = expandType('{ [K in keyof Box]-?: Box[K] }');
     const before = JSON.stringify(createTypeFromMapping(node, () => {}));
-    registerTypedef('Box', {type: 'object', properties: {w: 'number', h: 'number'}});
+    registerTypedef('Box', {
+      type: 'object',
+      properties: {
+        w: 'number',
+        h: 'number',
+      },
+    });
     const after = JSON.stringify(createTypeFromMapping(node, () => {}));
-    return before.includes('"w"') && !before.includes('"h"') && after.includes('"h"');
+    return (
+      before.includes('"w"') &&
+      !before.includes('"h"') &&
+      after.includes('"h"')
+    );
   } finally {
     if (prev === undefined) {
       delete typedefs.Box;
@@ -71,7 +103,12 @@ function testClassShapeReflectsReregistration() {
     const before = Object.keys(mergedClassShape('Alpha').properties);
     registerClass(A2);
     const after = Object.keys(mergedClassShape('Alpha').properties);
-    return before.includes('a') && !before.includes('b') && after.includes('b') && !after.includes('a');
+    return (
+      before.includes('a') &&
+      !before.includes('b') &&
+      after.includes('b') &&
+      !after.includes('a')
+    );
   } finally {
     if (prev === undefined) {
       delete classes.Alpha;
@@ -85,13 +122,25 @@ function testNegZeroDistinctFromZero() {
   // pin distinct union members instead of merging like their identical
   // JSON spellings did. Validation is unaffected (`-0 === +0`).
   try {
-    const templates = {T: {type: 'union', members: [-0, '"a"']}};
+    const templates = {
+      T: {
+        type: 'union',
+        members: [-0, '"a"'],
+      },
+    };
     const first = inspectTypeWithTemplates(-0, 'T', 'memoZero', 'v', templates);
     const second = inspectTypeWithTemplates(0, 'T', 'memoZero', 'v', templates);
     const pinned = templates.T;
-    return first === true && second === true && pinned && typeof pinned === 'object' &&
-      pinned.type === 'union' && pinned.members.length === 2 &&
-      pinned.members.some((_) => Object.is(_, -0)) && pinned.members.some((_) => Object.is(_, 0) && !Object.is(_, -0));
+    return (
+      first === true &&
+      second === true &&
+      pinned &&
+      typeof pinned === 'object' &&
+      pinned.type === 'union' &&
+      pinned.members.length === 2 &&
+      pinned.members.some((_) => Object.is(_, -0)) &&
+      pinned.members.some((_) => Object.is(_, 0) && !Object.is(_, -0))
+    );
   } finally {
     substitutedCache.clear();
   }
@@ -99,11 +148,24 @@ function testNegZeroDistinctFromZero() {
 function testReplaceNeverMutates() {
   // Pure substitution: the input tree is byte-identical afterwards, matched
   // subtrees are shared by identity, and only the rewrite path allocates.
-  const input = {type: 'object', properties: {a: 'K', b: {type: 'array', elementType: 'number'}}};
+  const input = {
+    type: 'object',
+    properties: {
+      a: 'K',
+      b: {
+        type: 'array',
+        elementType: 'number',
+      },
+    },
+  };
   const before = JSON.stringify(input);
   const out = substituteType(input, 'K', '"x"', () => {});
-  return JSON.stringify(input) === before && out !== input &&
-    out.properties.b === input.properties.b && out.properties.a === '"x"';
+  return (
+    JSON.stringify(input) === before &&
+    out !== input &&
+    out.properties.b === input.properties.b &&
+    out.properties.a === '"x"'
+  );
 }
 const tests = [
   testReplaceNeverMutates,

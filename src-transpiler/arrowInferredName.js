@@ -11,23 +11,37 @@
  * arrowInferredName(declaration.init, declaration); // 'greet'
  */
 function arrowInferredName(node, parent) {
-  if (parent.type === 'VariableDeclarator' && parent.init === node && parent.id.type === 'Identifier') {
+  const isDeclaratorName = parent.type === 'VariableDeclarator' && parent.init === node;
+  const declaresIdentifier = isDeclaratorName && parent.id.type === 'Identifier';
+  if (declaresIdentifier) {
     return parent.id.name;
   }
-  if (parent.type === 'AssignmentPattern' && parent.right === node && parent.left.type === 'Identifier') {
+  const isPatternDefault = parent.type === 'AssignmentPattern' && parent.right === node;
+  const defaultsIdentifier = isPatternDefault && parent.left.type === 'Identifier';
+  if (defaultsIdentifier) {
     return parent.left.name;
   }
-  if (parent.type === 'AssignmentExpression' && parent.right === node && parent.left.type === 'Identifier') {
+  const isAssignName = parent.type === 'AssignmentExpression' && parent.right === node;
+  const assignsIdentifier = isAssignName && parent.left.type === 'Identifier';
+  if (assignsIdentifier) {
     return parent.left.name;
   }
-  if (parent.type === 'ExportDefaultDeclaration' && parent.declaration === node) return 'default';
+  if (parent.type === 'ExportDefaultDeclaration' && parent.declaration === node) {
+    return 'default';
+  }
   if (parent.type === 'ClassPrivateProperty' && parent.value === node) {
     return `#${parent.key.id.name}`;
   }
-  if ((parent.type === 'ObjectProperty' || parent.type === 'ClassProperty') && parent.value === node) {
-    const key = parent.key;
-    if (!parent.computed && key.type === 'Identifier') return key.name;
-    if (key.type === 'StringLiteral' || key.type === 'NumericLiteral') return String(key.value);
+  const isObjectKey = parent.type === 'ObjectProperty' || parent.type === 'ClassProperty';
+  const namesValue = isObjectKey && parent.value === node;
+  if (namesValue) {
+    const {key} = parent;
+    if (!parent.computed && key.type === 'Identifier') {
+      return key.name;
+    }
+    if (key.type === 'StringLiteral' || key.type === 'NumericLiteral') {
+      return String(key.value);
+    }
     return null;
   }
   return '';

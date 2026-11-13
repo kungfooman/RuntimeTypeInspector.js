@@ -1,12 +1,12 @@
-import {options} from "./options.js";
-import {validators} from "./validators.js";
-import {validateNumber} from "./validateNumber.js";
-import {validateString} from "./validateString.js";
-import {validateBoolean} from "./validateBoolean.js";
-import {customTypes} from "./customTypes.js";
-import {customValidations} from "./customValidations.js";
+import {options                      } from "./options.js";
+import {validators                   } from "./validators.js";
+import {validateNumber               } from "./validateNumber.js";
+import {validateString               } from "./validateString.js";
+import {validateBoolean              } from "./validateBoolean.js";
+import {customTypes                  } from "./customTypes.js";
+import {customValidations            } from "./customValidations.js";
 import {isFailingNumberDisallowingInf} from "./isFailingNumberDisallowingInf.js";
-import {isFailingNumberAllowingInf} from "./isFailingNumberAllowingInf.js";
+import {isFailingNumberAllowingInf   } from "./isFailingNumberAllowingInf.js";
 /**
  * Scans an array-like range for the first element a primitive check would
  * reject, without building per-element names or recursing: `number`
@@ -52,7 +52,9 @@ function firstBadIndex(value, length, elementType) {
     // The Infinity verdict is picked once per scan, so the hot loop runs
     // a plain predicate per element instead of evaluating a boolean flag
     // and the options object every element.
-    const isBad = options.checkInfinity ? isFailingNumberDisallowingInf : isFailingNumberAllowingInf;
+    const disallowing = isFailingNumberDisallowingInf;
+    const allowing = isFailingNumberAllowingInf;
+    const isBad = options.checkInfinity ? disallowing : allowing;
     for (let i = 0; i < length; i++) {
       if (isBad(value[i])) {
         return i;
@@ -60,8 +62,9 @@ function firstBadIndex(value, length, elementType) {
     }
     return -1;
   }
-  if ((elementType === 'string' && validators.validateString === validateString) ||
-    (elementType === 'boolean' && validators.validateBoolean === validateBoolean)) {
+  const isStockString = elementType === 'string' && validators.validateString === validateString;
+  const isStockBoolean = elementType === 'boolean' && validators.validateBoolean === validateBoolean;
+  if (isStockString || isStockBoolean) {
     if (customTypes[elementType]) {
       return 0;
     }

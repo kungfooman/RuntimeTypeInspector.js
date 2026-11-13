@@ -6,7 +6,8 @@
  * unwrapMember({type: 'rest', annotation: 'K'}); // 'K'
  */
 function unwrapMember(element) {
-  if (element && typeof element === 'object' && (element.type === 'tupleMember' || element.type === 'rest')) {
+  const isWrapped = element.type === 'tupleMember' || element.type === 'rest';
+  if (element && typeof element === 'object' && isWrapped) {
     return element.elementType ?? element.annotation;
   }
   return element;

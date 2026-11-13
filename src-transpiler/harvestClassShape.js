@@ -1,5 +1,5 @@
-import {extractCurlyContent} from './extractCurlyContent.js';
-import {parseJSDocDocument} from './jsdoc-parsing-depfree/parseJSDocDocument.js';
+import {extractCurlyContent } from './extractCurlyContent.js';
+import {parseJSDocDocument  } from './jsdoc-parsing-depfree/parseJSDocDocument.js';
 import {inferTypeFromDefault} from './inferTypeFromDefault.js';
 // Declaration-site ranks: the field always beats constructor assignments,
 // like TSC where the declared type wins over assigned values.
@@ -47,7 +47,10 @@ function tagType(comment, tag, expandType) {
     if (!content || !content.trim()) {
       return;
     }
-    return {type: expandType(content.trim()), raw: content.trim()};
+    return {
+      type: expandType(content.trim()),
+      raw: content.trim(),
+    };
   } catch {
     // Unparseable annotation: fail open, harvest continues.
   }
@@ -76,7 +79,10 @@ function keyName(key, computed) {
  * @returns {*} Unwrapped node.
  */
 function unwrap(node) {
-  while (node && (node.type === 'ParenthesizedExpression' || node.type === 'TSAsExpression' || node.type === 'TSSatisfiesExpression')) {
+  const wrapped = (current) => current.type === 'ParenthesizedExpression' ||
+    current.type === 'TSAsExpression' ||
+    current.type === 'TSSatisfiesExpression';
+  while (node && wrapped(node)) {
     node = node.expression;
   }
   return node;
@@ -98,7 +104,8 @@ function record(fields, name, entry, warn, className) {
     return;
   }
   if (entry.jsdoc && existing.jsdoc && entry.raw !== existing.raw) {
-    warn(`harvestClassShape: ${className}.${name} has conflicting JSDoc types (${existing.raw} vs ${entry.raw})`);
+    const where = `${className}.${name} has conflicting JSDoc types`;
+    warn(`harvestClassShape: ${where} (${existing.raw} vs ${entry.raw})`);
   }
   const winner = entry.rank >= existing.rank ? entry : existing;
   winner.readonly = existing.readonly || entry.readonly;
@@ -116,9 +123,19 @@ function entryToType(entry) {
     return t;
   }
   if (t && typeof t === 'object') {
-    return {...t, ...(entry.readonly ? {readonly: true} : {}), ...(entry.optional ? {optional: true} : {})};
+    return {
+      ...t,
+      ...(entry.readonly ? {
+        readonly: true,
+      } : {}),
+      ...(entry.optional ? {
+        optional: true,
+      } : {}),
+    };
   }
-  const out = {type: t};
+  const out = {
+    type: t,
+  };
   if (entry.readonly) {
     out.readonly = true;
   }
@@ -151,7 +168,12 @@ function recordThisAssign(left, right, comment, conditional, ctx) {
   const declared = tagType(comment, '@type', expandType);
   if (right === undefined) {
     // Op-assign/update (`+=`, `++`): exists, type unknown.
-    record(fields, name, {type: 'any', rank: CTOR_INFER, jsdoc: false, optional: conditional}, warn, className);
+    record(fields, name, {
+      type: 'any',
+      rank: CTOR_INFER,
+      jsdoc: false,
+      optional: conditional,
+    }, warn, className);
     return;
   }
   const inferred = inferTypeFromDefault(unwrap(right));
@@ -176,7 +198,10 @@ function recordThisAssign(left, right, comment, conditional, ctx) {
  */
 function recordObjectAssign(node, conditional, ctx) {
   const {fields, expandType, warn, className} = ctx;
-  const {callee, arguments: args} = node;
+  const {
+    callee,
+    arguments: args,
+  } = node;
   if (!callee || callee.type !== 'MemberExpression' || callee.computed) {
     return false;
   }
@@ -343,15 +368,27 @@ function setterParamName(param) {
 function setterType(set, expandType) {
   const setComment = lastBlockComment(set);
   const paramName = setterParamName(set.params[0]);
-  const params = parseJSDocDocument(setComment ?? '', expandType).params;
+  const {params} = parseJSDocDocument(setComment ?? '', expandType);
   if (paramName && params && params[paramName] !== undefined) {
-    return {type: params[paramName], raw: undefined, jsdoc: true};
+    return {
+      type: params[paramName],
+      raw: undefined,
+      jsdoc: true,
+    };
   }
   const tagged = tagType(setComment, '@type', expandType);
   if (tagged) {
-    return {type: tagged.type, raw: tagged.raw, jsdoc: true};
+    return {
+      type: tagged.type,
+      raw: tagged.raw,
+      jsdoc: true,
+    };
   }
-  return {type: 'any', raw: undefined, jsdoc: false};
+  return {
+    type: 'any',
+    raw: undefined,
+    jsdoc: false,
+  };
 }
 /**
  * Harvests the instance shape of a class: field declarations (JSDoc wins,
@@ -370,7 +407,14 @@ function harvestClassShape(node, {expandType, warn}) {
     return;
   }
   const className = id.name;
-  const ctx = {fields: {}, gets: {}, sets: {}, expandType, warn, className};
+  const ctx = {
+    fields: {},
+    gets: {},
+    sets: {},
+    expandType,
+    warn,
+    className,
+  };
   let ctor = null;
   for (const el of node.body.body) {
     if (el.type === 'ClassPrivateProperty' || el.type === 'ClassPrivateMethod') {
@@ -406,7 +450,11 @@ function harvestClassShape(node, {expandType, warn}) {
       if (el.kind === 'constructor') {
         ctor = el;
       } else if (el.kind === 'method') {
-        ctx.fields[name] = ctx.fields[name] ?? {type: 'Function', rank: FIELD_INFER, jsdoc: false};
+        ctx.fields[name] = ctx.fields[name] ?? {
+          type: 'Function',
+          rank: FIELD_INFER,
+          jsdoc: false,
+        };
       } else if (el.kind === 'get') {
         ctx.gets[name] = el;
       } else if (el.kind === 'set') {
@@ -418,7 +466,8 @@ function harvestClassShape(node, {expandType, warn}) {
     const get = ctx.gets[name];
     const set = ctx.sets[name];
     const getComment = lastBlockComment(get);
-    const getType = tagType(getComment, '@type', expandType) ?? tagType(getComment, '@returns', expandType);
+    const fromType = tagType(getComment, '@type', expandType);
+    const getType = fromType ?? tagType(getComment, '@returns', expandType);
     const setInfo = set ? setterType(set, expandType) : undefined;
     const type = getType?.type ?? setInfo?.type ?? 'any';
     record(ctx.fields, name, {
@@ -453,6 +502,12 @@ function harvestClassShape(node, {expandType, warn}) {
   if (!Object.keys(properties).length) {
     return;
   }
-  return {name: className, shape: {type: 'object', properties}};
+  return {
+    name: className,
+    shape: {
+      type: 'object',
+      properties,
+    },
+  };
 }
 export {harvestClassShape};

@@ -1,14 +1,14 @@
-import {validators} from "./validators.js";
-import {classes} from "./registerClass.js";
-import {validateReference} from "./validateReference.js";
-import {validateNumber} from "./validateNumber.js";
-import {validateString} from "./validateString.js";
-import {validateBoolean} from "./validateBoolean.js";
-import {customTypes} from "./customTypes.js";
-import {customValidations} from "./customValidations.js";
-import {options} from "./options.js";
+import {validators                   } from "./validators.js";
+import {classes                      } from "./registerClass.js";
+import {validateReference            } from "./validateReference.js";
+import {validateNumber               } from "./validateNumber.js";
+import {validateString               } from "./validateString.js";
+import {validateBoolean              } from "./validateBoolean.js";
+import {customTypes                  } from "./customTypes.js";
+import {customValidations            } from "./customValidations.js";
+import {options                      } from "./options.js";
 import {isFailingNumberDisallowingInf} from "./isFailingNumberDisallowingInf.js";
-import {isFailingNumberAllowingInf} from "./isFailingNumberAllowingInf.js";
+import {isFailingNumberAllowingInf   } from "./isFailingNumberAllowingInf.js";
 /**
  * Names sharing space between utility types and registered classes: the
  * reference validator resolves them through its utility `case` branches
@@ -85,13 +85,16 @@ const utilityNames = new Set([
 function firstBadEntry(value, key, val) {
   // Without a registered pipeline or with userland hooks the scan cannot
   // reproduce custom recursion verbatim, so out of the way it stays.
-  if (validators.validateType === undefined ||
-    validators.validateReference !== validateReference ||
-    validators.validateNumber !== validateNumber ||
-    validators.validateString !== validateString ||
-    validators.validateBoolean !== validateBoolean ||
-    customValidations.length > 0 ||
-    customTypes.number || customTypes.string || customTypes.boolean) {
+  const isStockPipeline = validators.validateType !== undefined;
+  const hasStockReference = validators.validateReference === validateReference;
+  const hasStockNumber = validators.validateNumber === validateNumber;
+  const hasStockString = validators.validateString === validateString;
+  const hasStockBoolean = validators.validateBoolean === validateBoolean;
+  const hasHooks = customValidations.length > 0;
+  const hasCustomScalar = customTypes.number || customTypes.string || customTypes.boolean;
+  const isBypassed = hasStockReference === false || hasStockNumber === false;
+  const isPrimitiveHooked = hasStockString === false || hasStockBoolean === false;
+  if (isStockPipeline === false || isBypassed || isPrimitiveHooked || hasHooks || hasCustomScalar) {
     return -2;
   }
   // Fail closed when the option is missing: a deleted or undefined flag
@@ -131,27 +134,33 @@ function firstBadEntry(value, key, val) {
     } else if (val === 'string' || val === 'boolean') {
       const want = val;
       valBad = (v) => typeof v !== want;
-    } else if (classes[val]) {
-      // A userland hook for the class name takes precedence in the full
-      // loop, so the scan stays out of the way instead of trusting
-      // `instanceof` past it.
-      if (customTypes[val]) {
-        return -2;
-      }
-      const ctor = classes[val];
-      valBad = (v) => !(v instanceof ctor);
-    } else if (typeof val === 'object' && val.type === 'reference' &&
-      !utilityNames.has(val.name) && classes[val.name]) {
-      // Same hook rule for utility-shaped references that resolve to a
-      // registered class (`{type: 'object', ...}` nodes never reach here:
-      // only bare names and single-arg references take this branch).
-      if (customTypes[val.name]) {
-        return -2;
-      }
-      const ctor = classes[val.name];
-      valBad = (v) => !(v instanceof ctor);
     } else {
-      return -2;
+      const isNamedClass = classes[val] !== undefined;
+      const valObject = val !== null && typeof val === 'object' ? val : undefined;
+      const isUtilityReference = valObject !== undefined && valObject.type === 'reference';
+      const refName = isUtilityReference ? valObject.name : undefined;
+      const resolvesToClass = isUtilityReference && !utilityNames.has(refName) && classes[refName];
+      if (isNamedClass) {
+        // A userland hook for the class name takes precedence in the full
+        // loop, so the scan stays out of the way instead of trusting
+        // `instanceof` past it.
+        if (customTypes[val]) {
+          return -2;
+        }
+        const ctor = classes[val];
+        valBad = (v) => !(v instanceof ctor);
+      } else if (resolvesToClass) {
+        // Same hook rule for utility-shaped references that resolve to a
+        // registered class (`{type: 'object', ...}` nodes never reach here:
+        // only bare names and single-arg references take this branch).
+        if (customTypes[refName]) {
+          return -2;
+        }
+        const ctor = classes[refName];
+        valBad = (v) => !(v instanceof ctor);
+      } else {
+        return -2;
+      }
     }
   }
   if (keyBad === undefined && valBad === undefined) {

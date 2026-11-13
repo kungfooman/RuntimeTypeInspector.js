@@ -1,5 +1,5 @@
 import {evaluateCondition} from "./evaluateCondition.js";
-import {recurse} from "./validators.js";
+import {recurse          } from "./validators.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {object} expect - Conditional type with check/extends/true/false.

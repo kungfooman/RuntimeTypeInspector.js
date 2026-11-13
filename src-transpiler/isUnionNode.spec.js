@@ -1,5 +1,5 @@
 import {isUnionNode} from './isUnionNode.js';
-import {expandType} from './expandType.js';
+import {expandType } from './expandType.js';
 // We want: union nodes recognized, so navigation needs no cast.
 function testUnionPasses() {
   return isUnionNode(expandType('string | number')) === true;

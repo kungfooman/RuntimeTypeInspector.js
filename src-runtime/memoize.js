@@ -40,7 +40,13 @@ function versionedCache(...versionFns) {
       return entry && entry.value;
     },
     set(node, value) {
-      map.set(node, {versions: versionFns.map((fn) => fn()), value});
+      map.set(
+        node,
+        {
+          versions: versionFns.map((fn) => fn()),
+          value,
+        },
+      );
       return value;
     },
   };

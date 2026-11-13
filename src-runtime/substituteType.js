@@ -1,64 +1,67 @@
-import {substituteList            } from "./substituteList.js";
-import {substituteRecord          } from "./substituteRecord.js";
-import {substituteDescriptors     } from "./substituteDescriptors.js";
-import {substituteArray           } from "./substituteArray.js";
-import {substituteAtom            } from "./substituteAtom.js";
-import {substituteObject          } from "./substituteObject.js";
-import {substituteIndexSignature  } from "./substituteIndexSignature.js";
-import {substituteTuple           } from "./substituteTuple.js";
-import {substituteReference       } from "./substituteReference.js";
-import {substitutePromise         } from "./substitutePromise.js";
-import {substituteSet             } from "./substituteSet.js";
-import {substituteClass           } from "./substituteClass.js";
-import {substituteUnion           } from "./substituteUnion.js";
-import {substituteTemplateLiteral } from "./substituteTemplateLiteral.js";
-import {substituteRest            } from "./substituteRest.js";
-import {substituteIndexedAccess   } from "./substituteIndexedAccess.js";
-import {substituteMapping         } from "./substituteMapping.js";
-import {substituteIntersection    } from "./substituteIntersection.js";
-import {substituteKeyof           } from "./substituteKeyof.js";
-import {substituteCondition       } from "./substituteCondition.js";
-import {substituteTupleMember     } from "./substituteTupleMember.js";
-import {substituteRecordNode      } from "./substituteRecordNode.js";
-import {substituteMapNode         } from "./substituteMapNode.js";
-import {substituteTypeof          } from "./substituteTypeof.js";
-import {substituteNew             } from "./substituteNew.js";
-import {substituteFunction        } from "./substituteFunction.js";
+import {substituteList           } from "./substituteList.js";
+import {substituteRecord         } from "./substituteRecord.js";
+import {substituteDescriptors    } from "./substituteDescriptors.js";
+import {substituteArray          } from "./substituteArray.js";
+import {substituteAtom           } from "./substituteAtom.js";
+import {substituteObject         } from "./substituteObject.js";
+import {substituteIndexSignature } from "./substituteIndexSignature.js";
+import {substituteTuple          } from "./substituteTuple.js";
+import {substituteReference      } from "./substituteReference.js";
+import {substitutePromise        } from "./substitutePromise.js";
+import {substituteSet            } from "./substituteSet.js";
+import {substituteClass          } from "./substituteClass.js";
+import {substituteUnion          } from "./substituteUnion.js";
+import {substituteTemplateLiteral} from "./substituteTemplateLiteral.js";
+import {substituteRest           } from "./substituteRest.js";
+import {substituteIndexedAccess  } from "./substituteIndexedAccess.js";
+import {substituteMapping        } from "./substituteMapping.js";
+import {substituteIntersection   } from "./substituteIntersection.js";
+import {substituteKeyof          } from "./substituteKeyof.js";
+import {substituteCondition      } from "./substituteCondition.js";
+import {substituteTupleMember    } from "./substituteTupleMember.js";
+import {substituteRecordNode     } from "./substituteRecordNode.js";
+import {substituteMapNode        } from "./substituteMapNode.js";
+import {substituteTypeof         } from "./substituteTypeof.js";
+import {substituteNew            } from "./substituteNew.js";
+import {substituteFunction       } from "./substituteFunction.js";
 import {substitutes, recurseSubstitute} from "./substitutes.js";
 /**
  * Populates the dispatch table: every edge points outward from here, so the
  * module graph stays acyclic. Importing this module (or the package index)
  * guarantees a full table. Shorthand keys mirror the export names.
  */
-Object.assign(substitutes, {
-  substituteType,
-  substituteList,
-  substituteRecord,
-  substituteDescriptors,
-  substituteArray,
-  substituteAtom,
-  substituteObject,
-  substituteIndexSignature,
-  substituteTuple,
-  substituteReference,
-  substitutePromise,
-  substituteSet,
-  substituteClass,
-  substituteUnion,
-  substituteTemplateLiteral,
-  substituteRest,
-  substituteIndexedAccess,
-  substituteMapping,
-  substituteIntersection,
-  substituteKeyof,
-  substituteCondition,
-  substituteTupleMember,
-  substituteRecordNode,
-  substituteMapNode,
-  substituteTypeof,
-  substituteNew,
-  substituteFunction,
-});
+Object.assign(
+  substitutes,
+  {
+    substituteType,
+    substituteList,
+    substituteRecord,
+    substituteDescriptors,
+    substituteArray,
+    substituteAtom,
+    substituteObject,
+    substituteIndexSignature,
+    substituteTuple,
+    substituteReference,
+    substitutePromise,
+    substituteSet,
+    substituteClass,
+    substituteUnion,
+    substituteTemplateLiteral,
+    substituteRest,
+    substituteIndexedAccess,
+    substituteMapping,
+    substituteIntersection,
+    substituteKeyof,
+    substituteCondition,
+    substituteTupleMember,
+    substituteRecordNode,
+    substituteMapNode,
+    substituteTypeof,
+    substituteNew,
+    substituteFunction,
+  },
+);
 /**
  * Substitutes template references, purely: never mutates its input, and
  * unchanged subtrees are shared by identity with the input, so only the

@@ -1,5 +1,5 @@
 import {validateUnion} from './validateUnion.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType   } from '../src-transpiler/expandType.js';
 const silent = () => undefined;
 // We want: a dense number array to satisfy `Vec4 | number[]` through the
 // array member, because the union tries every member and the array fits.

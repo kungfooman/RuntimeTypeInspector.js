@@ -17,14 +17,24 @@ function addIndexedAccessWarning(value, index, loc, msg, details) {
     // console.log("breakpoints", breakpoints);
     debugger;
     breakpoints.delete(key); // trigger only once to quickly get app running again
-    crossContextPostMessage({type: 'rti', action: 'deleteBreakpoint', destination: 'ui', key});
+    crossContextPostMessage({
+      type: 'rti',
+      action: 'deleteBreakpoint',
+      destination: 'ui',
+      key,
+    });
   }
   const strings = [msg];
   crossContextPostMessage({
     type: 'rti',
     action: 'addError',
     destination: 'ui',
-    value, index, loc, name, strings, key,
+    value,
+    index,
+    loc,
+    name,
+    strings,
+    key,
     details,
   });
 }
@@ -48,7 +58,8 @@ function inspectIndexedAccess(value, index, loc = 'unspecified') {
     return value?.[index];
   }
   if (value == null) {
-    addIndexedAccessWarning(value, index, loc, 'inspectIndexedAccess> accessing index on nullish value', {value, index});
+    const nullish = 'inspectIndexedAccess> accessing index on nullish value';
+    addIndexedAccessWarning(value, index, loc, nullish, {value, index});
     return undefined;
   }
   const isSequence = Array.isArray(value) ||
@@ -57,9 +68,11 @@ function inspectIndexedAccess(value, index, loc = 'unspecified') {
   if (isSequence && typeof index === 'number') {
     const {length} = value;
     if (!Number.isInteger(index)) {
-      addIndexedAccessWarning(value, index, loc, 'inspectIndexedAccess> index isn\'t an integer', {index, length});
+      const notInteger = 'inspectIndexedAccess> index isn\'t an integer';
+      addIndexedAccessWarning(value, index, loc, notInteger, {index, length});
     } else if (index < 0 || index >= length) {
-      addIndexedAccessWarning(value, index, loc, 'inspectIndexedAccess> index out of bounds', {index, length});
+      const outOfBounds = 'inspectIndexedAccess> index out of bounds';
+      addIndexedAccessWarning(value, index, loc, outOfBounds, {index, length});
     }
   }
   return value[index];

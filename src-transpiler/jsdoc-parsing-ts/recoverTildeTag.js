@@ -1,5 +1,4 @@
 import {balancedBraceInner} from './balancedBraceInner.js';
-
 /**
  * Recovers a tag's raw type and head when tsc truncated the type at a
  * jsdoc inner-scope `~` (`Array<Raycaster~Intersection>` parses as
@@ -31,6 +30,9 @@ function recoverTildeTag(source, truncated) {
   if (group.text.startsWith(truncated) === false || group.text[truncated.length] !== '~') {
     return null;
   }
-  return {typeRaw: group.text, headRaw: source.slice(group.end).trim()};
+  return {
+    typeRaw: group.text,
+    headRaw: source.slice(group.end).trim(),
+  };
 }
 export {recoverTildeTag};

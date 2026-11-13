@@ -14,6 +14,10 @@
  * @returns {node is {type: 'array', elementType: ExpandedType}} Whether it is an array node.
  */
 function isArrayNode(node) {
-  return typeof node === 'object' && node !== null && node.type === 'array';
+  return (
+    typeof node === 'object' &&
+    node !== null &&
+    node.type === 'array'
+  );
 }
 export {isArrayNode};

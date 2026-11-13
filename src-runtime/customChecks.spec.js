@@ -1,9 +1,9 @@
-import {inspectType} from './inspectType.js';
-import {validateType} from './validateType.js';
-import {customChecks} from './customChecks.js';
-import {recurse} from './validators.js';
+import {inspectType            } from './inspectType.js';
+import {validateType           } from './validateType.js';
+import {customChecks           } from './customChecks.js';
+import {recurse                } from './validators.js';
 import {validateArrayLikeSparse} from './validateArrayLikeSparse.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType             } from '../src-transpiler/expandType.js';
 /**
  * Captures the RTI error message posted for a check.
  * @param {Function} fn - The check to run.
@@ -12,9 +12,12 @@ import {expandType} from '../src-transpiler/expandType.js';
 function capturePost(fn) {
   let posted;
   const origSelf = globalThis.self;
-  globalThis.self = {addEventListener: () => {}, postMessage: (msg) => {
-    posted = msg;
-  }};
+  globalThis.self = {
+    addEventListener: () => {},
+    postMessage: (msg) => {
+      posted = msg;
+    },
+  };
   try {
     fn();
     return posted;
@@ -65,7 +68,11 @@ function testCustomStillFlagsStrings() {
   customChecks.set('takeFloatStrings.data', holesSkipped);
   try {
     const posted = capturePost(() => inspectType([1, 'x'], expandType('Array<number>'), 'takeFloatStrings', 'data'));
-    return posted !== undefined && posted.loc === 'takeFloatStrings' && posted.name === 'data';
+    return (
+      posted !== undefined &&
+      posted.loc === 'takeFloatStrings' &&
+      posted.name === 'data'
+    );
   } finally {
     customChecks.delete('takeFloatStrings.data');
   }
@@ -85,7 +92,11 @@ function testUnlistedUsesCore() {
   const sparse = [];
   sparse.length = 3;
   const posted = capturePost(() => inspectType(sparse, expandType('Array<number>'), 'takeFloatCore', 'data'));
-  return posted !== undefined && posted.loc === 'takeFloatCore' && posted.name === 'data';
+  return (
+    posted !== undefined &&
+    posted.loc === 'takeFloatCore' &&
+    posted.name === 'data'
+  );
 }
 function testBareValidatorRegistersDirectly() {
   // Uniform contracts compose without adapters: the shipped sparse

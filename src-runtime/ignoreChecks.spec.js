@@ -1,6 +1,6 @@
-import {inspectType} from './inspectType.js';
+import {inspectType  } from './inspectType.js';
 import {ignoredChecks} from './ignoredChecks.js';
-import {options} from './options.js';
+import {options      } from './options.js';
 import {getCheckStats, resetCheckStats} from './checkStats.js';
 /**
  * Captures the RTI error message posted for a check.
@@ -10,9 +10,12 @@ import {getCheckStats, resetCheckStats} from './checkStats.js';
 function capturePost(fn) {
   let posted;
   const origSelf = globalThis.self;
-  globalThis.self = {addEventListener: () => {}, postMessage: (msg) => {
-    posted = msg;
-  }};
+  globalThis.self = {
+    addEventListener: () => {},
+    postMessage: (msg) => {
+      posted = msg;
+    },
+  };
   try {
     fn();
     return posted;
@@ -35,7 +38,11 @@ function testSiblingStillReports() {
   ignoredChecks.add('takeFloat.data');
   try {
     const posted = capturePost(() => inspectType('x', 'number', 'takeFloat', 'other'));
-    return posted !== undefined && posted.loc === 'takeFloat' && posted.name === 'other';
+    return (
+      posted !== undefined &&
+      posted.loc === 'takeFloat' &&
+      posted.name === 'other'
+    );
   } finally {
     ignoredChecks.delete('takeFloat.data');
   }
@@ -53,7 +60,11 @@ function testBareLocSuppressesAll() {
 function testUnlistedStillReports() {
   // Without any entry the same wrong value reports as usual.
   const posted = capturePost(() => inspectType('x', 'number', 'takeFloat', 'data'));
-  return posted !== undefined && posted.loc === 'takeFloat' && posted.name === 'data';
+  return (
+    posted !== undefined &&
+    posted.loc === 'takeFloat' &&
+    posted.name === 'data'
+  );
 }
 function testSuppressionRecordsASkip() {
   // Suppressed checks stay cheap and silent, but they are counted: the
@@ -66,8 +77,13 @@ function testSuppressionRecordsASkip() {
   try {
     const ok = inspectType('x', 'number', 'skipRow', 'data') === true;
     const rows = getCheckStats();
-    return ok && rows.length === 1 && rows[0].loc === 'skipRow data' &&
-      rows[0].skips === 1 && rows[0].checks === 0;
+    return (
+      ok &&
+      rows.length === 1 &&
+      rows[0].loc === 'skipRow data' &&
+      rows[0].skips === 1 &&
+      rows[0].checks === 0
+    );
   } finally {
     ignoredChecks.delete('skipRow.data');
     resetCheckStats();

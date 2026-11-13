@@ -1,8 +1,8 @@
-import {inspectType} from './inspectType.js';
-import {breakpoints} from './inspectType.js';
+import {inspectType } from './inspectType.js';
+import {breakpoints } from './inspectType.js';
 import {reportedKeys} from './reportedKeys.js';
-import {options} from './options.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {options     } from './options.js';
+import {expandType  } from '../src-transpiler/expandType.js';
 /**
  * Collects every RTI error message posted for the checks run inside.
  * @param {Function} fn - The checks to run.
@@ -13,9 +13,12 @@ function capturePosts(fn) {
   const origParent = globalThis.parent;
   const origSelf = globalThis.self;
   globalThis.parent = undefined;
-  globalThis.self = {addEventListener: () => {}, postMessage: (msg) => {
-    posted.push(msg);
-  }};
+  globalThis.self = {
+    addEventListener: () => {},
+    postMessage: (msg) => {
+      posted.push(msg);
+    },
+  };
   try {
     fn();
     return posted;
@@ -28,8 +31,13 @@ function testFirstFailurePostsFull() {
   // A first-seen key carries the whole diagnostic payload for the panel row.
   try {
     const posted = capturePosts(() => inspectType(['a'], expandType('Array<number>'), 'repeatA', 'x'));
-    return posted.length === 1 && posted[0].key === 'repeatA-x' && posted[0].repeat !== true &&
-      typeof posted[0].valueToString === 'string' && Array.isArray(posted[0].strings);
+    return (
+      posted.length === 1 &&
+      posted[0].key === 'repeatA-x' &&
+      posted[0].repeat !== true &&
+      typeof posted[0].valueToString === 'string' &&
+      Array.isArray(posted[0].strings)
+    );
   } finally {
     reportedKeys.clear();
   }
@@ -46,9 +54,15 @@ function testRepeatPostsKeyOnly() {
       return false;
     }
     const [, repeat] = posted;
-    return repeat.repeat === true && repeat.key === 'repeatB-x' &&
-      !('value' in repeat) && !('valueToString' in repeat) && !('strings' in repeat) &&
-      !('extras' in repeat) && !('expect' in repeat);
+    return (
+      repeat.repeat === true &&
+      repeat.key === 'repeatB-x' &&
+      !('value' in repeat) &&
+      !('valueToString' in repeat) &&
+      !('strings' in repeat) &&
+      !('extras' in repeat) &&
+      !('expect' in repeat)
+    );
   } finally {
     reportedKeys.clear();
   }
@@ -66,8 +80,13 @@ function testRepeatStillValidates() {
       second = inspectType(['b'], expandType('Array<number>'), 'repeatC', 'x');
       third = inspectType([1], expandType('Array<number>'), 'repeatC', 'x');
     });
-    return first === false && second === false && third === true &&
-      posted.length === 2 && options.count === before + 2;
+    return (
+      first === false &&
+      second === false &&
+      third === true &&
+      posted.length === 2 &&
+      options.count === before + 2
+    );
   } finally {
     reportedKeys.clear();
   }
@@ -96,7 +115,11 @@ function testNeverDedups() {
       inspectType(['a'], expandType('Array<number>'), 'repeatE', 'x');
       inspectType(['b'], expandType('Array<number>'), 'repeatE', 'x');
     });
-    return posted.length === 2 && posted[0].repeat !== true && posted[1].repeat === true;
+    return (
+      posted.length === 2 &&
+      posted[0].repeat !== true &&
+      posted[1].repeat === true
+    );
   } finally {
     options.mode = prevMode;
     reportedKeys.clear();
@@ -131,9 +154,14 @@ function testDistinctArgsEachReportFull() {
       return false;
     }
     const [a, b, c] = posted;
-    return a.repeat !== true && a.name === 'first' &&
-      b.repeat !== true && b.name === 'second' &&
-      c.repeat === true && c.key === 'takeTwo-first';
+    return (
+      a.repeat !== true &&
+      a.name === 'first' &&
+      b.repeat !== true &&
+      b.name === 'second' &&
+      c.repeat === true &&
+      c.key === 'takeTwo-first'
+    );
   } finally {
     reportedKeys.clear();
   }
@@ -145,7 +173,9 @@ function testModeChangeRepostsFull() {
   try {
     const posted = capturePosts(() => {
       inspectType('x', expandType('number'), 'takeModes', 'v');
-      inspectType({a: 1}, expandType('number'), 'takeModes', 'v');
+      inspectType({
+        a: 1,
+      }, expandType('number'), 'takeModes', 'v');
       inspectType('y', expandType('number'), 'takeModes', 'v');
       inspectType('z', expandType('number'), 'takeModes', 'v');
     });
@@ -153,8 +183,13 @@ function testModeChangeRepostsFull() {
       return false;
     }
     const [a, b, c, d] = posted;
-    return a.repeat !== true && b.repeat !== true && c.repeat !== true &&
-      d.repeat === true && d.key === 'takeModes-v';
+    return (
+      a.repeat !== true &&
+      b.repeat !== true &&
+      c.repeat !== true &&
+      d.repeat === true &&
+      d.key === 'takeModes-v'
+    );
   } finally {
     reportedKeys.clear();
   }
@@ -184,7 +219,11 @@ function testRepeatSkipsStack() {
       inspectType(['a'], expandType('Array<number>'), 'repeatNoStack', 'x');
       inspectType(['b'], expandType('Array<number>'), 'repeatNoStack', 'x');
     });
-    return posted.length === 2 && Array.isArray(posted[0].stack) && !('stack' in posted[1]);
+    return (
+      posted.length === 2 &&
+      Array.isArray(posted[0].stack) &&
+      !('stack' in posted[1])
+    );
   } finally {
     reportedKeys.clear();
   }
@@ -193,7 +232,9 @@ function testRepeatsStayCheap() {
   // Timing guard for the hot-loop path: N repeats must stay a small
   // fraction of N full reports for the same value. Same process back to
   // back, so the ratio survives slow machines where absolute budgets lie.
-  const big = Array.from({length: 5000}, (_, i) => i);
+  const big = Array.from({
+    length: 5000,
+  }, (_, i) => i);
   const expect = expandType('string');
   const calls = 50;
   const margin = 10;

@@ -19,11 +19,20 @@ import {isArrayNode} from '../isArrayNode.js';
 function tagRestElementType(tag, type) {
   const markerInBraces = tag.typeRaw.trim().startsWith('...');
   if (markerInBraces && tag.optional === true) {
-    return {elementType: 'never', dotDot: false};
+    return {
+      elementType: 'never',
+      dotDot: false,
+    };
   }
   if (markerInBraces && isArrayNode(type)) {
-    return {elementType: type.elementType, dotDot: true};
+    return {
+      elementType: type.elementType,
+      dotDot: true,
+    };
   }
-  return {elementType: type, dotDot: false};
+  return {
+    elementType: type,
+    dotDot: false,
+  };
 }
 export {tagRestElementType};

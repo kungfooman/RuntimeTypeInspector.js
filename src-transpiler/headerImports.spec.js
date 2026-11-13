@@ -1,7 +1,7 @@
-import {parse} from '@babel/parser';
+import {parse        } from '@babel/parser';
 import {parserOptions} from './parserOptions.js';
-import {Asserter} from './Asserter.js';
-import {expandType} from './expandType.js';
+import {Asserter     } from './Asserter.js';
+import {expandType   } from './expandType.js';
 const legacyHeader = "import {inspectIndexedAccess, inspectType, inspectTypeWithTemplates, youCanAddABreakpointHere, registerVariable, validateDivision, registerTypedef, registerClass, registerImportNamespaceSpecifier} from '@runtime-type-inspector/runtime';";
 /**
  * Transpiles one snippet with the header enabled.
@@ -9,7 +9,10 @@ const legacyHeader = "import {inspectIndexedAccess, inspectType, inspectTypeWith
  * @returns {string} Converted code with header.
  */
 function convert(src) {
-  const asserter = new Asserter({expandType, filename: 'test.js'});
+  const asserter = new Asserter({
+    expandType,
+    filename: 'test.js',
+  });
   const ast = parse(src, parserOptions);
   return asserter.getHeader(ast) + asserter.toSource(ast);
 }
@@ -27,8 +30,12 @@ function testOwnRuntimeImportOmitted() {
   // binding once and the helper stays usable.
   const out = convert("import {registerTypedef} from '@runtime-type-inspector/runtime';\n/** @param {number} x - The value. */\nfunction takeIt(x) {\n return x;\n}");
   const header = headerLine(out);
-  return header !== undefined && !header.includes('registerTypedef') && header.includes('inspectType') &&
-    out.includes("import {registerTypedef} from '@runtime-type-inspector/runtime';");
+  return (
+    header !== undefined &&
+    !header.includes('registerTypedef') &&
+    header.includes('inspectType') &&
+    out.includes("import {registerTypedef} from '@runtime-type-inspector/runtime';")
+  );
 }
 function testUnrelatedFileHeaderUnchanged() {
   // Files without own runtime imports get the exact legacy header.
@@ -49,7 +56,10 @@ function testForeignModuleImportKeepsHeader() {
 }
 function testNoArgHeaderUnchanged() {
   // Old callers passing no AST get the full legacy header (backward compat).
-  const asserter = new Asserter({expandType, filename: 'test.js'});
+  const asserter = new Asserter({
+    expandType,
+    filename: 'test.js',
+  });
   return asserter.getHeader().split('\n').find((line) => line.startsWith('import {')) === legacyHeader;
 }
 function testExportStarUnaffected() {

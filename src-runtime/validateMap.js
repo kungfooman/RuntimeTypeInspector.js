@@ -1,6 +1,6 @@
-import {recurse} from "./validators.js";
+import {recurse     } from "./validators.js";
 import {formatMapKey} from "./formatMapKey.js";
-import {isMapValue} from "./isMapValue.js";
+import {isMapValue  } from "./isMapValue.js";
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -22,7 +22,10 @@ function validateMap(value, expect, loc, name, critical, warn, depth) {
     if (key !== undefined) {
       const goodKey = recurse(k, key, loc, nameKey, critical, warn, depth + 1);
       if (!goodKey) {
-        const info = {expect: key, value: k};
+        const info = {
+          expect: key,
+          value: k,
+        };
         warn(`Map key ${formatMapKey(k)} has wrong type.`, info);
         return false;
       }
@@ -30,7 +33,10 @@ function validateMap(value, expect, loc, name, critical, warn, depth) {
     if (val !== undefined) {
       const good = recurse(v, val, loc, nameKey, critical, warn, depth + 1);
       if (!good) {
-        const info = {expect: val, value: v};
+        const info = {
+          expect: val,
+          value: v,
+        };
         warn(`Element ${nameKey} has wrong type.`, info);
         return false;
       }

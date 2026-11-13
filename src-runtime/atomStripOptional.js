@@ -15,7 +15,10 @@
  */
 function atomStripOptional(type) {
   if (type && typeof type === 'object' && type.type === 'atom') {
-    return {...type, optional: false};
+    return {
+      ...type,
+      optional: false,
+    };
   }
   return type;
 }

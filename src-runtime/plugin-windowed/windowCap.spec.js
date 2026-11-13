@@ -1,4 +1,4 @@
-import {options} from '../options.js';
+import {options  } from '../options.js';
 import {windowCap} from './windowCap.js';
 function testCapPassesThrough() {
   // A sane cap comes back unchanged, so normal tuning just works.
@@ -21,7 +21,11 @@ function testCapFloorsAndFloorsAtOne() {
     const zeroed = windowCap();
     options.mapCheckWindowCap = -5;
     const negative = windowCap();
-    return floored === 7 && zeroed === 1 && negative === 1;
+    return (
+      floored === 7 &&
+      zeroed === 1 &&
+      negative === 1
+    );
   } finally {
     options.mapCheckWindowCap = virgin;
   }

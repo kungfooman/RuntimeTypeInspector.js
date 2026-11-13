@@ -1,14 +1,19 @@
-import {parse} from '@babel/parser';
+import {parse        } from '@babel/parser';
 import {parserOptions} from './parserOptions.js';
-import {Asserter} from './Asserter.js';
-import {expandType} from './expandType.js';
+import {Asserter     } from './Asserter.js';
+import {expandType   } from './expandType.js';
 /**
  * @param {string} src - Source code to convert.
  * @param {object} [options] - Asserter options.
  * @returns {string} Converted code.
  */
 function convert(src, options) {
-  const asserter = new Asserter({expandType, addHeader: false, filename: 'test.js', ...options});
+  const asserter = new Asserter({
+    expandType,
+    addHeader: false,
+    filename: 'test.js',
+    ...options,
+  });
   return asserter.toSource(parse(src, parserOptions));
 }
 function testDefaultWraps() {
@@ -19,7 +24,9 @@ function testDefaultWraps() {
   return true;
 }
 function testFlagOffDrops() {
-  const out = convert('const x = a[i];', {inspectIndexedAccess: false});
+  const out = convert('const x = a[i];', {
+    inspectIndexedAccess: false,
+  });
   if (out.includes('inspectIndexedAccess')) {
     return false;
   }

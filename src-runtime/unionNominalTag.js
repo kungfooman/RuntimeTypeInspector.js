@@ -1,5 +1,5 @@
-import {snapshotMatches} from './snapshotMatches.js';
-import {snapshotTag} from './snapshotTag.js';
+import {snapshotMatches  } from './snapshotMatches.js';
+import {snapshotTag      } from './snapshotTag.js';
 import {unwrapTransparent} from './unwrapTransparent.js';
 /**
  * Nominal union accept: a tagged snapshot names its class, and

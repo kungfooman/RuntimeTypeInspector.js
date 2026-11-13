@@ -1,5 +1,5 @@
-import {inspectType} from './inspectType.js';
-import {options} from './options.js';
+import {inspectType    } from './inspectType.js';
+import {options        } from './options.js';
 import {captureMessages} from '../src-unittest/index.js';
 function testUnclonableStaysStructured() {
   // Issue #134 item 8: class instances with methods (functions) are not
@@ -9,7 +9,19 @@ function testUnclonableStaysStructured() {
   let msgs;
   try {
     msgs = captureMessages(() => {
-      inspectType({type: 'sphere', material: {name: 'Untitled', update() {}}, castShadows: false}, 'number', 'loc', 'unclonable');
+      inspectType(
+        {
+          type: 'sphere',
+          material: {
+            name: 'Untitled',
+            update() {},
+          },
+          castShadows: false,
+        },
+        'number',
+        'loc',
+        'unclonable',
+      );
     });
   } finally {
     options.exactObjects = prev;
@@ -18,15 +30,24 @@ function testUnclonableStaysStructured() {
     return false;
   }
   const [msg] = msgs;
-  return typeof msg.value === 'object' && msg.value.type === 'sphere' &&
-    msg.valueToString !== '[object Object]' && msg.valueToString.includes('sphere');
+  return (
+    typeof msg.value === 'object' &&
+    msg.value.type === 'sphere' &&
+    msg.valueToString !== '[object Object]' &&
+    msg.valueToString.includes('sphere')
+  );
 }
 function testPreviewNeverBareObject() {
   const msgs = captureMessages(() => {
-    inspectType({a: 1}, 'number', 'loc', 'preview');
+    inspectType({
+      a: 1,
+    }, 'number', 'loc', 'preview');
   });
-  return msgs.length === 1 && msgs[0].valueToString !== '[object Object]' &&
-    msgs[0].valueToString.includes('"a"');
+  return (
+    msgs.length === 1 &&
+    msgs[0].valueToString !== '[object Object]' &&
+    msgs[0].valueToString.includes('"a"')
+  );
 }
 function testExtrasSnapshotted() {
   const prev = options.exactObjects;
@@ -34,7 +55,20 @@ function testExtrasSnapshotted() {
   let msgs;
   try {
     msgs = captureMessages(() => {
-      inspectType({a: 1, f: () => {}}, {type: 'object', properties: {a: 'number'}}, 'loc', 'extras');
+      inspectType(
+        {
+          a: 1,
+          f: () => {},
+        },
+        {
+          type: 'object',
+          properties: {
+            a: 'number',
+          },
+        },
+        'loc',
+        'extras',
+      );
     });
   } finally {
     options.exactObjects = prev;
@@ -43,7 +77,11 @@ function testExtrasSnapshotted() {
     return false;
   }
   const extra = msgs[0].extras.find((_) => _ && typeof _ === 'object' && 'value' in _);
-  return !!extra && typeof extra.value === 'object' && extra.value.a === 1;
+  return (
+    !!extra &&
+    typeof extra.value === 'object' &&
+    extra.value.a === 1
+  );
 }
 const tests = [
   testUnclonableStaysStructured,

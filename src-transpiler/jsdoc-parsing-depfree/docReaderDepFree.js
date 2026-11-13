@@ -1,12 +1,11 @@
-import {parseJSDocNodes} from './parseJSDocNodes.js';
-import {makeParamTag} from './makeParamTag.js';
-import {parseParamHead} from './parseParamHead.js';
-import {readUnbracedType} from './readUnbracedType.js';
+import {parseJSDocNodes      } from './parseJSDocNodes.js';
+import {makeParamTag         } from './makeParamTag.js';
+import {parseParamHead       } from './parseParamHead.js';
+import {readUnbracedType     } from './readUnbracedType.js';
 import {splitOverloadSections} from './splitOverloadSections.js';
-import {docParamTag} from './docParamTag.js';
-import {docTemplateNode} from './docTemplateNode.js';
-import {docOverloadSection} from './docOverloadSection.js';
-
+import {docParamTag          } from './docParamTag.js';
+import {docTemplateNode      } from './docTemplateNode.js';
+import {docOverloadSection   } from './docOverloadSection.js';
 /**
  * Lowers one JSDoc comment through the dependency-free reader to the
  * shared canonical document: the same `{templates, overloads, params,
@@ -24,7 +23,13 @@ import {docOverloadSection} from './docOverloadSection.js';
  */
 function docReaderDepFree(comment) {
   /** @type {import('./canonicalDoc.js').CanonicalDoc} */
-  const doc = {templates: [], overloads: [], params: [], returns: '', callbacks: []};
+  const doc = {
+    templates: [],
+    overloads: [],
+    params: [],
+    returns: '',
+    callbacks: [],
+  };
   const sections = splitOverloadSections([comment]);
   if (sections.overloads.length > 0) {
     for (const node of parseJSDocNodes(comment)) {
@@ -53,9 +58,13 @@ function docReaderDepFree(comment) {
           }
         } else if (node.tag === '@callback') {
           const head = node.headRaw.startsWith('{') ? '' : (node.headRaw.split(/\s+/)[0] ?? '');
-          const entry = {name: head, params: []};
+          const entry = {
+            name: head,
+            params: [],
+          };
           doc.callbacks.push(entry);
-          const start = rows.findIndex((row) => row.tag === '@callback' && row.headRaw === node.headRaw);
+          const isCallback = (row) => row.tag === '@callback' && row.headRaw === node.headRaw;
+          const start = rows.findIndex(isCallback);
           for (const row of rows.slice(start + 1)) {
             if (row.tag !== '@param') {
               break;
@@ -64,7 +73,8 @@ function docReaderDepFree(comment) {
           }
         }
       }
-      const callbackNames = new Set(doc.callbacks.flatMap((entry) => entry.params.map((param) => param.name)));
+      const names = (entry) => entry.params.map((param) => param.name);
+      const callbackNames = new Set(doc.callbacks.flatMap(names));
       doc.params = doc.params.filter((param) => !callbackNames.has(param.name));
       return doc;
     }
@@ -77,9 +87,13 @@ function docReaderDepFree(comment) {
       for (const node of rows) {
         if (node.tag === '@callback') {
           const head = node.headRaw.startsWith('{') ? '' : (node.headRaw.split(/\s+/)[0] ?? '');
-          const entry = {name: head, params: []};
+          const entry = {
+            name: head,
+            params: [],
+          };
           doc.callbacks.push(entry);
-          const start = rows.findIndex((row) => row.tag === '@callback' && row.headRaw === node.headRaw);
+          const isCallback = (row) => row.tag === '@callback' && row.headRaw === node.headRaw;
+          const start = rows.findIndex(isCallback);
           for (const row of rows.slice(start + 1)) {
             if (row.tag !== '@param') {
               break;
@@ -108,7 +122,7 @@ function docReaderDepFree(comment) {
       // module {}` binds nothing). The grammar reads the name on both
       // sides of the split, so the name and the type agree instead of
       // second-guessing each other.
-      const name = parseParamHead(node.headRaw).name;
+      const {name} = parseParamHead(node.headRaw);
       const group = node.typeRaw === '' && name !== '' ? node.headRaw.slice(node.headRaw.indexOf(name) + name.length).match(/\{([^{}]*)\}/) : null;
       const typeRaw = group !== null && group[1].trim() !== '' ? group[1] : node.typeRaw;
       doc.params.push(docParamTag(makeParamTag(typeRaw, node.headRaw), typeRaw));
@@ -130,10 +144,14 @@ function docReaderDepFree(comment) {
       // binding), so the entry stays unnamed instead of splitting the
       // first brace word as a name.
       const head = node.headRaw.startsWith('{') ? '' : (node.headRaw.split(/\s+/)[0] ?? '');
-      const entry = {name: head, params: []};
+      const entry = {
+        name: head,
+        params: [],
+      };
       doc.callbacks.push(entry);
       const rows = parseJSDocNodes(comment);
-      const start = rows.findIndex((row) => row.tag === '@callback' && row.headRaw === node.headRaw);
+      const isCallback = (row) => row.tag === '@callback' && row.headRaw === node.headRaw;
+      const start = rows.findIndex(isCallback);
       for (const row of rows.slice(start + 1)) {
         if (row.tag !== '@param') {
           break;
@@ -145,7 +163,8 @@ function docReaderDepFree(comment) {
   // Callback rows group under their callback; they never count as flat
   // implementation rows. Dotted rows stay flat here (the fold needs
   // them); the `merged` flag on the TS side records where tsc nests them.
-  const callbackNames = new Set(doc.callbacks.flatMap((entry) => entry.params.map((param) => param.name)));
+  const names = (entry) => entry.params.map((param) => param.name);
+  const callbackNames = new Set(doc.callbacks.flatMap(names));
   doc.params = doc.params.filter((param) => !callbackNames.has(param.name));
   if (doc.returns === '') {
     // A lone `@type` with no node behind it still reads: mid-line braced

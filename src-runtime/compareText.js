@@ -1,4 +1,4 @@
-import {formatCompare} from './formatCompare.js';
+import {formatCompare  } from './formatCompare.js';
 import {explainMismatch} from './explainMismatch.js';
 /**
  * Renders a warning as plain text for the comparator Copy button: message,
@@ -16,12 +16,17 @@ export function compareText(warnObj) {
   try {
     diagnosis = explainMismatch(warnObj.value, warnObj.expect, warnObj.name);
   } catch {
-    diagnosis = {findings: [], stub: ''};
+    diagnosis = {
+      findings: [],
+      stub: '',
+    };
   }
   lines.push('Diagnosis:');
   if (diagnosis.findings.length) {
     for (const finding of diagnosis.findings) {
-      lines.push(`- [${finding.kind}] ${finding.path}: ${finding.detail || ''} (expected ${finding.expected}, got ${finding.actual})`);
+      const shape = `(expected ${finding.expected}, got ${finding.actual})`;
+      const detail = finding.detail || '';
+      lines.push(`- [${finding.kind}] ${finding.path}: ${detail} ${shape}`);
     }
   } else {
     lines.push('- The value now passes (or the shape is opaque to the differ).');

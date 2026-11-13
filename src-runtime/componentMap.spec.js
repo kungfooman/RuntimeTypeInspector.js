@@ -1,8 +1,8 @@
 import {validateType} from './validateType.js';
 import {registerTypedef, typedefs} from './registerTypedef.js';
-import {registerClass} from './registerClass.js';
-import {expandType} from '../src-transpiler/expandType.js';
-import {createType} from './createType.js';
+import {registerClass           } from './registerClass.js';
+import {expandType              } from '../src-transpiler/expandType.js';
+import {createType              } from './createType.js';
 import {inspectTypeWithTemplates} from './inspectTypeWithTemplates.js';
 const warn = () => undefined;
 /**
@@ -48,15 +48,18 @@ function prepare() {
   registerClass(LightComponent);
   registerClass(Entity);
   // Static shape of Entity: what TypeScript sees for `keyof Entity`.
-  registerTypedef('Entity', {
-    type: 'object',
-    properties: {
-      camera: 'CameraComponent',
-      light: 'LightComponent',
-      name: 'string',
-      enabled: 'boolean',
+  registerTypedef(
+    'Entity',
+    {
+      type: 'object',
+      properties: {
+        camera: 'CameraComponent',
+        light: 'LightComponent',
+        name: 'string',
+        enabled: 'boolean',
+      },
     },
-  });
+  );
   /**
    * The components an {@link Entity} can hold, keyed by name: only props
    * whose type extends {@link Component} survive the `as` remapping.
@@ -141,13 +144,38 @@ function testGenericMappedInstantiation() {
   // The machinery `ComponentOptions<K>` needs: template substitution must
   // flow through `mapping` and `indexedAccess` (local stand-in, not engine code).
   prepare();
-  registerTypedef('Box', {type: 'object', properties: {a: '"x"', b: 1}});
-  const templates = {T: 'Box'};
-  const mapping = () => ({type: 'mapping', iterable: {type: 'keyof', argument: 'T'}, element: 'K', result: {type: 'indexedAccess', index: 'K', object: 'T'}});
-  if (!inspectTypeWithTemplates({a: 'x', b: 1}, mapping(), 'loc', 'name', templates)) {
-    return false;
-  }
-  if (inspectTypeWithTemplates({a: 'y', b: 1}, mapping(), 'loc', 'name', templates)) {
+  registerTypedef('Box', {
+    type: 'object',
+    properties: {
+      a: '"x"',
+      b: 1,
+    },
+  });
+  const templates = {
+    T: 'Box',
+  };
+  const mapping = () => ({
+    type: 'mapping',
+    iterable: {
+      type: 'keyof',
+      argument: 'T',
+    },
+    element: 'K',
+    result: {
+      type: 'indexedAccess',
+      index: 'K',
+      object: 'T',
+    },
+  });
+  const passesRight = inspectTypeWithTemplates({
+    a: 'x',
+    b: 1,
+  }, mapping(), 'loc', 'name', templates);
+  const passesWrong = inspectTypeWithTemplates({
+    a: 'y',
+    b: 1,
+  }, mapping(), 'loc', 'name', templates);
+  if (passesRight === false || passesWrong) {
     return false;
   }
   return true;
@@ -182,8 +210,19 @@ function testModifierParsing() {
 // -? and +? strip and force optionality without mutating the typedef.
 function testQuestionModifiers() {
   prepare();
-  registerTypedef('O', {type: 'object', properties: {v: 'number'}, optional: true});
-  registerTypedef('R', {type: 'object', properties: {v: 'number'}});
+  registerTypedef('O', {
+    type: 'object',
+    properties: {
+      v: 'number',
+    },
+    optional: true,
+  });
+  registerTypedef('R', {
+    type: 'object',
+    properties: {
+      v: 'number',
+    },
+  });
   const plain = createType(expandType('{ [K in "x"]: O }'), warn);
   if (plain.properties.x !== 'O') {
     return false;

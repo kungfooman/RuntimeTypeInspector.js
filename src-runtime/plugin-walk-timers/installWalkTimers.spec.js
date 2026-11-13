@@ -1,5 +1,5 @@
 import '../validateType.js';
-import {validators} from '../validators.js';
+import {validators   } from '../validators.js';
 import {validateArray} from '../validateArray.js';
 import {installWalkTimers, resetWalkTimers, wrapWithWalkTimer} from './installWalkTimers.js';
 import {recordArrayScan, getCheckStats, resetCheckStats} from '../checkStats.js';
@@ -14,9 +14,17 @@ function testWrapDelegatesVerdict() {
   validators[key] = validateArray;
   wrapWithWalkTimer(key, recordArrayScan);
   try {
-    const good = validators[key]([1, 2], {elementType: 'number'}, 'T#x', 'items', true, warn, 0);
-    const bad = validators[key]([1, 'a'], {elementType: 'number'}, 'T#x', 'items', true, warn, 0);
-    return good === true && bad === false && messages.some((_) => _.includes('wrong type'));
+    const good = validators[key]([1, 2], {
+      elementType: 'number',
+    }, 'T#x', 'items', true, warn, 0);
+    const bad = validators[key]([1, 'a'], {
+      elementType: 'number',
+    }, 'T#x', 'items', true, warn, 0);
+    return (
+      good === true &&
+      bad === false &&
+      messages.some((_) => _.includes('wrong type'))
+    );
   } finally {
     delete validators[key];
   }
@@ -31,13 +39,22 @@ function testInstallTimesTableButNotDirectImport() {
   resetCheckStats();
   installWalkTimers();
   try {
-    const tabled = validators.validateArray([1, 'a'], {elementType: 'number'}, 'T#x', 'items', true, () => {}, 0);
+    const tabled = validators.validateArray([1, 'a'], {
+      elementType: 'number',
+    }, 'T#x', 'items', true, () => {}, 0);
     const rows = getCheckStats();
     const timed = rows.length === 1 && rows[0].loc === 'T#x items' && rows[0].arrayWalks === 1;
     resetCheckStats();
-    const direct = validateArray([1, 'a'], {elementType: 'number'}, 'T#x', 'items', true, () => {}, 0);
+    const direct = validateArray([1, 'a'], {
+      elementType: 'number',
+    }, 'T#x', 'items', true, () => {}, 0);
     const pure = getCheckStats().length === 0;
-    return tabled === false && direct === false && timed && pure;
+    return (
+      tabled === false &&
+      direct === false &&
+      timed &&
+      pure
+    );
   } finally {
     options.checkStats = virginCheckStats;
   }
@@ -61,9 +78,17 @@ function testDisabledTimerCostsOneBit() {
   validators[key] = validateArray;
   wrapWithWalkTimer(key, recordArrayScan);
   try {
-    const clean = validators[key]([1, 2], {elementType: 'number'}, 'T#x', 'items', true, () => {}, 0);
-    const dirty = validators[key]([1, 'a'], {elementType: 'number'}, 'T#x', 'items', true, () => {}, 0);
-    return clean === true && dirty === false && getCheckStats().length === 0;
+    const clean = validators[key]([1, 2], {
+      elementType: 'number',
+    }, 'T#x', 'items', true, () => {}, 0);
+    const dirty = validators[key]([1, 'a'], {
+      elementType: 'number',
+    }, 'T#x', 'items', true, () => {}, 0);
+    return (
+      clean === true &&
+      dirty === false &&
+      getCheckStats().length === 0
+    );
   } finally {
     resetWalkTimers();
     installWalkTimers();
@@ -82,17 +107,27 @@ function testEnableAfterSkippedInstallWiresTable() {
   validators[key] = core;
   options.checkStats = false;
   resetCheckStats();
-  setOptions({checkStats: true});
+  setOptions({
+    checkStats: true,
+  });
   const waits = [10, 20, 40, 80];
   const poll = () => {
     if (validators[key].walkTimed === true || waits.length === 0) {
       try {
-        const tabled = validators[key]([1, 'a'], {elementType: 'number'}, 'T#x', 'items', true, () => {}, 0);
+        const tabled = validators[key]([1, 'a'], {
+          elementType: 'number',
+        }, 'T#x', 'items', true, () => {}, 0);
         const rows = getCheckStats();
         const timed = tabled === false && rows.length === 1 && rows[0].arrayWalks === 1;
         resetCheckStats();
-        const direct = validateArray([1, 'a'], {elementType: 'number'}, 'T#x', 'items', true, () => {}, 0);
-        return timed && direct === false && getCheckStats().length === 0;
+        const direct = validateArray([1, 'a'], {
+          elementType: 'number',
+        }, 'T#x', 'items', true, () => {}, 0);
+        return (
+          timed &&
+          direct === false &&
+          getCheckStats().length === 0
+        );
       } finally {
         if (!wasTimed) {
           validators[key] = core;
@@ -102,9 +137,12 @@ function testEnableAfterSkippedInstallWiresTable() {
     }
     return new Promise((resolve) => {
       const wait = waits.shift();
-      setTimeout(() => {
-        resolve(poll());
-      }, wait);
+      setTimeout(
+        () => {
+          resolve(poll());
+        },
+        wait,
+      );
     });
   };
   return poll();

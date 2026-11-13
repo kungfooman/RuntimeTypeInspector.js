@@ -1,19 +1,26 @@
 import {extractNameAndOptionality} from './extractNameAndOptionality.js';
-import {annotateOptional     } from '../annotateOptional.js';
-import {extractCurlyContent } from '../extractCurlyContent.js';
-import {braceDepth           } from './braceDepth.js';
+import {annotateOptional         } from '../annotateOptional.js';
+import {extractCurlyContent      } from '../extractCurlyContent.js';
+import {braceDepth               } from './braceDepth.js';
 /**
- * Parses JSDoc comments to extract and expand typedefs and their associated properties.
+ * Parses JSDoc comments to extract and expand typedefs and properties.
  *
- * It iterates through the lines of a `CommentBlock` from the Babel AST, looking for `@typedef` and `@property`
- * annotations. When it finds a typedef, it stores it in the `typedefs` record. When it finds a property,
- * it adds it to the last found typedef if it is an object type. `@template` names preceding a
- * typedef are recorded in `typedefTemplates` so generic references can instantiate.
- * @param {Record<string, object>} typedefs - An object to store typedefs, mapping type names to their expanded definitions.
- * @param {Record<string, string[]>} typedefTemplates - An object to store template parameter names per generic typedef.
- * @param {Console["warn"]} warn - A warn function used for emitting warnings about non-extensible types.
- * @param {import("@babel/types").Comment} comment - A comment extracted from Babel's AST, expected to be a CommentBlock containing type definitions.
- * @param {Function} expandType - A function that takes a type expression as a string and returns a structured representation of the type.
+ * It iterates through the lines of a `CommentBlock` from the Babel AST,
+ * looking for `@typedef` and `@property` annotations. When it finds a
+ * typedef, it stores it in the `typedefs` record. When it finds a
+ * property, it adds it to the last found typedef if it is an object
+ * type. `@template` names preceding a typedef are recorded in
+ * `typedefTemplates` so generic references can instantiate.
+ * @param {Record<string, object>} typedefs - An object to store typedefs,
+ * mapping type names to their expanded definitions.
+ * @param {Record<string, string[]>} typedefTemplates - An object to store
+ * template parameter names per generic typedef.
+ * @param {Console["warn"]} warn - A warn function used for emitting
+ * warnings about non-extensible types.
+ * @param {import("@babel/types").Comment} comment - A comment extracted
+ * from the Babel AST, holding type definitions in a comment block.
+ * @param {Function} expandType - A function that takes a type expression
+ * as a string and returns the structured representation of the type.
  */
 function parseJSDocTypedef(typedefs, typedefTemplates, warn, comment, expandType) {
   const {type, value} = comment;
@@ -53,24 +60,32 @@ function parseJSDocTypedef(typedefs, typedefTemplates, warn, comment, expandType
     return line;
   });
   for (let i = 0; i < stripped.length; i++) {
-    const line = stripped[i];
+    const [line] = stripped.slice(i, i + 1);
     if (line.startsWith('@template')) {
       harvestTemplate(line);
     } else if (line.startsWith('@typedef')) {
       // Inline types may span lines: keep appending continuation lines
       // until the braces balance (the name follows the closing brace,
-      // possibly lines later). Stop at the next tag, so `@property` and
-      // friends keep their own meaning.
+      // possibly lines later). Stop at the next tag, so `@property`
+      // and friends keep their own meaning.
       let buf = line;
-      while (braceDepth(buf) > 0 && i + 1 < stripped.length && !stripped[i + 1].startsWith('@')) {
+      while (braceDepth(buf) > 0) {
+        const [next] = stripped.slice(i + 1, i + 2);
+        if (i + 1 >= stripped.length || next.startsWith('@')) {
+          break;
+        }
         buf += '\n' + stripped[++i];
       }
-      const {content: def, nextIndex} = extractCurlyContent(buf);
+      const {
+        content: def,
+        nextIndex,
+      } = extractCurlyContent(buf);
       let name = buf.substring(nextIndex).trim();
       // Drop description
-      name = name.split(' ')[0];
+      [name] = name.split(' ');
       lastTypedef = expandType(def);
-      // Ignore @typedef's that only refer to themselves in another file (see typedef-overwrite test)
+      // Ignore self-referencing typedefs from another file here.
+      // Covered by the typedef-overwrite fixture test instead.
       if (lastTypedef !== name) {
         typedefs[name] = lastTypedef;
         if (pendingTemplates.length) {

@@ -1,5 +1,4 @@
 import {nodeIsFunctionLike} from '../nodeIsFunctionLike.js';
-
 /**
  * Finds documentation blocks attached to a function or its declaration.
  * Class-level constructor overloads are combined with constructor docs.
@@ -14,12 +13,17 @@ function collectOverloadBlocks(node, parents) {
     node = parents[parents.length - 2];
   }
   let owner = node;
-  if (!owner.leadingComments && (node.type === 'ArrowFunctionExpression' || node.type === 'FunctionExpression')) {
+  const isInline = node.type === 'ArrowFunctionExpression' || node.type === 'FunctionExpression';
+  if (!owner.leadingComments && isInline) {
     const index = parents.lastIndexOf(node);
     for (let i = index - 1; i >= 0; i--) {
       const parent = parents[i];
-      if (nodeIsFunctionLike(parent)) break;
-      if (parent.type === 'VariableDeclarator' && parent.init !== node) break;
+      if (nodeIsFunctionLike(parent)) {
+        break;
+      }
+      if (parent.type === 'VariableDeclarator' && parent.init !== node) {
+        break;
+      }
       if (parent.leadingComments) {
         owner = parent;
         break;
@@ -29,7 +33,9 @@ function collectOverloadBlocks(node, parents) {
   if (!owner.leadingComments && node.type === 'FunctionDeclaration') {
     const index = parents.lastIndexOf(node);
     const parent = parents[index - 1];
-    if (parent && (parent.type === 'ExportNamedDeclaration' || parent.type === 'ExportDefaultDeclaration')) {
+    const exported = parent && parent.type === 'ExportNamedDeclaration';
+    const defaulted = parent && parent.type === 'ExportDefaultDeclaration';
+    if (exported || defaulted) {
       owner = parent;
     }
   }
@@ -37,17 +43,25 @@ function collectOverloadBlocks(node, parents) {
   const blocks = [];
   for (let i = comments.length - 1; i >= 0; i--) {
     const comment = comments[i];
-    if (comment.type !== 'CommentBlock' || !comment.value.startsWith('*')) break;
-    if (i < comments.length - 1 && comments[i + 1].loc && comment.loc &&
-        comments[i + 1].loc.start.line > comment.loc.end.line + 1) break;
+    if (comment.type !== 'CommentBlock' || !comment.value.startsWith('*')) {
+      break;
+    }
+    const nextRow = comments[i + 1];
+    const jumpsBlock = i < comments.length - 1 && nextRow.loc && comment.loc;
+    const hasGap = jumpsBlock && nextRow.loc.start.line > comment.loc.end.line + 1;
+    if (hasGap) {
+      break;
+    }
     blocks.unshift(comment.value);
   }
   if (node.type === 'ClassMethod' && node.kind === 'constructor') {
-    const classNode = parents.findLast((parent) => parent.type === 'ClassDeclaration' || parent.type === 'ClassExpression');
+    const declared = (parent) => parent.type === 'ClassDeclaration';
+    const expressed = (parent) => parent.type === 'ClassExpression';
+    const isClass = (parent) => declared(parent) || expressed(parent);
+    const classNode = parents.findLast(isClass);
     if (classNode?.leadingComments) {
-      const classBlocks = classNode.leadingComments.filter((comment) => (
-        comment.type === 'CommentBlock' && /@overload\b/.test(comment.value)
-      ));
+      const isOverloadBlock = (comment) => comment.type === 'CommentBlock' && /@overload\b/.test(comment.value);
+      const classBlocks = classNode.leadingComments.filter(isOverloadBlock);
       blocks.unshift(...classBlocks.map((comment) => comment.value));
     }
   }

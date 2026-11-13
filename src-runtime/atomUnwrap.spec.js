@@ -1,28 +1,49 @@
-import {atomUnwrap} from './atomUnwrap.js';
+import {atomUnwrap   } from './atomUnwrap.js';
 import {deepEqualType} from './deepEqualType.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType   } from '../src-transpiler/expandType.js';
 // We want: a leaf atom plus an occurrence flag to unwrap to a flagged leaf,
 // because `@param {T} [a]` must validate `T` while allowing omission.
 function testUnwrapLeafKeepsFlag() {
   const parsed = expandType('{a?: K}');
   const input = parsed.properties.a;
   const unwrapped = atomUnwrap(input);
-  const expected = {type: 'K', optional: true};
+  const expected = {
+    type: 'K',
+    optional: true,
+  };
   return deepEqualType(unwrapped, expected);
 }
 // We want: a tree replacement to keep its own shape with the occurrence
 // flags merged in, because a tree must never land in the leaf position the
 // validators switch on.
 function testUnwrapTreeMergesFlags() {
-  const unwrapped = atomUnwrap({type: 'atom', atomType: {type: 'string'}, optional: true});
-  const expected = {type: 'string', optional: true};
+  const unwrapped = atomUnwrap({
+    type: 'atom',
+    atomType: {
+      type: 'string',
+    },
+    optional: true,
+  });
+  const expected = {
+    type: 'string',
+    optional: true,
+  };
   return deepEqualType(unwrapped, expected);
 }
 // We want: an already-optional tree to stay optional without an atom flag,
 // so inner optionality is never stripped by the unwrap.
 function testUnwrapTreeKeepsInnerOptional() {
-  const unwrapped = atomUnwrap({type: 'atom', atomType: {type: 'string', optional: true}});
-  const expected = {type: 'string', optional: true};
+  const unwrapped = atomUnwrap({
+    type: 'atom',
+    atomType: {
+      type: 'string',
+      optional: true,
+    },
+  });
+  const expected = {
+    type: 'string',
+    optional: true,
+  };
   return deepEqualType(unwrapped, expected);
 }
 // We want: an unflagged atom to unwrap to the bare inner shape, because no
@@ -32,9 +53,14 @@ function testUnwrapTreeKeepsInnerOptional() {
 function testUnwrapBarePassthrough() {
   const parsed = expandType('{n?: number}');
   const flagged = parsed.properties.n;
-  const {optional, ...bare} = flagged;
+  const {
+    optional,
+    ...bare
+  } = flagged;
   const unwrapped = atomUnwrap(bare);
-  const expected = {type: 'number'};
+  const expected = {
+    type: 'number',
+  };
   return deepEqualType(unwrapped, expected);
 }
 // We want: the readonly flag to merge the same way as optional, because
@@ -43,7 +69,10 @@ function testUnwrapReadonlyMerges() {
   const parsed = expandType('{readonly a: K}');
   const input = parsed.properties.a;
   const unwrapped = atomUnwrap(input);
-  const expected = {type: 'K', readonly: true};
+  const expected = {
+    type: 'K',
+    readonly: true,
+  };
   return deepEqualType(unwrapped, expected);
 }
 const tests = [

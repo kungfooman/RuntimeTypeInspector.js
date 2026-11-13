@@ -31,7 +31,9 @@ function applyQuestionModifier(type, question) {
         }
       }
       if (current && typeof current === 'object' && current.optional) {
-        const out = {...current};
+        const out = {
+          ...current,
+        };
         delete out.optional;
         return out;
       }
@@ -41,7 +43,9 @@ function applyQuestionModifier(type, question) {
       if (!('optional' in type)) {
         return type;
       }
-      const out = {...type};
+      const out = {
+        ...type,
+      };
       delete out.optional;
       return out;
     }
@@ -51,8 +55,14 @@ function applyQuestionModifier(type, question) {
     if (type.optional === true) {
       return type;
     }
-    return {...type, optional: true};
+    return {
+      ...type,
+      optional: true,
+    };
   }
-  return {type, optional: true};
+  return {
+    type,
+    optional: true,
+  };
 }
 export {applyQuestionModifier};

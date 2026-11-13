@@ -1,4 +1,4 @@
-import {runChecks} from './runChecks.js';
+import {runChecks    } from './runChecks.js';
 import {noneUnchecked} from './noneUnchecked.js';
 // Plain function templates infer per call: `funPlain('a')` passes,
 // `funPlain(1)` fails against the `string` constraint.

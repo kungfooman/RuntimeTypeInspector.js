@@ -22,8 +22,12 @@ function unprepare() {
 // into a shape: methods stripped in transit read as transport, not defect.
 function testTaggedSnapshotMatchesBareName() {
   prepare();
+  const snapshot = {
+    w: 1,
+    $type: 'MatchBox',
+  };
   try {
-    return snapshotNominalMatch({w: 1, $type: 'MatchBox'}, 'MatchBox') === true;
+    return snapshotNominalMatch(snapshot, 'MatchBox') === true;
   } finally {
     unprepare();
   }
@@ -32,8 +36,11 @@ function testTaggedSnapshotMatchesBareName() {
 // no nominal claim, so methods still count.
 function testUntaggedValueStaysStrict() {
   prepare();
+  const plain = {
+    w: 1,
+  };
   try {
-    return snapshotNominalMatch({w: 1}, 'MatchBox') === false;
+    return snapshotNominalMatch(plain, 'MatchBox') === false;
   } finally {
     unprepare();
   }
@@ -43,9 +50,22 @@ function testUntaggedValueStaysStrict() {
 function testStrangerFailsSubclassPasses() {
   prepare();
   try {
-    registerTypedef('MatchAlias', {type: 'object', properties: {w: 'number'}});
-    const stranger = snapshotNominalMatch({w: 1, $type: 'Gadget'}, 'MatchBox') === false;
-    const sub = snapshotNominalMatch({w: 1, $type: 'MatchSubBox'}, 'MatchBox') === true;
+    registerTypedef('MatchAlias', {
+      type: 'object',
+      properties: {
+        w: 'number',
+      },
+    });
+    const strangerValue = {
+      w: 1,
+      $type: 'Gadget',
+    };
+    const stranger = snapshotNominalMatch(strangerValue, 'MatchBox') === false;
+    const subValue = {
+      w: 1,
+      $type: 'MatchSubBox',
+    };
+    const sub = snapshotNominalMatch(subValue, 'MatchBox') === true;
     delete typedefs.MatchAlias;
     return stranger && sub;
   } finally {

@@ -90,7 +90,7 @@ module.exports = {
     "complexity": "off",
     "consistent-return": "off",
     "consistent-this": "off",
-    "curly": "off",
+    "curly": "error",
     "default-case": "off",
     "default-case-last": "off",
     "default-param-last": "off",
@@ -197,17 +197,26 @@ module.exports = {
     "no-useless-escape": "off",
     "no-useless-rename": "error",
     "no-useless-return": "error",
-    "no-var": "off", // update to error
+    "no-var": "error",
     "no-void": "error",
     "no-warning-comments": "off",
     "no-with": "error",
-    "object-shorthand": "off",
+    "object-shorthand": ["error", "always"],
     "one-var": "off",
     "one-var-declaration-per-line": "off",
     "operator-assignment": ["error", "always"],
     "prefer-arrow-callback": "off",
     "prefer-const": "error",
-    "prefer-destructuring": "off",
+    "prefer-destructuring": ["error", {
+      "VariableDeclarator": {
+        "array": false,
+        "object": true
+      },
+      "AssignmentExpression": {
+        "array": false,
+        "object": false
+      }
+    }],
     "prefer-exponentiation-operator": "off",
     "prefer-named-capture-group": "off",
     "prefer-numeric-literals": "error",
@@ -238,8 +247,8 @@ module.exports = {
 
     // Layout & Formatting
     "array-bracket-newline": ["error", "consistent"],
-    //"array-bracket-spacing": ["error", "never"],
-    "array-element-newline": "off",
+    "array-bracket-spacing": ["error", "never"],
+    "array-element-newline": ["error", "consistent"],
     "arrow-parens": /*[
       "error", "as-needed", {
         "requireForBlockBody": true
@@ -247,8 +256,8 @@ module.exports = {
     ]*/ "off",
     "arrow-spacing": "error",
     "block-spacing": "error",
-    "brace-style": "error",
-    "comma-dangle": "off",
+    "brace-style": ["error", "1tbs", {"allowSingleLine": false}],
+    "comma-dangle": ["error", "always-multiline"],
     "comma-spacing": /*[
       "error", {
         "before": false,
@@ -260,8 +269,8 @@ module.exports = {
     "dot-location": ["error", "property"],
     "eol-last": ["error", "always"],
     "func-call-spacing": ["error", "never"],
-    "function-call-argument-newline": "off",
-    "function-paren-newline": "off",
+    "function-call-argument-newline": ["error", "consistent"],
+    "function-paren-newline": ["error", "consistent"],
     "generator-star-spacing": "error",
     "implicit-arrow-linebreak": "error",
     "indent": [
@@ -285,31 +294,31 @@ module.exports = {
     "linebreak-style": "off",
     "lines-around-comment": "off",
     "lines-between-class-members": ["error", "never"],
-    "max-len": "off",
+    "max-len": ["error", {
+      "code": 100,
+      "tabWidth": 2,
+      "ignoreComments": true,
+      "ignoreUrls": true,
+      "ignoreStrings": true,
+      "ignoreTemplateLiterals": true,
+      "ignoreRegExpLiterals": true
+    }],
     "max-statements-per-line": "off",
     "multiline-ternary": "off",
     "new-parens": "error",
     "newline-per-chained-call": "off",
     "no-extra-parens": ["error", "functions"],
     "no-mixed-spaces-and-tabs": "error",
-    "no-multi-spaces": /*[
-      "error", {
-        "ignoreEOLComments": true,
-        "exceptions": {
-          "ArrayExpression": true,
-          "AssignmentExpression": true,
-          "BinaryExpression": true,
-          "IfStatement": true,
-          "LogicalExpression": true,
-          "SwitchCase": true,
-          "VariableDeclarator": true,
-          "ImportDeclaration": true,
-        }
+    "no-multi-spaces": ["error", {
+      "ignoreEOLComments": true,
+      "exceptions": {
+        "ImportDeclaration": true,
+        "ImportSpecifier": true
       }
-    ]*/"off",
+    }],
     "no-multiple-empty-lines": [
       "error", {
-        "max": 2,
+        "max": 0,
         "maxBOF": 0,
         "maxEOF": 0
       }
@@ -317,19 +326,33 @@ module.exports = {
     "no-tabs": "error",
     "no-trailing-spaces": "error",
     "no-whitespace-before-property": "error",
-    "nonblock-statement-body-position": "off",
+    "nonblock-statement-body-position": ["error", "below"],
     "object-curly-newline": [
       "error", {
-        "consistent": true
+        "ObjectExpression": {
+          "multiline": true,
+          "consistent": true
+        },
+        "ImportDeclaration": {
+          "multiline": true,
+          "consistent": true
+        },
+        "ExportDeclaration": {
+          "multiline": true,
+          "consistent": true
+        }
       }
     ],
-    // Even errors for ImportDeclaration, but exception doesn't work here (todo figure out)
-    //"object-curly-spacing": ["error", "never"],
-    //"object-property-newline": [
-    //  "error", {
-    //    "allowAllPropertiesOnSameLine": true
-    //  }
-    //],
+    // Brace spacing is node-scoped in src-lint/align-imports.mjs --check:
+    // ImportDeclaration lines carry run padding, ObjectExpression and
+    // ObjectPattern pairs must have no inner padding. The core rule
+    // cannot exempt by AST node, so it stays off and the gate owns both.
+    "object-curly-spacing": "off",
+    "object-property-newline": [
+      "error", {
+        "allowAllPropertiesOnSameLine": true
+      }
+    ],
     "operator-linebreak": ["error", "after"],
     "padded-blocks": [
       "error", {
@@ -459,6 +482,15 @@ module.exports = {
   "plugins": [
     "import",
     "jsdoc"
+  ],
+
+  "overrides": [
+    {
+      "files": ["**/*.spec.js"],
+      "rules": {
+        "max-len": "off"
+      }
+    }
   ],
 
   "settings": {

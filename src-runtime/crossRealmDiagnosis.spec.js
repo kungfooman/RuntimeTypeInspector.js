@@ -1,13 +1,18 @@
 import vm from 'node:vm';
 import {registerClass, classes} from './registerClass.js';
 import {registerTypedef, typedefs, bumpTypedefVersion} from './registerTypedef.js';
-import {tagSnapshot} from './tagSnapshot.js';
-import {explainMismatch} from './explainMismatch.js';
+import {tagSnapshot      } from './tagSnapshot.js';
+import {explainMismatch  } from './explainMismatch.js';
 import {unwrapTransparent} from './unwrapTransparent.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType       } from '../src-transpiler/expandType.js';
 class RealmColor {
   constructor() {
-    Object.assign(this, {r: 0.95, g: 0.96, b: 0.98, a: 1});
+    Object.assign(this, {
+      r: 0.95,
+      g: 0.96,
+      b: 0.98,
+      a: 1,
+    });
   }
   clone() {
     return new RealmColor();
@@ -18,7 +23,12 @@ class RealmColor {
 }
 class RealmVec4 {
   constructor() {
-    Object.assign(this, {x: 0, y: 0, z: 0, w: 0});
+    Object.assign(this, {
+      x: 0,
+      y: 0,
+      z: 0,
+      w: 0,
+    });
   }
   dot() {
     return 0;
@@ -26,7 +36,10 @@ class RealmVec4 {
 }
 class RealmVec2 {
   constructor() {
-    Object.assign(this, {x: 0, y: 0});
+    Object.assign(this, {
+      x: 0,
+      y: 0,
+    });
   }
 }
 function prepareRealmTower() {
@@ -99,7 +112,9 @@ function testMissingClassesKeepSingleRow() {
   // Tagging happens checking-side with the full registry; the panel only
   // ever sees the tagged snapshot, so tag before wiping the classes.
   const transported = structuredClone(tagSnapshot(realmLiveValue()));
-  const savedClasses = {...classes};
+  const savedClasses = {
+    ...classes,
+  };
   for (const key of Object.keys(classes)) {
     delete classes[key];
   }
@@ -123,7 +138,9 @@ function testUnionTagMatchSkipsDataCheck() {
   prepareRealmTower();
   const transported = structuredClone(tagSnapshot(realmLiveValue()));
   transported.color.r = 'hot';
-  const savedClasses = {...classes};
+  const savedClasses = {
+    ...classes,
+  };
   for (const key of Object.keys(classes)) {
     delete classes[key];
   }
@@ -144,8 +161,12 @@ function testUnionTagMatchSkipsDataCheck() {
 // Revert that line and the missing methods report as defects.
 function testDirectShapeExemptsMethodsByTag() {
   prepareRealmTower();
-  const transported = structuredClone(tagSnapshot({color: new RealmColor()}));
-  const savedClasses = {...classes};
+  const transported = structuredClone(tagSnapshot({
+    color: new RealmColor(),
+  }));
+  const savedClasses = {
+    ...classes,
+  };
   for (const key of Object.keys(classes)) {
     delete classes[key];
   }
@@ -168,10 +189,19 @@ function testUnwrapTransparent() {
   const bare = unwrapTransparent('RealmColor');
   const partial = unwrapTransparent(expandType('Partial<RealmColor>'));
   const plain = unwrapTransparent(expandType('{a: number}'));
-  const empty = unwrapTransparent({type: 'reference', name: 'Readonly', args: []});
-  return readonlyColor === 'RealmColor' && nested === 'RealmColor' &&
+  const empty = unwrapTransparent({
+    type: 'reference',
+    name: 'Readonly',
+    args: [],
+  });
+  return (
+    readonlyColor === 'RealmColor' &&
+    nested === 'RealmColor' &&
     bare === 'RealmColor' &&
-    partial === undefined && plain === undefined && empty === undefined;
+    partial === undefined &&
+    plain === undefined &&
+    empty === undefined
+  );
 }
 export const tests = [
   testUnwrapTransparent,

@@ -1,5 +1,5 @@
-import {parse} from '@babel/parser';
-import {parserOptions} from './parserOptions.js';
+import {parse               } from '@babel/parser';
+import {parserOptions       } from './parserOptions.js';
 import {inferTypeFromDefault} from './inferTypeFromDefault.js';
 /**
  * @param {string} code - A default value expression.
@@ -32,10 +32,18 @@ function testNullishSkipped() {
   return true;
 }
 function testContainers() {
-  if (JSON.stringify(inferTypeFromDefault(defaultOf('[]'))) !== JSON.stringify({type: 'array', elementType: 'any'})) {
+  const anyArray = {
+    type: 'array',
+    elementType: 'any',
+  };
+  if (JSON.stringify(inferTypeFromDefault(defaultOf('[]'))) !== JSON.stringify(anyArray)) {
     return false;
   }
-  if (JSON.stringify(inferTypeFromDefault(defaultOf('{}'))) !== JSON.stringify({type: 'object', properties: {}})) {
+  const emptyObject = {
+    type: 'object',
+    properties: {},
+  };
+  if (JSON.stringify(inferTypeFromDefault(defaultOf('{}'))) !== JSON.stringify(emptyObject)) {
     return false;
   }
   return true;
@@ -47,7 +55,10 @@ function testUnaryAndSpecial() {
   if (inferTypeFromDefault(defaultOf('!x')) !== 'boolean') {
     return false;
   }
-  if (JSON.stringify(inferTypeFromDefault(defaultOf('123n'))) !== JSON.stringify({type: 'bigint'})) {
+  const big = {
+    type: 'bigint',
+  };
+  if (JSON.stringify(inferTypeFromDefault(defaultOf('123n'))) !== JSON.stringify(big)) {
     return false;
   }
   if (inferTypeFromDefault(defaultOf('/re/')) !== 'RegExp') {

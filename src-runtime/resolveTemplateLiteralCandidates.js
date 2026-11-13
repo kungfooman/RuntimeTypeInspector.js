@@ -1,4 +1,4 @@
-import {typedefs} from "./registerTypedef.js";
+import {typedefs                    } from "./registerTypedef.js";
 import {resolveTemplateLiteralValues} from "./resolveTemplateLiteralValues.js";
 import {templateCandidates, recurseCandidates} from "./templateCandidates.js";
 /**
@@ -9,10 +9,13 @@ import {templateCandidates, recurseCandidates} from "./templateCandidates.js";
  * interpolation kind) takes effect immediately, without forking RTI or
  * waiting for a release. Keys mirror the export names.
  */
-Object.assign(templateCandidates, {
-  resolveTemplateLiteralCandidates,
-  resolveTemplateLiteralValues,
-});
+Object.assign(
+  templateCandidates,
+  {
+    resolveTemplateLiteralCandidates,
+    resolveTemplateLiteralValues,
+  },
+);
 /**
  * Enumerates all concrete string candidates of a template literal interpolation.
  *

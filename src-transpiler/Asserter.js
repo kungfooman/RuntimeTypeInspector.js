@@ -1,32 +1,32 @@
-import {annotateOptional   } from './annotateOptional.js';
-import {arrowArity} from './arrowArity.js';
-import {arrowInferredName} from './arrowInferredName.js';
-import {collectOverloadBlocks} from './jsdoc-parsing-depfree/collectOverloadBlocks.js';
-import {dummyArityHead} from './dummyArityHead.js';
-import {freshKeyName} from './freshKeyName.js';
-import {overloadArity} from './overloadArity.js';
-import {overloadIgnoreSet} from './overloadIgnoreSet.js';
+import {annotateOptional      } from './annotateOptional.js';
+import {arrowArity            } from './arrowArity.js';
+import {arrowInferredName     } from './arrowInferredName.js';
+import {collectOverloadBlocks } from './jsdoc-parsing-depfree/collectOverloadBlocks.js';
+import {dummyArityHead        } from './dummyArityHead.js';
+import {freshKeyName          } from './freshKeyName.js';
+import {overloadArity         } from './overloadArity.js';
+import {overloadIgnoreSet     } from './overloadIgnoreSet.js';
 import {overloadInspectionArgs} from './overloadInspectionArgs.js';
-import {overloadNameKey} from './overloadNameKey.js';
-import {overloadSignatures} from './overloadSignatures.js';
-import {splitOverloadSections} from './jsdoc-parsing-depfree/splitOverloadSections.js';
-import {requiredTypeofs    } from './expandType.js';
-import {expandTypeDepFree  } from './expandTypeDepFree.js';
-import {harvestClassShape  } from './harvestClassShape.js';
-import {inferTypeFromDefault} from './inferTypeFromDefault.js';
-import {parseInlineParamType} from './jsdoc-parsing-depfree/parseInlineParamType.js';
-import {escapeName} from './escapeName.js';
-import {nodeIsFunctionLike } from './nodeIsFunctionLike.js';
-import {parseJSDoc         } from './jsdoc-parsing-depfree/parseJSDoc.js';
-import {parseJSDocDocument} from './jsdoc-parsing-depfree/parseJSDocDocument.js';
-import {parseJSDocTypedef  } from './jsdoc-parsing-depfree/parseJSDocTypedef.js';
-import {docReaderBoth} from './jsdoc-parsing-ts/docReaderBoth.js';
+import {overloadNameKey       } from './overloadNameKey.js';
+import {overloadSignatures    } from './overloadSignatures.js';
+import {splitOverloadSections } from './jsdoc-parsing-depfree/splitOverloadSections.js';
+import {requiredTypeofs       } from './expandType.js';
+import {expandTypeDepFree     } from './expandTypeDepFree.js';
+import {harvestClassShape     } from './harvestClassShape.js';
+import {inferTypeFromDefault  } from './inferTypeFromDefault.js';
+import {parseInlineParamType  } from './jsdoc-parsing-depfree/parseInlineParamType.js';
+import {escapeName            } from './escapeName.js';
+import {nodeIsFunctionLike    } from './nodeIsFunctionLike.js';
+import {parseJSDoc            } from './jsdoc-parsing-depfree/parseJSDoc.js';
+import {parseJSDocDocument    } from './jsdoc-parsing-depfree/parseJSDocDocument.js';
+import {parseJSDocTypedef     } from './jsdoc-parsing-depfree/parseJSDocTypedef.js';
+import {docReaderBoth         } from './jsdoc-parsing-ts/docReaderBoth.js';
 import {markTypeofRequirements} from './markTypeofRequirements.js';
-import {ignoredParamsIn     } from './ignoredParamsIn.js';
-import {runtimeImportNames  } from './runtimeImportNames.js';
-import {simplifyTypeToSource} from './simplifyTypeToSource.js';
-import {statReset          } from './stat.js';
-import {Stringifier        } from './Stringifier.js';
+import {ignoredParamsIn       } from './ignoredParamsIn.js';
+import {runtimeImportNames    } from './runtimeImportNames.js';
+import {simplifyTypeToSource  } from './simplifyTypeToSource.js';
+import {statReset             } from './stat.js';
+import {Stringifier           } from './Stringifier.js';
 /** @typedef {import('@babel/types').Node              } Node               */
 /** @typedef {import('@babel/types').ClassMethod       } ClassMethod        */
 /** @typedef {import('@babel/types').ClassPrivateMethod} ClassPrivateMethod */
@@ -34,14 +34,14 @@ import {Stringifier        } from './Stringifier.js';
 /**
  * @typedef {object} Options
  * @property {boolean} [forceCurly] - Determines whether curly braces are enforced in Stringifier.
- * @property {boolean} [validateDivision] - Indicates whether division operations should be validated.
+ * @property {boolean} [validateDivision] - Whether division is validated.
  * @property {boolean} [inspectIndexedAccess] - Indicates whether indexed accesses
  * like `arr[i]` should be wrapped for bounds and integer validation. Disable
  * to drop indexed access inspection entirely. Defaults to true.
- * @property {import('./parseJSDoc.js').ExpandType} [expandType] - A function that expands shorthand types into full descriptions.
+ * @property {import('./parseJSDoc.js').ExpandType} [expandType] - Expands type shorthands.
  * @property {string} [filename] - The name of a file to which the instance pertains.
  * @property {boolean} [addHeader] - Whether to add import declarations headers. Defaults to true.
- * @property {string[]} [ignoreLocations] - Ignore these locations because they are known false-positives.
+ * @property {string[]} [ignoreLocations] - Ignore these locations, known false-positives.
  * @property {string} [projectVersion] - Host project version funneled into
  * the emitted header via `setProjectVersion(...)`, so `Download log` meta
  * identifies the app build. Bundler plugins resolve it from their own
@@ -84,17 +84,50 @@ class Asserter extends Stringifier {
   }
   /** @type {Record<string, Stat>} */
   stats = {
-    'ArrowFunctionExpression'  : {checked: 0, unchecked: 0},
-    'ClassMethod#constructor'  : {checked: 0, unchecked: 0},
-    'ClassMethod#get'          : {checked: 0, unchecked: 0},
-    'ClassMethod#method'       : {checked: 0, unchecked: 0},
-    'ClassMethod#set'          : {checked: 0, unchecked: 0},
-    'ClassPrivateMethod#get'   : {checked: 0, unchecked: 0},
-    'ClassPrivateMethod#method': {checked: 0, unchecked: 0},
-    'ClassPrivateMethod#set'   : {checked: 0, unchecked: 0},
-    'FunctionDeclaration'      : {checked: 0, unchecked: 0},
-    'FunctionExpression'       : {checked: 0, unchecked: 0},
-    'ObjectMethod'             : {checked: 0, unchecked: 0},
+    'ArrowFunctionExpression'  : {
+      checked: 0,
+      unchecked: 0,
+    },
+    'ClassMethod#constructor'  : {
+      checked: 0,
+      unchecked: 0,
+    },
+    'ClassMethod#get'          : {
+      checked: 0,
+      unchecked: 0,
+    },
+    'ClassMethod#method'       : {
+      checked: 0,
+      unchecked: 0,
+    },
+    'ClassMethod#set'          : {
+      checked: 0,
+      unchecked: 0,
+    },
+    'ClassPrivateMethod#get'   : {
+      checked: 0,
+      unchecked: 0,
+    },
+    'ClassPrivateMethod#method': {
+      checked: 0,
+      unchecked: 0,
+    },
+    'ClassPrivateMethod#set'   : {
+      checked: 0,
+      unchecked: 0,
+    },
+    'FunctionDeclaration'      : {
+      checked: 0,
+      unchecked: 0,
+    },
+    'FunctionExpression'       : {
+      checked: 0,
+      unchecked: 0,
+    },
+    'ObjectMethod'             : {
+      checked: 0,
+      unchecked: 0,
+    },
   };
   /**
    * We expand type-asserted ArrowFunctionExpressions in order to add type assertions.
@@ -262,7 +295,9 @@ class Asserter extends Stringifier {
    * @returns {number} Required parameter count, else zero.
    */
   fieldOverloadArity(node, value) {
-    if (!this.hasFieldOverloads(node, value)) return 0;
+    if (!this.hasFieldOverloads(node, value)) {
+      return 0;
+    }
     return arrowArity(value);
   }
   /**
@@ -347,13 +382,17 @@ class Asserter extends Stringifier {
     const id_ = this.toSource(id);
     let out = super.ClassDeclaration(node);
     out += `${this.spaces}registerClass(${id_});`;
-    const harvested = harvestClassShape(node, {expandType: this.expandType, warn: this.warn.bind(this)});
+    const harvested = harvestClassShape(node, {
+      expandType: this.expandType,
+      warn: this.warn.bind(this),
+    });
     if (harvested) {
       // Hand-written typedefs win: emitting a second registerTypedef for the
       // same name would be last-wins deterministic but noisy, so the harvest
       // step skips names already present in this.typedefs (populated in File).
       if (this.typedefs[harvested.name]) {
-        this.warn(`harvestClassShape: skipping harvested shape for '${harvested.name}', hand-written typedef wins`);
+        const {name} = harvested;
+        this.warn(`harvestClassShape: skipping '${name}', typedef wins`);
       } else {
         const json = simplifyTypeToSource(harvested.shape);
         out += `\n${this.spaces}registerTypedef('${harvested.name}', ${json});`;
@@ -367,7 +406,7 @@ class Asserter extends Stringifier {
    * @param {Node} node - The starting node to search from.
    * @param {T} type - Type name of the node to search for.
    * @template {Node['type']} T
-   * @returns {Extract<Node, {type: T}>|undefined} The first ancestor node of the specified type, or undefined if none is found.
+   * @returns {Extract<Node, {type: T}>|undefined} First ancestor of the type.
    */
   findParentOfType(node, type) {
     const currentIndex = this.parents.findLastIndex(_ => _ === node);
@@ -379,10 +418,11 @@ class Asserter extends Stringifier {
     });
   }
   /**
-   * Alternatively "import * as rti from ..." would also prevent "Unused external imports" warning...
-   * or keeping log of every single call during RTI parsing.
+   * Alternatively "import * as rti from ..." would also prevent
+   * "Unused external imports" warnings.
    * @todo
-   * Once we went over every node, we can see if we really require registerTypef, registerClass etc.
+   * Once we went over every node, we can see if we really require
+   * registerTypedef, registerClass etc.
    * @param {import('@babel/types').File|import('@babel/types').Program} [ast] - Optional parsed
    * program: names the file already imports from the runtime are left out of
    * the header import, so bundlers never see the same binding twice. Imports
@@ -396,7 +436,13 @@ class Asserter extends Stringifier {
       return '';
     }
     let header = super.getHeader();
-    const names = ['inspectIndexedAccess', 'inspectType', 'inspectTypeWithTemplates', 'youCanAddABreakpointHere', 'registerVariable'];
+    const names = [
+      'inspectIndexedAccess',
+      'inspectType',
+      'inspectTypeWithTemplates',
+      'youCanAddABreakpointHere',
+      'registerVariable',
+    ];
     if (this.hasOverloadChecks || ast?.comments?.some((comment) => /@overload\b/.test(comment.value))) {
       names.push('inspectOverloads', 'overloadPropertyKey');
     }
@@ -408,7 +454,8 @@ class Asserter extends Stringifier {
       names.push('setProjectVersion');
     }
     const skip = ast ? runtimeImportNames(ast) : new Set();
-    header += `import {${names.filter((name) => !skip.has(name)).join(', ')}} from '@runtime-type-inspector/runtime';\n`;
+    const wanted = names.filter((name) => !skip.has(name));
+    header += `import {${wanted.join(', ')}} from '@runtime-type-inspector/runtime';\n`;
     // Prevent tree-shaking in UMD build so we can always "add a breakpoint here".
     header += "export * from '@runtime-type-inspector/runtime';\n";
     if (this.projectVersion !== undefined && this.projectVersion !== null) {
@@ -417,13 +464,13 @@ class Asserter extends Stringifier {
     return header;
   }
   /**
-   * Retrieves the node associated with the leading comments for an arrow function expression.
+   * Node holding the leading comments for an arrow function expression.
    *
-   * This method travels up the syntax tree from the given node to find a parent node with leading comments.
-   * This search is bounded by function boundaries or a 'CallExpression' node, as per the logic defined within the loop.
-   * @param {Node} node - The node representing the arrow function expression for which to find the leading comments node.
-   * @returns {Node|undefined} The node that contains the leading comments, or `undefined`
-   * if none is found before reaching a different function or 'CallExpression'.
+   * Travels up the syntax tree from the given node to find a parent node
+   * with leading comments. Bounded by function boundaries or a
+   * 'CallExpression' node.
+   * @param {Node} node - Arrow function expression to find comments for.
+   * @returns {Node|undefined} Node with leading comments, or `undefined`.
    */
   getLeadingCommentsNodeForArrowFunctionExpression(node) {
     const {parents} = this;
@@ -449,11 +496,13 @@ class Asserter extends Stringifier {
         if (parent.type === 'VariableDeclaration') {
           const comments = parent.leadingComments;
           const lastComment = comments[comments.length - 1];
-          const isStatementDoc = Boolean(parent.loc && lastComment?.loc &&
-            lastComment.loc.end.line + 1 === parent.loc.start.line);
+          const endsBefore = lastComment?.loc?.end.line;
+          const startsAt = parent.loc?.start.line;
+          const isStatementDoc = Boolean(startsAt && endsBefore + 1 === startsAt);
           if (isStatementDoc) {
             const declarator = parents[i + 1];
-            if (!declarator || declarator.type !== 'VariableDeclarator' || declarator.init !== node) {
+            const direct = declarator?.type === 'VariableDeclarator' && declarator.init === node;
+            if (!direct) {
               break;
             }
           }
@@ -497,14 +546,16 @@ class Asserter extends Stringifier {
         if (parent.type === 'VariableDeclaration') {
           const comments = parent.leadingComments;
           const lastComment = comments[comments.length - 1];
-          const isStatementDoc = Boolean(parent.loc && lastComment?.loc &&
-            lastComment.loc.end.line + 1 === parent.loc.start.line);
+          const endsBefore = lastComment?.loc?.end.line;
+          const startsAt = parent.loc?.start.line;
+          const isStatementDoc = Boolean(startsAt && endsBefore + 1 === startsAt);
           if (isStatementDoc) {
             // Docblock directly above the statement: TypeScript-like cascade,
             // only direct declarator initializers inherit it. Functions nested
             // deeper (e.g. inside object literals) do not.
             const declarator = parents[i + 1];
-            if (!declarator || declarator.type !== 'VariableDeclarator' || declarator.init !== node) {
+            const direct = declarator?.type === 'VariableDeclarator' && declarator.init === node;
+            if (!direct) {
               break;
             }
           }
@@ -513,16 +564,13 @@ class Asserter extends Stringifier {
       }
       i--;
     }
-    /** @todo convert all files in test/typechecking/*.mjs into full unit tests */
+    /** @todo Convert every file in test/typechecking/*.mjs into a unit test. */
     // Old way:
     // if (node.leadingComments) {
     //   return node.leadingComments;
     // }
     // node = this.findParentOfType(node, 'ExpressionStatement');
     // if (!node) {
-    //   /**
-    //    * @todo Need more refactoring, see missing type-assertions in test/typechecking/good-old-es5.mjs
-    //    */
     //   node = this.parents.findLast(_ => _.type === 'VariableDeclaration');
     //   if (!node) {
     //     return;
@@ -572,8 +620,15 @@ class Asserter extends Stringifier {
   getJSDoc(node) {
     let comment = this.getLeadingComment(node);
     const sections = splitOverloadSections(collectOverloadBlocks(node, this.parents));
-    if (sections.overloads.length) comment = sections.impl || '';
-    if (sections.overloads.length && !comment) return {templates: undefined, params: {}};
+    if (sections.overloads.length) {
+      comment = sections.impl || '';
+    }
+    if (sections.overloads.length && !comment) {
+      return {
+        templates: undefined,
+        params: {},
+      };
+    }
     if (!comment) {
       return;
     }
@@ -606,8 +661,13 @@ class Asserter extends Stringifier {
           return;
         }
         const paramName = this.getNameOfParam(node.params[0]);
-        const params    = {[paramName]: setter};
-        return {templates: undefined, params};
+        const params = {
+          [paramName]: setter,
+        };
+        return {
+          templates: undefined,
+          params,
+        };
       }
     }
     const {templates, params} = parseJSDocDocument(comment, this.expandType);
@@ -643,11 +703,15 @@ class Asserter extends Stringifier {
         continue;
       }
       let templates;
-      if (ancestor.type === 'ClassDeclaration' || ancestor.type === 'ClassExpression' || nodeIsFunctionLike(ancestor)) {
+      const isClass = ancestor.type === 'ClassDeclaration' || ancestor.type === 'ClassExpression';
+      if (isClass || nodeIsFunctionLike(ancestor)) {
         templates = this.templatesOf(ancestor);
       }
       if (templates) {
-        merged = {...merged, ...templates};
+        merged = {
+          ...merged,
+          ...templates,
+        };
       }
     }
     return merged;
@@ -661,7 +725,7 @@ class Asserter extends Stringifier {
    * @returns {Record<string, any>|undefined} Its templates or undefined.
    */
   templatesOf(node) {
-    let leadingComments = node.leadingComments;
+    let {leadingComments} = node;
     if (!leadingComments && (node.type === 'ClassDeclaration' || node.type === 'ClassExpression')) {
       const exportNamed = this.findParentOfType(node, 'ExportNamedDeclaration');
       leadingComments = exportNamed?.leadingComments;
@@ -678,9 +742,11 @@ class Asserter extends Stringifier {
     } else if (!leadingComments && node.type === 'FunctionDeclaration') {
       leadingComments = this.findParentOfType(node, 'ExportNamedDeclaration')?.leadingComments;
     } else if (!leadingComments && node.type === 'FunctionExpression') {
-      leadingComments = this.getLeadingCommentsNodeForFunctionExpression(node)?.leadingComments;
+      const holder = this.getLeadingCommentsNodeForFunctionExpression(node);
+      leadingComments = holder?.leadingComments;
     } else if (!leadingComments && node.type === 'ArrowFunctionExpression') {
-      leadingComments = this.getLeadingCommentsNodeForArrowFunctionExpression(node)?.leadingComments;
+      const holder = this.getLeadingCommentsNodeForArrowFunctionExpression(node);
+      leadingComments = holder?.leadingComments;
     }
     if (!leadingComments?.length) {
       return;
@@ -692,13 +758,10 @@ class Asserter extends Stringifier {
     return parseJSDocDocument(lastComment.value, this.expandType).templates;
   }
   /**
-   * Retrieves the name of a parameter from a Babel AST node.
-   *
-   * This function expects a node representing a function parameter and attempts to extract
-   * the parameter's name directly or from an AssignmentPattern.
-   *
-   * @param {Node} param - The AST node representing the function parameter from which to extract the name.
-   * @returns {string} The name of the parameter as a string, or the parameter's source code if the extraction fails.
+   * Name of a parameter from a Babel AST node: the identifier directly,
+   * or the left side of an AssignmentPattern; otherwise its source text.
+   * @param {Node} param - Function parameter node to extract the name from.
+   * @returns {string} Parameter name, or source text when extraction fails.
    */
   getNameOfParam(param) {
     if (param.type === 'Identifier') {
@@ -708,7 +771,7 @@ class Asserter extends Stringifier {
         return param.left.name;
       }
     }
-    this.warn("Unable to retrieve name from param in specified way - may contain too much information.");
+    this.warn('getNameOfParam> cannot extract a name, emitting source text.');
     return this.toSource(param);
   }
   statsReset() {
@@ -729,35 +792,29 @@ class Asserter extends Stringifier {
     const {stats} = this;
     const type = nodeIsFunctionLike(node) ? node.type : this.parentType;
     if (type === 'ClassMethod') {
-      const parent = /** @type {ClassMethod} */(
-        this.parent
-      );
-      const {kind} = parent;
+      const {kind} = this.parent;
       return stats[`ClassMethod#${kind}`];
     } else if (type === 'ClassPrivateMethod') {
-      const parent = /** @type {ClassPrivateMethod} */(
-        this.parent
-      );
-      const {kind} = parent;
+      const {kind} = this.parent;
       return stats[`ClassPrivateMethod#${kind}`];
     }
     const stat = stats[type];
     if (!stat) {
       this.warn("getStatsForNode> dummy, but unhandled... fix for node type", node);
-      return {checked: 0, unchecked: 0};
+      return {
+        checked: 0,
+        unchecked: 0,
+      };
     }
     return stat;
   }
   /**
-   * Checks if a provided Babel AST node has a parameter with the given name.
+   * Whether a Babel AST node declares a parameter with the given name.
    *
-   * This function will look at the node's parameters if available and determine whether
-   * one of them matches the provided name. Supports various parameter types such as Identifiers
-   * and AssignmentPatterns.
-   *
-   * @param {Node} node - The Babel AST node to inspect. If it's a BlockStatement, the parent node is used instead.
-   * @param {string} name - The name of the parameter to look for within the node's parameters.
-   * @returns {boolean} True if the node has a parameter with the given name; false otherwise.
+   * Looks at the node's parameters (Identifiers and AssignmentPatterns).
+   * @param {Node} node - Babel AST node to inspect (BlockStatement: parent).
+   * @param {string} name - Parameter name to look for.
+   * @returns {boolean} True with a matching parameter, false otherwise.
    */
   nodeHasParamName(node, name) {
     if (node.type === 'BlockStatement') {
@@ -777,7 +834,7 @@ class Asserter extends Stringifier {
           left.type === 'ObjectPattern' ||
           left.type === 'ArrayPattern' ||
           left.type === 'AssignmentPattern',
-          'Expected Identifier or ObjectPattern'
+          'Expected Identifier or ObjectPattern',
         );
         return left.name === name;
       } else if (type === 'Identifier') {
@@ -817,29 +874,34 @@ class Asserter extends Stringifier {
     this.hasOverloadChecks = true;
     this.getStatsForNode(node).checked++;
     const args = overloadInspectionArgs(fnNode, fnNode, fnNode.rtiOverloadWrapper || null);
-    const source = JSON.stringify(signatures, null, 2).replaceAll('\n', '\n' + this.spaces);
+    const dumped = JSON.stringify(signatures, null, 2);
+    const source = dumped.replaceAll('\n', '\n' + this.spaces);
     const atLoc = escapeName(loc);
     let guard = '';
-    if (loc === 'ContactPoint#constructor' || loc === 'ContactResult#constructor' || loc === 'SingleContactResult#constructor') {
+    const skipLengthCheck = loc === 'ContactPoint#constructor';
+    const skipResultCheck = loc === 'ContactResult#constructor';
+    const skipSingle = loc === 'SingleContactResult#constructor';
+    if (skipLengthCheck || skipResultCheck || skipSingle) {
       guard = 'arguments.length !== 0 && ';
     }
-    let out = `\n${this.spaces}if (${guard}!inspectOverloads(${args}, ${source}, '${atLoc}', 'arguments')) {\n${this.spaces}  youCanAddABreakpointHere();\n${this.spaces}}\n`;
-    const implParams = sections.impl ? parseJSDocDocument(sections.impl, this.expandType).params : undefined;
-    const documented = new Set([...Object.keys(implParams || {}), ...(ignored instanceof Set ? ignored : [])]);
+    const probe = `!inspectOverloads(${args}, ${source}, '${atLoc}', 'arguments')`;
+    let out = `\n${this.spaces}if (${guard}${probe}) {\n`;
+    out += `${this.spaces}  youCanAddABreakpointHere();\n${this.spaces}}\n`;
+    const scoped = sections.impl ? parseJSDocDocument(sections.impl, this.expandType) : undefined;
+    const implParams = scoped?.params;
+    const listed = ignored instanceof Set ? [...ignored] : [];
+    const documented = new Set([...Object.keys(implParams || {}), ...listed]);
     out += this.emitDefaultChecks(node, this.collectDefaultChecks(node, documented), false);
     return out;
   }
   /**
-   * Generates a string containing type checks for a given Babel AST node based on associated JSDoc information.
+   * Type checks for a Babel AST node from its JSDoc annotations.
    *
-   * This function analyzes the node and its JSDoc annotations to construct runtime type
-   * check expressions. It handles various parameter patterns and outputs code that performs
-   * actual type assertions. If a node does not correspond to any known or supported pattern,
-   * it returns an empty string.
-   *
+   * Analyzes the node and its JSDoc to build runtime type check
+   * expressions. Returns an empty string for unsupported patterns.
    * @override
-   * @param {Node} node - The Babel AST node for which to generate type checks.
-   * @returns {string} A string of code with type check assertions, based on the JSDoc comments associated with the given node.
+   * @param {Node} node - Babel AST node to generate type checks for.
+   * @returns {string} Code with type check assertions for the node.
    */
   generateTypeChecks(node) {
     const {parent} = this;
@@ -877,9 +939,12 @@ class Asserter extends Stringifier {
       stat.checked++;
       return this.emitDefaultChecks(node, inferred, true);
     }
-    const {templates: ownTemplates, params} = jsdoc;
+    const {
+      templates: ownTemplates,
+      params,
+    } = jsdoc;
     if (!params) {
-      console.warn("This should never happen, please check your input code.", this.getLeadingComment(node), {jsdoc});
+      console.warn('generateTypeChecks> expected params, got none.', {jsdoc});
       stat.unchecked++;
       return '';
     }
@@ -887,7 +952,10 @@ class Asserter extends Stringifier {
     // this node: merge them under method-local templates so `K` in
     // `@param {K}` resolves jointly. Inner scopes shadow outer ones.
     const scopeTemplates = this.getScopeTemplates(node);
-    const templates = scopeTemplates ? {...scopeTemplates, ...ownTemplates} : ownTemplates;
+    const templates = scopeTemplates ? {
+      ...scopeTemplates,
+      ...ownTemplates,
+    } : ownTemplates;
     stat.checked++;
     const {spaces} = this;
     let out = '';
@@ -961,10 +1029,13 @@ class Asserter extends Stringifier {
                 newlineBeforeFirst();
                 const atLoc = escapeName(loc);
                 const atName = escapeName(nameFancy);
+                const head = `${element.name}, ${t}, '${atLoc}', '${atName}'`;
+                const probe = `!inspectTypeWithTemplates(${head}, rtiTemplates)`;
+                const plain = `!inspectType(${head})`;
                 if (templates) {
-                  out += `${spaces}if (!inspectTypeWithTemplates(${element.name}, ${t}, '${atLoc}', '${atName}', rtiTemplates)) {\n`;
+                  out += `${spaces}if (${probe}) {\n`;
                 } else {
-                  out += `${spaces}if (!inspectType(${element.name}, ${t}, '${atLoc}', '${atName}')) {\n`;
+                  out += `${spaces}if (${plain}) {\n`;
                 }
                 out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
               }
@@ -988,7 +1059,8 @@ class Asserter extends Stringifier {
                     this.warn(
                       "missing subtype information in JSDoc> in type",
                       JSON.stringify(type, null, 2),
-                      "for ObjectPattern:", this.toSource(property).trim()
+                      "for ObjectPattern:",
+                      this.toSource(property).trim(),
                     );
                     continue;
                   }
@@ -1001,10 +1073,13 @@ class Asserter extends Stringifier {
                   newlineBeforeFirst();
                   const atLoc = escapeName(loc);
                   const atName = escapeName(nameFancy);
+                  const head = `${keyName}, ${t}, '${atLoc}', '${atName}'`;
+                  const probe = `!inspectTypeWithTemplates(${head}, rtiTemplates)`;
+                  const plain = `!inspectType(${head})`;
                   if (templates) {
-                    out += `${spaces}if (!inspectTypeWithTemplates(${keyName}, ${t}, '${atLoc}', '${atName}', rtiTemplates)) {\n`;
+                    out += `${spaces}if (${probe}) {\n`;
                   } else {
-                    out += `${spaces}if (!inspectType(${keyName}, ${t}, '${atLoc}', '${atName}')) {\n`;
+                    out += `${spaces}if (${plain}) {\n`;
                   }
                   out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
                 }
@@ -1027,7 +1102,9 @@ class Asserter extends Stringifier {
             // undeclared variable at runtime (ReferenceError). Skip it
             // like the missing-param case below; tsc already reports
             // these as TS8024.
-            const isRestBinding = param.type === 'RestElement' && param.argument && param.argument.type === 'Identifier' && param.argument.name === name;
+            const arg = param.argument;
+            const bindsName = arg?.type === 'Identifier' && arg.name === name;
+            const isRestBinding = param.type === 'RestElement' && bindsName;
             if (!isRestBinding) {
               const loc = this.getName(node);
               this.warn(`generateTypeChecks> ${loc}> Missing param: ${nameFancy}`);
@@ -1052,27 +1129,31 @@ class Asserter extends Stringifier {
       let prevCheck = '';
       // JSDoc doesn't support multiple function signatures yet, but this is
       // exactly what we would need to deal with ObjectPool'ing
-      if (
-        loc === 'ContactPoint#constructor' ||
-        loc === 'ContactResult#constructor' ||
-        loc === 'SingleContactResult#constructor'
-      ) {
+      const skipLengthCheck = loc === 'ContactPoint#constructor';
+      const skipResultCheck = loc === 'ContactResult#constructor';
+      const skipSingleCheck = loc === 'SingleContactResult#constructor';
+      if (skipLengthCheck || skipResultCheck || skipSingleCheck) {
         prevCheck = 'arguments.length !== 0 && ';
       }
       newlineBeforeFirst();
       const atLoc = escapeName(loc);
       const atName = escapeName(nameFancy);
+      const head = `${name}, ${t}, '${atLoc}', '${atName}'`;
+      const probe = `!inspectTypeWithTemplates(${head}, rtiTemplates)`;
+      const plain = `!inspectType(${head})`;
       if (templates) {
-        out += `${spaces}if (${prevCheck}!inspectTypeWithTemplates(${name}, ${t}, '${atLoc}', '${atName}', rtiTemplates)) {\n`;
+        out += `${spaces}if (${prevCheck}${probe}) {\n`;
       } else {
-        out += `${spaces}if (${prevCheck}!inspectType(${name}, ${t}, '${atLoc}', '${atName}')) {\n`;
+        out += `${spaces}if (${prevCheck}${plain}) {\n`;
       }
       out += `${spaces}  youCanAddABreakpointHere();\n${spaces}}\n`;
     }
     // Params without JSDoc but with inferable defaults get synthesized
     // optional checks; JSDoc types always win on conflict. Suppressed
     // params stay out of the synthesis pool like documented ones do.
-    out += this.emitDefaultChecks(node, this.collectDefaultChecks(node, new Set([...Object.keys(params), ...(ignored instanceof Set ? ignored : [])])), out === '');
+    const listed = ignored instanceof Set ? [...ignored] : [];
+    const seen = new Set([...Object.keys(params), ...listed]);
+    out += this.emitDefaultChecks(node, this.collectDefaultChecks(node, seen), out === '');
     return out;
   }
   /**
@@ -1092,10 +1173,13 @@ class Asserter extends Stringifier {
     if (!Array.isArray(params)) {
       return [];
     }
-    if (fnNode.type === 'ArrowFunctionExpression' && !this.findParentOfType(fnNode, 'VariableDeclarator')) {
-      // Bare callbacks (e.g. `.forEach((x = 0) => ...)`) can't be named,
-      // synthesizing checks would spam unnameable-callback warnings.
-      return [];
+    if (fnNode.type === 'ArrowFunctionExpression') {
+      const bound = this.findParentOfType(fnNode, 'VariableDeclarator');
+      if (!bound) {
+        // Bare callbacks (e.g. `.forEach((x = 0) => ...)`) can't be named,
+        // synthesizing checks would spam unnameable-callback warnings.
+        return [];
+      }
     }
     const checks = [];
     for (const param of params) {
@@ -1112,7 +1196,10 @@ class Asserter extends Stringifier {
       const inline = parseInlineParamType(param.leadingComments, this.expandType) ??
         parseInlineParamType(target.leadingComments, this.expandType);
       if (inline !== undefined) {
-        checks.push({name: target.name, type: annotateOptional(inline, isAssignment)});
+        checks.push({
+          name: target.name,
+          type: annotateOptional(inline, isAssignment),
+        });
         continue;
       }
       if (!isAssignment) {
@@ -1122,7 +1209,10 @@ class Asserter extends Stringifier {
       if (inferred === undefined) {
         continue;
       }
-      checks.push({name: target.name, type: annotateOptional(inferred, true)});
+      checks.push({
+        name: target.name,
+        type: annotateOptional(inferred, true),
+      });
     }
     return checks;
   }
@@ -1178,7 +1268,10 @@ class Asserter extends Stringifier {
    * @returns {string|null} The class name `X`, or null when no match.
    */
   assignPrototypeOwner(call, child) {
-    const {callee, arguments: args} = call;
+    const {
+      callee,
+      arguments: args,
+    } = call;
     if (!Array.isArray(args) || args.indexOf(child) < 1) {
       return null;
     }
@@ -1186,11 +1279,12 @@ class Asserter extends Stringifier {
       return null;
     }
     const {object, property} = callee;
-    if (object.type !== 'Identifier' || object.name !== 'Object' ||
-        property.type !== 'Identifier' || property.name !== 'assign') {
+    const isObject = object.type === 'Identifier' && object.name === 'Object';
+    const isAssign = property.type === 'Identifier' && property.name === 'assign';
+    if (!isObject || !isAssign) {
       return null;
     }
-    const target = args[0];
+    const [target] = args;
     if (!target || target.type !== 'MemberExpression' || target.computed) {
       return null;
     }
@@ -1304,29 +1398,48 @@ class Asserter extends Stringifier {
         if (parent.init !== child || parent.id.type !== 'Identifier') {
           return null;
         }
-        return {owner: this.toSource(parent.id), prefix, instance: false};
+        return {
+          owner: this.toSource(parent.id),
+          prefix,
+          instance: false,
+        };
       }
       if (parent.type === 'AssignmentExpression') {
         if (parent.right !== child || child.type !== 'ObjectExpression') {
           return null;
         }
         const {left} = parent;
-        if (left.type === 'MemberExpression' && !left.computed &&
-            left.property.type === 'Identifier' && left.property.name === 'prototype') {
-          return {owner: this.toSource(left.object), prefix, instance: true};
+        const isMemberTarget = left.type === 'MemberExpression';
+        const isPlainAssign = isMemberTarget && left.computed === false;
+        const prop = isPlainAssign ? left.property : undefined;
+        const namesPrototype = prop !== undefined && prop.type === 'Identifier' && prop.name === 'prototype';
+        if (namesPrototype) {
+          return {
+            owner: this.toSource(left.object),
+            prefix,
+            instance: true,
+          };
         }
         // `o.x = {m() {}}` keeps the declared chain; other shapes
         // (`this.o.x = ...`, `a.b.c = ...`) stay bare: the method outlives
         // any single lexical binding.
         if (left.type === 'Identifier') {
-          return {owner: this.toSource(left), prefix, instance: false};
+          return {
+            owner: this.toSource(left),
+            prefix,
+            instance: false,
+          };
         }
         return null;
       }
       if (parent.type === 'CallExpression') {
         const owner = this.assignPrototypeOwner(parent, child);
         if (owner) {
-          return {owner, prefix, instance: true};
+          return {
+            owner,
+            prefix,
+            instance: true,
+          };
         }
         return null;
       }
@@ -1339,7 +1452,7 @@ class Asserter extends Stringifier {
   /**
    * Qualifies a leaf key with its owner chain.
    * @example
-   * qualifyLeaf({type: 'Identifier', name: 'set'}, false, 'BitPacking', '', false); // 'BitPacking.set'
+   * qualifyLeaf({type: 'Identifier', name: 'set'}, false, 'B', '', false);
    * @param {Node} key - The method or property key node.
    * @param {boolean} computed - Whether the key was computed.
    * @param {string} owner - The owning binding name.
@@ -1362,9 +1475,10 @@ class Asserter extends Stringifier {
     const found = this.locateObjectOwner(property);
     if (found && found.owner) {
       // Prototype mixins (`Object.assign(X.prototype, ...)`) name real
-      // instance members (`ScopeSpace#resolve`); other properties keep the
-      // declared chain (`object.method`).
-      return this.qualifyLeaf(property.key, property.computed, found.owner, found.prefix, found.instance);
+      // instance members; other properties keep the declared chain.
+      const {owner, prefix, instance} = found;
+      const {key, computed} = property;
+      return this.qualifyLeaf(key, computed, owner, prefix, instance);
     }
     return this.keyPart(property.key, property.computed, '.').slice(1);
   }
@@ -1422,7 +1536,8 @@ class Asserter extends Stringifier {
    */
   getNameForClassMethod(node) {
     const toSource = this.toSource.bind(this);
-    const classDecl = this.parents.findLast(_ => _.type === 'ClassDeclaration' || _.type === 'ClassExpression');
+    const isClass = (_) => _.type === 'ClassDeclaration' || _.type === 'ClassExpression';
+    const classDecl = this.parents.findLast(isClass);
     if (!classDecl) {
       return toSource(node.key);
     }
@@ -1468,7 +1583,8 @@ class Asserter extends Stringifier {
   getNameForArrowFunction(node) {
     const index = this.parents.findLastIndex((parent) => parent === node);
     const field = this.parents[index - 1];
-    if (field && (field.type === 'ClassProperty' || field.type === 'ClassPrivateProperty') && field.value === node) {
+    const isField = field?.type === 'ClassProperty' || field?.type === 'ClassPrivateProperty';
+    if (isField && field.value === node) {
       return this.getNameForClassMethod(field);
     }
     // Arrow as object value (`arrow: (y) => y`): the property key plus the
@@ -1549,42 +1665,37 @@ class Asserter extends Stringifier {
     if (!computed || object.type === 'Super') {
       return super.MemberExpression(node);
     }
-    const parent = this.parent;
+    const {parent} = this;
     if (parent) {
       // `a[i] = ...`, `a[i]++`/`--` and `delete a[i]` are handled by the statement
       // itself, wrapping them here would produce invalid assignment to a call.
-      if (parent.type === 'AssignmentExpression' && parent.left === node) {
-        return super.MemberExpression(node);
-      }
-      if (parent.type === 'UpdateExpression' && parent.argument === node) {
-        return super.MemberExpression(node);
-      }
-      if (parent.type === 'UnaryExpression' && parent.operator === 'delete' && parent.argument === node) {
+      const isWrite = parent.type === 'AssignmentExpression' && parent.left === node;
+      const isUpdate = parent.type === 'UpdateExpression' && parent.argument === node;
+      const isDelete = parent.type === 'UnaryExpression' && parent.operator === 'delete';
+      if (isWrite || isUpdate || (isDelete && parent.argument === node)) {
         return super.MemberExpression(node);
       }
       // Destructuring, rest and loop targets are assigned to, never read.
-      if (parent.type === 'ArrayPattern') {
-        return super.MemberExpression(node);
-      }
-      if (parent.type === 'RestElement' && parent.argument === node) {
+      const writesTarget = parent.type === 'ArrayPattern';
+      const writesRest = parent.type === 'RestElement' && parent.argument === node;
+      const writesDefault = parent.type === 'AssignmentPattern' && parent.left === node;
+      const writesLoop = parent.type === 'ForOfStatement' || parent.type === 'ForInStatement';
+      if (writesTarget || writesRest || writesDefault || (writesLoop && parent.left === node)) {
         return super.MemberExpression(node);
       }
       if (parent.type === 'ObjectProperty' && parent.value === node) {
         // `({p: a[i]})` reads but `({p: a[i]} = ...)` writes: bypass inside patterns only.
-        const grandparent = this.parents[this.parents.findLastIndex((_) => _ === parent) - 1];
+        const at = this.parents.findLastIndex((_) => _ === parent) - 1;
+        const grandparent = this.parents[at];
         if (grandparent?.type === 'ObjectPattern') {
           return super.MemberExpression(node);
         }
       }
-      if (parent.type === 'AssignmentPattern' && parent.left === node) {
-        return super.MemberExpression(node);
-      }
-      if ((parent.type === 'ForOfStatement' || parent.type === 'ForInStatement') && parent.left === node) {
-        return super.MemberExpression(node);
-      }
       // Method calls and tags carry their base as `this`; wrapping the callee
       // would silently rebind it to undefined.
-      if ((parent.type === 'CallExpression' || parent.type === 'OptionalCallExpression') && parent.callee === node) {
+      const isCall = parent.type === 'CallExpression';
+      const isOptCall = parent.type === 'OptionalCallExpression';
+      if ((isCall || isOptCall) && parent.callee === node) {
         return super.MemberExpression(node);
       }
       if (parent.type === 'TaggedTemplateExpression' && parent.tag === node) {
@@ -1647,8 +1758,12 @@ class Asserter extends Stringifier {
     for (const name in this.typedefs) {
       const typedef = this.typedefs[name];
       const json = simplifyTypeToSource(typedef);
-      const params = this.typedefTemplates[name];
-      out += params?.length ? `registerTypedef('${name}', ${json}, ${JSON.stringify(params)});\n` : `registerTypedef('${name}', ${json});\n`;
+      const dumped = JSON.stringify(this.typedefTemplates[name]);
+      let call = `registerTypedef('${name}', ${json});`;
+      if (this.typedefTemplates[name]?.length) {
+        call = `registerTypedef('${name}', ${json}, ${dumped});`;
+      }
+      out += `${call}\n`;
     }
     const code = this.toSource(program) + '\n';
     out += code;

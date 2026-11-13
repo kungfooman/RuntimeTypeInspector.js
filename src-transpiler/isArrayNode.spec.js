@@ -1,5 +1,5 @@
 import {isArrayNode} from './isArrayNode.js';
-import {expandType} from './expandType.js';
+import {expandType } from './expandType.js';
 // We want: array nodes recognized, so navigation needs no cast.
 function testArrayPasses() {
   return isArrayNode(expandType('string[]')) === true;

@@ -1,5 +1,4 @@
 import {runChecks} from './runChecks.js';
-
 // Class creation still runs the key expression exactly once per
 // definition: coercion happens at class-evaluation time, before any
 // instance exists, with no extra reads from the new capture.
@@ -22,7 +21,6 @@ function testComputedFieldEvaluatesKeyOncePerClass() {
   const afterDef = reads;`;
   return runChecks(src, 'afterDef', (scope) => scope.afterDef === 1);
 }
-
 // Reentrant class creation keeps each class on its own key: a key whose
 // coercion builds the next class still binds the outer class first, and
 // both instances then check, name, and implement independently. Counts add
@@ -74,7 +72,6 @@ function testComputedFieldSurvivesReentrantClassCreation() {
     hits.length === 2
   ));
 }
-
 // Two fields in one class keep definition order and independent values:
 // each key coerces once at class evaluation, then twice more per instance
 // along the capture path, so one instance totals six coercions.
@@ -118,7 +115,6 @@ function testComputedFieldInstancesCoerceOwnKeys() {
     hits.length === 0
   ));
 }
-
 // A static computed field coerces once at class definition, never per
 // instance: constructing twice adds no reads, and the stored wrapper still
 // checks with its coerced name and arity.
@@ -148,7 +144,6 @@ function testComputedStaticFieldEvaluatesOnce() {
     hits.length === 1
   ));
 }
-
 // A two-parameter field keeps arity two: the dummy head counts required
 // params, so a wrong second argument still hits while the name holds.
 function testComputedFieldKeepsMultiParamArity() {
@@ -166,7 +161,6 @@ function testComputedFieldKeepsMultiParamArity() {
     posted[0].loc === 'Fields#String(\'pair\')'
   ));
 }
-
 export const tests = [
   testComputedFieldEvaluatesKeyOncePerClass,
   testComputedFieldSurvivesReentrantClassCreation,

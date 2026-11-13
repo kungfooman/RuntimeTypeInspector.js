@@ -4,8 +4,8 @@ import {ignoredChecks            } from './ignoredChecks.js';
 import {customChecks             } from './customChecks.js';
 import {describeValueType        } from './describeValue.js';
 import {stringifyType            } from './stringifyType.js';
-import {previewValue} from './previewValue.js';
-import {stringifyValue} from './stringifyValue.js';
+import {previewValue             } from './previewValue.js';
+import {stringifyValue           } from './stringifyValue.js';
 import {validateType             } from './validateType.js';
 import {partition                } from './partition.js';
 import {importNamespaceSpecifiers} from './registerImportNamespaceSpecifier.js';
@@ -15,7 +15,7 @@ import {reportedKeys             } from './reportedKeys.js';
 import {tagValue                 } from './tagValue.js';
 import {captureStackLines        } from './captureStack.js';
 import {globalMessageHost        } from './globalMessageHost.js';
-import {recordCheck, recordSkip, nowMs       } from './checkStats.js';
+import {recordCheck, recordSkip, nowMs} from './checkStats.js';
 const breakpoints = new Set();
 /**
  * Snapshot budgets for panel-bound values: the tree batches rows on click,
@@ -29,80 +29,83 @@ const PANEL_SNAPSHOT_NODES = 20000;
 // more complex scenarious like running RTI inside a `Worker` or `<iframe>` aswell.
 // Bare hosts (Node loading the transpiler bundle) have no message bus at all:
 // the listener simply stays unregistered instead of throwing at import time.
-globalMessageHost()?.addEventListener?.('message', (e) => {
-  const {data} = e;
-  const {type, action, destination} = data;
+globalMessageHost()?.addEventListener?.(
+  'message',
+  (e) => {
+    const {data} = e;
+    const {type, action, destination} = data;
   // console.log("Message event", e);
   // console.log("Message data", data);
-  if (type !== 'rti') {
-    return;
-  }
+    if (type !== 'rti') {
+      return;
+    }
   // Messages come from Worker/IFrame/window to update UI state:
-  if (destination === 'ui') {
+    if (destination === 'ui') {
     // console.log("Ignoring UI events here, handled in TypePanel instead.");
-    return;
-  }
+      return;
+    }
   // Messages come from UI to control a few behaviours:
-  if (destination === 'worker') {
-    if (action === 'addError') {
-      console.warn('We are not keeping track of errors in workers at all.');
-      return;
-    }
-    if (action === 'deleteBreakpoint') {
-      const {key} = data;
-      breakpoints.delete(key);
-      return;
-    }
-    if (action === 'addBreakpoint') {
-      const {key} = data;
-      breakpoints.add(key);
-      return;
-    }
-    if (action === 'enable') {
-      options.enabled = true;
-      return;
-    }
-    if (action === 'disable') {
-      options.enabled = false;
-      return;
-    }
-    if (action === 'strictNullChecks') {
-      options.strictNullChecks = data.value !== false;
-      return;
-    }
-    if (action === 'checkInfinity') {
-      options.checkInfinity = data.value !== false;
-      return;
-    }
-    if (action === 'exactObjects') {
-      options.exactObjects = data.value === true;
-      return;
-    }
-    if (action === 'windowedChecks') {
-      options.windowedChecks = data.value !== false;
-      return;
-    }
-    if (action === 'mapCheckWindowCap') {
-      const cap = Math.floor(Number(data.value));
-      if (Number.isFinite(cap) && cap >= 1) {
-        options.mapCheckWindowCap = cap;
+    if (destination === 'worker') {
+      if (action === 'addError') {
+        console.warn('We are not keeping track of errors in workers at all.');
+        return;
       }
-      return;
-    }
-    if (action === 'mapCheckWindowMinTotalMs') {
-      const min = Number(data.value);
-      if (Number.isFinite(min) && min >= 0) {
-        options.mapCheckWindowMinTotalMs = min;
+      if (action === 'deleteBreakpoint') {
+        const {key} = data;
+        breakpoints.delete(key);
+        return;
       }
-      return;
+      if (action === 'addBreakpoint') {
+        const {key} = data;
+        breakpoints.add(key);
+        return;
+      }
+      if (action === 'enable') {
+        options.enabled = true;
+        return;
+      }
+      if (action === 'disable') {
+        options.enabled = false;
+        return;
+      }
+      if (action === 'strictNullChecks') {
+        options.strictNullChecks = data.value !== false;
+        return;
+      }
+      if (action === 'checkInfinity') {
+        options.checkInfinity = data.value !== false;
+        return;
+      }
+      if (action === 'exactObjects') {
+        options.exactObjects = data.value === true;
+        return;
+      }
+      if (action === 'windowedChecks') {
+        options.windowedChecks = data.value !== false;
+        return;
+      }
+      if (action === 'mapCheckWindowCap') {
+        const cap = Math.floor(Number(data.value));
+        if (Number.isFinite(cap) && cap >= 1) {
+          options.mapCheckWindowCap = cap;
+        }
+        return;
+      }
+      if (action === 'mapCheckWindowMinTotalMs') {
+        const min = Number(data.value);
+        if (Number.isFinite(min) && min >= 0) {
+          options.mapCheckWindowMinTotalMs = min;
+        }
+        return;
+      }
+      if (action === 'checkStats') {
+        options.checkStats = data.value !== false;
+        return;
+      }
     }
-    if (action === 'checkStats') {
-      options.checkStats = data.value !== false;
-      return;
-    }
-  }
-  console.log('Unhandled action destination combo', {action, destination, e, data});
-});
+    console.log('Unhandled action destination combo', {action, destination, e, data});
+  },
+);
 /**
  * @param {*} value - The actual value that we need to validate.
  * @param {*} expect - The supposed type information of said value.
@@ -129,9 +132,15 @@ function inspectType(value, expect, loc, name, critical = true) {
   if (typeof expect === 'string' && expect.includes('.')) {
     // Quoted literals (e.g. narrowed `"a.b.c"`) are values, not namespace
     // paths: rewriting them misfires `unhandled` noise on the next check.
-    const first = expect[0];
+    const [first] = expect;
     const last = expect[expect.length - 1];
-    const quoted = expect.length >= 2 && (first === '"' && last === '"' || first === "'" && last === "'");
+    const quotedStart = first === '"' && last === '"';
+    const quotedSingle = first === "'" && last === "'";
+    const quoted = expect.length >= 2 &&
+      (
+        quotedStart ||
+        quotedSingle
+      );
     if (!quoted) {
       // E.g. ['MathUtils', 'Quaternion']
       const parts = expect.split('.');
@@ -176,7 +185,12 @@ function inspectType(value, expect, loc, name, critical = true) {
       // console.log("breakpoints", breakpoints);
       debugger;
       breakpoints.delete(key); // trigger only once to quickly get app running again
-      crossContextPostMessage({type: 'rti', action: 'deleteBreakpoint', destination: 'ui', key});
+      crossContextPostMessage({
+        type: 'rti',
+        action: 'deleteBreakpoint',
+        destination: 'ui',
+        key,
+      });
     }
     // Hot-loop repeat: the panel already holds this key's full report, so
     // rebuilding previews, probing clonability and reposting the value buys
@@ -188,7 +202,13 @@ function inspectType(value, expect, loc, name, critical = true) {
     if (options.mode !== 'spam') {
       const tag = tagValue(value);
       if (reportedKeys.get(key) === tag) {
-        crossContextPostMessage({type: 'rti', action: 'addError', destination: 'ui', key, repeat: true});
+        crossContextPostMessage({
+          type: 'rti',
+          action: 'addError',
+          destination: 'ui',
+          key,
+          repeat: true,
+        });
         return ret;
       }
       reportedKeys.set(key, tag);
@@ -205,7 +225,10 @@ function inspectType(value, expect, loc, name, critical = true) {
     // Everything after it is RTI-only extra detail (kept, not replaced).
     let summary;
     try {
-      summary = `Argument of type ${describeValueType(value)} is not assignable to parameter of type ${stringifyType(expect)}.`;
+      const actual = describeValueType(value);
+      const wanted = stringifyType(expect);
+      summary = `Argument of type ${actual} is not assignable`;
+      summary += ` to parameter of type ${wanted}.`;
     } catch {
       summary = undefined;
     }
@@ -228,7 +251,13 @@ function inspectType(value, expect, loc, name, critical = true) {
     // content-free `[object Object]` string. Panel-sized budgets: the tree
     // batches on click, so capture roomy enough that batches yield data.
     if (!isClonable(value)) {
-      value = stringifyValue(value, {maxBreadth: PANEL_SNAPSHOT_BREADTH, maxNodes: PANEL_SNAPSHOT_NODES});
+      value = stringifyValue(
+        value,
+        {
+          maxBreadth: PANEL_SNAPSHOT_BREADTH,
+          maxNodes: PANEL_SNAPSHOT_NODES,
+        },
+      );
     } else {
       // Record class identity the post would otherwise strip: messaging
       // structured-clones, so instances arrive as plain data. Plain values
@@ -245,7 +274,20 @@ function inspectType(value, expect, loc, name, critical = true) {
         }
       }
     }
-    const msg = {type: 'rti', action: 'addError', destination: 'ui', value, expect, loc, name, valueToString, strings, extras, key, stack};
+    const msg = {
+      type: 'rti',
+      action: 'addError',
+      destination: 'ui',
+      value,
+      expect,
+      loc,
+      name,
+      valueToString,
+      strings,
+      extras,
+      key,
+      stack,
+    };
     try {
       crossContextPostMessage(msg);
     } catch (e) {

@@ -6,7 +6,9 @@
  * @returns {Record<string, any>} A new object with mapped values.
  */
 function mapValues(obj, fn) {
-  if (!obj) return obj;
+  if (!obj) {
+    return obj;
+  }
   /** @type {Record<string, any>} */
   const result = {};
   for (const key in obj) {

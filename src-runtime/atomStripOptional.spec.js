@@ -1,6 +1,6 @@
 import {atomStripOptional} from './atomStripOptional.js';
-import {deepEqualType} from './deepEqualType.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {deepEqualType    } from './deepEqualType.js';
+import {expandType       } from '../src-transpiler/expandType.js';
 // We want: an optional atom to come back with `optional: false`, because
 // `NonNullable` must clear the occurrence flag while keeping the wrapper
 // the `resolveObjectArgs` loop dispatches on.
@@ -8,7 +8,11 @@ function testStripOptionalAtomClearsFlag() {
   const parsed = expandType('{camera?: Camera}');
   const input = parsed.properties.camera;
   const stripped = atomStripOptional(input);
-  const expected = {type: 'atom', atomType: 'Camera', optional: false};
+  const expected = {
+    type: 'atom',
+    atomType: 'Camera',
+    optional: false,
+  };
   return deepEqualType(stripped, expected);
 }
 // We want: stripping to be idempotent, because `resolveObjectArgs` may see
@@ -19,7 +23,11 @@ function testStripOptionalAtomAlreadyFalse() {
   const input = parsed.properties.camera;
   const once = atomStripOptional(input);
   const twice = atomStripOptional(once);
-  const expected = {type: 'atom', atomType: 'Camera', optional: false};
+  const expected = {
+    type: 'atom',
+    atomType: 'Camera',
+    optional: false,
+  };
   return deepEqualType(twice, expected);
 }
 // We want: a bare string to pass through by identity, because the caller's
@@ -30,7 +38,10 @@ function testStripOptionalBarePassthrough() {
 // We want: a non-atom object to pass through by identity, because only the
 // tagged wrapper owns the occurrence flag this helper clears.
 function testStripOptionalNonAtomPassthrough() {
-  const input = {type: 'string', optional: true};
+  const input = {
+    type: 'string',
+    optional: true,
+  };
   return atomStripOptional(input) === input;
 }
 // We want: nullish inputs to pass through untouched, because the utility

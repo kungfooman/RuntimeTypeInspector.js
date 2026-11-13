@@ -12,7 +12,9 @@ function decodeBase64(base64) {
   const binary = atob(base64);
   const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
   try {
-    return new TextDecoder('utf-8', {fatal: true}).decode(bytes);
+    return new TextDecoder('utf-8', {
+      fatal: true,
+    }).decode(bytes);
   } catch {
     // The hash was produced by the old btoa(string) Latin1 path – just return
     // the raw string so that legacy URL links keep working.

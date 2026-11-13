@@ -1,6 +1,6 @@
-import {options} from './options.js';
+import {options       } from './options.js';
 import {validateNumber} from './validateNumber.js';
-import {validateType} from './validateType.js';
+import {validateType  } from './validateType.js';
 const warn = () => undefined;
 function testInfinityCheckedByDefault() {
   const prev = options.checkInfinity;

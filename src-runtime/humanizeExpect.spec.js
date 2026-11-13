@@ -1,11 +1,17 @@
 import {humanizeExpect} from './humanizeExpect.js';
-import {formatCompare} from './formatCompare.js';
+import {formatCompare } from './formatCompare.js';
 const tests = [
   () => humanizeExpect('K').summary === 'K' &&
     humanizeExpect('K').notes.join(' ').includes('unresolved generic'),
   () => humanizeExpect('number').summary === 'number' && humanizeExpect('number').notes.length === 0,
   () => {
-    const {summary} = humanizeExpect({type: 'object', properties: {a: 'number'}, optional: false});
+    const {summary} = humanizeExpect({
+      type: 'object',
+      properties: {
+        a: 'number',
+      },
+      optional: false,
+    });
     return summary.includes('a: number');
   },
   () => {
@@ -13,7 +19,9 @@ const tests = [
     return expectPretty === 'number' && actualPretty === '1';
   },
   () => {
-    const {actualPretty} = formatCompare('number', {a: 1});
+    const {actualPretty} = formatCompare('number', {
+      a: 1,
+    });
     return actualPretty.includes('"a"');
   },
 ];

@@ -11,7 +11,9 @@
 function arrowArity(node) {
   let count = 0;
   for (const param of node.params) {
-    if (param.type === 'AssignmentPattern' || param.type === 'RestElement') break;
+    if (param.type === 'AssignmentPattern' || param.type === 'RestElement') {
+      break;
+    }
     count++;
   }
   return count;

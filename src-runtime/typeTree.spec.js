@@ -1,9 +1,9 @@
 import {expandType} from '../src-transpiler/expandType.js';
 import {registerTypedef, typedefs, typedefTemplates} from './registerTypedef.js';
 import {registerClass, classes} from './registerClass.js';
-import {options} from './options.js';
+import {options      } from './options.js';
 import {buildTypeTree} from './typeTree.js';
-import {suggestKey} from './suggestKey.js';
+import {suggestKey   } from './suggestKey.js';
 function reset() {
   Object.keys(typedefs).forEach((_) => delete typedefs[_]);
   Object.keys(typedefTemplates).forEach((_) => delete typedefTemplates[_]);
@@ -19,7 +19,7 @@ function testKeyofListsKeys() {
   if (tree.kind !== 'alias') {
     return false;
   }
-  const inter = tree.children[0];
+  const [inter] = tree.children;
   if (inter.kind !== 'intersection') {
     return false;
   }
@@ -28,8 +28,11 @@ function testKeyofListsKeys() {
     return false;
   }
   // "nope" is flagged as absent, and the failing level is pinned.
-  return keyof.valueInKeys === false && keyof.passes === false &&
-    inter.children.find((_) => treeSnipIsString(_))?.passes === true;
+  return (
+    keyof.valueInKeys === false &&
+    keyof.passes === false &&
+    inter.children.find((_) => treeSnipIsString(_))?.passes === true
+  );
 }
 /**
  * @param {object} node - A tree node.
@@ -39,24 +42,33 @@ function treeSnipIsString(node) {
   return node.summary === 'string';
 }
 function testDidYouMean() {
-  return suggestKey('camra', ['camera', 'light']) === 'camera' &&
+  return (
+    suggestKey('camra', ['camera', 'light']) === 'camera' &&
     suggestKey('nope', ['camera', 'light']) === undefined &&
-    suggestKey('cam', ['camera', 'light']) === undefined;
+    suggestKey('cam', ['camera', 'light']) === undefined
+  );
 }
 function testAliasClimb() {
   prepareMap();
-  const tree = buildTypeTree('ComponentMap', {camera: {fov: 1}}, 'ComponentMap');
+  const tree = buildTypeTree('ComponentMap', {
+    camera: {
+      fov: 1,
+    },
+  }, 'ComponentMap');
   if (tree.kind !== 'alias' || !tree.children?.length) {
     return false;
   }
-  const obj = tree.children[0];
+  const [obj] = tree.children;
   return obj.kind === 'object' && obj.children.some((_) => _.label.startsWith('camera:'));
 }
 function testUnionMarks() {
   reset();
   const tree = buildTypeTree(expandType('"a" | "b"'), 'c', 'root');
-  return tree.kind === 'union' && tree.children.length === 2 &&
-    tree.children.every((_) => _.passes === false);
+  return (
+    tree.kind === 'union' &&
+    tree.children.length === 2 &&
+    tree.children.every((_) => _.passes === false)
+  );
 }
 function deepType(n) {
   let t = 'number';
@@ -79,7 +91,9 @@ function testUnlimitedDepth() {
 }
 function testConditionDescends() {
   reset();
-  const tree = buildTypeTree(expandType('"camera" extends "camera" | "other" ? {fov: number} : string'), {fov: 'x'}, 'data');
+  const tree = buildTypeTree(expandType('"camera" extends "camera" | "other" ? {fov: number} : string'), {
+    fov: 'x',
+  }, 'data');
   if (tree.kind !== 'condition' || !tree.children?.length) {
     return false;
   }
@@ -91,9 +105,12 @@ function testConditionDescends() {
   if (entered.entered !== true || skipped.entered !== false) {
     return false;
   }
-  const branch = tree.children[0];
-  return branch.kind === 'object' && branch.passes === 'shape' &&
-    branch.children.some((_) => _.label.startsWith('fov:') && _.passes === false);
+  const [branch] = tree.children;
+  return (
+    branch.kind === 'object' &&
+    branch.passes === 'shape' &&
+    branch.children.some((_) => _.label.startsWith('fov:') && _.passes === false)
+  );
 }
 function testTransparentWrapperUnwraps() {
   // The user's exact dead end: NonNullable<EntityShape["camera"]> must
@@ -104,19 +121,24 @@ function testTransparentWrapperUnwraps() {
   if (tree.kind !== 'reference' || !tree.children?.length) {
     return false;
   }
-  const selected = tree.children[0];
+  const [selected] = tree.children;
   if (selected.kind !== 'indexedAccess' || !selected.children?.length) {
     return false;
   }
-  const shape = selected.children[0];
+  const [shape] = selected.children;
   return shape.kind === 'object' && shape.children.some((_) => _.label.startsWith('fov:'));
 }
 function testIndexedAccessDirect() {
   reset();
   registerTypedef('EntityShape', expandType('{camera: {fov: number}}'));
-  const tree = buildTypeTree(expandType('EntityShape["camera"]'), {fov: 60}, 'camera');
-  return tree.kind === 'indexedAccess' && tree.passes === true &&
-    tree.children?.[0]?.kind === 'object';
+  const tree = buildTypeTree(expandType('EntityShape["camera"]'), {
+    fov: 60,
+  }, 'camera');
+  return (
+    tree.kind === 'indexedAccess' &&
+    tree.passes === true &&
+    tree.children?.[0]?.kind === 'object'
+  );
 }
 function testPartialExpands() {
   reset();
@@ -125,18 +147,26 @@ function testPartialExpands() {
   if (tree.kind !== 'reference' || !tree.children?.length) {
     return false;
   }
-  const shape = tree.children[0];
-  return shape.kind === 'object' &&
+  const [shape] = tree.children;
+  return (
+    shape.kind === 'object' &&
     shape.children.some((_) => _.label.startsWith('a:')) &&
-    shape.children.some((_) => _.label.startsWith('b:'));
+    shape.children.some((_) => _.label.startsWith('b:'))
+  );
 }
 function testPickExpands() {
   reset();
   registerTypedef('Box', expandType('{a: number, b: string}'));
-  const tree = buildTypeTree(expandType('Pick<Box, "a">'), {a: 1}, 'p');
-  const shape = tree.children?.[0];
-  return tree.kind === 'reference' && shape?.kind === 'object' &&
-    shape.children.length === 1 && shape.children[0].label.startsWith('a:');
+  const tree = buildTypeTree(expandType('Pick<Box, "a">'), {
+    a: 1,
+  }, 'p');
+  const [shape] = tree.children ?? [];
+  return (
+    tree.kind === 'reference' &&
+    shape?.kind === 'object' &&
+    shape.children.length === 1 &&
+    shape.children[0].label.startsWith('a:')
+  );
 }
 function testClassClimbs() {
   reset();
@@ -160,7 +190,12 @@ function testRecursiveTypedefTerminates() {
   const tree = buildTypeTree('Node', {}, 'Node');
   const child = tree.children?.[0]?.children?.find((_) => _.label.startsWith('child:'));
   // Terminates: the recursive alias itself carries the fold-back note.
-  return !!child && child.kind === 'alias' && !child.children && child.detail.includes('Recursive');
+  return (
+    !!child &&
+    child.kind === 'alias' &&
+    !child.children &&
+    child.detail.includes('Recursive')
+  );
 }
 function testObjectChildrenProbeValues() {
   // Regression: property levels probed the whole parent object, so a
@@ -168,8 +203,15 @@ function testObjectChildrenProbeValues() {
   // their own value: name ✗, email ✓.
   reset();
   registerTypedef('User', expandType('{id: number, name: string, email: string, passwordHash: string}'));
-  const tree = buildTypeTree(expandType('Pick<User, "name" | "email">'), {name: 1, email: 'a@b.c'}, 'userInfo');
-  const shape = tree.children?.[0];
+  const tree = buildTypeTree(
+    expandType('Pick<User, "name" | "email">'),
+    {
+      name: 1,
+      email: 'a@b.c',
+    },
+    'userInfo',
+  );
+  const [shape] = tree.children ?? [];
   if (tree.kind !== 'reference' || shape?.kind !== 'object') {
     return false;
   }
@@ -183,28 +225,59 @@ function testAbsentOptionalKeysPass() {
   reset();
   registerTypedef('Box', expandType('{a: number, b: string}'));
   const tree = buildTypeTree(expandType('Partial<Box>'), {}, 'p');
-  const shape = tree.children?.[0];
-  return shape?.kind === 'object' &&
+  const [shape] = tree.children ?? [];
+  return (
+    shape?.kind === 'object' &&
     shape.children.length === 2 &&
-    shape.children.every((_) => _.passes === true);
+    shape.children.every((_) => _.passes === true)
+  );
 }
 function testTreeExtrasOmit() {
   // The user's Pick/Omit case: excess keys render in the tree with the
   // removal wording and a dotted fix path, not just in Diagnosis.
   reset();
   registerTypedef('User', expandType('{id: number, name: string, email: string}'));
-  const tree = buildTypeTree(expandType('Pick<User, "name" | "email">'), {name: 1, email: 'a', id: 2}, 'userInfo', undefined, 'userInfo');
-  const shape = tree.children?.[0];
+  const tree = buildTypeTree(
+    expandType('Pick<User, "name" | "email">'),
+    {
+      name: 1,
+      email: 'a',
+      id: 2,
+    },
+    'userInfo',
+    undefined,
+    'userInfo',
+  );
+  const [shape] = tree.children ?? [];
   const extra = shape?.children?.find((_) => _.kind === 'extra');
-  return shape?.kind === 'object' && !!extra && extra.passes === false &&
-    extra.detail.includes('not selected by') && extra.detail.includes('Pick') &&
-    extra.fix === 'Remove `userInfo.id`.' && extra.label.startsWith('id:');
+  return (
+    shape?.kind === 'object' &&
+    !!extra &&
+    extra.passes === false &&
+    extra.detail.includes('not selected by') &&
+    extra.detail.includes('Pick') &&
+    extra.fix === 'Remove `userInfo.id`.' &&
+    extra.label.startsWith('id:')
+  );
 }
 function testTreeExtrasPlain() {
   reset();
-  const tree = buildTypeTree(expandType('{fov: number}'), {fov: 60, fovv: 1}, 'options', undefined, 'options');
+  const tree = buildTypeTree(
+    expandType('{fov: number}'),
+    {
+      fov: 60,
+      fovv: 1,
+    },
+    'options',
+    undefined,
+    'options',
+  );
   const extra = tree.children?.find((_) => _.kind === 'extra');
-  return !!extra && extra.passes === false && extra.detail.includes('check spelling');
+  return (
+    !!extra &&
+    extra.passes === false &&
+    extra.detail.includes('check spelling')
+  );
 }
 function testAbsentOptionalUnionPasses() {
   // Issue #261: an absent optional union (`powerPreference?: 'a'|'b'|...`)
@@ -214,17 +287,35 @@ function testAbsentOptionalUnionPasses() {
   reset();
   const tree = buildTypeTree(expandType('{powerPreference?: \'default\' | \'high-performance\' | \'low-power\'}'), {}, 'options');
   const child = tree.children?.find((_) => _.label.startsWith('powerPreference:'));
-  return !!child && child.passes === true && !child.children &&
-    child.optional === true && child.detail === undefined;
+  return (
+    !!child &&
+    child.passes === true &&
+    !child.children &&
+    child.optional === true &&
+    child.detail === undefined
+  );
 }
 function testTreeExtrasUnmarkedWhenLenient() {
   reset();
   const prev = options.exactObjects;
   options.exactObjects = false;
   try {
-    const tree = buildTypeTree(expandType('{fov: number}'), {fov: 60, fovv: 1}, 'options', undefined, 'options');
+    const tree = buildTypeTree(
+      expandType('{fov: number}'),
+      {
+        fov: 60,
+        fovv: 1,
+      },
+      'options',
+      undefined,
+      'options',
+    );
     const extra = tree.children?.find((_) => _.kind === 'extra');
-    return !!extra && extra.passes === undefined && !extra.fix;
+    return (
+      !!extra &&
+      extra.passes === undefined &&
+      !extra.fix
+    );
   } finally {
     options.exactObjects = prev;
   }
@@ -237,9 +328,13 @@ function testTreeExtrasUnmarkedWhenLenient() {
 function testSetRootAdmitsShape() {
   reset();
   const tree = buildTypeTree(expandType('Set<string | number>'), new Set(['admin', true]), 'items', undefined, 'items');
-  return tree.kind === 'set' && tree.passes === 'shape' &&
+  return (
+    tree.kind === 'set' &&
+    tree.passes === 'shape' &&
     tree.children?.length === 2 &&
-    tree.children[0].passes === true && tree.children[1].passes === false;
+    tree.children[0].passes === true &&
+    tree.children[1].passes === false
+  );
 }
 /**
  * A non-`Set` value against a `Set` type stays a hard failure: there is no
@@ -258,9 +353,15 @@ function testSetRootStaysRedWhenNotASet() {
  */
 function testObjectRootAdmitsShape() {
   reset();
-  const bad = buildTypeTree(expandType('{fov: number}'), {fov: 'x'}, 'options', undefined, 'options');
+  const bad = buildTypeTree(expandType('{fov: number}'), {
+    fov: 'x',
+  }, 'options', undefined, 'options');
   const arr = buildTypeTree(expandType('{fov: number}'), [1], 'options', undefined, 'options');
-  return bad.kind === 'object' && bad.passes === 'shape' && arr.passes === false;
+  return (
+    bad.kind === 'object' &&
+    bad.passes === 'shape' &&
+    arr.passes === false
+  );
 }
 /**
  * Failing union members sort first, with shape-mismatches counting as
@@ -270,8 +371,12 @@ function testObjectRootAdmitsShape() {
 function testUnionSortKeepsShapeMemberFirst() {
   reset();
   const tree = buildTypeTree(expandType('Set<string> | number'), new Set([1]), 'v', undefined, 'v');
-  return tree.kind === 'union' && tree.children?.length === 2 &&
-    tree.children[0].kind === 'set' && tree.children[0].passes === 'shape';
+  return (
+    tree.kind === 'union' &&
+    tree.children?.length === 2 &&
+    tree.children[0].kind === 'set' &&
+    tree.children[0].passes === 'shape'
+  );
 }
 const tests = [
   testSetRootAdmitsShape,

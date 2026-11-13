@@ -1,5 +1,4 @@
 import {canonicalize} from '../../src-runtime/canonicalize.js';
-
 /**
  * Round-trips one canonical document through JSON: what both readers
  * produce must be plain data (no positions, no TS nodes, no functions).

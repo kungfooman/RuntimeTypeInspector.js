@@ -1,9 +1,9 @@
 import {validateType} from './validateType.js';
 import {registerTypedef, typedefs} from './registerTypedef.js';
 import {registerClass} from './registerClass.js';
-import {expandType} from '../src-transpiler/expandType.js';
-import {getTypeKeys} from './getTypeKeys.js';
-import {createType} from './createType.js';
+import {expandType   } from '../src-transpiler/expandType.js';
+import {getTypeKeys  } from './getTypeKeys.js';
+import {createType   } from './createType.js';
 import {evaluateCondition, extendsCheck} from './evaluateCondition.js';
 const warn = () => undefined;
 /**
@@ -41,13 +41,16 @@ function prepare() {
   registerClass(Component);
   registerClass(CameraComponent);
   // Static shape used by the key machinery.
-  registerTypedef('Entity', {
-    type: 'object',
-    properties: {
-      camera: 'CameraComponent',
-      name: 'string',
+  registerTypedef(
+    'Entity',
+    {
+      type: 'object',
+      properties: {
+        camera: 'CameraComponent',
+        name: 'string',
+      },
     },
-  });
+  );
 }
 /**
  * Already working: NonNullable unwraps while rejecting null.
@@ -113,19 +116,26 @@ function testAsRemap() {
 // Partial makes every prop optional but still checks present ones.
 function testPartial() {
   prepare();
-  registerTypedef('Box', {type: 'object', properties: {a: 'number', b: 'string'}});
+  registerTypedef('Box', {
+    type: 'object',
+    properties: {
+      a: 'number',
+      b: 'string',
+    },
+  });
   const expect = expandType('Partial<Box>');
   // All props optional now: empty and partial pass, wrong types still fail.
-  if (!validateType({}, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (!validateType({a: 1}, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({a: 'x'}, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType(null, expect, 'loc', 'name', true, warn, 0)) {
+  const passesEmpty = validateType({}, expect, 'loc', 'name', true, warn, 0);
+  const partialValue = {
+    a: 1,
+  };
+  const passesPartial = validateType(partialValue, expect, 'loc', 'name', true, warn, 0);
+  const wrongValue = {
+    a: 'x',
+  };
+  const acceptsWrong = validateType(wrongValue, expect, 'loc', 'name', true, warn, 0);
+  const acceptsNull = validateType(null, expect, 'loc', 'name', true, warn, 0);
+  if (passesEmpty === false || passesPartial === false || acceptsWrong || acceptsNull) {
     return false;
   }
   return true;
@@ -133,16 +143,25 @@ function testPartial() {
 // Pick keeps only the named keys, still required.
 function testPick() {
   prepare();
-  registerTypedef('Box', {type: 'object', properties: {a: 'number', b: 'string'}});
+  registerTypedef('Box', {
+    type: 'object',
+    properties: {
+      a: 'number',
+      b: 'string',
+    },
+  });
   const expect = expandType('Pick<Box, "a">');
-  if (!validateType({a: 1}, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({a: 'x'}, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
+  const rightValue = {
+    a: 1,
+  };
+  const passesRight = validateType(rightValue, expect, 'loc', 'name', true, warn, 0);
+  const wrongValue = {
+    a: 'x',
+  };
+  const acceptsWrong = validateType(wrongValue, expect, 'loc', 'name', true, warn, 0);
   // Picked keys stay required.
-  if (validateType({}, expect, 'loc', 'name', true, warn, 0)) {
+  const acceptsEmpty = validateType({}, expect, 'loc', 'name', true, warn, 0);
+  if (passesRight === false || acceptsWrong || acceptsEmpty) {
     return false;
   }
   return true;
@@ -150,16 +169,25 @@ function testPick() {
 // Omit drops the named keys and keeps the rest required.
 function testOmit() {
   prepare();
-  registerTypedef('Box', {type: 'object', properties: {a: 'number', b: 'string'}});
+  registerTypedef('Box', {
+    type: 'object',
+    properties: {
+      a: 'number',
+      b: 'string',
+    },
+  });
   const expect = expandType('Omit<Box, "a">');
-  if (!validateType({b: 'x'}, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({b: 1}, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
+  const rightValue = {
+    b: 'x',
+  };
+  const passesRight = validateType(rightValue, expect, 'loc', 'name', true, warn, 0);
+  const wrongValue = {
+    b: 1,
+  };
+  const acceptsWrong = validateType(wrongValue, expect, 'loc', 'name', true, warn, 0);
   // Remaining keys stay required.
-  if (validateType({}, expect, 'loc', 'name', true, warn, 0)) {
+  const acceptsEmpty = validateType({}, expect, 'loc', 'name', true, warn, 0);
+  if (passesRight === false || acceptsWrong || acceptsEmpty) {
     return false;
   }
   return true;
@@ -230,11 +258,21 @@ function testGenericTypedefInstantiation() {
   // Generic references instantiate by substituting arguments for the
   // typedef's template parameters (harvested from `@template` lines).
   prepare();
-  registerTypedef('Box', {type: 'object', properties: {content: 'T'}}, ['T']);
-  if (!validateType({content: 1}, expandType('Box<number>'), 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({content: 'x'}, expandType('Box<number>'), 'loc', 'name', true, warn, 0)) {
+  registerTypedef('Box', {
+    type: 'object',
+    properties: {
+      content: 'T',
+    },
+  }, ['T']);
+  const rightValue = {
+    content: 1,
+  };
+  const passesRight = validateType(rightValue, expandType('Box<number>'), 'loc', 'name', true, warn, 0);
+  const wrongValue = {
+    content: 'x',
+  };
+  const acceptsWrong = validateType(wrongValue, expandType('Box<number>'), 'loc', 'name', true, warn, 0);
+  if (passesRight === false || acceptsWrong) {
     return false;
   }
   return true;
@@ -251,35 +289,82 @@ function prepareCameraTower() {
   registerClass(Component);
   registerClass(Color);
   registerClass(CamComponent);
-  registerTypedef('Color', {type: 'object', properties: {r: 'number', g: 'number', b: 'number', a: 'number'}});
-  registerTypedef('CamComponent', {type: 'object', properties: {clearColor: 'Color', fov: 'number'}});
-  registerTypedef('CamEntity', {
-    type: 'object',
-    properties: {
-      camera: {type: 'union', members: ['CamComponent', 'undefined'], readonly: true},
-      store: {type: 'record', key: 'string', val: 'Component'},
-      tags: {type: 'array', elementType: 'string'},
-      name: 'string',
-      addComponent: 'Function',
+  registerTypedef(
+    'Color',
+    {
+      type: 'object',
+      properties: {
+        r: 'number',
+        g: 'number',
+        b: 'number',
+        a: 'number',
+      },
     },
-  });
+  );
+  registerTypedef(
+    'CamComponent',
+    {
+      type: 'object',
+      properties: {
+        clearColor: 'Color',
+        fov: 'number',
+      },
+    },
+  );
+  registerTypedef(
+    'CamEntity',
+    {
+      type: 'object',
+      properties: {
+        camera: {
+          type: 'union',
+          members: ['CamComponent', 'undefined'],
+          readonly: true,
+        },
+        store: {
+          type: 'record',
+          key: 'string',
+          val: 'Component',
+        },
+        tags: {
+          type: 'array',
+          elementType: 'string',
+        },
+        name: 'string',
+        addComponent: 'Function',
+      },
+    },
+  );
   registerTypedef('CamMap', expandType('{ [K in keyof CamEntity as NonNullable<CamEntity[K]> extends Component ? K : never]: NonNullable<CamEntity[K]> }'));
   registerTypedef('CamName', expandType('keyof CamMap & string'));
   registerTypedef('CamWritableKeys', expandType('{ [P in keyof T]-?: IfEquals<{ [Q in P]: T[P] }, { -readonly [Q in P]: T[P] }, P> }[keyof T]'), ['T']);
   registerTypedef('CamOptionKeys', expandType('{ [K in CamWritableKeys<C>]: K extends \'system\' | \'entity\' | `_${string}` ? never : NonNullable<C[K]> extends Function ? never : K }[CamWritableKeys<C>]'), ['C']); // eslint-disable-line no-template-curly-in-string
   registerTypedef('CamOptionsOf', expandType('Partial<Pick<C, Extract<CamOptionKeys<C>, keyof C>>>'), ['C']);
-  registerTypedef('CamOverrides', {
-    type: 'object',
-    properties: {
-      camera: {
-        type: 'object',
-        properties: {
-          calculateProjection: {type: 'Function', optional: true},
-          clearColor: {type: 'union', members: ['Color', {type: 'array', elementType: 'number'}], optional: true},
+  registerTypedef(
+    'CamOverrides',
+    {
+      type: 'object',
+      properties: {
+        camera: {
+          type: 'object',
+          properties: {
+            calculateProjection: {
+              type: 'Function',
+              optional: true,
+            },
+            clearColor: {
+              type: 'union',
+              members: ['Color', {
+                type: 'array',
+                elementType: 'number',
+              }],
+              optional: true,
+            },
+          },
         },
       },
     },
-  });
+  );
   registerTypedef('CamOverridesOf', expandType('K extends keyof CamOverrides ? CamOverrides[K] : {}'), ['K']);
   registerTypedef('CamMerged', expandType('Omit<CamOptionsOf<CamMap[K]>, keyof CamOverridesOf<K>> & CamOverridesOf<K>'), ['K']);
   registerTypedef('CamOptions', expandType('{ [P in keyof CamMerged<K>]: CamMerged<K>[P] }'), ['K']);
@@ -316,10 +401,25 @@ function testNonNullableIndexedAccessKeys() {
 function testConcreteShapesDoNotExtendClass() {
   prepareCameraTower();
   const shapes = [
-    {type: 'record', key: 'string', val: 'Component'},
-    {type: 'array', elementType: 'string'},
-    {type: 'object', properties: {a: 'number'}},
-    {type: 'function', parameters: []},
+    {
+      type: 'record',
+      key: 'string',
+      val: 'Component',
+    },
+    {
+      type: 'array',
+      elementType: 'string',
+    },
+    {
+      type: 'object',
+      properties: {
+        a: 'number',
+      },
+    },
+    {
+      type: 'function',
+      parameters: [],
+    },
   ];
   for (const shape of shapes) {
     if (extendsCheck(shape, 'Component') !== false) {
@@ -361,16 +461,21 @@ function testComponentMapDropsComplexMembers() {
 function testNestedPartialPickValidates() {
   prepareCameraTower();
   const expect = expandType('CamOptionsOf<CamComponent>');
-  if (!validateType({clearColor: new Color(), fov: 1}, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (!validateType({}, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({clearColor: 'x'}, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({fov: 'x'}, expect, 'loc', 'name', true, warn, 0)) {
+  const rightValue = {
+    clearColor: new Color(),
+    fov: 1,
+  };
+  const passesRight = validateType(rightValue, expect, 'loc', 'name', true, warn, 0);
+  const passesEmpty = validateType({}, expect, 'loc', 'name', true, warn, 0);
+  const wrongColor = {
+    clearColor: 'x',
+  };
+  const acceptsWrongColor = validateType(wrongColor, expect, 'loc', 'name', true, warn, 0);
+  const wrongFov = {
+    fov: 'x',
+  };
+  const acceptsWrongFov = validateType(wrongFov, expect, 'loc', 'name', true, warn, 0);
+  if (passesRight === false || passesEmpty === false || acceptsWrongColor || acceptsWrongFov) {
     return false;
   }
   return true;
@@ -389,9 +494,16 @@ function testMergedTowerEndToEnd() {
   }
   const expect = expandType('CamOptions<"camera">');
   const passing = [
-    {clearColor: new Color()},
-    {clearColor: [0.5, 0.6, 0.9, 1], fov: 60},
-    {fov: 60},
+    {
+      clearColor: new Color(),
+    },
+    {
+      clearColor: [0.5, 0.6, 0.9, 1],
+      fov: 60,
+    },
+    {
+      fov: 60,
+    },
     {},
   ];
   for (const value of passing) {
@@ -400,9 +512,15 @@ function testMergedTowerEndToEnd() {
     }
   }
   const failing = [
-    {clearColor: 'x'},
-    {fov: 'x'},
-    {nope: 1},
+    {
+      clearColor: 'x',
+    },
+    {
+      fov: 'x',
+    },
+    {
+      nope: 1,
+    },
   ];
   for (const value of failing) {
     if (validateType(value, expect, 'loc', 'data', true, warn, 0)) {
@@ -422,15 +540,24 @@ function testMergedIntersectionWholeExcess() {
   prepareCameraTower();
   const expect = expandType('CamMerged<"camera">');
   const passing = [
-    {clearColor: [0.5, 0.6, 0.9, 1]},
-    {clearColor: new Color(), calculateProjection: () => {}},
+    {
+      clearColor: [0.5, 0.6, 0.9, 1],
+    },
+    {
+      clearColor: new Color(),
+      calculateProjection: () => {},
+    },
   ];
   for (const value of passing) {
     if (!validateType(value, expect, 'loc', 'data', true, warn, 0)) {
       return false;
     }
   }
-  const failing = [{nope: 1}, {clearColor: 'x'}];
+  const failing = [{
+    nope: 1,
+  }, {
+    clearColor: 'x',
+  }];
   for (const value of failing) {
     if (validateType(value, expect, 'loc', 'data', true, warn, 0)) {
       return false;

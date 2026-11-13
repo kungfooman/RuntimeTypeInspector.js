@@ -13,6 +13,10 @@ import {recurseSubstitute} from "./substitutes.js";
 function substituteIndexedAccess(type, search, replace, warn) {
   const index = recurseSubstitute(type.index, search, replace, warn);
   const object = recurseSubstitute(type.object, search, replace, warn);
-  return index === type.index && object === type.object ? type : {...type, index, object};
+  return index === type.index && object === type.object ? type : {
+    ...type,
+    index,
+    object,
+  };
 }
 export {substituteIndexedAccess};

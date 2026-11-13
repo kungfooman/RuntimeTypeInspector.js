@@ -1,5 +1,5 @@
 import {unwrapMember} from "./unwrapMember.js";
-import {literalOf} from "./literalOf.js";
+import {literalOf   } from "./literalOf.js";
 import {isArrayValue} from "./isArrayValue.js";
 /**
  * Collects template inference candidates by walking a runtime value alongside
@@ -29,13 +29,18 @@ function collectCandidates(value, expect, out = []) {
     // Bare position (`T`, `string`, `"a"`): only unquoted names can be keys,
     // quoted strings and primitives are literals. Membership in `templates`
     // is checked by the caller, not here.
-    if (expect.length >= 2 && (expect[0] === '"' && expect[expect.length - 1] === '"' ||
-        expect[0] === "'" && expect[expect.length - 1] === "'")) {
+    const startsDouble = expect[0] === '"' && expect[expect.length - 1] === '"';
+    const startsSingle = expect[0] === "'" && expect[expect.length - 1] === "'";
+    if (expect.length >= 2 && (startsDouble || startsSingle)) {
       return out;
     }
     const literal = literalOf(value);
     if (literal !== undefined) {
-      out.push({key: expect, literal, value});
+      out.push({
+        key: expect,
+        literal,
+        value,
+      });
     }
     return out;
   }
@@ -64,7 +69,8 @@ function collectCandidates(value, expect, out = []) {
       }
       if (Array.isArray(expect.indexSignatures)) {
         for (const signature of expect.indexSignatures) {
-          if (signature && signature.type === 'indexSignature' && signature.indexType !== undefined) {
+          const isIndexed = signature && signature.type === 'indexSignature';
+          if (isIndexed && signature.indexType !== undefined) {
             for (const key of Object.keys(value)) {
               collectCandidates(value[key], signature.indexType, out);
             }

@@ -2,7 +2,7 @@ import {TypePanel, storedMapCheckWindowCap, storedMapCheckWindowMinTotalMs} from
 import {options} from './options.js';
 import {recordCheck, recordMapRide, recordSkip, recordMapScan, recordSetScan, recordArrayScan, recordObjectScan, getCheckStats, resetCheckStats} from './checkStats.js';
 import {reportedKeys} from './reportedKeys.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType  } from '../src-transpiler/expandType.js';
 import {collectFailPaths, explainMismatch} from './explainMismatch.js';
 import {buildTypeTree} from './typeTree.js';
 import {registerClass, classes} from './registerClass.js';
@@ -126,7 +126,14 @@ class FakeNode {
     return current.connectedRoot === true;
   }
   getBoundingClientRect() {
-    return {left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0};
+    return {
+      left: 0,
+      top: 0,
+      right: 0,
+      bottom: 0,
+      width: 0,
+      height: 0,
+    };
   }
 }
 class FakeElement extends FakeNode {
@@ -258,7 +265,10 @@ function installFakeBrowser() {
       return Object.keys(store).length;
     },
   };
-  globalThis.location = {hash: '', href: 'http://localhost/'};
+  globalThis.location = {
+    hash: '',
+    href: 'http://localhost/',
+  };
   return () => {
     for (const key of Object.keys(saved)) {
       if (saved[key] === undefined) {
@@ -271,8 +281,20 @@ function installFakeBrowser() {
 }
 function stubWarn(loc, name) {
   return {
-    loc, name, expect: {type: 'object', properties: {a: 'number'}}, value: {a: 1},
-    msg: `${loc} ${name} broke`, hits: 1, detailStrings: ['boom'],
+    loc,
+    name,
+    expect: {
+      type: 'object',
+      properties: {
+        a: 'number',
+      },
+    },
+    value: {
+      a: 1,
+    },
+    msg: `${loc} ${name} broke`,
+    hits: 1,
+    detailStrings: ['boom'],
   };
 }
 /**
@@ -456,20 +478,36 @@ function testPanelMaximizeRestore() {
       return false;
     }
     const {divAll} = TypePanel;
-    panel.titlebar.fire('mousedown', {clientX: 100, clientY: 100, target: panel.titlebar});
-    globalThis.document.fire('mousemove', {clientX: 500, clientY: 500});
+    panel.titlebar.fire('mousedown', {
+      clientX: 100,
+      clientY: 100,
+      target: panel.titlebar,
+    });
+    globalThis.document.fire('mousemove', {
+      clientX: 500,
+      clientY: 500,
+    });
     globalThis.document.fire('mouseup', {});
     if (divAll.style.left !== '8px' || divAll.style.top !== '8px') {
       return false;
     }
     const grip = panel.div.children.find((_) => _?.dataset?.dir === 'e');
-    grip.fire('mousedown', {clientX: 100, clientY: 100, target: grip});
-    globalThis.document.fire('mousemove', {clientX: 500, clientY: 100});
+    grip.fire('mousedown', {
+      clientX: 100,
+      clientY: 100,
+      target: grip,
+    });
+    globalThis.document.fire('mousemove', {
+      clientX: 500,
+      clientY: 100,
+    });
     globalThis.document.fire('mouseup', {});
     if (!String(panel.div.style.width).includes('calc')) {
       return false;
     }
-    panel.titlebar.fire('dblclick', {target: panel.buttonMaximize});
+    panel.titlebar.fire('dblclick', {
+      target: panel.buttonMaximize,
+    });
     if (panel.div.dataset.maximized !== 'true') {
       return false;
     }
@@ -477,7 +515,9 @@ function testPanelMaximizeRestore() {
     if (globalThis.localStorage.getItem('rti-panel-geometry') !== null) {
       return false;
     }
-    panel.titlebar.fire('dblclick', {target: panel.titlebar});
+    panel.titlebar.fire('dblclick', {
+      target: panel.titlebar,
+    });
     if (panel.div.dataset.maximized === 'true' || panel.buttonMaximize.textContent !== '□') {
       return false;
     }
@@ -512,8 +552,15 @@ function testCompareMaximizeRestore() {
     if (!String(win.el.style.width).includes('calc')) {
       return false;
     }
-    win.titlebar.fire('mousedown', {clientX: 100, clientY: 100, target: win.titlebar});
-    globalThis.document.fire('mousemove', {clientX: 500, clientY: 500});
+    win.titlebar.fire('mousedown', {
+      clientX: 100,
+      clientY: 100,
+      target: win.titlebar,
+    });
+    globalThis.document.fire('mousemove', {
+      clientX: 500,
+      clientY: 500,
+    });
     globalThis.document.fire('mouseup', {});
     if (win.el.style.left !== '8px' || win.el.style.top !== '8px') {
       return false;
@@ -572,7 +619,7 @@ function rowDetails(node, key) {
     }
     const kids = current.children ?? [];
     if (kids.length === 3 && kids[0]?.textContent === key && kids[2]?.tag === 'details') {
-      found = kids[2];
+      [, , found] = kids;
       return;
     }
     for (const child of kids) {
@@ -600,8 +647,11 @@ function actualFor(value, expect, name) {
  */
 function testActualMapFailureHighlighted() {
   return withPanel(() => {
-    const node = actualFor(new Map([['apiKey', null], ['other', 'x']]),
-                           expandType('Map<string, string | number>'), 'config');
+    const node = actualFor(
+      new Map([['apiKey', null], ['other', 'x']]),
+      expandType('Map<string, string | number>'),
+      'config',
+    );
     if (!node || node.children[0]?.open !== true) {
       return false;
     }
@@ -616,8 +666,18 @@ function testActualMapFailureHighlighted() {
  */
 function testActualNestedFailureExpands() {
   return withPanel(() => {
-    const node = actualFor({a: {b: 1}, z: {y: 2}},
-                           expandType('{a: {b: string}, z: {y: number}}'), 'config');
+    const node = actualFor(
+      {
+        a: {
+          b: 1,
+        },
+        z: {
+          y: 2,
+        },
+      },
+      expandType('{a: {b: string}, z: {y: number}}'),
+      'config',
+    );
     if (!node) {
       return false;
     }
@@ -653,7 +713,10 @@ function testActualFailuresRevealPastBatch() {
       value[`k${i}`] = i;
     }
     value.k29 = 'x';
-    const node = actualFor(value, {type: 'object', properties}, 'v');
+    const node = actualFor(value, {
+      type: 'object',
+      properties,
+    }, 'v');
     if (!node || !textOf(node).includes('k29')) {
       return false;
     }
@@ -668,7 +731,11 @@ function testActualFailuresRevealPastBatch() {
  */
 function testActualSnapshotMapHighlighted() {
   return withPanel(() => {
-    const snapshot = {$type: 'Map', size: 1, entries: [['apiKey', null]]};
+    const snapshot = {
+      $type: 'Map',
+      size: 1,
+      entries: [['apiKey', null]],
+    };
     const node = renderActualValue(snapshot, 'config', new Set(["config.get('apiKey')"]));
     if (!node || textOf(node).includes('$type')) {
       return false;
@@ -712,8 +779,9 @@ function testActualOtherTypesRender() {
     ];
     for (const [value, want] of cases) {
       const node = renderActualValue(value, 'v', new Set());
-      if (!node || !textOf(node).includes(want) ||
-          findAllByClass(node, 'rti-fail-hit').length !== 0) {
+      const showsWant = node && textOf(node).includes(want);
+      const hits = node ? findAllByClass(node, 'rti-fail-hit').length : -1;
+      if (showsWant === false || hits !== 0) {
         return false;
       }
     }
@@ -731,8 +799,20 @@ function testActualBranchHeaders() {
     if (!live || !textOf(live).includes('array [2]')) {
       return false;
     }
-    const snap = renderActualValue({$type: 'Uint8Array', length: 2, values: [1, 2]}, 'v', new Set());
-    return !!snap && textOf(snap).includes('Uint8Array(2)') && !textOf(snap).includes('$type');
+    const snap = renderActualValue(
+      {
+        $type: 'Uint8Array',
+        length: 2,
+        values: [1, 2],
+      },
+      'v',
+      new Set(),
+    );
+    return (
+      !!snap &&
+      textOf(snap).includes('Uint8Array(2)') &&
+      !textOf(snap).includes('$type')
+    );
   });
 }
 /**
@@ -768,16 +848,19 @@ function testActualCustomClassHighlighted() {
  */
 function testTypeTreeSetRootWarns() {
   return withPanel((panel) => {
-    const tree = buildTypeTree(expandType('Set<string | number>'), new Set(['admin', true]),
-                               'items', undefined, 'items');
+    const tree = buildTypeTree(expandType('Set<string | number>'), new Set(['admin', true]), 'items', undefined, 'items');
     if (tree.passes !== 'shape') {
       return false;
     }
     const box = panel.renderTypeNode(tree, 0);
-    const details = box.children[0];
-    const mark = details?.children[0]?.children[0];
-    return mark?.textContent.includes('⚠') && mark?.className.includes('rti-warn') &&
-      findAllByClass(box, 'rti-warn').length === 1 && details?.open === true;
+    const [details] = box.children;
+    const [mark] = details?.children[0]?.children ?? [];
+    return (
+      mark?.textContent.includes('⚠') &&
+      mark?.className.includes('rti-warn') &&
+      findAllByClass(box, 'rti-warn').length === 1 &&
+      details?.open === true
+    );
   });
 }
 /**
@@ -787,8 +870,15 @@ function testTypeTreeSetRootWarns() {
  */
 function testActualCompareHighlightsMap() {
   return withPanel((panel) => {
-    const warnObj = {loc: 'L1', name: 'config', expect: expandType('Map<string, string>'),
-      value: new Map([['apiKey', null]]), msg: 'm', hits: 1, detailStrings: []};
+    const warnObj = {
+      loc: 'L1',
+      name: 'config',
+      expect: expandType('Map<string, string>'),
+      value: new Map([['apiKey', null]]),
+      msg: 'm',
+      hits: 1,
+      detailStrings: [],
+    };
     const node = actualPane(panel, warnObj);
     if (node.tag === 'pre') {
       return false;
@@ -825,15 +915,18 @@ function testMinimizeRestoreTaskbar() {
       return false;
     }
     const [minEntry] = panel.taskbarWins.children;
-    if (panel.taskbarWins.children.length !== 1 ||
-        minEntry.className.includes('rti-taskbar-active')) {
+    const isOnlyEntry = panel.taskbarWins.children.length === 1;
+    if (isOnlyEntry === false || minEntry.className.includes('rti-taskbar-active')) {
       return false;
     }
     panel.restoreCompare(key);
     const [entry] = panel.taskbarWins.children;
-    return !win.minimized && win.el.style.display === '' &&
+    return (
+      !win.minimized &&
+      win.el.style.display === '' &&
       panel.taskbarWins.children.length === 1 &&
-      entry.className.includes('rti-taskbar-active');
+      entry.className.includes('rti-taskbar-active')
+    );
   });
 }
 function testTaskbarActiveFollowsFront() {
@@ -846,7 +939,9 @@ function testTaskbarActiveFollowsFront() {
       return false;
     }
     // Clicking the covered window flips the bright entry to it.
-    globalThis.document.fire('mousedown', {target: panel.compareWins.get('L1-a').el.children[0]});
+    globalThis.document.fire('mousedown', {
+      target: panel.compareWins.get('L1-a').el.children[0],
+    });
     const labels = panel.taskbarWins.children
       .filter((_) => _.className.includes('rti-taskbar-active'))
       .map((_) => _.textContent);
@@ -857,19 +952,26 @@ function testCloseDestroys() {
   return withPanel((panel) => {
     panel.openComparator(stubWarn('L1', 'a'));
     panel.closeCompare('L1-a');
-    return panel.compareWins.size === 0 && panel.compareFocus.length === 0 &&
-      panel.taskbarWins.children.length === 0;
+    return (
+      panel.compareWins.size === 0 &&
+      panel.compareFocus.length === 0 &&
+      panel.taskbarWins.children.length === 0
+    );
   });
 }
 function testEscClosesTopmost() {
   return withPanel((panel) => {
     panel.openComparator(stubWarn('L1', 'a'));
     panel.openComparator(stubWarn('L2', 'b'));
-    globalThis.document.fire('keydown', {key: 'Escape'});
+    globalThis.document.fire('keydown', {
+      key: 'Escape',
+    });
     if (panel.compareWins.size !== 1 || panel.compareWins.has('L2-b')) {
       return false;
     }
-    globalThis.document.fire('keydown', {key: 'Escape'});
+    globalThis.document.fire('keydown', {
+      key: 'Escape',
+    });
     return panel.compareWins.size === 0;
   });
 }
@@ -888,8 +990,11 @@ function testSingletonNoStacking() {
     }
     // Re-evaluation hands back the same panel, refreshed — never a twin.
     const again = new TypePanel();
-    return again === panel && panel.compareWins.size === 0 &&
-      panel.div.style.display !== 'none';
+    return (
+      again === panel &&
+      panel.compareWins.size === 0 &&
+      panel.div.style.display !== 'none'
+    );
   });
 }
 function testStaleInstanceIgnoresEvents() {
@@ -901,12 +1006,24 @@ function testStaleInstanceIgnoresEvents() {
     }
     // A leaked pre-singleton instance must not process messages anymore.
     const stale = Object.create(TypePanel.prototype);
-    stale.handleEvent({data: {type: 'rti', destination: 'ui', action: 'clear'}});
+    stale.handleEvent({
+      data: {
+        type: 'rti',
+        destination: 'ui',
+        action: 'clear',
+      },
+    });
     if (panel.compareWins.size !== 0) {
       return false;
     }
     panel.openComparator(stubWarn('L2', 'b'));
-    stale.handleEvent({data: {type: 'rti', destination: 'ui', action: 'clear'}});
+    stale.handleEvent({
+      data: {
+        type: 'rti',
+        destination: 'ui',
+        action: 'clear',
+      },
+    });
     return panel.compareWins.size === 1;
   });
 }
@@ -921,7 +1038,9 @@ function testClickBringsToFront() {
     }
     // Document-capture path with a nested target (e.g. titlebar content),
     // as a real browser dispatches it.
-    globalThis.document.fire('mousedown', {target: a.children[0]});
+    globalThis.document.fire('mousedown', {
+      target: a.children[0],
+    });
     return Number(a.style.zIndex) > Number(b.style.zIndex);
   });
 }
@@ -966,7 +1085,9 @@ function testRtiEntryFocusesPanelWithCount() {
     if (panel.div.style.display === 'none' || panel.activeWindow !== 'panel') {
       return false;
     }
-    const {count: prev} = options;
+    const {
+      count: prev,
+    } = options;
     options.count = 1;
     try {
       panel.updateErrorCount();
@@ -980,16 +1101,20 @@ function testOutsideClickClearsAll() {
   return withPanel((panel) => {
     panel.openComparator(stubWarn('L1', 'a'));
     // Click on bare page (not a window): everything goes dim, nothing bright.
-    globalThis.document.fire('mousedown', {target: globalThis.document.body});
+    globalThis.document.fire('mousedown', {
+      target: globalThis.document.body,
+    });
     if (panel.activeWindow !== null) {
       return false;
     }
     const titles = (key) => panel.compareWins.get(key).titlebar.classList;
     const bright = panel.taskbarWins.children
       .filter((_) => _.className.includes('rti-taskbar-active'));
-    return titles('L1-a').contains('rti-inactive') === true &&
+    return (
+      titles('L1-a').contains('rti-inactive') === true &&
       panel.titlebar.classList.contains('rti-inactive') === true &&
-      bright.length === 0;
+      bright.length === 0
+    );
   });
 }
 function testPanelClickFrontsOverCompares() {
@@ -1002,13 +1127,17 @@ function testPanelClickFrontsOverCompares() {
     }
     // Click inside the main panel wrapper: it must front above compares,
     // main title blue again, taskbar kept above everything.
-    globalThis.document.fire('mousedown', {target: panel.toolbar});
+    globalThis.document.fire('mousedown', {
+      target: panel.toolbar,
+    });
     const panelZ = Number(divAll.style.zIndex);
     const titles = (key) => panel.compareWins.get(key).titlebar.classList;
-    return panelZ > winZ &&
+    return (
+      panelZ > winZ &&
       Number(panel.taskbar.style.zIndex) > panelZ &&
       panel.titlebar.classList.contains('rti-inactive') === false &&
-      titles('L1-a').contains('rti-inactive') === true;
+      titles('L1-a').contains('rti-inactive') === true
+    );
   });
 }
 function testActiveTitleFollowsClick() {
@@ -1022,7 +1151,9 @@ function testActiveTitleFollowsClick() {
     if (titles('L2-b').contains('rti-inactive') !== false) {
       return false;
     }
-    globalThis.document.fire('mousedown', {target: panel.compareWins.get('L1-a').el.children[0]});
+    globalThis.document.fire('mousedown', {
+      target: panel.compareWins.get('L1-a').el.children[0],
+    });
     return titles('L1-a').contains('rti-inactive') === false &&
       titles('L2-b').contains('rti-inactive') === true;
   });
@@ -1033,7 +1164,10 @@ function testGrabActivatesWindow() {
     panel.openComparator(stubWarn('L2', 'b'));
     panel.setActive(null);
     // Grabbing the titlebar (drag start) marks the window active.
-    panel.compareWins.get('L1-a').titlebar.fire('mousedown', {clientX: 10, clientY: 10});
+    panel.compareWins.get('L1-a').titlebar.fire('mousedown', {
+      clientX: 10,
+      clientY: 10,
+    });
     return panel.activeWindow === 'L1-a';
   });
 }
@@ -1043,7 +1177,9 @@ function testPointerdownFronts() {
     panel.openComparator(stubWarn('L2', 'b'));
     const a = panel.compareWins.get('L1-a').el;
     const b = panel.compareWins.get('L2-b').el;
-    globalThis.document.fire('pointerdown', {target: a.children[0]});
+    globalThis.document.fire('pointerdown', {
+      target: a.children[0],
+    });
     return Number(a.style.zIndex) > Number(b.style.zIndex) && panel.activeWindow === 'L1-a';
   });
 }
@@ -1063,7 +1199,7 @@ function testTaskbarAlwaysVisible() {
 function testCompareWindowsResizable() {
   return withPanel((panel) => {
     panel.openComparator(stubWarn('L1', 'a'));
-    const el = panel.compareWins.get('L1-a').el;
+    const {el} = panel.compareWins.get('L1-a');
     const dirs = el.children
       .map((_) => _?.dataset?.dir)
       .filter(Boolean)
@@ -1082,12 +1218,14 @@ function testTaskbarPressKeepsButtonAlive() {
   return withPanel((panel) => {
     panel.openComparator(stubWarn('L1', 'a'));
     panel.openComparator(stubWarn('L2', 'b'));
-    const entry = panel.taskbarWins.children[0];
+    const [entry] = panel.taskbarWins.children;
     const before = panel.activeWindow;
     if (before === 'panel' || before === 'L1-a') {
       return false;
     }
-    globalThis.document.fire('mousedown', {target: entry});
+    globalThis.document.fire('mousedown', {
+      target: entry,
+    });
     if (!entry.isConnected || panel.activeWindow !== before) {
       return false;
     }
@@ -1104,10 +1242,17 @@ function testDragCannotLoseWindow() {
   return withPanel((panel) => {
     panel.openComparator(stubWarn('L1', 'a'));
     const {el, titlebar} = panel.compareWins.get('L1-a');
-    const press = {clientX: 100, clientY: 100, target: titlebar};
+    const press = {
+      clientX: 100,
+      clientY: 100,
+      target: titlebar,
+    };
     globalThis.document.fire('mousedown', press);
     titlebar.fire('mousedown', press);
-    globalThis.document.fire('mousemove', {clientX: 5000, clientY: 5000});
+    globalThis.document.fire('mousemove', {
+      clientX: 5000,
+      clientY: 5000,
+    });
     globalThis.document.fire('mouseup', {});
     // Fake viewport is 1600x900: sliver stays at right/bottom caption.
     if (el.style.left !== '1536px' || el.style.top !== '872px') {
@@ -1115,7 +1260,10 @@ function testDragCannotLoseWindow() {
     }
     globalThis.document.fire('mousedown', press);
     titlebar.fire('mousedown', press);
-    globalThis.document.fire('mousemove', {clientX: -5000, clientY: -5000});
+    globalThis.document.fire('mousemove', {
+      clientX: -5000,
+      clientY: -5000,
+    });
     globalThis.document.fire('mouseup', {});
     return el.style.left === '64px' && el.style.top === '0px';
   });
@@ -1131,19 +1279,33 @@ function testResizeKeepsCaptionOnScreen() {
     const {el} = panel.compareWins.get('L1-a');
     const grip = (dir) => el.children.find((_) => _?.dataset?.dir === dir);
     const north = grip('n');
-    const pressN = {clientX: 100, clientY: 100, target: north};
+    const pressN = {
+      clientX: 100,
+      clientY: 100,
+      target: north,
+    };
     globalThis.document.fire('mousedown', pressN);
     north.fire('mousedown', pressN);
-    globalThis.document.fire('mousemove', {clientX: 100, clientY: -5000});
+    globalThis.document.fire('mousemove', {
+      clientX: 100,
+      clientY: -5000,
+    });
     globalThis.document.fire('mouseup', {});
     if (el.style.top !== '0px') {
       return false;
     }
     const west = grip('w');
-    const pressW = {clientX: 100, clientY: 100, target: west};
+    const pressW = {
+      clientX: 100,
+      clientY: 100,
+      target: west,
+    };
     globalThis.document.fire('mousedown', pressW);
     west.fire('mousedown', pressW);
-    globalThis.document.fire('mousemove', {clientX: -5000, clientY: 100});
+    globalThis.document.fire('mousemove', {
+      clientX: -5000,
+      clientY: 100,
+    });
     globalThis.document.fire('mouseup', {});
     return el.style.left === '64px';
   });
@@ -1155,7 +1317,13 @@ function testResizeKeepsCaptionOnScreen() {
  */
 function testStaleGeometryClampedToViewport() {
   return withPanel((panel) => {
-    globalThis.localStorage.setItem('rti-panel-geometry', JSON.stringify({left: '-2000px', top: '3000px'}));
+    globalThis.localStorage.setItem(
+      'rti-panel-geometry',
+      JSON.stringify({
+        left: '-2000px',
+        top: '3000px',
+      }),
+    );
     panel.applyGeometry();
     return TypePanel.divAll.style.left === '64px' && TypePanel.divAll.style.top === '872px';
   });
@@ -1184,7 +1352,12 @@ function testViewportShrinkRevivesWindows() {
     const panelTopOk = TypePanel.divAll.style.top === '572px';
     const winLeftOk = win.el.style.left === '736px';
     const winTopOk = win.el.style.top === '572px';
-    return panelLeftOk && panelTopOk && winLeftOk && winTopOk;
+    return (
+      panelLeftOk &&
+      panelTopOk &&
+      winLeftOk &&
+      winTopOk
+    );
   });
 }
 /**
@@ -1246,7 +1419,11 @@ function testPanelStartCenter() {
       const centered = style.left === '480px' && style.top === '290px';
       const unanchored = style.right === 'auto' && style.bottom === 'auto';
       const synced = options.panelPosition === 'center' && fresh.selectPosition.value === 'center';
-      return centered && unanchored && synced;
+      return (
+        centered &&
+        unanchored &&
+        synced
+      );
     } finally {
       options.panelPosition = prev;
     }
@@ -1276,7 +1453,11 @@ function testPanelPositionMenu() {
       panel.selectPosition.onchange();
       const fallback = TypePanel.divAll.style.bottom === '0px';
       const corner = TypePanel.divAll.style.right === '0px';
-      return fallback && corner && options.panelPosition === 'bottom-right';
+      return (
+        fallback &&
+        corner &&
+        options.panelPosition === 'bottom-right'
+      );
     } finally {
       options.panelPosition = prev;
     }
@@ -1291,7 +1472,13 @@ function testPersistedPositionWinsOverStart() {
     const prev = options.panelPosition;
     try {
       globalThis.localStorage.setItem('rti-panel-position', 'top-left');
-      globalThis.localStorage.setItem('rti-panel-geometry', JSON.stringify({left: '100px', top: '100px'}));
+      globalThis.localStorage.setItem(
+        'rti-panel-geometry',
+        JSON.stringify({
+          left: '100px',
+          top: '100px',
+        }),
+      );
       TypePanel.instance = null;
       TypePanel.divAll = null;
       const fresh = new TypePanel();
@@ -1318,10 +1505,26 @@ function testSecondInstantiationStillFetchesErrors() {
       if (again !== panel) {
         return false;
       }
-      const sink = {postMessage: () => {}};
-      const msg = {source: null, srcElement: sink, data: {type: 'rti', destination: 'ui', action: 'addError',
-        value: 1, expect: 'string', loc: 'L1', name: 'a', valueToString: '1',
-        strings: ['boom'], extras: [], key: 'L1-a'}};
+      const sink = {
+        postMessage: () => {},
+      };
+      const msg = {
+        source: null,
+        srcElement: sink,
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          value: 1,
+          expect: 'string',
+          loc: 'L1',
+          name: 'a',
+          valueToString: '1',
+          strings: ['boom'],
+          extras: [],
+          key: 'L1-a',
+        },
+      };
       globalThis.window.fire('message', msg);
       const warnObj = panel.warnings['L1-a'];
       return !!warnObj && panel.warnedTable.contains(warnObj.tr);
@@ -1349,10 +1552,26 @@ function testCorpsePanelRebuildsLive() {
       }
       // Rebuilding re-syncs options from storage; re-quiet for the fetch.
       options.mode = 'never';
-      const sink = {postMessage: () => {}};
-      const msg = {source: null, srcElement: sink, data: {type: 'rti', destination: 'ui', action: 'addError',
-        value: 1, expect: 'string', loc: 'L1', name: 'a', valueToString: '1',
-        strings: ['boom'], extras: [], key: 'L1-a'}};
+      const sink = {
+        postMessage: () => {},
+      };
+      const msg = {
+        source: null,
+        srcElement: sink,
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          value: 1,
+          expect: 'string',
+          loc: 'L1',
+          name: 'a',
+          valueToString: '1',
+          strings: ['boom'],
+          extras: [],
+          key: 'L1-a',
+        },
+      };
       globalThis.window.fire('message', msg);
       const warnObj = revived.warnings['L1-a'];
       const fetched = !!warnObj && revived.warnedTable.contains(warnObj.tr);
@@ -1377,7 +1596,11 @@ function testClearResetsErrorCount() {
       const again = new TypePanel();
       const zeroed = options.count === 0 && panel.spanErrors.innerText === 'Type validation errors: 0';
       const badge = panel.taskbarRti.textContent === 'RTI' && panel.titleText.textContent === 'Runtime Type Inspector';
-      return again === panel && zeroed && badge;
+      return (
+        again === panel &&
+        zeroed &&
+        badge
+      );
     } finally {
       options.count = prev;
     }
@@ -1395,11 +1618,26 @@ function testCompareActualShowsTree() {
     if (!text.includes('a') || !text.includes('1')) {
       return false;
     }
-    const snap = actualPane(panel, {...stubWarn('L1', 'b'),
-      value: {$type: 'FakeWindow', name: '', location: {$type: 'FakeLocation'}}});
+    const snap = actualPane(
+      panel,
+      {
+        ...stubWarn('L1', 'b'),
+        value: {
+          $type: 'FakeWindow',
+          name: '',
+          location: {
+            $type: 'FakeLocation',
+          },
+        },
+      },
+    );
     const snapText = textOf(snap);
-    return snap.className.includes('rti-line') && snapText.includes('FakeWindow') &&
-      snapText.includes('FakeLocation') && !snapText.includes('$type');
+    return (
+      snap.className.includes('rti-line') &&
+      snapText.includes('FakeWindow') &&
+      snapText.includes('FakeLocation') &&
+      !snapText.includes('$type')
+    );
   });
 }
 function testCompareActualBatches() {
@@ -1411,14 +1649,22 @@ function testCompareActualBatches() {
     for (let i = 0; i < 25; i++) {
       big[`k${i}`] = i;
     }
-    const node = actualPane(panel, {...stubWarn('L1', 'c'), value: big, expect: 'any'});
+    const node = actualPane(panel, {
+      ...stubWarn('L1', 'c'),
+      value: big,
+      expect: 'any',
+    });
     const marker = findByClass(node, 'rti-more');
     if (!marker || !textOf(node).includes('...(+5 more)') || textOf(node).includes('k24')) {
       return false;
     }
     marker.onclick();
     const text = textOf(node);
-    return text.includes('k24') && !text.includes('...(+') && findByClass(node, 'rti-more') === null;
+    return (
+      text.includes('k24') &&
+      !text.includes('...(+') &&
+      findByClass(node, 'rti-more') === null
+    );
   });
 }
 function testRepeatBumpsHitsWithoutLogChurn() {
@@ -1428,12 +1674,36 @@ function testRepeatBumpsHitsWithoutLogChurn() {
     const prevMode = options.mode;
     options.mode = 'never';
     try {
-      panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError',
-        value: 1, expect: 'string', loc: 'L2', name: 'b', valueToString: '1',
-        strings: ['boom'], extras: [], key: 'L2-b'}});
-      panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError', key: 'L2-b', repeat: true}});
+      panel.addError({
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          value: 1,
+          expect: 'string',
+          loc: 'L2',
+          name: 'b',
+          valueToString: '1',
+          strings: ['boom'],
+          extras: [],
+          key: 'L2-b',
+        },
+      });
+      panel.addError({
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          key: 'L2-b',
+          repeat: true,
+        },
+      });
       const warnObj = panel.warnings['L2-b'];
-      return !!warnObj && warnObj.hits === 2 && panel.eventLog.length === 1;
+      return (
+        !!warnObj &&
+        warnObj.hits === 2 &&
+        panel.eventLog.length === 1
+      );
     } finally {
       options.mode = prevMode;
     }
@@ -1446,7 +1716,15 @@ function testRepeatUnknownKeyDropped() {
     const prevMode = options.mode;
     options.mode = 'never';
     try {
-      panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError', key: 'nope-x', repeat: true}});
+      panel.addError({
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          key: 'nope-x',
+          repeat: true,
+        },
+      });
       return !panel.warnings['nope-x'] && panel.eventLog.length === 0;
     } finally {
       options.mode = prevMode;
@@ -1491,10 +1769,23 @@ function testUnknownActionWarnsInsteadOfThrowing() {
     const prevMode = options.mode;
     options.mode = 'never';
     try {
-      const sink = {postMessage: () => {}};
+      const sink = {
+        postMessage: () => {},
+      };
       const warns = recordWarns(() => {
-        globalThis.window.fire('message', {source: null, srcElement: sink,
-          data: {type: 'rti', destination: 'ui', action: 'bogus', key: 'x'}});
+        globalThis.window.fire(
+          'message',
+          {
+            source: null,
+            srcElement: sink,
+            data: {
+              type: 'rti',
+              destination: 'ui',
+              action: 'bogus',
+              key: 'x',
+            },
+          },
+        );
       });
       return warns.length === 1 && Object.keys(panel.warnings).length === 0;
     } finally {
@@ -1510,17 +1801,37 @@ function testDuplicateDeliveryWarnsOnce() {
     const prevMode = options.mode;
     options.mode = 'never';
     try {
-      const sink = {postMessage: () => {}};
-      const event = {source: null, srcElement: sink,
-        data: {type: 'rti', destination: 'ui', action: 'addError',
-          value: 1, expect: 'string', loc: 'L9', name: 'dup', valueToString: '1',
-          strings: ['boom'], extras: [], key: 'L9-dup'}};
+      const sink = {
+        postMessage: () => {},
+      };
+      const event = {
+        source: null,
+        srcElement: sink,
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          value: 1,
+          expect: 'string',
+          loc: 'L9',
+          name: 'dup',
+          valueToString: '1',
+          strings: ['boom'],
+          extras: [],
+          key: 'L9-dup',
+        },
+      };
       const warns = recordWarns(() => {
         globalThis.window.fire('message', event);
         globalThis.window.fire('message', event);
       });
       const warnObj = panel.warnings['L9-dup'];
-      return warns.length === 1 && !!warnObj && warnObj.hits === 2 && panel.eventLog.length === 2;
+      return (
+        warns.length === 1 &&
+        !!warnObj &&
+        warnObj.hits === 2 &&
+        panel.eventLog.length === 2
+      );
     } finally {
       options.mode = prevMode;
     }
@@ -1544,11 +1855,27 @@ function testTransmittedStackPreferred() {
     options.mode = 'never';
     try {
       const stack = ['Error', 'at ValFn (app.js:10:5)', 'at tick (app.js:20:3)'];
-      panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError',
-        value: 1, expect: 'string', loc: 'L4', name: 's', valueToString: '1',
-        strings: ['boom'], extras: [], key: 'L4-s', stack}});
-      return panel.eventLog.length === 1 && panel.eventLog[0].stack !== undefined &&
-        JSON.stringify(panel.eventLog[0].stack) === JSON.stringify(stack);
+      panel.addError({
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          value: 1,
+          expect: 'string',
+          loc: 'L4',
+          name: 's',
+          valueToString: '1',
+          strings: ['boom'],
+          extras: [],
+          key: 'L4-s',
+          stack,
+        },
+      });
+      return (
+        panel.eventLog.length === 1 &&
+        panel.eventLog[0].stack !== undefined &&
+        JSON.stringify(panel.eventLog[0].stack) === JSON.stringify(stack)
+      );
     } finally {
       options.mode = prevMode;
     }
@@ -1561,9 +1888,21 @@ function testMissingStackFallsBack() {
     const prevMode = options.mode;
     options.mode = 'never';
     try {
-      panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError',
-        value: 1, expect: 'string', loc: 'L5', name: 't', valueToString: '1',
-        strings: ['boom'], extras: [], key: 'L5-t'}});
+      panel.addError({
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          value: 1,
+          expect: 'string',
+          loc: 'L5',
+          name: 't',
+          valueToString: '1',
+          strings: ['boom'],
+          extras: [],
+          key: 'L5-t',
+        },
+      });
       const logged = panel.eventLog.length === 1 ? panel.eventLog[0].stack : undefined;
       return Array.isArray(logged) && logged.length >= 1;
     } finally {
@@ -1579,15 +1918,22 @@ function testMissingStackFallsBack() {
  */
 function testDeadPopoutReattachesOnReopen() {
   return withPanel((panel) => {
-    panel.popoutWin = {closed: true, close() {}};
+    panel.popoutWin = {
+      closed: true,
+      close() {},
+    };
     panel.buttonPopout.textContent = '🗗';
     const deadBody = new FakeElement('body');
     deadBody.connectedRoot = true;
     globalThis.document.body.removeChild(TypePanel.divAll);
     deadBody.append(TypePanel.divAll);
     const revived = new TypePanel();
-    return revived === panel && TypePanel.divAll.parent === globalThis.document.body &&
-      panel.popoutWin === null && panel.buttonPopout.textContent === '⧉';
+    return (
+      revived === panel &&
+      TypePanel.divAll.parent === globalThis.document.body &&
+      panel.popoutWin === null &&
+      panel.buttonPopout.textContent === '⧉'
+    );
   });
 }
 /**
@@ -1601,7 +1947,9 @@ function testForeignDocumentReattachesOnReopen() {
     deadBody.connectedRoot = true;
     globalThis.document.body.removeChild(TypePanel.divAll);
     deadBody.append(TypePanel.divAll);
-    TypePanel.divAll.ownerDocument = {name: 'popup-document'};
+    TypePanel.divAll.ownerDocument = {
+      name: 'popup-document',
+    };
     const revived = new TypePanel();
     delete TypePanel.divAll.ownerDocument;
     return revived === panel && TypePanel.divAll.parent === globalThis.document.body;
@@ -1614,7 +1962,10 @@ function testForeignDocumentReattachesOnReopen() {
  */
 function testShowRecoversStrandedPanel() {
   return withPanel((panel) => {
-    panel.popoutWin = {closed: true, close() {}};
+    panel.popoutWin = {
+      closed: true,
+      close() {},
+    };
     const deadBody = new FakeElement('body');
     deadBody.connectedRoot = true;
     globalThis.document.body.removeChild(TypePanel.divAll);
@@ -1631,7 +1982,10 @@ function testShowRecoversStrandedPanel() {
 function popupDocument() {
   const listeners = {};
   return {
-    defaultView: {innerWidth: 1600, innerHeight: 900},
+    defaultView: {
+      innerWidth: 1600,
+      innerHeight: 900,
+    },
     addEventListener: (type, fn) => {
       (listeners[type] ??= []).push(fn);
     },
@@ -1656,14 +2010,24 @@ function testPopoutDragUsesOwnDocument() {
     const {el, titlebar} = panel.compareWins.get('L1-a');
     const popupDoc = popupDocument();
     el.ownerDocument = popupDoc;
-    const press = {clientX: 100, clientY: 100, target: titlebar};
+    const press = {
+      clientX: 100,
+      clientY: 100,
+      target: titlebar,
+    };
     titlebar.fire('mousedown', press);
     const home = [el.style.left, el.style.top];
-    globalThis.document.fire('mousemove', {clientX: 500, clientY: 500});
+    globalThis.document.fire('mousemove', {
+      clientX: 500,
+      clientY: 500,
+    });
     if (el.style.left !== home[0] || el.style.top !== home[1]) {
       return false;
     }
-    popupDoc.fire('mousemove', {clientX: 200, clientY: 150});
+    popupDoc.fire('mousemove', {
+      clientX: 200,
+      clientY: 150,
+    });
     popupDoc.fire('mouseup', {});
     return el.style.left === '100px' && el.style.top === '50px';
   });
@@ -1679,12 +2043,22 @@ function testPopoutResizeUsesOwnDocument() {
     const popupDoc = popupDocument();
     el.ownerDocument = popupDoc;
     const grip = el.children.find((_) => _?.dataset?.dir === 'e');
-    grip.fire('mousedown', {clientX: 100, clientY: 100, target: grip});
-    globalThis.document.fire('mousemove', {clientX: 500, clientY: 100});
+    grip.fire('mousedown', {
+      clientX: 100,
+      clientY: 100,
+      target: grip,
+    });
+    globalThis.document.fire('mousemove', {
+      clientX: 500,
+      clientY: 100,
+    });
     if (el.style.width !== undefined) {
       return false;
     }
-    popupDoc.fire('mousemove', {clientX: 500, clientY: 100});
+    popupDoc.fire('mousemove', {
+      clientX: 500,
+      clientY: 100,
+    });
     popupDoc.fire('mouseup', {});
     return el.style.width === '400px';
   });
@@ -1702,9 +2076,21 @@ function testRowCopyButtonCopies() {
       const prevMode = options.mode;
       options.mode = 'never';
       try {
-        panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError',
-          value: 1, expect: 'string', loc: 'L9', name: 'z', valueToString: '1',
-          strings: ['boom'], extras: [], key: 'L9-z'}});
+        panel.addError({
+          data: {
+            type: 'rti',
+            destination: 'ui',
+            action: 'addError',
+            value: 1,
+            expect: 'string',
+            loc: 'L9',
+            name: 'z',
+            valueToString: '1',
+            strings: ['boom'],
+            extras: [],
+            key: 'L9-z',
+          },
+        });
       } finally {
         options.mode = prevMode;
       }
@@ -1735,9 +2121,21 @@ function testRowCopyMarkResetsOnRefresh() {
       const prevMode = options.mode;
       options.mode = 'never';
       try {
-        panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError',
-          value: 1, expect: 'string', loc: 'L9', name: 'z', valueToString: '1',
-          strings: ['boom'], extras: [], key: 'L9-z'}});
+        panel.addError({
+          data: {
+            type: 'rti',
+            destination: 'ui',
+            action: 'addError',
+            value: 1,
+            expect: 'string',
+            loc: 'L9',
+            name: 'z',
+            valueToString: '1',
+            strings: ['boom'],
+            extras: [],
+            key: 'L9-z',
+          },
+        });
       } finally {
         options.mode = prevMode;
       }
@@ -1746,9 +2144,21 @@ function testRowCopyMarkResetsOnRefresh() {
       if (!warnObj.button_copy.classList.contains('rti-copied')) {
         return false;
       }
-      panel.addError({data: {type: 'rti', destination: 'ui', action: 'addError',
-        value: 'other', expect: 'string', loc: 'L9', name: 'z', valueToString: 'other',
-        strings: ['bang'], extras: [], key: 'L9-z'}});
+      panel.addError({
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          value: 'other',
+          expect: 'string',
+          loc: 'L9',
+          name: 'z',
+          valueToString: 'other',
+          strings: ['bang'],
+          extras: [],
+          key: 'L9-z',
+        },
+      });
       return warnObj.button_copy.textContent === '📋' &&
         !warnObj.button_copy.classList.contains('rti-copied');
     } finally {
@@ -1776,7 +2186,9 @@ function popupStub(body) {
   const docListeners = {};
   const popupDoc = {
     title: '',
-    head: {appendChild() {}},
+    head: {
+      appendChild() {},
+    },
     body,
     defaultView: null,
     addEventListener: (type, fn) => {
@@ -1789,10 +2201,14 @@ function popupStub(body) {
     document: popupDoc,
     addEventListener() {},
   };
-  return {popup, opened, open: (...args) => {
-    opened.push(args);
-    return popup;
-  }};
+  return {
+    popup,
+    opened,
+    open: (...args) => {
+      opened.push(args);
+      return popup;
+    },
+  };
 }
 /**
  * Popping out opens a fresh unnamed window: a reused name would recapture a
@@ -1806,8 +2222,11 @@ function testPopoutOpensBlankWindow() {
     const stub = popupStub(body);
     globalThis.window.open = stub.open;
     panel.popout();
-    return stub.opened[0]?.[1] === '_blank' && TypePanel.divAll.parent === body &&
-      panel.buttonPopout.textContent === '🗗';
+    return (
+      stub.opened[0]?.[1] === '_blank' &&
+      TypePanel.divAll.parent === body &&
+      panel.buttonPopout.textContent === '🗗'
+    );
   });
 }
 /**
@@ -1817,7 +2236,10 @@ function testPopoutOpensBlankWindow() {
  */
 function testSaveGeometrySkipsPopout() {
   return withPanel((panel) => {
-    panel.popoutWin = {closed: false, close() {}};
+    panel.popoutWin = {
+      closed: false,
+      close() {},
+    };
     panel.saveGeometry();
     return globalThis.localStorage.getItem('rti-panel-geometry') === null;
   });
@@ -1830,16 +2252,23 @@ function testSaveGeometrySkipsPopout() {
  */
 function testPageshowRecoversStrandedPanel() {
   return withPanel((panel) => {
-    panel.popoutWin = {closed: true, close() {}};
+    panel.popoutWin = {
+      closed: true,
+      close() {},
+    };
     const deadBody = new FakeElement('body');
     deadBody.connectedRoot = true;
     globalThis.document.body.removeChild(TypePanel.divAll);
     deadBody.append(TypePanel.divAll);
-    globalThis.window.fire('pageshow', {persisted: false});
+    globalThis.window.fire('pageshow', {
+      persisted: false,
+    });
     if (TypePanel.divAll.parent !== deadBody) {
       return false;
     }
-    globalThis.window.fire('pageshow', {persisted: true});
+    globalThis.window.fire('pageshow', {
+      persisted: true,
+    });
     return TypePanel.divAll.parent === globalThis.document.body && panel.popoutWin === null;
   });
 }
@@ -1852,17 +2281,33 @@ function testPageshowRecoversStrandedPanel() {
  * @returns {void}
  */
 function feedError(panel, sink) {
-  const msg = {source: sink, data: {type: 'rti', destination: 'ui', action: 'addError',
-    value: 1, expect: 'string', loc: 'L1', name: 'a', valueToString: '1',
-    strings: ['boom'], extras: [], key: 'L1-a'}};
+  const msg = {
+    source: sink,
+    data: {
+      type: 'rti',
+      destination: 'ui',
+      action: 'addError',
+      value: 1,
+      expect: 'string',
+      loc: 'L1',
+      name: 'a',
+      valueToString: '1',
+      strings: ['boom'],
+      extras: [],
+      key: 'L1-a',
+    },
+  };
   globalThis.window.fire('message', msg);
 }
 function testWindowedCheckboxWiresOptionStorageAndWorker() {
   return withPanel((panel) => {
     const prevWindowed = options.windowedChecks;
-    const sink = {messages: [], postMessage(data) {
-      this.messages.push(data);
-    }};
+    const sink = {
+      messages: [],
+      postMessage(data) {
+        this.messages.push(data);
+      },
+    };
     try {
       options.windowedChecks = false;
       const prevMode = options.mode;
@@ -1871,9 +2316,11 @@ function testWindowedCheckboxWiresOptionStorageAndWorker() {
       options.mode = prevMode;
       panel.inputWindowed.checked = true;
       panel.inputWindowed.onchange();
-      return options.windowedChecks === true &&
+      return (
+        options.windowedChecks === true &&
         localStorage.getItem('rti-windowed-checks') === 'true' &&
-        sink.messages.some(_ => _.action === 'windowedChecks' && _.value === true && _.destination === 'worker');
+        sink.messages.some(_ => _.action === 'windowedChecks' && _.value === true && _.destination === 'worker')
+      );
     } finally {
       options.windowedChecks = prevWindowed;
     }
@@ -1884,9 +2331,12 @@ function testWindowCapInputClampsAndForwards() {
   // garbage input never clobbers the live value.
   return withPanel((panel) => {
     const prevCap = options.mapCheckWindowCap;
-    const sink = {messages: [], postMessage(data) {
-      this.messages.push(data);
-    }};
+    const sink = {
+      messages: [],
+      postMessage(data) {
+        this.messages.push(data);
+      },
+    };
     try {
       const prevMode = options.mode;
       options.mode = 'never';
@@ -1904,7 +2354,11 @@ function testWindowCapInputClampsAndForwards() {
       panel.inputWindowCap.value = '-5';
       panel.inputWindowCap.onchange();
       const noNegative = options.mapCheckWindowCap === 256;
-      return applied && kept && noNegative;
+      return (
+        applied &&
+        kept &&
+        noNegative
+      );
     } finally {
       options.mapCheckWindowCap = prevCap;
     }
@@ -1913,9 +2367,12 @@ function testWindowCapInputClampsAndForwards() {
 function testWindowMinTotalInputClampsAndForwards() {
   return withPanel((panel) => {
     const prevMin = options.mapCheckWindowMinTotalMs;
-    const sink = {messages: [], postMessage(data) {
-      this.messages.push(data);
-    }};
+    const sink = {
+      messages: [],
+      postMessage(data) {
+        this.messages.push(data);
+      },
+    };
     try {
       const prevMode = options.mode;
       options.mode = 'never';
@@ -1955,7 +2412,13 @@ function testWindowMinTotalInputClampsAndForwards() {
       panel.inputWindowMinTotal.value = '-3';
       panel.inputWindowMinTotal.onchange();
       const noNegative = options.mapCheckWindowMinTotalMs === 250;
-      return applied && zeroOk && baseline && kept && noNegative;
+      return (
+        applied &&
+        zeroOk &&
+        baseline &&
+        kept &&
+        noNegative
+      );
     } finally {
       options.mapCheckWindowMinTotalMs = prevMin;
       localStorage.removeItem('rti-window-min-total-ms');
@@ -1987,7 +2450,13 @@ function testStoredTweakSurvivesReloadStaleHealsCodeWins() {
       options.mapCheckWindowCap = 4096;
       const capCodeWins = storedMapCheckWindowCap() === 4096;
       options.mapCheckWindowCap = prevCap;
-      return keptTweak && healedLegacy && codeWins && capKept && capCodeWins;
+      return (
+        keptTweak &&
+        healedLegacy &&
+        codeWins &&
+        capKept &&
+        capCodeWins
+      );
     } finally {
       options.mapCheckWindowMinTotalMs = prevMin;
       localStorage.removeItem('rti-window-min-total-ms');
@@ -2015,15 +2484,22 @@ function testStateButtonsAreShortVerbsWithReset() {
       .flatMap((_) => _.children)
       .filter((_) => _.tag === 'button')
       .map((_) => _.textContent);
-    return labels.includes('Load') && labels.includes('Save') && labels.includes('RESET');
+    return (
+      labels.includes('Load') &&
+      labels.includes('Save') &&
+      labels.includes('RESET')
+    );
   });
 }
 function testCheckStatsCheckboxWiresOptionStorageAndWorker() {
   return withPanel((panel) => {
     const prevStats = options.checkStats;
-    const sink = {messages: [], postMessage(data) {
-      this.messages.push(data);
-    }};
+    const sink = {
+      messages: [],
+      postMessage(data) {
+        this.messages.push(data);
+      },
+    };
     try {
       const prevMode = options.mode;
       options.mode = 'never';
@@ -2031,9 +2507,11 @@ function testCheckStatsCheckboxWiresOptionStorageAndWorker() {
       options.mode = prevMode;
       panel.inputCheckStats.checked = false;
       panel.inputCheckStats.onchange();
-      return options.checkStats === false &&
+      return (
+        options.checkStats === false &&
         localStorage.getItem('rti-check-stats') === 'false' &&
-        sink.messages.some(_ => _.action === 'checkStats' && _.value === false && _.destination === 'worker');
+        sink.messages.some(_ => _.action === 'checkStats' && _.value === false && _.destination === 'worker')
+      );
     } finally {
       options.checkStats = prevStats;
     }
@@ -2048,9 +2526,11 @@ function testCheckStatsTableRendersHotspotsSorted() {
       recordMapScan('Bbb#scan-light', 'v', 1);
       panel.updateCheckStats();
       const rows = panel.checksTable.children.slice(1);
-      return rows.length === 3 &&
+      return (
+        rows.length === 3 &&
         textOf(rows[0]).includes('Aaa#scan-heavy') &&
-        textOf(rows[2]).includes('Zzz#checks');
+        textOf(rows[2]).includes('Zzz#checks')
+      );
     } finally {
       resetCheckStats();
     }
@@ -2102,10 +2582,12 @@ function testLogMetaCarriesWindowSettings() {
       options.mapCheckWindowMinTotalMs = 250;
       options.checkStats = false;
       const meta = panel.getLogMeta();
-      return meta.settings.windowedChecks === true &&
+      return (
+        meta.settings.windowedChecks === true &&
         meta.settings.mapCheckWindowCap === 256 &&
         meta.settings.mapCheckWindowMinTotalMs === 250 &&
-        meta.settings.checkStats === false;
+        meta.settings.checkStats === false
+      );
     } finally {
       options.windowedChecks = prevWindowed;
       options.mapCheckWindowCap = prevCap;
@@ -2118,10 +2600,12 @@ function testStatsWinHiddenByDefault() {
   // The stats window is a separate box, hidden until the Stats button
   // opens it, and it never sits inside the panel body.
   return withPanel((panel) => {
-    return panel.statsWin !== null &&
+    return (
+      panel.statsWin !== null &&
       panel.statsWinHidden === true &&
       panel.statsWin.style.display === 'none' &&
-      panel.body.children.length === 1;
+      panel.body.children.length === 1
+    );
   });
 }
 /**
@@ -2173,7 +2657,11 @@ function testStatsWinOpensPopulatesAndCloses() {
       const populated = rows.length === 1 && textOf(rows[0]).includes('W#x');
       panel.hideStatsWin();
       const hidden = panel.statsWin.style.display === 'none' && panel.statsWinHidden === true;
-      return shown && populated && hidden;
+      return (
+        shown &&
+        populated &&
+        hidden
+      );
     } finally {
       resetCheckStats();
     }
@@ -2208,7 +2696,13 @@ function testStatsButtonShowsSkippedCount() {
       resetCheckStats();
       panel.updateCheckStats();
       const cleared = panel.buttonStats.textContent === 'Stats';
-      return plain && ridesOnly && both && suppressedOnly && cleared;
+      return (
+        plain &&
+        ridesOnly &&
+        both &&
+        suppressedOnly &&
+        cleared
+      );
     } finally {
       resetCheckStats();
     }
@@ -2233,10 +2727,14 @@ function testStatsLocCellIsButtonWithTitle() {
     try {
       recordCheck('get', 'v', 1);
       panel.updateCheckStats();
-      const cell = panel.checksTable.children[1].children[0];
-      const btn = cell.children[0];
-      return btn.tag === 'button' && btn.textContent === 'get v' &&
-        btn.title.startsWith('get v') && btn.title.length > 'get v'.length;
+      const [cell] = panel.checksTable.children[1].children;
+      const [btn] = cell.children;
+      return (
+        btn.tag === 'button' &&
+        btn.textContent === 'get v' &&
+        btn.title.startsWith('get v') &&
+        btn.title.length > 'get v'.length
+      );
     } finally {
       resetCheckStats();
     }
@@ -2266,11 +2764,13 @@ function testStatsTableShowsSkippedPercent() {
       // No map activity at all: dash.
       recordCheck('Flat#x', 'v', 1);
       panel.updateCheckStats();
-      return statsCell(panel, 'Skp#m', 'skipPct') === '75.0%' &&
+      return (
+        statsCell(panel, 'Skp#m', 'skipPct') === '75.0%' &&
         statsCell(panel, 'Flat#x', 'skipPct') === '—' &&
         statsCell(panel, 'Skp#m', 'skipped') === '3' &&
         statsCell(panel, 'Skp#m', 'suppressed') === '1' &&
-        statsCell(panel, 'Skp#s', 'suppressed') === '1';
+        statsCell(panel, 'Skp#s', 'suppressed') === '1'
+      );
     } finally {
       options.windowedChecks = prevWindowed;
       resetCheckStats();
@@ -2289,9 +2789,11 @@ function testStatsTableFormatsCompactTimes() {
       recordMapScan('Fmt#mid', 'v', 2.345);        // ms -> "2.35ms"
       recordMapScan('Fmt#big', 'v', 42.6);         // ms -> "42.6ms"
       panel.updateCheckStats();
-      return statsCell(panel, 'Fmt#tiny', 'scanMs') === '0.4µs' &&
+      return (
+        statsCell(panel, 'Fmt#tiny', 'scanMs') === '0.4µs' &&
         statsCell(panel, 'Fmt#mid', 'scanMs') === '2.35ms' &&
-        statsCell(panel, 'Fmt#big', 'scanMs') === '42.6ms';
+        statsCell(panel, 'Fmt#big', 'scanMs') === '42.6ms'
+      );
     } finally {
       resetCheckStats();
     }
@@ -2307,11 +2809,13 @@ function testNeverRanTimeCellsShowDash() {
       recordCheck('Chk#only', 'v', 1);
       recordMapScan('Scn#only', 'v', 2);
       panel.updateCheckStats();
-      return statsCell(panel, 'Chk#only', 'scanMs') === '—' &&
+      return (
+        statsCell(panel, 'Chk#only', 'scanMs') === '—' &&
         statsCell(panel, 'Chk#only', 'maxScanMs') === '—' &&
         statsCell(panel, 'Scn#only', 'checkMs') === '—' &&
         statsCell(panel, 'Scn#only', 'maxCheckMs') === '—' &&
-        statsCell(panel, 'Scn#only', 'scanMs') === '2.00ms';
+        statsCell(panel, 'Scn#only', 'scanMs') === '2.00ms'
+      );
     } finally {
       resetCheckStats();
     }
@@ -2330,11 +2834,13 @@ function testKindColumnNamesWalkKind() {
       recordObjectScan('Kind#object', 'v', 5);
       recordMapScan('Kind#map', 'v', 6);
       panel.updateCheckStats();
-      return statsCell(panel, 'Kind#plain', 'kind') === '—' &&
+      return (
+        statsCell(panel, 'Kind#plain', 'kind') === '—' &&
         statsCell(panel, 'Kind#set', 'kind') === 'set' &&
         statsCell(panel, 'Kind#array', 'kind') === 'array' &&
         statsCell(panel, 'Kind#object', 'kind') === 'object' &&
-        statsCell(panel, 'Kind#map', 'kind') === 'map';
+        statsCell(panel, 'Kind#map', 'kind') === 'map'
+      );
     } finally {
       resetCheckStats();
     }
@@ -2350,12 +2856,14 @@ function testWalkColumnsUnifyContainerTime() {
       recordSetScan('Kind#set', 'v', 3);
       recordMapScan('Kind#map', 'v', 50);
       panel.updateCheckStats();
-      return statsCell(panel, 'Kind#set', 'scans') === '1' &&
+      return (
+        statsCell(panel, 'Kind#set', 'scans') === '1' &&
         statsCell(panel, 'Kind#set', 'scanMs') === '3.00ms' &&
         statsCell(panel, 'Kind#set', 'maxScanMs') === '3.00ms' &&
         statsCell(panel, 'Kind#map', 'scans') === '1' &&
         statsCell(panel, 'Kind#map', 'scanMs') === '50.0ms' &&
-        statsCell(panel, 'Kind#map', 'maxScanMs') === '50.0ms';
+        statsCell(panel, 'Kind#map', 'maxScanMs') === '50.0ms'
+      );
     } finally {
       resetCheckStats();
     }
@@ -2369,13 +2877,19 @@ function testWalkTimeSortsAcrossKinds() {
     try {
       recordMapScan('Kind#mapheavy', 'v', 50);
       recordArrayScan('Kind#arrayheavy', 'v', 40);
-      panel.checksSort = {id: 'scanMs', desc: true};
+      panel.checksSort = {
+        id: 'scanMs',
+        desc: true,
+      };
       panel.updateCheckStats();
       const first = textOf(panel.checksTable.children[1]).includes('Kind#mapheavy');
       return first;
     } finally {
       resetCheckStats();
-      panel.checksSort = {id: 'scanMs', desc: true};
+      panel.checksSort = {
+        id: 'scanMs',
+        desc: true,
+      };
     }
   });
 }
@@ -2417,7 +2931,10 @@ function testSkippedColumnsFollowWindowing() {
  * @returns {object} The stand-in.
  */
 function collectionShaped(cells) {
-  const shaped = {length: cells.length, [Symbol.iterator]: Array.prototype.values.bind(cells)};
+  const shaped = {
+    length: cells.length,
+    [Symbol.iterator]: Array.prototype.values.bind(cells),
+  };
   cells.forEach((cell, i) => {
     shaped[i] = cell;
   });
@@ -2452,11 +2969,11 @@ function testStatsHeadersSortOnClick() {
   // carries an arrow so the order is visible, not guessed. Columns are
   // found by sort id, so conditional columns cannot shift them.
   const clickHead = (panel, id) => {
-    const head = panel.checksTable.children[0];
+    const [head] = panel.checksTable.children;
     head.children[statsColIndex(panel, id)].onclick();
   };
   const headText = (panel, id) => {
-    const head = panel.checksTable.children[0];
+    const [head] = panel.checksTable.children;
     return head.children[statsColIndex(panel, id)].textContent;
   };
   return withPanel((panel) => {
@@ -2465,7 +2982,10 @@ function testStatsHeadersSortOnClick() {
       recordCheck('Zzz#checks', 'v', 5);
       recordMapScan('Aaa#scan-heavy', 'v', 50);
       recordMapScan('Bbb#scan-light', 'v', 1);
-      panel.checksSort = {id: 'scanMs', desc: true};
+      panel.checksSort = {
+        id: 'scanMs',
+        desc: true,
+      };
       panel.updateCheckStats();
       const firstByScan = textOf(panel.checksTable.children[1]).includes('Aaa#scan-heavy');
       const scanArrow = headText(panel, 'scanMs').includes('▼');
@@ -2478,10 +2998,19 @@ function testStatsHeadersSortOnClick() {
       clickHead(panel, 'loc');
       const flipped = textOf(panel.checksTable.children[1]).includes('Zzz#checks') &&
         headText(panel, 'loc').includes('▼');
-      return firstByScan && scanArrow && byLoc && locArrow && flipped;
+      return (
+        firstByScan &&
+        scanArrow &&
+        byLoc &&
+        locArrow &&
+        flipped
+      );
     } finally {
       resetCheckStats();
-      panel.checksSort = {id: 'scanMs', desc: true};
+      panel.checksSort = {
+        id: 'scanMs',
+        desc: true,
+      };
     }
   });
 }
@@ -2493,8 +3022,8 @@ function testStatsWinMaximizesViaSharedCore() {
     panel.showStatsWin();
     try {
       const el = panel.statsWin;
-      const width = el.style.width;
-      const height = el.style.height;
+      const {width} = el.style;
+      const {height} = el.style;
       panel.toggleStatsMaximize();
       const maximized = el.dataset.maximized === 'true' &&
         el.classList.contains('rti-maximized') &&
@@ -2517,7 +3046,7 @@ function testStatsWinCaptionHasMinMaxClose() {
   return withPanel((panel) => {
     panel.showStatsWin();
     try {
-      const caption = panel.statsWin.children[0].children[1];
+      const [, caption] = panel.statsWin.children[0].children;
       const labels = caption.children.map(_ => _.textContent);
       return labels.join(',') === '_,□,×';
     } finally {
@@ -2533,7 +3062,7 @@ function testStatsWinCaptionHasMinMaxClose() {
  * @returns {number} Header index, or -1.
  */
 function statsColIndex(panel, id) {
-  const head = panel.checksTable.children[0];
+  const [head] = panel.checksTable.children;
   for (let i = 0; i < head.children.length; i++) {
     if (head.children[i].dataset.sort === id) {
       return i;
@@ -2569,14 +3098,18 @@ function testStatsHeaderCellsCarryTooltips() {
     try {
       recordCheck('Tip#x', 'v', 1);
       panel.updateCheckStats();
-      const header = panel.checksTable.children[0];
+      const [header] = panel.checksTable.children;
       const ids = [];
       for (let i = 0; i < header.children.length; i++) {
         ids.push(header.children[i].dataset.sort);
       }
-      return header.children.length === ids.length &&
+      return (
+        header.children.length === ids.length &&
         Array.prototype.every.call(header.children, _ => typeof _.title === 'string' && _.title.length > 0) &&
-        new Set(ids).size === ids.length && ids.includes('scanMs') && ids.includes('loc');
+        new Set(ids).size === ids.length &&
+        ids.includes('scanMs') &&
+        ids.includes('loc')
+      );
     } finally {
       resetCheckStats();
     }
@@ -2592,9 +3125,9 @@ function testStatsLocClickShowsCallStack() {
     try {
       recordCheck('Where#x', 'v', 1);
       panel.updateCheckStats();
-      const btn = panel.checksTable.children[1].children[0].children[0];
+      const [btn] = panel.checksTable.children[1].children[0].children;
       btn.onclick();
-      const detail = panel.checksTable.children[2];
+      const [, , detail] = panel.checksTable.children;
       const shown = detail.className === 'rti-checks-loc-detail' &&
         textOf(detail).includes('Where#x') &&
         textOf(detail).includes('recordCheck');
@@ -2606,7 +3139,12 @@ function testStatsLocClickShowsCallStack() {
         panel.checksTable.children[2].className === 'rti-checks-loc-detail';
       panel.buttonResetCheckStats.onclick();
       const reset = panel.checksTable.children.length === 1;
-      return shown && toggled && kept && reset;
+      return (
+        shown &&
+        toggled &&
+        kept &&
+        reset
+      );
     } finally {
       resetCheckStats();
     }

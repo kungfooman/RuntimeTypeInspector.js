@@ -1,16 +1,15 @@
 import ts from 'typescript';
-import {parseJSDocNodes} from '../jsdoc-parsing-depfree/parseJSDocNodes.js';
-import {docTemplateNode} from '../jsdoc-parsing-depfree/docTemplateNode.js';
+import {parseJSDocNodes   } from '../jsdoc-parsing-depfree/parseJSDocNodes.js';
+import {docTemplateNode   } from '../jsdoc-parsing-depfree/docTemplateNode.js';
 import {balancedBraceInner} from './balancedBraceInner.js';
-import {parseParamHead} from '../jsdoc-parsing-depfree/parseParamHead.js';
-import {stripTsBraces} from './stripTsBraces.js';
-import {tsParamTag} from './tsParamTag.js';
-import {tsTemplateTag} from './tsTemplateTag.js';
-import {tsOverloadTag} from './tsOverloadTag.js';
-import {tsCallbackTag} from './tsCallbackTag.js';
-import {tsDottedChildren} from './tsDottedChildren.js';
-import {recoverTildeTag} from './recoverTildeTag.js';
-
+import {parseParamHead    } from '../jsdoc-parsing-depfree/parseParamHead.js';
+import {stripTsBraces     } from './stripTsBraces.js';
+import {tsParamTag        } from './tsParamTag.js';
+import {tsTemplateTag     } from './tsTemplateTag.js';
+import {tsOverloadTag     } from './tsOverloadTag.js';
+import {tsCallbackTag     } from './tsCallbackTag.js';
+import {tsDottedChildren  } from './tsDottedChildren.js';
+import {recoverTildeTag   } from './recoverTildeTag.js';
 /**
  * Lowers one JSDoc comment through the TypeScript compiler to the shared
  * canonical document: the same `{templates, overloads, params, returns,
@@ -28,10 +27,17 @@ import {recoverTildeTag} from './recoverTildeTag.js';
 function docReaderTS(comment) {
   // TS only attaches JSDoc inside real comment delimiters; the depfree
   // reader takes bare tag text, so wrap here and keep one input shape.
-  const source = ts.createSourceFile('docreader.ts', '/**\n' + comment + '\n*/\nfunction __docReader() {}', ts.ScriptTarget.Latest, true);
-  const fn = source.statements[0];
+  const text = `/**\n${comment}\n*/\nfunction __docReader() {}`;
+  const source = ts.createSourceFile('docreader.ts', text, ts.ScriptTarget.Latest, true);
+  const [fn] = source.statements;
   /** @type {import('../jsdoc-parsing-depfree/canonicalDoc.js').CanonicalDoc} */
-  const doc = {templates: [], overloads: [], params: [], returns: '', callbacks: []};
+  const doc = {
+    templates: [],
+    overloads: [],
+    params: [],
+    returns: '',
+    callbacks: [],
+  };
   for (const tag of ts.getJSDocTags(fn) ?? []) {
     if (tag.kind === ts.SyntaxKind.JSDocOverloadTag) {
       doc.overloads.push(tsOverloadTag(tag));
@@ -107,7 +113,11 @@ function docReaderTS(comment) {
         const tail = signature.parameters[index]?.getText?.() ?? '';
         const inner = '@param ' + tail.split('@param').slice(1).join('@param');
         const nested = tsDottedChildren(parameter.name, inner, 2);
-        rows.push({...parameter, type: '', merged: true}, ...nested);
+        rows.push({
+          ...parameter,
+          type: '',
+          merged: true,
+        }, ...nested);
       }
       callback.params = rows;
       if (signature.type && signature.type.typeExpression) {
@@ -164,7 +174,11 @@ function docReaderTS(comment) {
     if (param.type.includes('@param')) {
       const container = param.name;
       const atTag = segments.findIndex((segment) => atParam(segment, container));
-      out.push({...param, type: '', merged: true});
+      out.push({
+        ...param,
+        type: '',
+        merged: true,
+      });
       out.push(...tsDottedChildren(container, comment, atTag + 1));
       continue;
     }
@@ -173,7 +187,8 @@ function docReaderTS(comment) {
   doc.params = out;
   // Callback rows group under their callback on the depfree side too;
   // never count them as flat implementation rows.
-  const callbackNames = new Set(doc.callbacks.flatMap((entry) => entry.params.map((param) => param.name)));
+  const names = (entry) => entry.params.map((param) => param.name);
+  const callbackNames = new Set(doc.callbacks.flatMap(names));
   doc.params = doc.params.filter((param) => !callbackNames.has(param.name));
   return doc;
 }

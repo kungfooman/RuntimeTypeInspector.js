@@ -1,6 +1,6 @@
 import {resolveObjectSide} from './resolveObjectSide.js';
-import {deepEqualType} from './deepEqualType.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {deepEqualType    } from './deepEqualType.js';
+import {expandType       } from '../src-transpiler/expandType.js';
 const silent = () => undefined;
 // We want: plain object shapes to pass through, because indexed access
 // reads their properties directly.
@@ -8,14 +8,24 @@ function testObjectPassthrough() {
   const parsed = expandType('{a: K}');
   const input = parsed;
   const resolved = resolveObjectSide(input, silent, 0);
-  return deepEqualType(resolved, {type: 'object', properties: {a: 'K'}});
+  return deepEqualType(resolved, {
+    type: 'object',
+    properties: {
+      a: 'K',
+    },
+  });
 }
 // We want: utility references to materialize, because `T[K]` over
 // `Pick<T, ...>` reads the picked shape, not the reference.
 function testUtilityMaterializes() {
   const parsed = expandType('Pick<{a: K, b: number}, "a">');
   const resolved = resolveObjectSide(parsed, silent, 0);
-  const expected = {type: 'object', properties: {a: 'K'}};
+  const expected = {
+    type: 'object',
+    properties: {
+      a: 'K',
+    },
+  };
   return deepEqualType(resolved, expected);
 }
 // We want: intersections to merge member shapes, because `T[K]` over
@@ -23,7 +33,13 @@ function testUtilityMaterializes() {
 function testIntersectionMerges() {
   const parsed = expandType('{a: K} & {b: number}');
   const resolved = resolveObjectSide(parsed, silent, 0);
-  const expected = {type: 'object', properties: {a: 'K', b: 'number'}};
+  const expected = {
+    type: 'object',
+    properties: {
+      a: 'K',
+      b: 'number',
+    },
+  };
   return deepEqualType(resolved, expected);
 }
 // We want: an unresolvable member to fail the whole merge, because a

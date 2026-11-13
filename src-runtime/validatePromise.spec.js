@@ -1,5 +1,5 @@
 import {validateType} from './validateType.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {expandType  } from '../src-transpiler/expandType.js';
 const warn = () => undefined;
 function testPromiseNumberValid() {
   // User snippet:
@@ -10,16 +10,30 @@ function testPromiseNumberValid() {
   //   const promise = new Promise((resolve, reject) => resolve(123));
   //   test(promise) must pass with no 'unchecked'.
   const expect = expandType('Promise<number>');
-  if (JSON.stringify(expect) !== JSON.stringify({type: 'promise', elementType: 'number'})) {
+  const desugared = {
+    type: 'promise',
+    elementType: 'number',
+  };
+  if (JSON.stringify(expect) !== JSON.stringify(desugared)) {
     return false;
   }
   let unchecked = false;
   const promise = new Promise((resolve) => {
     resolve(123);
   });
-  const ret = validateType(promise, expect, 'test', 'a', true, (...args) => {
-    if (args[0] === 'unchecked') unchecked = true;
-  }, 0);
+  const ret = validateType(
+    promise,
+    expect,
+    'test',
+    'a',
+    true,
+    (...args) => {
+      if (args[0] === 'unchecked') {
+        unchecked = true;
+      }
+    },
+    0,
+  );
   return ret === true && unchecked === false;
 }
 function testPromiseNumberInvalid() {
@@ -31,13 +45,13 @@ function testPromiseNumberInvalid() {
   if (validateType('123', expect, 'test', 'a', true, warn, 0)) {
     return false;
   }
-  if (validateType({then: () => {}}, expect, 'test', 'a', true, warn, 0)) {
-    return false;
-  }
-  if (validateType(null, expect, 'test', 'a', true, warn, 0)) {
-    return false;
-  }
-  if (validateType(undefined, expect, 'test', 'a', true, warn, 0)) {
+  const thenable = {
+    then: () => {},
+  };
+  const acceptsThenable = validateType(thenable, expect, 'test', 'a', true, warn, 0);
+  const acceptsNull = validateType(null, expect, 'test', 'a', true, warn, 0);
+  const acceptsUndefined = validateType(undefined, expect, 'test', 'a', true, warn, 0);
+  if (acceptsThenable || acceptsNull || acceptsUndefined) {
     return false;
   }
   return true;
@@ -53,9 +67,17 @@ function testPromiseRejectsWithWarning() {
   // Failure must warn (not silently pass) and must not warn 'unchecked'.
   const expect = expandType('Promise<number>');
   const warnings = [];
-  const ret = validateType(123, expect, 'test', 'a', true, (...args) => {
-    warnings.push(args[0]);
-  }, 0);
+  const ret = validateType(
+    123,
+    expect,
+    'test',
+    'a',
+    true,
+    (...args) => {
+      warnings.push(args[0]);
+    },
+    0,
+  );
   if (ret !== false) {
     return false;
   }

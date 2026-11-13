@@ -1,14 +1,16 @@
 import {options} from './options.js';
 import {recordCheck, recordMapRide, recordSkip, recordMapScan, recordSetScan, recordArrayScan, recordObjectScan, getCheckStats, resetCheckStats} from './checkStats.js';
 import {validateType} from './validateType.js';
-import {inspectType} from './inspectType.js';
-import {expandType} from '../src-transpiler/expandType.js';
+import {inspectType } from './inspectType.js';
+import {expandType  } from '../src-transpiler/expandType.js';
 /**
  * Untouched options as captured at import time, so tests can flip and
  * restore without turning suite ordering into part of the contract.
  * @type {{checkStats: boolean}}
  */
-const virgin = {checkStats: options.checkStats};
+const virgin = {
+  checkStats: options.checkStats,
+};
 function testKindWalksAccumulatePerKind() {
   // Each container kind accumulates its own total and worst: Set, Array
   // and Object walks land in separate ledgers on the same row, and kinds
@@ -20,11 +22,20 @@ function testKindWalksAccumulatePerKind() {
   recordArrayScan('T#k', 'v', 4);
   recordObjectScan('T#k', 'v', 5);
   const rows = getCheckStats();
-  return rows.length === 1 &&
-    rows[0].setMs === 10 && rows[0].maxSetMs === 7 && rows[0].setWalks === 2 &&
-    rows[0].arrayMs === 4 && rows[0].maxArrayMs === 4 && rows[0].arrayWalks === 1 &&
-    rows[0].objectMs === 5 && rows[0].maxObjectMs === 5 && rows[0].objectWalks === 1 &&
-    rows[0].scanMs === 0 && rows[0].scans === 0;
+  return (
+    rows.length === 1 &&
+    rows[0].setMs === 10 &&
+    rows[0].maxSetMs === 7 &&
+    rows[0].setWalks === 2 &&
+    rows[0].arrayMs === 4 &&
+    rows[0].maxArrayMs === 4 &&
+    rows[0].arrayWalks === 1 &&
+    rows[0].objectMs === 5 &&
+    rows[0].maxObjectMs === 5 &&
+    rows[0].objectWalks === 1 &&
+    rows[0].scanMs === 0 &&
+    rows[0].scans === 0
+  );
 }
 function testKindTimeFoldsIntoCheckTime() {
   // A Set walk followed by a zero-measured check attributes the walk to
@@ -35,7 +46,7 @@ function testKindTimeFoldsIntoCheckTime() {
   recordSetScan('T#fold-set', 'v', 30);
   recordArrayScan('T#fold-set', 'v', 12);
   recordCheck('T#fold-set', 'v', 0);
-  const coarse = getCheckStats()[0];
+  const [coarse] = getCheckStats();
   // Both walks fold into the one enclosing check: total and worst both
   // read 42, since the check is the unit the worst is measured in.
   const coarseOk = coarse.checkMs === 42 && coarse.maxCheckMs === 42;
@@ -48,7 +59,10 @@ function testInspectTypeSplitsParams() {
   options.checkStats = true;
   resetCheckStats();
   const exprOk = inspectType('x > 0', 'string', 'E#m', 'expr');
-  const arrExpect = {type: 'array', elementType: 'string'};
+  const arrExpect = {
+    type: 'array',
+    elementType: 'string',
+  };
   const definesOk = inspectType(['a', 'b'], arrExpect, 'E#m', 'defines');
   const rows = getCheckStats();
   const expr = rows.find(_ => _.loc === 'E#m expr');
@@ -70,14 +84,24 @@ function testValidatorsRecordTheirKind() {
   options.checkStats = true;
   resetCheckStats();
   const warn = () => undefined;
-  const setExpect = {type: 'set', elementType: 'number'};
-  const arrExpect = {type: 'array', elementType: 'number'};
+  const setExpect = {
+    type: 'set',
+    elementType: 'number',
+  };
+  const arrExpect = {
+    type: 'array',
+    elementType: 'number',
+  };
   const recExpect = expandType('Record<string, number>');
   const setOk = validateType(new Set([1, 'x']), setExpect, 'V#kinds', 'v', true, warn, 0) === false;
   const arrOk = validateType([1, 'x'], arrExpect, 'V#kinds', 'v', true, warn, 0) === false;
-  const recOk = validateType({a: 1, b: 'x'}, recExpect, 'V#kinds', 'v', true, warn, 0) === false;
+  const recValue = {
+    a: 1,
+    b: 'x',
+  };
+  const recOk = validateType(recValue, recExpect, 'V#kinds', 'v', true, warn, 0) === false;
   recordCheck('V#kinds', 'v', 0);
-  const row = getCheckStats()[0];
+  const [row] = getCheckStats();
   const ok = setOk && arrOk && recOk &&
     row.setWalks === 1 && row.arrayWalks === 1 && row.objectWalks === 1 &&
     row.checks === 1 && row.checkMs === row.setMs + row.arrayMs + row.objectMs;
@@ -96,13 +120,13 @@ function testNestedScanTimeFoldsIntoCheckTime() {
   resetCheckStats();
   recordMapScan('T#fold', 'v', 30);
   recordCheck('T#fold', 'v', 0);
-  const coarse = getCheckStats()[0];
+  const [coarse] = getCheckStats();
   const coarseOk = coarse.checks === 1 && coarse.scanMs === 30 &&
     coarse.checkMs === 30 && coarse.maxCheckMs === 30;
   resetCheckStats();
   recordMapScan('T#fine', 'v', 30);
   recordCheck('T#fine', 'v', 42);
-  const fine = getCheckStats()[0];
+  const [fine] = getCheckStats();
   const fineOk = fine.checkMs === 42 && fine.maxCheckMs === 42 && fine.scanMs === 30;
   return coarseOk && fineOk;
 }
@@ -119,10 +143,17 @@ function testRowCountsTotalsAndWorst() {
   recordMapScan('T#m', 'v', 2);
   recordMapScan('T#m', 'v', 7);
   const rows = getCheckStats();
-  return rows.length === 1 && rows[0].loc === 'T#m v' &&
-    rows[0].checks === 2 && rows[0].rides === 3 && rows[0].scans === 2 &&
-    rows[0].checkMs === 2 && rows[0].maxCheckMs === 1.5 &&
-    rows[0].scanMs === 9 && rows[0].maxScanMs === 7;
+  return (
+    rows.length === 1 &&
+    rows[0].loc === 'T#m v' &&
+    rows[0].checks === 2 &&
+    rows[0].rides === 3 &&
+    rows[0].scans === 2 &&
+    rows[0].checkMs === 2 &&
+    rows[0].maxCheckMs === 1.5 &&
+    rows[0].scanMs === 9 &&
+    rows[0].maxScanMs === 7
+  );
 }
 function testUndefinedTimingsCountButCostNothing() {
   // A check without a measurement (timing was off, or the clock is not
@@ -132,9 +163,15 @@ function testUndefinedTimingsCountButCostNothing() {
   recordCheck('T#u');
   recordMapScan('T#u');
   const rows = getCheckStats();
-  return rows.length === 1 && rows[0].checks === 1 && rows[0].scans === 1 &&
-    rows[0].checkMs === 0 && rows[0].maxCheckMs === 0 &&
-    rows[0].scanMs === 0 && rows[0].maxScanMs === 0;
+  return (
+    rows.length === 1 &&
+    rows[0].checks === 1 &&
+    rows[0].scans === 1 &&
+    rows[0].checkMs === 0 &&
+    rows[0].maxCheckMs === 0 &&
+    rows[0].scanMs === 0 &&
+    rows[0].maxScanMs === 0
+  );
 }
 function testHotspotSortScanMsThenCheckMsThenChecks() {
   // The panel promises hotspots first: the biggest scan time leads,
@@ -171,9 +208,17 @@ function testParamsSplitRows() {
   const rows = getCheckStats();
   const cheap = rows.find(_ => _.loc === 'P#m cheap');
   const pricey = rows.find(_ => _.loc === 'P#m pricey');
-  return rows.length === 2 && cheap !== undefined && pricey !== undefined &&
-    cheap.checks === 1 && cheap.scans === 0 && cheap.checkMs === 1 &&
-    pricey.checks === 1 && pricey.scans === 1 && pricey.checkMs === 50;
+  return (
+    rows.length === 2 &&
+    cheap !== undefined &&
+    pricey !== undefined &&
+    cheap.checks === 1 &&
+    cheap.scans === 0 &&
+    cheap.checkMs === 1 &&
+    pricey.checks === 1 &&
+    pricey.scans === 1 &&
+    pricey.checkMs === 50
+  );
 }
 function testNoClonableRowPerLocIsAnonymous() {
   // Different locs split into different rows: the table answers "which
@@ -212,9 +257,13 @@ function testRowCarriesCallStack() {
   options.checkStats = true;
   resetCheckStats();
   recordCheck('T#stack', 'v', 1);
-  const stack = getCheckStats()[0].stack;
-  return typeof stack === 'string' && stack.includes('recordCheck') &&
-    stack.includes('rowFor') && stack.includes('Error');
+  const [{stack}] = getCheckStats();
+  return (
+    typeof stack === 'string' &&
+    stack.includes('recordCheck') &&
+    stack.includes('rowFor') &&
+    stack.includes('Error')
+  );
 }
 function testStackCapturedExactlyOncePerRow() {
   // Hot locs record millions of checks: the `new Error()` cost must be
@@ -273,7 +322,11 @@ function testSkipsAccumulatePerRow() {
     recordSkip('T#s', 'v');
     recordSkip('T#s', 'v');
     const rows = getCheckStats();
-    return rows.length === 1 && rows[0].skips === 2 && rows[0].checks === 0;
+    return (
+      rows.length === 1 &&
+      rows[0].skips === 2 &&
+      rows[0].checks === 0
+    );
   } finally {
     resetCheckStats();
   }

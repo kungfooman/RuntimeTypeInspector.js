@@ -1,4 +1,4 @@
-import {options                } from './options.js';
+import {options                   } from './options.js';
 import {validateDivisionAddWarning} from './validateDivisionAddWarning.js';
 /**
  * @param {number} lhs - The left hand side.
@@ -18,7 +18,10 @@ function validateDivision(lhs, rhs, loc = 'unspecified') {
   const twoBigInts = typeof lhs === 'bigint' && typeof rhs === 'bigint';
   const valid = twoNumbers || twoBigInts;
   if (!valid) {
-    const expect = {type: 'union', members: ['number', 'bigint']};
+    const expect = {
+      type: 'union',
+      members: ['number', 'bigint'],
+    };
     const msg = `validateDivision> incompatible type pair`;
     const details = {lhs, rhs, twoNumbers, twoBigInts};
     validateDivisionAddWarning('would throw', expect, loc, 'division', msg, details);

@@ -36,18 +36,23 @@ function stringifyType(type, space = 0, depth = 0) {
   if (typeof type !== 'object') {
     return String(type);
   }
-  if (type !== null && typeof type === 'object') {
+  if (typeof type === 'object') {
     if (type.type === 'parameter') {
-      return `${stringifyType(type.name, space, depth + 1)}: ${stringifyType(type.paramType, space, depth + 1)}`;
+      const key = stringifyType(type.name, space, depth + 1);
+      const val = stringifyType(type.paramType, space, depth + 1);
+      return `${key}: ${val}`;
     }
     if (type.type === 'atom') {
       return stringifyType(type.atomType, space, depth + 1);
     }
   }
-  const {type: kind} = type;
+  const {
+    type: kind,
+  } = type;
   // {type: 'string', optional: true} etc. where kind is a plain type name
   // and carries no extra structural fields - unwrap below after switch.
   let out;
+  const stringifyNested = (nested) => stringifyType(nested, space, depth + 1);
   switch (kind) {
     case 'object': {
       const {properties, indexSignatures} = type;
@@ -62,7 +67,10 @@ function stringifyType(type, space = 0, depth = 0) {
           const isReadonly = !!(val && typeof val === 'object' && val.readonly);
           const prefix = isReadonly ? 'readonly ' : '';
           if (isOpt) {
-            const inner = { ...val, optional: false };
+            const inner = {
+              ...val,
+              optional: false,
+            };
             const innerStr = stringifyType(inner, space, depth + 1);
             parts.push(`${prefix}${stringifyKey(key)}?: ${innerStr}`);
           } else {
@@ -97,11 +105,13 @@ function stringifyType(type, space = 0, depth = 0) {
       const {elements} = type;
       const stringifyEl = (el) => {
         if (el && typeof el === 'object' && el.type === 'tupleMember') {
-          const inner = stringifyType(el.elementType, space, depth + 1);
-          if (el.dotDot) return `...${el.name}: ${inner}`;
+          const inner = stringifyNested(el.elementType);
+          if (el.dotDot) {
+            return `...${el.name}: ${inner}`;
+          }
           return `${el.name}${el.optional ? '?' : ''}: ${inner}`;
         }
-        return stringifyType(el, space, depth + 1);
+        return stringifyNested(el);
       };
       if (space && elements.length > 3) {
         const pad = ' '.repeat(space * (depth + 1));
@@ -113,71 +123,89 @@ function stringifyType(type, space = 0, depth = 0) {
       break;
     }
     case 'tupleMember': {
-      const inner = stringifyType(type.elementType, space, depth + 1);
-      if (type.dotDot) return `...${type.name}: ${inner}`;
+      const inner = stringifyNested(type.elementType);
+      if (type.dotDot) {
+        return `...${type.name}: ${inner}`;
+      }
       return `${type.name}${type.optional ? '?' : ''}: ${inner}`;
     }
     case 'union':
-      out = type.members.map((_) => stringifyType(_, space, depth + 1)).join(' | ');
+      out = type.members.map(stringifyNested).join(' | ');
       break;
     case 'intersection':
-      out = type.members.map((_) => stringifyType(_, space, depth + 1)).join(' & ');
+      out = type.members.map(stringifyNested).join(' & ');
       break;
     case 'record':
-      out = `Record<${stringifyType(type.key, space, depth + 1)}, ${stringifyType(type.val, space, depth + 1)}>`;
+      out = `Record<${stringifyNested(type.key)}, ${stringifyNested(type.val)}>`;
       break;
     case 'map':
-      out = `Map<${stringifyType(type.key, space, depth + 1)}, ${stringifyType(type.val, space, depth + 1)}>`;
+      out = `Map<${stringifyNested(type.key)}, ${stringifyNested(type.val)}>`;
       break;
     case 'set':
-      out = `Set<${stringifyType(type.elementType, space, depth + 1)}>`;
+      out = `Set<${stringifyNested(type.elementType)}>`;
       break;
     case 'promise':
-      out = `Promise<${stringifyType(type.elementType, space, depth + 1)}>`;
+      out = `Promise<${stringifyNested(type.elementType)}>`;
       break;
     case 'class':
-      out = `Class<${stringifyType(type.elementType, space, depth + 1)}>`;
+      out = `Class<${stringifyNested(type.elementType)}>`;
       break;
     case 'rest':
-      out = `...${stringifyType(type.annotation, space, depth + 1)}`;
+      out = `...${stringifyNested(type.annotation)}`;
       break;
     case 'keyof':
-      out = `keyof ${stringifyType(type.argument, space, depth + 1)}`;
+      out = `keyof ${stringifyNested(type.argument)}`;
       break;
     case 'typeof':
-      out = `typeof ${stringifyType(type.argument, space, depth + 1)}`;
+      out = `typeof ${stringifyNested(type.argument)}`;
       break;
     case 'indexedAccess':
-      out = `${stringifyType(type.object, space, depth + 1)}[${stringifyType(type.index, space, depth + 1)}]`;
+      out = `${stringifyNested(type.object)}[${stringifyNested(type.index)}]`;
       break;
     case 'mapping': {
-      const iterable = stringifyType(type.iterable, space, depth + 1);
-      const element = stringifyType(type.element, space, depth + 1);
-      const result = stringifyType(type.result, space, depth + 1);
-      const readonly = type.readonly === '-' ? '-readonly ' : type.readonly === '+' ? '+readonly ' : type.readonly === 'readonly' ? 'readonly ' : '';
-      const question = type.question === '-' ? '-?' : type.question === '+' ? '+?' : type.question === '?' ? '?' : '';
+      const iterable = stringifyNested(type.iterable);
+      const element = stringifyNested(type.element);
+      const result = stringifyNested(type.result);
+      let readonly = '';
+      if (type.readonly === '-') {
+        readonly = '-readonly ';
+      } else if (type.readonly === '+' || type.readonly === 'readonly') {
+        readonly = type.readonly === '+' ? '+readonly ' : 'readonly ';
+      }
+      let question = '';
+      if (type.question === '-' || type.question === '+') {
+        question = type.question + '?';
+      } else if (type.question === '?') {
+        question = '?';
+      }
       if (type.nameType !== undefined) {
-        return `{${readonly}[${element} in ${iterable} as ${stringifyType(type.nameType, space, depth + 1)}]${question}: ${result}}`;
+        const renamed = stringifyNested(type.nameType);
+        return `{${readonly}[${element} in ${iterable} as ${renamed}]${question}: ${result}}`;
       }
       return `{${readonly}[${element} in ${iterable}]${question}: ${result}}`;
     }
     case 'function': {
-      const params = (type.parameters || []).map((_) => stringifyType(_, space, depth + 1)).join(', ');
-      const ret = type.ret ? stringifyType(type.ret, space, depth + 1) : 'any';
+      const params = (type.parameters || []).map(stringifyNested).join(', ');
+      const ret = type.ret ? stringifyNested(type.ret) : 'any';
       out = `(${params})=>${ret}`;
       break;
     }
     case 'new': {
-      const params = (type.parameters || []).map((_) => stringifyType(_, space, depth + 1)).join(', ');
-      const ret = type.ret ? stringifyType(type.ret, space, depth + 1) : 'any';
+      const params = (type.parameters || []).map(stringifyNested).join(', ');
+      const ret = type.ret ? stringifyNested(type.ret) : 'any';
       out = `new(${params})=>${ret}`;
       break;
     }
-    case 'condition':
-      out = `${stringifyType(type.checkType, space, depth + 1)} extends ${stringifyType(type.extendsType, space, depth + 1)}?${stringifyType(type.trueType, space, depth + 1)}:${stringifyType(type.falseType, space, depth + 1)}`;
+    case 'condition': {
+      const check = stringifyNested(type.checkType);
+      const base = stringifyNested(type.extendsType);
+      const yes = stringifyNested(type.trueType);
+      const no = stringifyNested(type.falseType);
+      out = `${check} extends ${base}?${yes}:${no}`;
       break;
+    }
     case 'reference': {
-      const args = (type.args || []).map((_) => stringifyType(_, space, depth + 1)).join(', ');
+      const args = (type.args || []).map(stringifyNested).join(', ');
       out = args ? `${type.name}<${args}>` : type.name;
       break;
     }
@@ -186,20 +214,23 @@ function stringifyType(type, space = 0, depth = 0) {
       let str = '`';
       str += quasis[0];
       for (let i = 0; i < types.length; i++) {
-        str += `\${${stringifyType(types[i], space, depth + 1)}}${quasis[i + 1]}`;
+        str += `\${${stringifyNested(types[i])}}${quasis[i + 1]}`;
       }
       str += '`';
       out = str;
       break;
     }
     case 'indexSignature': {
-      const params = (type.indexParameters || []).map((_) => {
-        if (isParameterNode(_)) {
-          return `${stringifyType(_.name, space, depth + 1)}: ${stringifyType(_.paramType, space, depth + 1)}`;
+      const stringifyIndexParam = (param) => {
+        if (isParameterNode(param)) {
+          const key = stringifyNested(param.name);
+          const val = stringifyNested(param.paramType);
+          return `${key}: ${val}`;
         }
-        return stringifyType(_, space, depth + 1);
-      }).join(', ');
-      out = `[${params}]: ${stringifyType(type.indexType, space, depth + 1)}`;
+        return stringifyNested(param);
+      };
+      const params = (type.indexParameters || []).map(stringifyIndexParam).join(', ');
+      out = `[${params}]: ${stringifyNested(type.indexType)}`;
       break;
     }
     case 'bigint':

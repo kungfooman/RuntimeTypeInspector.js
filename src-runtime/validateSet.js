@@ -1,4 +1,4 @@
-import {recurse} from "./validators.js";
+import {recurse   } from "./validators.js";
 import {isSetValue} from "./isSetValue.js";
 /**
  * @param {*} value - The actual value that we need to validate.
@@ -20,7 +20,10 @@ function validateSet(value, expect, loc, name, critical, warn, depth) {
   for (const innerValue of value) {
     const test = recurse(innerValue, elementType, loc, name, critical, warn, depth + 1);
     if (!test) {
-      const info = {expect: elementType, got: innerValue};
+      const info = {
+        expect: elementType,
+        got: innerValue,
+      };
       warn(`validateSet> invalid set member at [...${name}.values()][${i}]`, info);
       return false;
     }

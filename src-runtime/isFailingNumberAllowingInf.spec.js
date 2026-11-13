@@ -19,14 +19,19 @@ function testRejectsNaN() {
 function testRejectsNonNumber() {
   // Non-number types fail without coercion, boxed numbers included,
   // mirroring validateNumber's strict typeof behavior.
-  return isFailingNumberAllowingInf('1') === true &&
+  return (
+    isFailingNumberAllowingInf('1') === true &&
     isFailingNumberAllowingInf(Object(1)) === true &&
-    isFailingNumberAllowingInf(null) === true;
+    isFailingNumberAllowingInf(null) === true
+  );
 }
 function testAcceptsFinite() {
   // Ordinary finite numbers, including signed zero, pass.
-  return isFailingNumberAllowingInf(0) === false &&
-    isFailingNumberAllowingInf(-0) === false && isFailingNumberAllowingInf(1.5) === false;
+  return (
+    isFailingNumberAllowingInf(0) === false &&
+    isFailingNumberAllowingInf(-0) === false &&
+    isFailingNumberAllowingInf(1.5) === false
+  );
 }
 const tests = [
   testAcceptsInfinity,

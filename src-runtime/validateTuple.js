@@ -1,7 +1,7 @@
-import {recurse} from "./validators.js";
-import {isArrayValue} from "./isArrayValue.js";
-import {tupleEffective} from "./tupleEffective.js";
-import {tupleOptional} from "./tupleOptional.js";
+import {recurse            } from "./validators.js";
+import {isArrayValue       } from "./isArrayValue.js";
+import {tupleEffective     } from "./tupleEffective.js";
+import {tupleOptional      } from "./tupleOptional.js";
 import {expandTupleElements} from "./expandTupleElements.js";
 /**
  * @param {*} value - The actual value that we need to validate.
@@ -28,15 +28,35 @@ function validateTuple(value, expect, loc, name, critical, warn, depth) {
     // Variadic array rest must be last logical element for now; handle before/after split
     const before = expanded.slice(0, variadicPos);
     const after = expanded.slice(variadicPos);
-    const minLength = before.filter((el) => !tupleOptional(el)).length + after.filter((el) => !tupleOptional(el)).length;
+    const beforeRequired = before.filter(
+      (el) => !tupleOptional(el),
+    ).length;
+    const afterRequired = after.filter(
+      (el) => !tupleOptional(el),
+    ).length;
+    const minLength = beforeRequired + afterRequired;
     if (value.length < minLength) {
       warn('Value and tuple elements have different lengths (variadic).');
       return false;
     }
     // Validate before part
     for (let i = 0; i < before.length; i++) {
-      if (value[i] === undefined && tupleOptional(before[i])) continue;
-      if (!recurse(value[i], tupleEffective(before[i]), loc, `${name}[${i}]`, critical, warn, depth + 1)) {
+      if (value[i] === undefined && tupleOptional(before[i])) {
+        continue;
+      }
+      const leafType = tupleEffective(before[i]);
+      const leafName = `${name}[${i}]`;
+      const leafDepth = depth + 1;
+      const leafOk = recurse(
+        value[i],
+        leafType,
+        loc,
+        leafName,
+        critical,
+        warn,
+        leafDepth,
+      );
+      if (!leafOk) {
         warn('Tuple validation failed.');
         return false;
       }
@@ -45,7 +65,18 @@ function validateTuple(value, expect, loc, name, critical, warn, depth) {
     const middleCount = value.length - before.length - after.length;
     for (let i = 0; i < middleCount; i++) {
       const idx = before.length + i;
-      if (!recurse(value[idx], variadic.elementType, loc, `${name}[${idx}]`, critical, warn, depth + 1)) {
+      const middleName = `${name}[${idx}]`;
+      const middleDepth = depth + 1;
+      const middleOk = recurse(
+        value[idx],
+        variadic.elementType,
+        loc,
+        middleName,
+        critical,
+        warn,
+        middleDepth,
+      );
+      if (!middleOk) {
         warn('Tuple validation failed.');
         return false;
       }
@@ -53,8 +84,22 @@ function validateTuple(value, expect, loc, name, critical, warn, depth) {
     // Validate after part
     for (let i = 0; i < after.length; i++) {
       const idx = before.length + middleCount + i;
-      if (value[idx] === undefined && tupleOptional(after[i])) continue;
-      if (!recurse(value[idx], tupleEffective(after[i]), loc, `${name}[${idx}]`, critical, warn, depth + 1)) {
+      if (value[idx] === undefined && tupleOptional(after[i])) {
+        continue;
+      }
+      const leafType = tupleEffective(after[i]);
+      const leafName = `${name}[${idx}]`;
+      const leafDepth = depth + 1;
+      const leafOk = recurse(
+        value[idx],
+        leafType,
+        loc,
+        leafName,
+        critical,
+        warn,
+        leafDepth,
+      );
+      if (!leafOk) {
         warn('Tuple validation failed.');
         return false;
       }
@@ -63,7 +108,9 @@ function validateTuple(value, expect, loc, name, critical, warn, depth) {
   }
   // Optional trailing tuple members: e.g. [string, number?] -> length 1 or 2
   let required = expanded.length;
-  while (required > 0 && tupleOptional(expanded[required - 1])) required--;
+  while (required > 0 && tupleOptional(expanded[required - 1])) {
+    required--;
+  }
   if (value.length < required || value.length > expanded.length) {
     warn('Value and tuple elements have different lengths.');
     return false;
@@ -83,7 +130,7 @@ function validateTuple(value, expect, loc, name, critical, warn, depth) {
       `${name}[${i}]`,
       critical,
       warn,
-      depth + 1
+      depth + 1,
     );
   });
   if (!ret) {

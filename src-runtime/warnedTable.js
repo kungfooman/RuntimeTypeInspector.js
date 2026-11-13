@@ -5,8 +5,9 @@ function createTable() {
     return null;
   }
   const descs = ['Hide', 'Debug', 'Hits', 'Loc', 'Name', 'Expect', 'Value', 'Message', 'Inspect'];
-  return Table({},
-               Tr({}, ...descs.map(createTableHead))
+  return Table(
+    {},
+    Tr({}, ...descs.map(createTableHead)),
   );
 }
 export {createTable};

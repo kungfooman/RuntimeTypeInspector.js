@@ -1,7 +1,7 @@
-import {classes} from './registerClass.js';
-import {stringifyType} from './stringifyType.js';
+import {classes       } from './registerClass.js';
+import {stringifyType } from './stringifyType.js';
 import {stringifyValue} from './stringifyValue.js';
-import {prettyValue} from './describeValue.js';
+import {prettyValue   } from './describeValue.js';
 /**
  * Short human-readable summary for an expected type, for the panel's Expect
  * column (issue #134 item 2). Bare single-letter types like `K` are

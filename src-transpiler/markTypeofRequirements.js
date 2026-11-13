@@ -1,4 +1,4 @@
-import {requiredTypeofs    } from './expandType.js';
+import {requiredTypeofs} from './expandType.js';
 /**
  * Pre-marks every `typeof Name` value query inside a JSDoc comment so the
  * later `VariableDeclaration` pass emits its `registerVariable` in source

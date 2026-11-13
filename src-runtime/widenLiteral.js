@@ -8,6 +8,12 @@
  * widenLiteral(1); // 'number'
  */
 function widenLiteral(literal) {
-  return typeof literal === 'string' ? 'string' : typeof literal === 'number' ? 'number' : 'boolean';
+  if (typeof literal === 'string') {
+    return 'string';
+  }
+  if (typeof literal === 'number') {
+    return 'number';
+  }
+  return 'boolean';
 }
 export {widenLiteral};

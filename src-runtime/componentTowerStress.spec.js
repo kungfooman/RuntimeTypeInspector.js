@@ -3,8 +3,8 @@ import {registerTypedef, typedefs} from './registerTypedef.js';
 import {registerClass, classes} from './registerClass.js';
 import {expandType} from '../src-transpiler/expandType.js';
 import {getTypeKeys, resolveObject} from './getTypeKeys.js';
-import {createType} from './createType.js';
-import {extendsCheck} from './evaluateCondition.js';
+import {createType           } from './createType.js';
+import {extendsCheck         } from './evaluateCondition.js';
 import {createTypeFromMapping} from './createTypeFromMapping.js';
 const warn = () => undefined;
 /**
@@ -39,25 +39,71 @@ function prepareStress() {
   registerClass(TwColor);
   registerClass(TwCam);
   registerClass(TwOther);
-  registerTypedef('TwColor', {type: 'object', properties: {r: 'number'}});
-  registerTypedef('TwCam', {type: 'object', properties: {fov: 'number'}});
-  registerTypedef('TwBox', {type: 'object', properties: {a: 'number', b: 'string'}});
-  registerTypedef('TwBox2', {type: 'object', properties: {a: 'number', c: 'boolean'}});
-  registerTypedef('TwTint', 'TwColor');
-  registerTypedef('TwChain', 'TwTint');
-  registerTypedef('TwOptBox', {type: 'object', properties: {v: 'number'}, optional: true});
-  registerTypedef('TwRoBox', {type: 'object', properties: {v: 'number'}, readonly: true});
-  registerTypedef('TwRich', {
+  registerTypedef('TwColor', {
     type: 'object',
     properties: {
-      plain: 'TwColor',
-      alias: 'TwTint',
-      chain: 'TwChain',
-      union: {type: 'union', members: ['TwColor', {type: 'array', elementType: 'number'}]},
-      list: {type: 'array', elementType: 'TwColor'},
-      count: 'number',
+      r: 'number',
     },
   });
+  registerTypedef('TwCam', {
+    type: 'object',
+    properties: {
+      fov: 'number',
+    },
+  });
+  registerTypedef('TwBox', {
+    type: 'object',
+    properties: {
+      a: 'number',
+      b: 'string',
+    },
+  });
+  registerTypedef('TwBox2', {
+    type: 'object',
+    properties: {
+      a: 'number',
+      c: 'boolean',
+    },
+  });
+  registerTypedef('TwTint', 'TwColor');
+  registerTypedef('TwChain', 'TwTint');
+  registerTypedef('TwOptBox', {
+    type: 'object',
+    properties: {
+      v: 'number',
+    },
+    optional: true,
+  });
+  registerTypedef('TwRoBox', {
+    type: 'object',
+    properties: {
+      v: 'number',
+    },
+    readonly: true,
+  });
+  registerTypedef(
+    'TwRich',
+    {
+      type: 'object',
+      properties: {
+        plain: 'TwColor',
+        alias: 'TwTint',
+        chain: 'TwChain',
+        union: {
+          type: 'union',
+          members: ['TwColor', {
+            type: 'array',
+            elementType: 'number',
+          }],
+        },
+        list: {
+          type: 'array',
+          elementType: 'TwColor',
+        },
+        count: 'number',
+      },
+    },
+  );
   registerTypedef('TwWritable', expandType('{ [P in keyof T]-?: IfEquals<{ [Q in P]: T[P] }, { -readonly [Q in P]: T[P] }, P> }[keyof T]'), ['T']);
 }
 // --- Point 1: `-?` / `-readonly` preserve reference identity. ---
@@ -86,10 +132,12 @@ function testStripQuestionStillStrips() {
   if (typedefs.TwOptBox.optional !== true) {
     return false;
   }
-  if (validateType(undefined, prop, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (!validateType({v: 1}, prop, 'loc', 'name', true, warn, 0)) {
+  const acceptsUndefined = validateType(undefined, prop, 'loc', 'name', true, warn, 0);
+  const rightValue = {
+    v: 1,
+  };
+  const passesRight = validateType(rightValue, prop, 'loc', 'name', true, warn, 0);
+  if (acceptsUndefined || passesRight === false) {
     return false;
   }
   return true;
@@ -142,13 +190,19 @@ function testWritableKeysRichSpelling() {
 // Getter-only (readonly) properties are still filtered out.
 function testWritableKeysDropsGetterOnly() {
   prepareStress();
-  registerTypedef('TwMixed', {
-    type: 'object',
-    properties: {
-      ro: {type: 'TwColor', readonly: true},
-      rw: 'TwColor',
+  registerTypedef(
+    'TwMixed',
+    {
+      type: 'object',
+      properties: {
+        ro: {
+          type: 'TwColor',
+          readonly: true,
+        },
+        rw: 'TwColor',
+      },
     },
-  });
+  );
   const keys = getTypeKeys(expandType('TwWritable<TwMixed>'), warn);
   if (!Array.isArray(keys) || JSON.stringify(keys) !== JSON.stringify(['rw'])) {
     return false;
@@ -178,14 +232,25 @@ function testDoubleNonNullableKeys() {
 // emptier stays unresolvable rather than guessing.
 function testSingleMemberUnionResolution() {
   prepareStress();
-  const single = resolveObject({type: 'union', members: ['TwBox', 'undefined']}, warn, 0);
+  const single = resolveObject({
+    type: 'union',
+    members: ['TwBox', 'undefined'],
+  }, warn, 0);
   if (!single || single.type !== 'object' || JSON.stringify(Object.keys(single.properties).sort()) !== JSON.stringify(['a', 'b'])) {
     return false;
   }
-  if (resolveObject({type: 'union', members: ['TwBox', 'TwBox2']}, warn, 0) !== undefined) {
+  const ambiguous = {
+    type: 'union',
+    members: ['TwBox', 'TwBox2'],
+  };
+  if (resolveObject(ambiguous, warn, 0) !== undefined) {
     return false;
   }
-  if (resolveObject({type: 'union', members: ['null', 'undefined']}, warn, 0) !== undefined) {
+  const empty = {
+    type: 'union',
+    members: ['null', 'undefined'],
+  };
+  if (resolveObject(empty, warn, 0) !== undefined) {
     return false;
   }
   return true;
@@ -194,18 +259,27 @@ function testSingleMemberUnionResolution() {
 // key reads resolve through them instead of returning member names.
 function testNullSlotJoinsMap() {
   prepareStress();
-  registerTypedef('TwNullEntity', {
-    type: 'object',
-    properties: {
-      camera: {type: 'union', members: ['TwCam', 'null']},
-      name: 'string',
+  registerTypedef(
+    'TwNullEntity',
+    {
+      type: 'object',
+      properties: {
+        camera: {
+          type: 'union',
+          members: ['TwCam', 'null'],
+        },
+        name: 'string',
+      },
     },
-  });
+  );
   registerTypedef('TwNullMap', expandType('{ [K in keyof TwNullEntity as NonNullable<TwNullEntity[K]> extends TwComponent ? K : never]: NonNullable<TwNullEntity[K]> }'));
   let count = 0;
-  const type = createType('TwNullMap', () => {
-    count++;
-  });
+  const type = createType(
+    'TwNullMap',
+    () => {
+      count++;
+    },
+  );
   if (!type || JSON.stringify(Object.keys(type.properties)) !== JSON.stringify(['camera'])) {
     return false;
   }
@@ -223,13 +297,16 @@ function testNullSlotJoinsMap() {
 function testDoublyNestedPartial() {
   prepareStress();
   const expect = expandType('Partial<Partial<TwBox>>');
-  if (!validateType({}, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (!validateType({a: 1}, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({a: 'x'}, expect, 'loc', 'name', true, warn, 0)) {
+  const passesEmpty = validateType({}, expect, 'loc', 'name', true, warn, 0);
+  const rightValue = {
+    a: 1,
+  };
+  const passesRight = validateType(rightValue, expect, 'loc', 'name', true, warn, 0);
+  const wrongValue = {
+    a: 'x',
+  };
+  const acceptsWrong = validateType(wrongValue, expect, 'loc', 'name', true, warn, 0);
+  if (passesEmpty === false || passesRight === false || acceptsWrong) {
     return false;
   }
   return true;
@@ -238,10 +315,13 @@ function testDoublyNestedPartial() {
 function testRequiredReimposes() {
   prepareStress();
   const expect = expandType('Required<Partial<TwBox>>');
-  if (validateType({}, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (!validateType({a: 1, b: 's'}, expect, 'loc', 'name', true, warn, 0)) {
+  const acceptsEmpty = validateType({}, expect, 'loc', 'name', true, warn, 0);
+  const rightValue = {
+    a: 1,
+    b: 's',
+  };
+  const passesRight = validateType(rightValue, expect, 'loc', 'name', true, warn, 0);
+  if (acceptsEmpty || passesRight === false) {
     return false;
   }
   return true;
@@ -250,13 +330,16 @@ function testRequiredReimposes() {
 function testGenericUtilityWrapper() {
   prepareStress();
   registerTypedef('TwOpts', expandType('Partial<Pick<T, "a">>'), ['T']);
-  if (!validateType({a: 1}, expandType('TwOpts<TwBox>'), 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (!validateType({}, expandType('TwOpts<TwBox>'), 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({a: 'x'}, expandType('TwOpts<TwBox>'), 'loc', 'name', true, warn, 0)) {
+  const rightValue = {
+    a: 1,
+  };
+  const passesRight = validateType(rightValue, expandType('TwOpts<TwBox>'), 'loc', 'name', true, warn, 0);
+  const passesEmpty = validateType({}, expandType('TwOpts<TwBox>'), 'loc', 'name', true, warn, 0);
+  const wrongValue = {
+    a: 'x',
+  };
+  const acceptsWrong = validateType(wrongValue, expandType('TwOpts<TwBox>'), 'loc', 'name', true, warn, 0);
+  if (passesRight === false || passesEmpty === false || acceptsWrong) {
     return false;
   }
   return true;
@@ -265,13 +348,20 @@ function testGenericUtilityWrapper() {
 function testUtilityUnionDistribution() {
   prepareStress();
   const expect = expandType('Partial<TwBox|TwBox2>');
-  if (!validateType({b: 's'}, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (!validateType({c: true}, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({a: 'x', c: 'x'}, expect, 'loc', 'name', true, warn, 0)) {
+  const boxValue = {
+    b: 's',
+  };
+  const passesBox = validateType(boxValue, expect, 'loc', 'name', true, warn, 0);
+  const box2Value = {
+    c: true,
+  };
+  const passesBox2 = validateType(box2Value, expect, 'loc', 'name', true, warn, 0);
+  const wrongValue = {
+    a: 'x',
+    c: 'x',
+  };
+  const acceptsWrong = validateType(wrongValue, expect, 'loc', 'name', true, warn, 0);
+  if (passesBox === false || passesBox2 === false || acceptsWrong) {
     return false;
   }
   const keys = getTypeKeys(expandType('Omit<Partial<TwBox>, "a">'), warn);
@@ -281,16 +371,23 @@ function testUtilityUnionDistribution() {
   // `Omit` over a nested union utility validates member-wise: omitted keys
   // are rejected while surviving keys still type-check.
   const omitUnion = expandType('Omit<Partial<TwBox|TwBox2>, "a">');
-  if (!validateType({b: 's'}, omitUnion, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (!validateType({c: true}, omitUnion, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({a: 1}, omitUnion, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({b: 1}, omitUnion, 'loc', 'name', true, warn, 0)) {
+  const omitBox = {
+    b: 's',
+  };
+  const passesOmitBox = validateType(omitBox, omitUnion, 'loc', 'name', true, warn, 0);
+  const omitBox2 = {
+    c: true,
+  };
+  const passesOmitBox2 = validateType(omitBox2, omitUnion, 'loc', 'name', true, warn, 0);
+  const omittedValue = {
+    a: 1,
+  };
+  const acceptsOmitted = validateType(omittedValue, omitUnion, 'loc', 'name', true, warn, 0);
+  const wrongOmit = {
+    b: 1,
+  };
+  const acceptsWrongOmit = validateType(wrongOmit, omitUnion, 'loc', 'name', true, warn, 0);
+  if (passesOmitBox === false || passesOmitBox2 === false || acceptsOmitted || acceptsWrongOmit) {
     return false;
   }
   return true;
@@ -300,13 +397,16 @@ function testUtilityUnionDistribution() {
 function testNonNullableUtility() {
   prepareStress();
   const expect = expandType('NonNullable<Partial<TwBox>|undefined>');
-  if (!validateType({a: 1}, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType(null, expect, 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (validateType({a: 'x'}, expect, 'loc', 'name', true, warn, 0)) {
+  const rightValue = {
+    a: 1,
+  };
+  const passesRight = validateType(rightValue, expect, 'loc', 'name', true, warn, 0);
+  const acceptsNull = validateType(null, expect, 'loc', 'name', true, warn, 0);
+  const wrongValue = {
+    a: 'x',
+  };
+  const acceptsWrong = validateType(wrongValue, expect, 'loc', 'name', true, warn, 0);
+  if (passesRight === false || acceptsNull || acceptsWrong) {
     return false;
   }
   const keys = getTypeKeys(expandType('NonNullable<Partial<TwBox>|undefined>'), warn);
@@ -320,16 +420,49 @@ function testNonNullableUtility() {
 function testEachConcreteKindDecisive() {
   prepareStress();
   const shapes = [
-    {type: 'object', properties: {a: 'number'}},
-    {type: 'object'},
-    {type: 'array', elementType: 'string'},
-    {type: 'tuple', elements: ['string', 'number']},
-    {type: 'record', key: 'string', val: 'number'},
-    {type: 'map', key: 'string', val: 'number'},
-    {type: 'set', elementType: 'number'},
-    {type: 'promise', elementType: 'number'},
-    {type: 'function', parameters: []},
-    {type: 'new', parameters: []},
+    {
+      type: 'object',
+      properties: {
+        a: 'number',
+      },
+    },
+    {
+      type: 'object',
+    },
+    {
+      type: 'array',
+      elementType: 'string',
+    },
+    {
+      type: 'tuple',
+      elements: ['string', 'number'],
+    },
+    {
+      type: 'record',
+      key: 'string',
+      val: 'number',
+    },
+    {
+      type: 'map',
+      key: 'string',
+      val: 'number',
+    },
+    {
+      type: 'set',
+      elementType: 'number',
+    },
+    {
+      type: 'promise',
+      elementType: 'number',
+    },
+    {
+      type: 'function',
+      parameters: [],
+    },
+    {
+      type: 'new',
+      parameters: [],
+    },
     expandType('`_${string}`'), // eslint-disable-line no-template-curly-in-string
     expandType('Array<number>'),
     expandType('ReadonlyArray<number>'),
@@ -347,10 +480,21 @@ function testDeferredStaysUndecidable() {
   if (extendsCheck(expandType('TwBoxed<number>'), 'TwComponent') !== undefined) {
     return false;
   }
-  if (extendsCheck({type: 'keyof', argument: 'TwMissing'}, 'TwComponent') !== undefined) {
+  const missingKey = {
+    type: 'keyof',
+    argument: 'TwMissing',
+  };
+  if (extendsCheck(missingKey, 'TwComponent') !== undefined) {
     return false;
   }
-  if (extendsCheck({type: 'condition', checkType: 'TwBox', extendsType: 'TwComponent', trueType: '"a"', falseType: '"b"'}, 'TwComponent') !== undefined) {
+  const deferredCond = {
+    type: 'condition',
+    checkType: 'TwBox',
+    extendsType: 'TwComponent',
+    trueType: '"a"',
+    falseType: '"b"',
+  };
+  if (extendsCheck(deferredCond, 'TwComponent') !== undefined) {
     return false;
   }
   return true;
@@ -358,7 +502,13 @@ function testDeferredStaysUndecidable() {
 // Union checks fail fast on a decisive member, even beside deferred ones.
 function testUnionMixShortCircuits() {
   prepareStress();
-  const mixed = {type: 'union', members: [{type: 'array', elementType: 'string'}, expandType('TwBoxed<number>')]};
+  const mixed = {
+    type: 'union',
+    members: [{
+      type: 'array',
+      elementType: 'string',
+    }, expandType('TwBoxed<number>')],
+  };
   if (extendsCheck(mixed, 'TwComponent') !== false) {
     return false;
   }
@@ -385,9 +535,13 @@ function testNominalChainIntact() {
 function testNominalChainDualPackage() {
   prepareStress();
   class BaseCopy {}
-  Object.defineProperty(BaseCopy, 'name', {value: 'TwComponent'});
+  Object.defineProperty(BaseCopy, 'name', {
+    value: 'TwComponent',
+  });
   class TwinCam extends BaseCopy {}
-  Object.defineProperty(TwinCam, 'name', {value: 'TwCam'});
+  Object.defineProperty(TwinCam, 'name', {
+    value: 'TwCam',
+  });
   const SavedCam = classes.TwCam;
   classes.TwCam = TwinCam;
   try {
@@ -409,26 +563,60 @@ function testNominalChainDualPackage() {
 // nested shapes, methods, primitives) maps to its slots with zero warnings.
 function testBigMapSilent() {
   prepareStress();
-  registerTypedef('TwBig', {
-    type: 'object',
-    properties: {
-      camera: {type: 'union', members: ['TwCam', 'undefined']},
-      tup: {type: 'tuple', elements: ['string', 'number']},
-      prom: {type: 'promise', elementType: 'number'},
-      grid: {type: 'map', key: 'string', val: 'number'},
-      tags: expandType('ReadonlyArray<string>'),
-      run: 'Function',
-      rec: {type: 'record', key: 'string', val: 'number'},
-      nested: {type: 'object', properties: {deep: {type: 'array', elementType: {type: 'tuple', elements: ['number']}}}},
-      name: 'string',
-      addComponent: 'Function',
+  registerTypedef(
+    'TwBig',
+    {
+      type: 'object',
+      properties: {
+        camera: {
+          type: 'union',
+          members: ['TwCam', 'undefined'],
+        },
+        tup: {
+          type: 'tuple',
+          elements: ['string', 'number'],
+        },
+        prom: {
+          type: 'promise',
+          elementType: 'number',
+        },
+        grid: {
+          type: 'map',
+          key: 'string',
+          val: 'number',
+        },
+        tags: expandType('ReadonlyArray<string>'),
+        run: 'Function',
+        rec: {
+          type: 'record',
+          key: 'string',
+          val: 'number',
+        },
+        nested: {
+          type: 'object',
+          properties: {
+            deep: {
+              type: 'array',
+              elementType: {
+                type: 'tuple',
+                elements: ['number'],
+              },
+            },
+          },
+        },
+        name: 'string',
+        addComponent: 'Function',
+      },
     },
-  });
+  );
   registerTypedef('TwBigMap', expandType('{ [K in keyof TwBig as NonNullable<TwBig[K]> extends TwComponent ? K : never]: NonNullable<TwBig[K]> }'));
   let count = 0;
-  const type = createType('TwBigMap', () => {
-    count++;
-  });
+  const type = createType(
+    'TwBigMap',
+    () => {
+      count++;
+    },
+  );
   if (!type || JSON.stringify(Object.keys(type.properties)) !== JSON.stringify(['camera'])) {
     return false;
   }
@@ -438,16 +626,22 @@ function testBigMapSilent() {
 // instance, while real instances pass both layers.
 function testStaticRuntimeAgreement() {
   prepareStress();
-  if (validateType({r: 1}, 'TwColor', 'loc', 'name', true, warn, 0)) {
+  const plainValue = {
+    r: 1,
+  };
+  const acceptsPlain = validateType(plainValue, 'TwColor', 'loc', 'name', true, warn, 0);
+  const acceptsArray = validateType([1], 'TwColor', 'loc', 'name', true, warn, 0);
+  const passesInstance = validateType(new TwColor(), 'TwColor', 'loc', 'name', true, warn, 0);
+  if (acceptsPlain || acceptsArray || passesInstance === false) {
     return false;
   }
-  if (validateType([1], 'TwColor', 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (!validateType(new TwColor(), 'TwColor', 'loc', 'name', true, warn, 0)) {
-    return false;
-  }
-  if (extendsCheck({type: 'object', properties: {r: 'number'}}, 'TwColor') !== false) {
+  const plainShape = {
+    type: 'object',
+    properties: {
+      r: 'number',
+    },
+  };
+  if (extendsCheck(plainShape, 'TwColor') !== false) {
     return false;
   }
   return true;
@@ -457,7 +651,10 @@ function testStaticRuntimeAgreement() {
 // lenient); only a missing `?` rejects null.
 function testOptionalTakesExplicitNull() {
   prepareStress();
-  const optional = {type: 'number', optional: true};
+  const optional = {
+    type: 'number',
+    optional: true,
+  };
   if (!validateType(null, optional, 'loc', 'name', true, warn, 0)) {
     return false;
   }
@@ -471,7 +668,10 @@ function testOptionalTakesExplicitNull() {
 // production shape.
 function testNullableUnionMembers() {
   prepareStress();
-  const nullable = {type: 'union', members: ['number', 'null']};
+  const nullable = {
+    type: 'union',
+    members: ['number', 'null'],
+  };
   if (!validateType(null, nullable, 'loc', 'name', true, warn, 0)) {
     return false;
   }
@@ -484,7 +684,13 @@ function testNullableUnionMembers() {
 // passes): the hostile check is the verdict the Diagnosis explains.
 function testUnionAllFailStillFails() {
   prepareStress();
-  const union = {type: 'union', members: ['TwColor', {type: 'array', elementType: 'number'}]};
+  const union = {
+    type: 'union',
+    members: ['TwColor', {
+      type: 'array',
+      elementType: 'number',
+    }],
+  };
   if (validateType([0, 0], union, 'loc', 'name', true, warn, 0) === false) {
     return false;
   }
@@ -499,10 +705,19 @@ function testSubclassSatisfiesBase() {
   if (!validateType(new TwSubCam(), 'TwCam', 'loc', 'name', true, warn, 0)) {
     return false;
   }
-  if (!validateType({fov: 1, $type: 'TwSubCam'}, 'TwCam', 'loc', 'name', true, warn, 0)) {
+  const taggedValue = {
+    fov: 1,
+    $type: 'TwSubCam',
+  };
+  const passesTagged = validateType(taggedValue, 'TwCam', 'loc', 'name', true, warn, 0);
+  if (passesTagged === false) {
     return false;
   }
-  return validateType({fov: 1, $type: 'TwOther'}, 'TwCam', 'loc', 'name', true, warn, 0) === false;
+  const stranger = {
+    fov: 1,
+    $type: 'TwOther',
+  };
+  return validateType(stranger, 'TwCam', 'loc', 'name', true, warn, 0) === false;
 }
 export const tests = [
   testStripKeepsAliasSpelling,

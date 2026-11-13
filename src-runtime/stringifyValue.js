@@ -59,7 +59,10 @@ function stringifyValue(value, options = {}) {
       return '[undefined]';
     }
     if (type === 'bigint') {
-      return {$type: 'bigint', value: String(val)};
+      return {
+        $type: 'bigint',
+        value: String(val),
+      };
     }
     if (type === 'function') {
       return `[Function ${val.name || 'anonymous'}]`;
@@ -79,7 +82,10 @@ function stringifyValue(value, options = {}) {
         return val.toISOString();
       }
       if (val instanceof Error) {
-        return {$type: val.name || 'Error', message: val.message};
+        return {
+          $type: val.name || 'Error',
+          message: val.message,
+        };
       }
       if (val instanceof RegExp) {
         return String(val);
@@ -88,17 +94,26 @@ function stringifyValue(value, options = {}) {
         return `[DOM ${val.tagName}]`;
       }
       if (val instanceof ArrayBuffer) {
-        return {$type: 'ArrayBuffer', byteLength: val.byteLength};
+        return {
+          $type: 'ArrayBuffer',
+          byteLength: val.byteLength,
+        };
       }
       if (typeof SharedArrayBuffer !== 'undefined' && val instanceof SharedArrayBuffer) {
-        return {$type: 'SharedArrayBuffer', byteLength: val.byteLength};
+        return {
+          $type: 'SharedArrayBuffer',
+          byteLength: val.byteLength,
+        };
       }
       if (ArrayBuffer.isView(val)) {
         const tag = val.constructor?.name ?? 'ArrayBufferView';
         if (val instanceof DataView) {
-          return {$type: tag, byteLength: val.byteLength};
+          return {
+            $type: tag,
+            byteLength: val.byteLength,
+          };
         }
-        const length = val.length;
+        const {length} = val;
         const count = Math.min(length, maxBreadth);
         const values = [];
         for (let i = 0; i < count; i++) {
@@ -107,7 +122,11 @@ function stringifyValue(value, options = {}) {
         if (length > count) {
           values.push(`[...+${length - count} more]`);
         }
-        return {$type: tag, length, values};
+        return {
+          $type: tag,
+          length,
+          values,
+        };
       }
       // Brand checks (not `instanceof`): maps and sets shared live
       // across realms keep their entries in logs instead of collapsing
@@ -117,12 +136,18 @@ function stringifyValue(value, options = {}) {
         const count = Math.min(entries.length, maxBreadth);
         const out = [];
         for (let i = 0; i < count; i++) {
-          out.push([walk(entries[i][0], depth + 1, `${path}[${i}][0]`), walk(entries[i][1], depth + 1, `${path}[${i}][1]`)]);
+          const key = walk(entries[i][0], depth + 1, `${path}[${i}][0]`);
+          const entry = walk(entries[i][1], depth + 1, `${path}[${i}][1]`);
+          out.push([key, entry]);
         }
         if (entries.length > count) {
           out.push(`[...+${entries.length - count} more]`);
         }
-        return {$type: 'Map', size: val.size, entries: out};
+        return {
+          $type: 'Map',
+          size: val.size,
+          entries: out,
+        };
       }
       if (isSetValue(val)) {
         const items = [...val.values()];
@@ -134,13 +159,20 @@ function stringifyValue(value, options = {}) {
         if (items.length > count) {
           values.push(`[...+${items.length - count} more]`);
         }
-        return {$type: 'Set', size: val.size, values};
+        return {
+          $type: 'Set',
+          size: val.size,
+          values,
+        };
       }
       if (val instanceof Promise) {
         return '[Promise]';
       }
       if (Array.isArray(val)) {
-        seen.push({obj: val, path});
+        seen.push({
+          obj: val,
+          path,
+        });
         const out = [];
         const count = Math.min(val.length, maxBreadth);
         for (let i = 0; i < count; i++) {
@@ -169,16 +201,23 @@ function stringifyValue(value, options = {}) {
       if (tag && tag !== 'Object') {
         out.$type = tag;
       }
-      seen.push({obj: val, path});
+      seen.push({
+        obj: val,
+        path,
+      });
       const stringKeys = Object.keys(val);
       const symbolKeys = Object.getOwnPropertySymbols(val);
-      const labels = [...stringKeys, ...symbolKeys.map((sym) => (sym.description === undefined ? '[Symbol]' : `[Symbol ${sym.description}]`))];
+      const namedSymbol = (sym) => `[Symbol ${sym.description}]`;
+      const symbolLabel = (sym) => (sym.description === undefined ? '[Symbol]' : namedSymbol(sym));
+      const labels = [...stringKeys, ...symbolKeys.map(symbolLabel)];
       const count = Math.min(labels.length, maxBreadth);
       for (let i = 0; i < count; i++) {
         const key = labels[i];
+        const isString = i < stringKeys.length;
+        const offset = i - stringKeys.length;
         let prop;
         try {
-          prop = i < stringKeys.length ? val[stringKeys[i]] : val[symbolKeys[i - stringKeys.length]];
+          prop = isString ? val[stringKeys[i]] : val[symbolKeys[offset]];
         } catch {
           out[key] = '[Getter threw]';
           continue;

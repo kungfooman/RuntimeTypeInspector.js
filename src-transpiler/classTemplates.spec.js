@@ -1,11 +1,11 @@
 import {parseJSDocDocument} from './jsdoc-parsing-depfree/parseJSDocDocument.js';
-import {runChecks} from './runChecks.js';
-import {noneUnchecked} from './noneUnchecked.js';
+import {runChecks         } from './runChecks.js';
+import {noneUnchecked     } from './noneUnchecked.js';
 // `@template {Constraint} [K=Default]` keeps the constraint: the default
 // only applies when nothing is inferred (issue #265 parsed this as
 // undefined, so the whole class went unchecked).
 function testConstrainedDefaultKeepsConstraint() {
-  const templates = parseJSDocDocument('@template {AssetType | (string & {})} [K=string]').templates;
+  const {templates} = parseJSDocDocument('@template {AssetType | (string & {})} [K=string]');
   if (!templates || typeof templates.K !== 'object' || templates.K.type !== 'union') {
     return false;
   }
@@ -406,12 +406,16 @@ function testFileObjectDeepDiagnostic() {
     '}';
   return runChecks(src, 'Asset4', (scope, {hits, posted}) => {
     const before = hits.length;
-    const good = new scope.Asset4('cube', 'container', {url: './a.glb'}); // ok
+    const good = new scope.Asset4('cube', 'container', {
+      url: './a.glb',
+    }); // ok
     const omitted = new scope.Asset4('cube', 'container'); // ok: file optional
     if (good.type !== 'container' || hits.length !== before) {
       return false;
     }
-    const bad = new scope.Asset4('cube', 'container', {url: 123}); // warns deep
+    const bad = new scope.Asset4('cube', 'container', {
+      url: 123,
+    }); // warns deep
     if (bad.type !== 'container' || hits.length !== before + 1) {
       return false;
     }

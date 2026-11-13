@@ -6,8 +6,12 @@ import {parse                } from '@babel/parser';
  * @returns {boolean} Whether source codes are identical on the AST level.
  */
 function compareAST(left, right) {
-  const l = parse(left , {sourceType: 'module'});
-  const r = parse(right, {sourceType: 'module'});
+  const l = parse(left , {
+    sourceType: 'module',
+  });
+  const r = parse(right, {
+    sourceType: 'module',
+  });
   const ljson = ast2jsonForComparison(l);
   const rjson = ast2jsonForComparison(r);
   const test = ljson === rjson;

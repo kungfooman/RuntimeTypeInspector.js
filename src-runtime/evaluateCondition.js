@@ -1,9 +1,9 @@
-import {typedefs} from "./registerTypedef.js";
-import {classes} from "./registerClass.js";
+import {typedefs        } from "./registerTypedef.js";
+import {classes         } from "./registerClass.js";
 import {mergedClassShape} from "./classShape.js";
-import {getTypeKeys} from "./getTypeKeys.js";
-import {validators} from "./validators.js";
-import {deepEqualType} from "./deepEqualType.js";
+import {getTypeKeys     } from "./getTypeKeys.js";
+import {validators      } from "./validators.js";
+import {deepEqualType   } from "./deepEqualType.js";
 validators.evaluateCondition = evaluateCondition;
 validators.decideIfEquals = decideIfEquals;
 /**
@@ -12,8 +12,9 @@ validators.decideIfEquals = decideIfEquals;
  */
 function stripLiteral(type) {
   if (typeof type === 'string' && type.length >= 2) {
-    if ((type[0] === "'" && type[type.length - 1] === "'") ||
-        (type[0] === '"' && type[type.length - 1] === '"')) {
+    const isSingleQuoted = type[0] === "'" && type[type.length - 1] === "'";
+    const isDoubleQuoted = type[0] === '"' && type[type.length - 1] === '"';
+    if (isSingleQuoted || isDoubleQuoted) {
       return type.slice(1, -1);
     }
   }
@@ -86,8 +87,17 @@ function resolveForExtends(type, warn, depth = 0) {
     // so class/shorthand names resolve to their property maps here
     // (identity checks keep the name; see the string branch above).
     // Classes merge harvested shapes up the constructor chain.
-    for (let i = 0; i < 10 && typeof object === 'string' && (classes[object] || typedefs[object]); i++) {
-      object = classes[object] ? mergedClassShape(object) : resolveForExtends(typedefs[object], warn, depth + 1);
+    for (let i = 0; i < 10; i++) {
+      if (typeof object !== 'string') {
+        break;
+      }
+      if (classes[object]) {
+        object = mergedClassShape(object);
+      } else if (typedefs[object]) {
+        object = resolveForExtends(typedefs[object], warn, depth + 1);
+      } else {
+        break;
+      }
     }
     if (object && object.type === 'mapping') {
       const materialize = validators.materializeMapping;
@@ -106,8 +116,11 @@ function resolveForExtends(type, warn, depth = 0) {
     }
     return resolveForExtends(prop, warn, depth + 1);
   }
-  if (type.type === 'reference' && type.name === 'NonNullable' && Array.isArray(type.args) && type.args.length) {
-    const inner = resolveForExtends(type.args[0], warn, depth + 1);
+  const isNonNull = type.type === 'reference' && type.name === 'NonNullable';
+  const hasArgs = Array.isArray(type.args) && type.args.length;
+  if (isNonNull && hasArgs) {
+    const [innerArg] = type.args;
+    const inner = resolveForExtends(innerArg, warn, depth + 1);
     if (inner === 'null' || inner === 'undefined') {
       return 'never';
     }
@@ -119,26 +132,47 @@ function resolveForExtends(type, warn, depth = 0) {
       if (kept.length === 1) {
         return resolveForExtends(kept[0], warn, depth + 1);
       }
-      return {type: 'union', members: kept};
+      return {
+        type: 'union',
+        members: kept,
+      };
     }
     return inner;
   }
   if (type.type === 'union' && Array.isArray(type.members)) {
-    return {type: 'union', members: type.members.map((member) => resolveForExtends(member, warn, depth + 1))};
+    return {
+      type: 'union',
+      members: type.members.map((member) => resolveForExtends(member, warn, depth + 1)),
+    };
   }
   if (type.type === 'intersection' && Array.isArray(type.members)) {
-    return {type: 'intersection', members: type.members.map((member) => resolveForExtends(member, warn, depth + 1))};
+    return {
+      type: 'intersection',
+      members: type.members.map((member) => resolveForExtends(member, warn, depth + 1)),
+    };
   }
   if (type.type === 'keyof') {
     const keys = getTypeKeys(type.argument, warn);
     if (!Array.isArray(keys)) {
       return;
     }
-    return {type: 'union', members: keys.map((key) => (typeof key === 'string' ? literalType(key) : key))};
+    return {
+      type: 'union',
+      members: keys.map((key) => (typeof key === 'string' ? literalType(key) : key)),
+    };
   }
   return type;
 }
-const primitives = new Set(['string', 'number', 'boolean', 'bigint', 'symbol', 'undefined', 'object', 'function']);
+const primitives = new Set([
+  'string',
+  'number',
+  'boolean',
+  'bigint',
+  'symbol',
+  'undefined',
+  'object',
+  'function',
+]);
 /**
  * Silent warn sink for internal resolutions: `extendsCheck` takes no `warn`
  * parameter, so key reads that cannot report use this instead.
@@ -200,14 +234,17 @@ function extendsCheck(check, target) {
   if (check === target) {
     return true;
   }
-  if (check && check.type === 'templateLiteral' && Array.isArray(check.types) && !check.types.length) {
+  const isBareTemplate = check?.type === 'templateLiteral' && Array.isArray(check?.types);
+  if (isBareTemplate && !check.types.length) {
     // Bare template without interpolation is just its literal text.
     check = `"${check.quasis[0] ?? ''}"`;
   }
   if (check === 'null' || check === 'undefined') {
     return false;
   }
-  if (typeof target === 'string' && (target === 'Function' || target === 'CallableFunction' || target === 'NewableFunction')) {
+  const isCallableName = target === 'Function' || target === 'CallableFunction';
+  const isNewableName = target === 'NewableFunction';
+  if (typeof target === 'string' && (isCallableName || isNewableName)) {
     if (check && (check.type === 'function' || check.type === 'new')) {
       return true;
     }
@@ -226,9 +263,10 @@ function extendsCheck(check, target) {
         return false;
       }
     }
-    if (check && typeof check === 'object' && check.type !== undefined &&
-        check.type !== 'reference' && check.type !== 'typeof' && check.type !== 'condition' &&
-        check.type !== 'intersection' && check.type !== 'union') {
+    const isResolvedShape = check && typeof check === 'object' && check.type !== undefined;
+    const isUncallable = check.type !== 'reference' && check.type !== 'typeof' && check.type !== 'condition';
+    const isCompound = check.type !== 'intersection' && check.type !== 'union';
+    if (isResolvedShape && isUncallable && isCompound) {
       // Resolved shapes that aren't callable never extend Function. Unions
       // distribute through the member loop below; references and other
       // deferred forms stay undecidable rather than failing closed.
@@ -287,7 +325,13 @@ function extendsCheck(check, target) {
       if (!Array.isArray(keys)) {
         return undefined;
       }
-      return extendsCheck(check, {type: 'union', members: keys.map((key) => (typeof key === 'string' ? literalType(key) : key))});
+      return extendsCheck(
+        check,
+        {
+          type: 'union',
+          members: keys.map((key) => (typeof key === 'string' ? literalType(key) : key)),
+        },
+      );
     }
     if (target && target.type === 'templateLiteral') {
       if (typeof check === 'string') {
@@ -298,8 +342,9 @@ function extendsCheck(check, target) {
       }
       return false;
     }
-    if (target && target.type === 'object' &&
-        target.properties === undefined && !target.indexSignatures) {
+    const isBareObject = target && target.type === 'object';
+    const hasNoMembers = target.properties === undefined && !target.indexSignatures;
+    if (isBareObject && hasNoMembers) {
       // `{}` accepts every non-nullish type, like TS (`1 extends {}`).
       // Only the bare literal shape (no `properties` key): `object` keeps
       // rejecting primitives below, as before.
@@ -312,7 +357,11 @@ function extendsCheck(check, target) {
         if (typeof check !== 'string') {
           return true;
         }
-        if (stripLiteral(check) !== check || primitives.has(check) || classes[check] !== undefined) {
+        const stripped = stripLiteral(check);
+        const isLiteral = stripped !== check;
+        const isPrimitive = primitives.has(check);
+        const isClassName = classes[check] !== undefined;
+        if (isLiteral || isPrimitive || isClassName) {
           return true;
         }
         return undefined;
@@ -341,7 +390,9 @@ function extendsCheck(check, target) {
       // decisively do not extend. Deferred forms (references, conditions,
       // indexed access, keyof, unions handled above, ...) stay undecidable
       // rather than failing closed.
-      if (check.type === 'reference' && (check.name === 'Array' || check.name === 'ReadonlyArray')) {
+      const isArrayRef = check.type === 'reference' && check.name === 'Array';
+      const isReadonlyRef = check.type === 'reference' && check.name === 'ReadonlyArray';
+      if (isArrayRef || isReadonlyRef) {
         return false;
       }
       switch (check.type) {
@@ -494,6 +545,9 @@ function decideIfEquals(X, Y, warn) {
  * @returns {boolean|undefined} Decision or undefined when undecidable.
  */
 function evaluateCondition(checkType, extendsType, warn) {
-  return extendsCheck(resolveForExtends(checkType, warn), resolveForExtends(extendsType, warn));
+  const check = resolveForExtends(checkType, warn);
+  const base = resolveForExtends(extendsType, warn);
+  return extendsCheck(check, base);
 }
-export {evaluateCondition, extendsCheck, resolveForExtends, literalType, stripLiteral, decideIfEquals};
+export {evaluateCondition, extendsCheck, resolveForExtends, literalType, stripLiteral};
+export {decideIfEquals};

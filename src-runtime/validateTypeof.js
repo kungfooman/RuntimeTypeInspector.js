@@ -36,7 +36,9 @@ function isConstLiteral(ref) {
 export function validateTypeof(value, expect, loc, name, critical, warn, depth) {
   const target = expect.argument;
   // Read through the table so userland overrides take effect.
-  const ctor = classes[target] ?? (typeof target === 'string' ? validators.lookupGlobalConstructor(target) : undefined);
+  const isName = typeof target === 'string';
+  const global = isName ? validators.lookupGlobalConstructor(target) : undefined;
+  const ctor = classes[target] ?? global;
   if (typeof ctor === 'function') {
     if (value === ctor) {
       return true;
@@ -78,7 +80,9 @@ export function validateTypeof(value, expect, loc, name, critical, warn, depth) 
       warn(`Expected typeof ${target}.`, {value, expect});
       return false;
     }
-    if ((ref === null || typeof ref !== 'object') && (value === null || typeof value !== 'object')) {
+    const refIsBare = ref === null || typeof ref !== 'object';
+    const valueIsBare = value === null || typeof value !== 'object';
+    if (refIsBare && valueIsBare) {
       if (variableKinds[target] === 'const' && isConstLiteral(ref)) {
         if (value === ref) {
           return true;
@@ -107,6 +111,12 @@ export function validateTypeof(value, expect, loc, name, critical, warn, depth) 
       return false;
     }
   }
-  warn('unchecked', {value, type: 'typeof', loc, name, expect});
+  warn('unchecked', {
+    value,
+    type: 'typeof',
+    loc,
+    name,
+    expect,
+  });
   return false;
 }

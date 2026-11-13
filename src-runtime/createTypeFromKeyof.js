@@ -11,7 +11,11 @@ function createTypeFromKeyof(expect, warn) {
   if (object) {
     const optional = false;
     const members = Object.keys(object.properties);
-    return {type: 'union', optional, members};
+    return {
+      type: 'union',
+      optional,
+      members,
+    };
   }
   warn('createTypeFromKeyof: unhandled type.', {expect});
 }

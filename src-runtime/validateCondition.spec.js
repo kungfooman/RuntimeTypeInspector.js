@@ -1,5 +1,5 @@
 import {validateType} from './validateType.js';
-import {evaluateCondition} from './evaluateCondition.js';
+import {evaluateCondition, resolveForExtends} from './evaluateCondition.js';
 import {inspectTypeWithTemplates} from './inspectTypeWithTemplates.js';
 import {registerTypedef, typedefs} from './registerTypedef.js';
 import {registerClass, classes} from './registerClass.js';
@@ -58,15 +58,40 @@ function testUndecidableFailsClosed() {
  */
 function testOverridesOf() {
   clearTypedefs();
-  registerTypedef('Overrides', {type: 'object', properties: {a: {type: 'object', properties: {x: 'number'}}}});
+  registerTypedef(
+    'Overrides',
+    {
+      type: 'object',
+      properties: {
+        a: {
+          type: 'object',
+          properties: {
+            x: 'number',
+          },
+        },
+      },
+    },
+  );
   const expect = () => expandType('K extends keyof Overrides ? Overrides[K] : {}');
-  if (!inspectTypeWithTemplates({x: 1}, expect(), 'loc', 'name', {K: '"a"'})) {
-    return false;
-  }
-  if (!inspectTypeWithTemplates({anything: 1}, expect(), 'loc', 'name', {K: '"b"'})) {
-    return false;
-  }
-  if (inspectTypeWithTemplates({x: 'nope'}, expect(), 'loc', 'name', {K: '"a"'})) {
+  const rightValue = {
+    x: 1,
+  };
+  const passesRight = inspectTypeWithTemplates(rightValue, expect(), 'loc', 'name', {
+    K: '"a"',
+  });
+  const otherValue = {
+    anything: 1,
+  };
+  const passesOther = inspectTypeWithTemplates(otherValue, expect(), 'loc', 'name', {
+    K: '"b"',
+  });
+  const wrongValue = {
+    x: 'nope',
+  };
+  const acceptsWrong = inspectTypeWithTemplates(wrongValue, expect(), 'loc', 'name', {
+    K: '"a"',
+  });
+  if (passesRight === false || passesOther === false || acceptsWrong) {
     return false;
   }
   return true;
@@ -119,11 +144,17 @@ function testIntersectionTarget() {
  */
 function testIntersectionTargetSkipsUndecidable() {
   clearTypedefs();
-  const decided = {type: 'intersection', members: ['Foo', '"b"']};
+  const decided = {
+    type: 'intersection',
+    members: ['Foo', '"b"'],
+  };
   if (evaluateCondition('"a"', decided, warn) !== false) {
     return false;
   }
-  const open = {type: 'intersection', members: ['Foo', 'Bar']};
+  const open = {
+    type: 'intersection',
+    members: ['Foo', 'Bar'],
+  };
   if (evaluateCondition('"a"', open, warn) !== undefined) {
     return false;
   }
@@ -146,7 +177,13 @@ function testIntersectionCheck() {
  */
 function testKeyofTarget() {
   clearTypedefs();
-  registerTypedef('Box', {type: 'object', properties: {a: 'number', b: 'string'}});
+  registerTypedef('Box', {
+    type: 'object',
+    properties: {
+      a: 'number',
+      b: 'string',
+    },
+  });
   if (evaluateCondition('"a"', expandType('keyof Box'), warn) !== true) {
     return false;
   }
@@ -169,7 +206,17 @@ function testComponentNameCondition() {
   registerClass(CondComponent);
   registerClass(CondRender);
   registerClass(CondLight);
-  registerTypedef('CondEntity', {type: 'object', properties: {render: 'CondRender', light: 'CondLight', name: 'string'}});
+  registerTypedef(
+    'CondEntity',
+    {
+      type: 'object',
+      properties: {
+        render: 'CondRender',
+        light: 'CondLight',
+        name: 'string',
+      },
+    },
+  );
   registerTypedef('CondMap', expandType('{[K in keyof CondEntity as NonNullable<CondEntity[K]> extends CondComponent ? K : never]: NonNullable<CondEntity[K]>}'));
   registerTypedef('CondName', expandType('keyof CondMap & string'));
   try {
@@ -190,6 +237,74 @@ function testComponentNameCondition() {
     delete classes.CondComponent;
     delete classes.CondRender;
     delete classes.CondLight;
+  }
+}
+/**
+ * Missing indexed-access key is undecidable, not false: resolving
+ * `C['nope']` yields undefined, so the condition fails closed with a
+ * warning instead of validating against the false branch.
+ * @returns {boolean} True when documented behavior holds.
+ */
+function testMissingIndexedAccessKeyFailsClosed() {
+  clearTypedefs();
+  registerTypedef('MissBox', {
+    type: 'object',
+    properties: {
+      kept: 'number',
+    },
+  });
+  const check = {
+    type: 'indexedAccess',
+    object: 'MissBox',
+    index: '"nope"',
+  };
+  const resolved = resolveForExtends(check, warn);
+  if (resolved !== undefined) {
+    return false;
+  }
+  const expect = {
+    type: 'condition',
+    checkType: check,
+    extendsType: 'number',
+    trueType: 'number',
+    falseType: 'string',
+  };
+  const warnings = [];
+  const ret = validateType(1, expect, 'loc', 'name', true, (...args) => warnings.push(args[0]), 0);
+  if (ret !== false || !warnings.length) {
+    return false;
+  }
+  return true;
+}
+/**
+ * Bare runtime class without a harvested typedef: the loop must take the
+ * class branch (`mergedClassShape` over the prototype) instead of falling
+ * through to undefined. Unique name avoids the shared registry.
+ * @returns {boolean} True when documented behavior holds.
+ */
+function testBareRuntimeClassIndexedAccess() {
+  clearTypedefs();
+  class BareProbe {}
+  Object.defineProperty(BareProbe, 'name', {
+    value: 'BareRuntimeProbe',
+  });
+  BareProbe.prototype.probeMethod = function () {};
+  registerClass(BareProbe);
+  try {
+    if ('BareRuntimeProbe' in typedefs) {
+      return false;
+    }
+    const check = {
+      type: 'indexedAccess',
+      object: 'BareRuntimeProbe',
+      index: '"probeMethod"',
+    };
+    if (resolveForExtends(check, warn) !== 'Function') {
+      return false;
+    }
+    return true;
+  } finally {
+    delete classes.BareRuntimeProbe;
   }
 }
 /**
@@ -222,8 +337,20 @@ function testBooleanLiteralCondition() {
     return false;
   }
   // End to end: substituted `T extends true ? string[] : string`.
-  const verbose = {type: 'condition', checkType: true, extendsType: true, trueType: expandType('string[]'), falseType: 'string'};
-  const quiet = {type: 'condition', checkType: false, extendsType: true, trueType: expandType('string[]'), falseType: 'string'};
+  const verbose = {
+    type: 'condition',
+    checkType: true,
+    extendsType: true,
+    trueType: expandType('string[]'),
+    falseType: 'string',
+  };
+  const quiet = {
+    type: 'condition',
+    checkType: false,
+    extendsType: true,
+    trueType: expandType('string[]'),
+    falseType: 'string',
+  };
   if (!validateType(['Error 1', 'Error 2'], verbose, 'loc', 'payload', true, warn, 0)) {
     return false;
   }
@@ -240,6 +367,8 @@ function testBooleanLiteralCondition() {
 }
 export const tests = [
   testBooleanLiteralCondition,
+  testMissingIndexedAccessKeyFailsClosed,
+  testBareRuntimeClassIndexedAccess,
   testTrueBranch,
   testFalseBranch,
   testUndecidableFailsClosed,

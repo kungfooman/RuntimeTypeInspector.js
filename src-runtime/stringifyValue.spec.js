@@ -9,13 +9,19 @@ function testPrimitives() {
   return true;
 }
 function testCircular() {
-  const obj = {a: 1};
+  const obj = {
+    a: 1,
+  };
   obj.self = obj;
   const out = stringifyValue(obj);
   if (out.self !== '[Circular ~]') {
     return false;
   }
-  const root = {child: {name: 'x'}};
+  const root = {
+    child: {
+      name: 'x',
+    },
+  };
   root.child.parent = root;
   if (stringifyValue(root).child.parent !== '[Circular ~]') {
     return false;
@@ -23,9 +29,13 @@ function testCircular() {
   return true;
 }
 function testDepthCap() {
-  let deep = {v: 0};
+  let deep = {
+    v: 0,
+  };
   for (let i = 0; i < 10; i++) {
-    deep = {next: deep};
+    deep = {
+      next: deep,
+    };
   }
   if (JSON.stringify(stringifyValue(deep)).includes('"v"')) {
     return false;
@@ -54,7 +64,11 @@ function testLongString() {
   return true;
 }
 function testExoticTypes() {
-  if (JSON.stringify(stringifyValue(123n)) !== JSON.stringify({$type: 'bigint', value: '123'})) {
+  const bigintShape = {
+    $type: 'bigint',
+    value: '123',
+  };
+  if (JSON.stringify(stringifyValue(123n)) !== JSON.stringify(bigintShape)) {
     return false;
   }
   if (stringifyValue(undefined) !== '[undefined]') {
@@ -76,8 +90,13 @@ function throwGetter() {
   throw new Error('getter');
 }
 function testThrowingGetter() {
-  const obj = {ok: 1};
-  Object.defineProperty(obj, 'boom', {enumerable: true, get: throwGetter});
+  const obj = {
+    ok: 1,
+  };
+  Object.defineProperty(obj, 'boom', {
+    enumerable: true,
+    get: throwGetter,
+  });
   const out = stringifyValue(obj);
   if (out.ok !== 1 || out.boom !== '[Getter threw]') {
     return false;
@@ -85,7 +104,9 @@ function testThrowingGetter() {
   return true;
 }
 function testRevokedProxy() {
-  const {proxy, revoke} = Proxy.revocable({a: 1}, {});
+  const {proxy, revoke} = Proxy.revocable({
+    a: 1,
+  }, {});
   revoke();
   const out = stringifyValue(proxy);
   if (out !== '[Revoked Proxy]' && out !== '[Unreadable]') {
@@ -94,14 +115,23 @@ function testRevokedProxy() {
   return true;
 }
 function testContainers() {
-  const out = stringifyValue({m: new Map([['a', 1]]), s: new Set([1, 2]), t: new Int32Array([1, 2, 3])});
+  const out = stringifyValue({
+    m: new Map([['a', 1]]),
+    s: new Set([1, 2]),
+    t: new Int32Array([1, 2, 3]),
+  });
   if (out.m.$type !== 'Map' || out.s.$type !== 'Set' || out.t.$type !== 'Int32Array') {
     return false;
   }
   if (JSON.stringify(out.t.values) !== '[1,2,3]') {
     return false;
   }
-  if (JSON.stringify(stringifyValue(new Map())) !== JSON.stringify({$type: 'Map', size: 0, entries: []})) {
+  const emptyMap = {
+    $type: 'Map',
+    size: 0,
+    entries: [],
+  };
+  if (JSON.stringify(stringifyValue(new Map())) !== JSON.stringify(emptyMap)) {
     return false;
   }
   return true;
@@ -132,13 +162,17 @@ function testClassTagAndSpecials() {
 }
 function testNeverThrowsNeverMegabytes() {
   // Kitchen sink: everything hostile at once must stringify safely and small.
-  const {proxy, revoke} = Proxy.revocable({evil: 1}, {});
+  const {proxy, revoke} = Proxy.revocable({
+    evil: 1,
+  }, {});
   revoke();
   const sink = {
     big: new Array(100000).fill(0),
     str: 'y'.repeat(100000),
     bigarr: new Float64Array(100000),
-    map: new Map(Array.from({length: 1000}, (_, i) => [`k${i}`, i])),
+    map: new Map(Array.from({
+      length: 1000,
+    }, (_, i) => [`k${i}`, i])),
     fn: function fn() {},
     sym: Symbol('s'),
     undef: undefined,
@@ -147,7 +181,10 @@ function testNeverThrowsNeverMegabytes() {
     proxy,
   };
   sink.self = sink;
-  Object.defineProperty(sink, 'getter', {enumerable: true, get: throwGetter});
+  Object.defineProperty(sink, 'getter', {
+    enumerable: true,
+    get: throwGetter,
+  });
   let json;
   try {
     json = JSON.stringify(stringifyValue(sink));

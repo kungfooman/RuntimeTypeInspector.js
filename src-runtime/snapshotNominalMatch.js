@@ -1,5 +1,5 @@
-import {classMatches} from './classMatches.js';
-import {snapshotTag} from './snapshotTag.js';
+import {classMatches     } from './classMatches.js';
+import {snapshotTag      } from './snapshotTag.js';
 import {unwrapTransparent} from './unwrapTransparent.js';
 /**
  * Nominal match for the method check: a tagged snapshot that names the
@@ -23,8 +23,9 @@ function snapshotNominalMatch(value, expect) {
   if (snapshot === undefined) {
     return false;
   }
-  const rawName = typeof expect === 'string' ? expect :
-    (expect && typeof expect === 'object' && typeof expect.type === 'string' ? expect.type : undefined);
+  const isObject = expect && typeof expect === 'object';
+  const objectName = isObject && typeof expect.type === 'string' ? expect.type : undefined;
+  const rawName = typeof expect === 'string' ? expect : objectName;
   const className = unwrapTransparent(rawName);
   return snapshot === className || classMatches(snapshot, className);
 }
