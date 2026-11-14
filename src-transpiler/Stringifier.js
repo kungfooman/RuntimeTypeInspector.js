@@ -438,6 +438,31 @@ class Stringifier {
     return out;
   }
   /**
+   * Rounds a class static initialization block through unchanged: the block
+   * carries no params or return type, so it emits no checks, and each
+   * statement inside keeps its own expression-level instrumentation.
+   * @example
+   * class Vec3 {
+   *   static {
+   *     console.log("once");
+   *   }
+   * }
+   * @param {import("@babel/types").StaticBlock} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  StaticBlock(node) {
+    const {body} = node;
+    const {spaces} = this;
+    let out = spaces;
+    out += 'static {\n';
+    this.numSpaces++;
+    out += this.mapToSource(body).join('\n') + '\n';
+    this.numSpaces--;
+    out += spaces;
+    out += '}';
+    return out;
+  }
+  /**
    * > asd;
    * > asd = 1;
    * > static asd;
@@ -1126,6 +1151,41 @@ class Stringifier {
       return this.spaces + keySource;
     }
     return `${this.spaces}${keySource}: ${valSource}`;
+  }
+  /**
+   * A spread prop (`<div {...props} />`) merges into the props object, so the
+   * emitted entry keeps spread syntax and lets `createElement` receive it.
+   * @example
+   * <div {...props} />
+   * @param {import("@babel/types").JSXSpreadAttribute} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  JSXSpreadAttribute(node) {
+    const {argument} = node;
+    return `${this.spaces}...${this.toSource(argument)}`;
+  }
+  /**
+   * A spread child (`<div>{...items}</div>`) becomes one spread call argument,
+   * matching how the elements array would receive the entries.
+   * @example
+   * <div>{...items}</div>
+   * @param {import("@babel/types").JSXSpreadChild} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  JSXSpreadChild(node) {
+    const {expression} = node;
+    return `...${this.toSource(expression)}`;
+  }
+  /**
+   * A comment-only container holds no value, so it emits nothing. The parent
+   * element loop already skips empty sources.
+   * @example
+   * <div>{/* a comment *\/}</div>
+   * @param {import("@babel/types").JSXEmptyExpression} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  JSXEmptyExpression(node) {
+    return '';
   }
   /**
    * @param {import("@babel/types").JSXElement} node - The Babel AST node.

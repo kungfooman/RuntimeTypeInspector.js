@@ -253,6 +253,8 @@ const tests = [
   ...(await import('./src-transpiler/functionTemplates.spec.js')).tests,
   ...(await import('./src-transpiler/templateConstraints.spec.js')).tests,
   ...(await import('./src-transpiler/indexedAccess.spec.js')).tests,
+  ...(await import('./src-transpiler/staticBlock.spec.js')).tests,
+  ...(await import('./src-transpiler/nodeCoverage.spec.js')).tests,
   ...(await import('./src-transpiler/locationNames.spec.js')).tests,
   ...(await import('./src-transpiler/noRuntimeImport.spec.js')).tests,
   ...(await import('./src-runtime/inspectIndexedAccess.spec.js'   )).tests,

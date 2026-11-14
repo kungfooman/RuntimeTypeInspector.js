@@ -36,6 +36,7 @@ export * from './jsdoc-parsing-depfree/index.js';
 export * from './jsdoc-parsing-ts/index.js';
 export * from './nodeChildren.js';
 export * from './nodeIsFunctionLike.js';
+export * from './findUnhandledNodeTypes.js';
 export * from './escapeName.js';
 export * from './parserOptions.js';
 export * from './annotateOptional.js';

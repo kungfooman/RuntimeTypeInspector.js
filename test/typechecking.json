@@ -392,6 +392,10 @@
     "output": "./test/typechecking/simple-ObjectPattern-typedef-output.mjs"
   },
   {
+    "input": "./test/typechecking/static-block-input.mjs",
+    "output": "./test/typechecking/static-block-output.mjs"
+  },
+  {
     "input": "./test/typechecking/stringifier-ArrowFunctionExpression-spaces-input.mjs",
     "output": "./test/typechecking/stringifier-ArrowFunctionExpression-spaces-output.mjs"
   },
