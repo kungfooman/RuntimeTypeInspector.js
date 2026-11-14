@@ -38,6 +38,7 @@
   "homepage": "https://github.com/kungfooman/RuntimeTypeInspector.js#readme",
   "files": [],
   "devDependencies": {
+    "@babel/types": "^7.23.9",
     "@playcanvas/jsdoc-template": "^1.1.2",
     "@rollup/plugin-babel": "^6.0.3",
     "@rollup/plugin-commonjs": "^25.0.4",
@@ -67,6 +68,5 @@
     "rollup-plugin-visualizer": "^5.9.2",
     "to-fast-properties": "^4.0.0",
     "typescript": "^5.9.3"
-  },
-  "dependencies": {}
+  }
 }

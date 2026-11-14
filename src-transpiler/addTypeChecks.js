@@ -19,7 +19,11 @@ import {parserOptions} from './parserOptions.js';
  */
 function addTypeChecks(src, options) {
   try {
-    const asserter = new Asserter(options);
+    const withInput = {
+      ...options,
+      input: src,
+    };
+    const asserter = new Asserter(withInput);
     const ast = parse(src, parserOptions);
     // Must be called before getHeader since it's keeping an eye open for JSX elements.
     const source = asserter.toSource(ast);

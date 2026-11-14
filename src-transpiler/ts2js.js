@@ -1,6 +1,6 @@
 import {parse             } from '@babel/parser';
 import {Stringifier       } from './Stringifier.js';
-import {nodeChildren      } from './nodeChildren.js';
+import {childNodes        } from './childNodes.js';
 import {nodeIsFunctionLike} from './nodeIsFunctionLike.js';
 /** @typedef {import('@babel/types').Node} Node */
 /**
@@ -431,9 +431,6 @@ class ToJS extends Stringifier {
   TSInstantiationExpression(node) {
     return this.toSource(node.expression);
   }
-  TSTypeCastExpression(node) {
-    return this.toSource(node.expression);
-  }
   TSParameterProperty(node) {
     return this.toSource(node.parameter);
   }
@@ -477,6 +474,13 @@ class ToJS extends Stringifier {
    * @returns {string} An empty string.
    */
   TSDeclareFunction() {
+    return '';
+  }
+  /**
+   * Drop ambient method signatures, they have no runtime representation.
+   * @returns {string} An empty string.
+   */
+  TSDeclareMethod() {
     return '';
   }
   /**
@@ -825,17 +829,10 @@ function annotate(node, parents) {
   } else if (type === 'VariableDeclaration' && !node.declare) {
     collectVariableTypeComments(node, parents);
   }
-  // recurse into children based on the annotated keys
-  const keys = nodeChildren[type];
-  for (const key of keys ?? []) {
-    const child = node[key];
-    if (Array.isArray(child)) {
-      for (const entry of child) {
-        annotate(entry, parents);
-      }
-    } else if (child && typeof child === 'object' && child.type) {
-      annotate(child, parents);
-    }
+  // recurse into children using Babel's own visitor keys
+  const children = childNodes(node);
+  for (const child of children) {
+    annotate(child, parents);
   }
   parents.pop();
 }

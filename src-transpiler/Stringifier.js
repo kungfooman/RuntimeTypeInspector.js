@@ -1,4 +1,5 @@
 import {capitalize   } from './capitalize.js';
+import {childNodes   } from './childNodes.js';
 import {trimEndSpaces} from './trimEndSpaces.js';
 /**
  * @typedef {import("@babel/types").Node} Node
@@ -68,12 +69,39 @@ class Stringifier {
     if (this[type]) {
       return this[type](node);
     }
+    return this.unknownNode(node);
+  }
+  /** @type {string|null} */
+  input = null;
+  /**
+   * Last-resort renderer for node types without a dedicated method (new
+   * Babel syntax the table does not know yet). Prefers the node's original
+   * source slice, which reproduces even unknown keywords verbatim; without
+   * stored input it emits every child in source order instead. Either way
+   * this also warns loudly: silence here would mean silently wrong code.
+   * @param {Node} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  unknownNode(node) {
     console.log(node);
-    const notOfInterest = ["start", "end", "loc", "type"];
-    const ofInterest = Object.keys(node).filter(_ => !notOfInterest.includes(_));
+    const notOfInterest = ['start', 'end', 'loc', 'type'];
+    const ofInterest = Object.keys(node).filter((key) => !notOfInterest.includes(key));
     const props = ofInterest.join(', ');
-    const fn = `${type}(node) {\n  const {${props}} = node;\n  return ;\n}`;
+    const fn = `${node.type}(node) {\n  const {${props}} = node;\n  return ;\n}`;
     console.warn('TODO ADD METHOD:', fn);
+    if (typeof node.start === 'number' && typeof node.end === 'number' && typeof this.input === 'string') {
+      return this.input.slice(node.start, node.end);
+    }
+    const parts = [];
+    for (const child of childNodes(node)) {
+      const source = this.toSource(child);
+      if (source.length) {
+        parts.push(source);
+      }
+    }
+    if (parts.length) {
+      return parts.join('\n');
+    }
     return `rtiUnhandled("${node.type}");\n`;
   }
   parentProvidesSpaces(reverseIndex) {
@@ -1755,14 +1783,30 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   Program(node) {
-    const {/*sourceType, interpreter,*/ body, directives} = node;
+    const {interpreter, body, directives} = node;
     let out = '';
+    if (interpreter) {
+      out += this.toSource(interpreter) + '\n';
+    }
     // @todo I would like to keep comments above and below,
     // but below one is currently dropped (does't matter for AST)
     // See: test/typechecking/directive.mjs
     out += this.mapToSource(directives);
     out += this.mapToSource(body).join('\n');
     return out;
+  }
+  /**
+   * A hashbang line (`#!/usr/bin/env node`) carries no runtime semantics for
+   * the transpiled output, but dropping it silently would corrupt executable
+   * scripts, so it round-trips verbatim.
+   * @example
+   * #!/usr/bin/env node
+   * @param {import("@babel/types").InterpreterDirective} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  InterpreterDirective(node) {
+    const {value} = node;
+    return `#!${value}`;
   }
   /**
    * @param {import("@babel/types").StringLiteral} node - The Babel AST node.
