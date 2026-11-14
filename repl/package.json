@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@babel/parser": "^8.0.0-alpha.12",
+    "@babel/types": "^7.29.14",
     "@runtime-type-inspector/transpiler": "^6.0.0",
     "ace-builds": "^1.35.2",
     "ace-diff": "^3.0.3",
