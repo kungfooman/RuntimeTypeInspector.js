@@ -1,0 +1,9 @@
+{
+  "throws": [
+    {
+      "loc": "Vec3#constructor",
+      "name": "x",
+      "value": "oops"
+    }
+  ]
+}

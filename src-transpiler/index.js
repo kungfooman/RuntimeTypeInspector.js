@@ -34,7 +34,6 @@ export * from './runtimeImportNames.js';
 export * from './JSDocAnnotator.js';
 export * from './jsdoc-parsing-depfree/index.js';
 export * from './jsdoc-parsing-ts/index.js';
-export * from './nodeChildren.js';
 export * from './nodeIsFunctionLike.js';
 export * from './escapeName.js';
 export * from './parserOptions.js';

@@ -1,7 +1,7 @@
+import {VISITOR_KEYS         } from '@babel/types';
 import {expandTypeDepFree    } from './expandTypeDepFree.js';
 import {collectOverloadBlocks} from './jsdoc-parsing-depfree/collectOverloadBlocks.js';
 import {splitOverloadSections} from './jsdoc-parsing-depfree/splitOverloadSections.js';
-import {nodeChildren         } from './nodeChildren.js';
 import {nodeIsFunctionLike   } from './nodeIsFunctionLike.js';
 import {parseJSDocDocument   } from './jsdoc-parsing-depfree/parseJSDocDocument.js';
 import {parseJSDocTypedef    } from './jsdoc-parsing-depfree/parseJSDocTypedef.js';
@@ -68,15 +68,16 @@ class JSDocAnnotator {
         }
       }
     }
-    const {type} = node;
-    const childrenKeys = nodeChildren[type] || [];
-    for (const key of childrenKeys) {
+    const keys = VISITOR_KEYS[node.type] ?? [];
+    for (const key of keys) {
       const child = node[key];
       if (Array.isArray(child)) {
-        for (const c of child) {
-          this.traverse(c);
+        for (const entry of child) {
+          if (entry && typeof entry === 'object' && typeof entry.type === 'string') {
+            this.traverse(entry);
+          }
         }
-      } else if (child && typeof child === 'object' && child.type) {
+      } else if (child && typeof child === 'object' && typeof child.type === 'string') {
         this.traverse(child);
       }
     }

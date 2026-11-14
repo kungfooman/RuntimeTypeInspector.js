@@ -69,10 +69,10 @@ class Stringifier {
       return this[type](node);
     }
     console.log(node);
-    const notOfInterest = ["start", "end", "loc", "type"];
-    const ofInterest = Object.keys(node).filter(_ => !notOfInterest.includes(_));
+    const notOfInterest = ['start', 'end', 'loc', 'type'];
+    const ofInterest = Object.keys(node).filter((key) => !notOfInterest.includes(key));
     const props = ofInterest.join(', ');
-    const fn = `${type}(node) {\n  const {${props}} = node;\n  return ;\n}`;
+    const fn = `${node.type}(node) {\n  const {${props}} = node;\n  return ;\n}`;
     console.warn('TODO ADD METHOD:', fn);
     return `rtiUnhandled("${node.type}");\n`;
   }
@@ -435,6 +435,31 @@ class Stringifier {
     out += this.toSource(key);
     out += `(${this.mapToSource(params).join(', ')})`;
     out += this.toSource(body);
+    return out;
+  }
+  /**
+   * Rounds a class static initialization block through unchanged: the block
+   * carries no params or return type, so it emits no checks, and each
+   * statement inside keeps its own expression-level instrumentation.
+   * @example
+   * class Vec3 {
+   *   static {
+   *     console.log("once");
+   *   }
+   * }
+   * @param {import("@babel/types").StaticBlock} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  StaticBlock(node) {
+    const {body} = node;
+    const {spaces} = this;
+    let out = spaces;
+    out += 'static {\n';
+    this.numSpaces++;
+    out += this.mapToSource(body).join('\n') + '\n';
+    this.numSpaces--;
+    out += spaces;
+    out += '}';
     return out;
   }
   /**
@@ -1128,6 +1153,41 @@ class Stringifier {
     return `${this.spaces}${keySource}: ${valSource}`;
   }
   /**
+   * A spread prop (`<div {...props} />`) merges into the props object, so the
+   * emitted entry keeps spread syntax and lets `createElement` receive it.
+   * @example
+   * <div {...props} />
+   * @param {import("@babel/types").JSXSpreadAttribute} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  JSXSpreadAttribute(node) {
+    const {argument} = node;
+    return `${this.spaces}...${this.toSource(argument)}`;
+  }
+  /**
+   * A spread child (`<div>{...items}</div>`) becomes one spread call argument,
+   * matching how the elements array would receive the entries.
+   * @example
+   * <div>{...items}</div>
+   * @param {import("@babel/types").JSXSpreadChild} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  JSXSpreadChild(node) {
+    const {expression} = node;
+    return `...${this.toSource(expression)}`;
+  }
+  /**
+   * A comment-only container holds no value, so it emits nothing. The parent
+   * element loop already skips empty sources.
+   * @example
+   * <div>{/* a comment *\/}</div>
+   * @param {import("@babel/types").JSXEmptyExpression} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  JSXEmptyExpression(node) {
+    return '';
+  }
+  /**
    * @param {import("@babel/types").JSXElement} node - The Babel AST node.
    * @returns {string} Stringification of the node.
    */
@@ -1695,14 +1755,30 @@ class Stringifier {
    * @returns {string} Stringification of the node.
    */
   Program(node) {
-    const {/*sourceType, interpreter,*/ body, directives} = node;
+    const {interpreter, body, directives} = node;
     let out = '';
+    if (interpreter) {
+      out += this.toSource(interpreter) + '\n';
+    }
     // @todo I would like to keep comments above and below,
     // but below one is currently dropped (does't matter for AST)
     // See: test/typechecking/directive.mjs
     out += this.mapToSource(directives);
     out += this.mapToSource(body).join('\n');
     return out;
+  }
+  /**
+   * A hashbang line (`#!/usr/bin/env node`) carries no runtime semantics for
+   * the transpiled output, but dropping it silently would corrupt executable
+   * scripts, so it round-trips verbatim.
+   * @example
+   * #!/usr/bin/env node
+   * @param {import("@babel/types").InterpreterDirective} node - The Babel AST node.
+   * @returns {string} Stringification of the node.
+   */
+  InterpreterDirective(node) {
+    const {value} = node;
+    return `#!${value}`;
   }
   /**
    * @param {import("@babel/types").StringLiteral} node - The Babel AST node.
