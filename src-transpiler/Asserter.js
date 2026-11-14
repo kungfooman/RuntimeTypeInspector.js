@@ -46,8 +46,6 @@ import {Stringifier           } from './Stringifier.js';
  * the emitted header via `setProjectVersion(...)`, so `Download log` meta
  * identifies the app build. Bundler plugins resolve it from their own
  * option or the host package.json.
- * @property {string} [input] - The original source text. Stored for the
- * unknown-node fallback, so new Babel syntax still reproduces verbatim.
  * @property {import('./jsdoc-parsing-ts/docReaderBoth.js').DocReader} [docReader] - Injectable
  * doc-reader probe running over every JSDoc comment at transpile time.
  * Absent unless set: import `docReaderBoth` from the transpiler and pass
@@ -66,7 +64,6 @@ class Asserter extends Stringifier {
     addHeader = true,
     ignoreLocations = [],
     projectVersion,
-    input = null,
     docReader,
   } = {}) {
     super();
@@ -80,7 +77,6 @@ class Asserter extends Stringifier {
     this.addHeader = addHeader;
     this.ignoreLocations = ignoreLocations;
     this.projectVersion = projectVersion;
-    this.input = input;
     // Fail closed: only a real function probes. Garbage (a typo, a
     // deleted key, a stale string) disables instead of enabling.
     /** @type {import('./jsdoc-parsing-ts/docReaderBoth.js').DocReader|undefined} */

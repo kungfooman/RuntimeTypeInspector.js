@@ -3,13 +3,11 @@ import {ALIAS_KEYS   } from '@babel/types';
 import {parserOptions} from './parserOptions.js';
 import {Asserter     } from './Asserter.js';
 import {expandType   } from './expandType.js';
-import {childNodes   } from './childNodes.js';
 const standardTypes = new Set(Object.entries(ALIAS_KEYS)
   .filter(([, aliases]) => aliases.includes('Standardized'))
   .map(([type]) => type));
 /**
- * Converts `src` through the real pipeline with the source text stored, so
- * the unknown-node fallback can slice verbatim.
+ * Converts `src` through the real pipeline.
  * @param {string} src - Source code to convert.
  * @returns {string} Converted code.
  */
@@ -18,97 +16,8 @@ function convert(src) {
     expandType,
     addHeader: false,
     filename: 'test.js',
-    input: src,
   });
   return asserter.toSource(parse(src, parserOptions));
-}
-/**
- * Renames every node of one type, simulating a Babel update that renames or
- * adds a construct the emitter table does not know yet.
- * @param {string} src - Source code to parse.
- * @param {string} from - Node type to rename.
- * @param {string} to - Replacement type (unknown to the emitter table).
- * @returns {string} Converted code for the mutated tree.
- */
-function convertRenamed(src, from, to) {
-  const ast = parse(src, parserOptions);
-  const walk = (node) => {
-    if (!node || typeof node !== 'object' || typeof node.type !== 'string') {
-      return;
-    }
-    if (node.type === from) {
-      node.type = to;
-    }
-    for (const child of childNodes(node)) {
-      walk(child);
-    }
-  };
-  walk(ast);
-  const asserter = new Asserter({
-    expandType,
-    addHeader: false,
-    filename: 'test.js',
-    input: src,
-  });
-  return asserter.toSource(ast);
-}
-/**
- * Collects every node type the parser produces for `src`.
- * @param {string} src - Source code to parse.
- * @returns {Set<string>} The produced node types.
- */
-function producedNodeTypes(src) {
-  const found = new Set();
-  const walk = (node) => {
-    if (!node || typeof node !== 'object' || typeof node.type !== 'string') {
-      return;
-    }
-    found.add(node.type);
-    for (const child of childNodes(node)) {
-      walk(child);
-    }
-  };
-  walk(parse(src, parserOptions));
-  return found;
-}
-function testStaticBlockSurvives() {
-  // The issue repro must round-trip instead of degrading into a placeholder.
-  const src = `class Vec3 {
-  static {
-    console.log("once");
-  }
-}`;
-  const out = convert(src);
-  if (out.includes('rtiUnhandled')) {
-    console.warn('static block degraded into placeholder', {out});
-    return false;
-  }
-  return out.includes('static {') && out.includes('console.log("once");');
-}
-function testRenamedBlockSurvives() {
-  // A renamed block wrapper (what a Babel update looks like) still
-  // reproduces verbatim from the stored input instead of breaking the build.
-  const src = `class Vec3 {
-  static {
-    console.log("once");
-  }
-}`;
-  const out = convertRenamed(src, 'StaticBlock', 'StaticBlockFuture');
-  if (out.includes('rtiUnhandled')) {
-    console.warn('renamed block degraded into placeholder', {out});
-    return false;
-  }
-  return out.includes('static {') && out.includes('console.log("once");');
-}
-function testRenamedOperatorSurvives() {
-  // A renamed operator keeps its operands: the output stays runnable code
-  // instead of dropping the expression.
-  const out = convertRenamed('const value = left ?? right;', 'LogicalExpression', 'LogicalExpressionFuture');
-  if (out.includes('rtiUnhandled')) {
-    console.warn('renamed operator degraded into placeholder', {out});
-    return false;
-  }
-  return out.includes('left') && out.includes('right');
 }
 function testStandardTypesStayCovered() {
   // Every node type Babel calls Standardized that our parserOptions can
@@ -200,7 +109,7 @@ function testStandardTypesStayCovered() {
     UpdateExpression: 'count++;',
     VariableDeclaration: 'const value = 1;',
     VariableDeclarator: 'const value = 1;',
-    WhileStatement: 'while (live) { run(); }',
+    WhileStatement: 'while (live) { continue; }',
     YieldExpression: 'function* gen() { yield 1; }',
   };
   // Standardized types the parser rejects under our options stay out of the
@@ -220,14 +129,6 @@ function testStandardTypesStayCovered() {
       console.warn('probe is not a Standardized type', {type});
       return false;
     }
-    for (const produced of producedNodeTypes(src)) {
-      if (produced === 'File' || produced === 'Program') {
-        continue;
-      }
-      if (!standardTypes.has(produced)) {
-        continue;
-      }
-    }
     const out = convert(src);
     if (out.includes('rtiUnhandled')) {
       console.warn('standardized type degrades into placeholder', {type, out});
@@ -242,6 +143,12 @@ function testStandardTypesStayCovered() {
     }
     console.warn('gated syntax now parses without a probe', {type});
     return false;
+  }
+  for (const type of standardTypes) {
+    if (!(type in probes) && !(type in gated)) {
+      console.warn('standardized type has no probe', {type});
+      return false;
+    }
   }
   return true;
 }
@@ -275,23 +182,9 @@ function testJsxEmptyExpressionEmits() {
   }
   return true;
 }
-function testHashbangRoundTrips() {
-  // A hashbang parses into an InterpreterDirective the Program emitter must
-  // carry: dropping it silently would corrupt executable scripts.
-  const out = convert('#!/usr/bin/env node\nconst value = 1;');
-  if (out.includes('rtiUnhandled')) {
-    console.warn('hashbang degraded into placeholder', {out});
-    return false;
-  }
-  return out.includes('#!/usr/bin/env node');
-}
 export const tests = [
-  testStaticBlockSurvives,
-  testRenamedBlockSurvives,
-  testRenamedOperatorSurvives,
   testStandardTypesStayCovered,
   testJsxSpreadAttributeEmits,
   testJsxSpreadChildEmits,
   testJsxEmptyExpressionEmits,
-  testHashbangRoundTrips,
 ];

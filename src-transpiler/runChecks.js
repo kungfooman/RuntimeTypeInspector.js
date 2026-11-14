@@ -23,7 +23,6 @@ function runChecks(src, expose, body) {
     expandType,
     addHeader: false,
     filename: 'test.js',
-    input: src,
   });
   let out = asserter.toSource(parse(src, parserOptions));
   // `export` cannot run inside `new Function`: strip it. Export only affects
