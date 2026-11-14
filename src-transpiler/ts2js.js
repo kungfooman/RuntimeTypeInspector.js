@@ -1,6 +1,6 @@
 import {parse             } from '@babel/parser';
+import {VISITOR_KEYS      } from '@babel/types';
 import {Stringifier       } from './Stringifier.js';
-import {childNodes        } from './childNodes.js';
 import {nodeIsFunctionLike} from './nodeIsFunctionLike.js';
 /** @typedef {import('@babel/types').Node} Node */
 /**
@@ -830,9 +830,15 @@ function annotate(node, parents) {
     collectVariableTypeComments(node, parents);
   }
   // recurse into children using Babel's own visitor keys
-  const children = childNodes(node);
-  for (const child of children) {
-    annotate(child, parents);
+  for (const key of VISITOR_KEYS[type] ?? []) {
+    const child = node[key];
+    if (Array.isArray(child)) {
+      for (const entry of child) {
+        annotate(entry, parents);
+      }
+    } else if (child && typeof child === 'object' && child.type) {
+      annotate(child, parents);
+    }
   }
   parents.pop();
 }
