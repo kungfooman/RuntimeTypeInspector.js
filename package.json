@@ -23,7 +23,9 @@
     "test:parity": "node test/parity/run.mjs",
     "test:parity-tags": "node test/parity-tags/run.mjs",
     "test:update": "node gen_tests.js > test/typechecking.json",
-    "sync:consumer": "node sync-version.js && npm run build && node sync-consumer.js"
+    "sync:consumer": "node sync-version.js && npm run build && node sync-consumer.js",
+    "supported:build": "bash supported/build-all.sh",
+    "supported:fetch": "node supported/scripts/fetch-upstream.mjs"
   },
   "repository": {
     "type": "git",

@@ -1005,6 +1005,10 @@ class TypePanel {
   winSeq = 0;
   /** @type {Set<Document>} */
   escDocs = new Set();
+  /** @type {boolean} */
+  attachQueued = false;
+  /** @type {boolean} */
+  positionRestored = false;
   /** @type {Set<Document>} */
   focusDocs = new Set();
   warnedTable;
@@ -1025,14 +1029,18 @@ class TypePanel {
   warnedDuplicate = false;
   constructor() {
     // Single panel by design (one shared wrapper, one message stream):
-    // re-evaluating `new TypePanel()` (REPL Shift-Enter) refreshes and
-    // reveals the existing panel instead of stacking dead twins whose
-    // identical windows made clicks appear to do nothing. But a detached
-    // wrapper (closed pop-out, wiped body, replaced root) is a corpse:
-    // handing it back would keep appending new errors into dead nodes
-    // where nobody can see them, so that rebuilds fresh instead.
-    if (TypePanel.instance && TypePanel.divAll?.isConnected) {
+    // re-evaluating `new TypePanel()` (REPL Shift-Enter, or a second entry
+    // chunk on the same page) refreshes and reveals the existing panel
+    // instead of stacking dead twins whose identical windows made clicks
+    // appear to do nothing. The hand-back is unconditional on purpose: entry
+    // chunks evaluate before `DOMContentLoaded`, so a connectedness check
+    // here would miss a panel whose body append is still scheduled and
+    // build a twin. A detached wrapper (closed pop-out, wiped body,
+    // replaced root) is a corpse, so the attach step re-appends it instead
+    // of handing back dead nodes nobody can see.
+    if (TypePanel.instance) {
       TypePanel.instance.reattachStranded();
+      TypePanel.instance.ensureAttached();
       TypePanel.instance.clear();
       TypePanel.instance.show();
       // Singleton hand-back: returning an object overrides `this` by design.
@@ -1522,6 +1530,7 @@ class TypePanel {
     }
     divAll.append(div);
     const positionRestored = this.applyGeometry();
+    this.positionRestored = positionRestored;
     this.selectPosition.value = options.panelPosition;
     const storedPosition = localStorage.getItem('rti-panel-position');
     if (storedPosition !== null) {
@@ -1540,27 +1549,11 @@ class TypePanel {
       () => this.div?.dataset?.maximized === 'true',
     );
     this.observeGeometry(div);
-    const finalFunc = () => {
-      document.body.append(divAll);
-      document.body.append(this.taskbar);
-      this.buildStatsWindow();
-      if (this.statsWin) {
-        divAll.append(this.statsWin);
-        this.statsWin.style.display = 'none';
-        this.statsWinHidden = true;
-      }
-      if (!positionRestored) {
-        // Center needs layout: re-dock fresh panels once measurable.
-        this.applyStartPosition();
-      }
-    };
-    // Add our <div> to <body> when possible
-    if (document.readyState === "complete") {
-      finalFunc();
-    } else {
-      // add when page is loaded
-      document.addEventListener("DOMContentLoaded", finalFunc);
-    }
+    // Body append runs once per panel lifetime, now or on DOMContentLoaded:
+    // entry chunks evaluate before the body exists, and second chunks must
+    // not schedule a twin append. A wiped body later re-appends through
+    // the same path (reattachStranded docks, ensureAttached re-appends).
+    this.ensureAttached();
     this.loadState();
     this.updateTaskbarVisibility();
     // In the simplest case RTI sends its errors onto `window` to update UI state.
@@ -1591,9 +1584,63 @@ class TypePanel {
     this.refreshCompareTaskbar();
     this.settleActive();
   }
+  /**
+   * Appends the panel wrapper and taskbar to the body once the body exists:
+   * now when possible, otherwise on the first `DOMContentLoaded`. Later
+   * calls only re-append after a body wipe (the corpse case the
+   * constructor hand-back used to rebuild for). Never throws: a missing
+   * body simply waits for content load.
+   */
+  ensureAttached() {
+    const {divAll} = TypePanel;
+    if (divAll?.isConnected) {
+      return;
+    }
+    if (typeof document === 'undefined' || !document.body) {
+      return;
+    }
+    if (document.readyState === 'complete') {
+      this.attachNow();
+      return;
+    }
+    if (this.attachQueued) {
+      return;
+    }
+    this.attachQueued = true;
+    // add when page is loaded
+    document.addEventListener('DOMContentLoaded', () => this.attachNow());
+  }
+  /**
+   * Moves the wrapper, taskbar and stats window into the live body.
+   * Appends are moves and the stats window builds once, so repeats are safe.
+   */
+  attachNow() {
+    const {divAll} = TypePanel;
+    if (!divAll || typeof document === 'undefined' || !document.body) {
+      return;
+    }
+    document.body.append(divAll);
+    document.body.append(this.taskbar);
+    this.buildStatsWindow();
+    if (this.statsWin) {
+      divAll.append(this.statsWin);
+      this.statsWin.style.display = 'none';
+      this.statsWinHidden = true;
+    }
+    if (!this.positionRestored) {
+      // Center needs layout: re-dock fresh panels once measurable.
+      this.applyStartPosition();
+    }
+  }
   show() {
     this.reattachStranded();
-    this.div.style.display = '';
+    // Restore the flex column, not the blank default: the panel div carries
+    // no class, so clearing to '' falls back to `block`, which silently
+    // disables the flex cap the scrollable body depends on — the body then
+    // grows to full content height and paints over the page with no
+    // scrollbar. `niceDiv` sets the same value at build time; hide/show
+    // round-trips through `none` back to it.
+    this.div.style.display = 'flex';
     this.updateTaskbarVisibility();
     this.refreshCompareTaskbar();
     this.frontPanel();
@@ -3372,7 +3419,12 @@ class TypePanel {
   }
   updateCheckStats() {
     this.updateStatsButton();
-    if (!this.checksTable) {
+    // The stats table lives inside the pop-out stats window: rebuilding it
+    // while hidden burns main-thread time per error arrival (full sort plus
+    // node churn per row) for a table nobody can see. Hidden stays cheap —
+    // the button label above already carries the live totals — and opening
+    // the window rebuilds from the same rows.
+    if (!this.checksTable || this.statsWinHidden !== false) {
       return;
     }
     const [, ...stale] = this.checksTable.children;
@@ -3569,17 +3621,32 @@ class TypePanel {
       valueToString,
       strings,
       extras = [],
-      key,
+      key: eventKey,
       repeat,
       stack,
+      source,
     } = event.data;
+    // Rows are keyed per reporting runtime: two registries can hold
+    // different shapes behind the same `loc-name` (worker, iframe, or a
+    // version mix on one page), and merging them would attribute one
+    // registry's failures to the other's types. Same-runtime traffic keeps
+    // the bare key, so the common single-registry page renders and dedups
+    // exactly like before.
+    const key = source === undefined || source === options.runtimeId ? eventKey : `${eventKey}@${source}`;
     if (repeat) {
       // Checking-side dedup: the full report already sits under this key,
-      // so only the hit count and totals advance — no value, no log churn.
-      // Unknown keys (panel reloaded after the report) have no row to bump.
+      // so only the hit count advances — no value, no log churn. Coalesced
+      // flushes carry the tick count as `ticks`; legacy senders post one
+      // message per tick and bump by one. The totals counter needs no
+      // touch: the checking side already incremented it once per failure
+      // before the tick was noted. Unknown keys (panel reloaded after the
+      // report) have no row to bump.
+      const ticks = Number.isFinite(event.data.ticks) && event.data.ticks >= 1 ?
+        Math.floor(event.data.ticks) :
+        1;
       const known = this.warnings[key];
       if (known) {
-        known.hits++;
+        known.hits += ticks;
       }
       this.updateErrorCount();
       return;
@@ -3601,6 +3668,7 @@ class TypePanel {
       loc,
       name,
       key,
+      source,
       expect,
       value: stringifyValue(value),
       valueToString,
@@ -3621,7 +3689,17 @@ class TypePanel {
         loc,
         name,
         () => this.openComparator(warnObj),
+        // The checking side arms breakpoints under the bare `loc-name`
+        // key, so the row carries which key to arm however it is stored
+        // here (foreign registries suffix the panel key with `@source`).
+        eventKey,
       );
+      // Foreign registries tag the Loc cell with their short source id, so
+      // rows from a worker/iframe/version mix read as attributed instead of
+      // blended. Local rows keep the bare loc (and every existing spec).
+      if (source !== undefined && source !== options.runtimeId) {
+        warnObj.td_location.textContent = `${loc} @${source}`;
+      }
       this.warnedTable?.append(warnObj.tr);
       this.warnings[key] = warnObj;
     }

@@ -112,6 +112,7 @@ export * from './substituteTupleMember.js';
 export * from './substituteNew.js';
 export * from './substituteFunction.js';
 export * from './reportedKeys.js';
+export * from './pendingRepeats.js';
 export * from './resolveType.js';
 export * from './stringifyType.js';
 export * from './stringifyValue.js';

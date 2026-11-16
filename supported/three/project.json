@@ -1,0 +1,19 @@
+{
+  "name": "three",
+  "repo": "https://github.com/mrdoob/three.js.git",
+  "rev": "5a5b1edea7e147864478f3867b47c6ffe72b5062",
+  "checkoutDir": "three.js",
+  "sourceEntry": "src/Three.js",
+  "bundles": {
+    "full": {
+      "entry": "three.rti.js",
+      "out": "build/three.rti.mjs",
+      "minExports": 400
+    },
+    "core": {
+      "entry": "three-core.rti.js",
+      "out": "build/three.core.rti.mjs",
+      "minExports": 400
+    }
+  }
+}

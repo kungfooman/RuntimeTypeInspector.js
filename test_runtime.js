@@ -151,6 +151,8 @@ const tests = [
   ...(await import('./src-runtime/ignoreChecks.spec.js'              )).tests,
   ...(await import('./src-runtime/customChecks.spec.js'              )).tests,
   ...(await import('./src-runtime/reportedKeys.spec.js'              )).tests,
+  ...(await import('./src-runtime/pendingRepeats.spec.js'            )).tests,
+  ...(await import('./src-runtime/crossContextPostMessage.spec.js'     )).tests,
   ...(await import('./src-runtime/tagValue.spec.js'                 )).tests,
   ...(await import('./src-runtime/captureStack.spec.js'             )).tests,
   ...(await import('./src-runtime/validateArrayLikeSparse.spec.js'     )).tests,

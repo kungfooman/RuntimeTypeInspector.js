@@ -1,0 +1,21 @@
+{
+  "name": "three-rti-sandbox",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Isolated RTI build sandbox: builds three.js from tmp/supported/three.js with the RTI rollup plugin, without touching the three.js tree or its build system",
+  "type": "module",
+  "scripts": {
+    "build": "./node_modules/.bin/rollup --config ./rollup.config.mjs"
+  },
+  "dependencies": {
+    "@rollup/plugin-node-resolve": "16.0.0",
+    "@runtime-type-inspector/plugin-rollup": "file:../../plugin-rollup",
+    "@runtime-type-inspector/runtime": "file:../../@runtime-type-inspector/runtime",
+    "@runtime-type-inspector/transpiler": "file:../../@runtime-type-inspector/transpiler",
+    "magic-string": "^1.4.5",
+    "rollup": "4.35.0"
+  },
+  "engines": {
+    "node": ">=18.3.0"
+  }
+}

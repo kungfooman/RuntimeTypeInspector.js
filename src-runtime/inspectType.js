@@ -13,6 +13,7 @@ import {isClonable               } from './isClonable.js';
 import {tagSnapshot              } from './tagSnapshot.js';
 import {reportedKeys             } from './reportedKeys.js';
 import {tagValue                 } from './tagValue.js';
+import {noteRepeat               } from './pendingRepeats.js';
 import {captureStackLines        } from './captureStack.js';
 import {globalMessageHost        } from './globalMessageHost.js';
 import {recordCheck, recordSkip, nowMs} from './checkStats.js';
@@ -202,13 +203,11 @@ function inspectType(value, expect, loc, name, critical = true) {
     if (options.mode !== 'spam') {
       const tag = tagValue(value);
       if (reportedKeys.get(key) === tag) {
-        crossContextPostMessage({
-          type: 'rti',
-          action: 'addError',
-          destination: 'ui',
-          key,
-          repeat: true,
-        });
+        // Hot-loop tick: count it for the coalesced flush instead of
+        // posting per check. One message per key per turn carries the
+        // delta, so the inbox and the panel rebuilds stay bounded while
+        // the hit counts stay exact.
+        noteRepeat(key);
         return ret;
       }
       reportedKeys.set(key, tag);
