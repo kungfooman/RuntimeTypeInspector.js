@@ -1,4 +1,6 @@
 import {bestEffort             } from './cross-context/bestEffort.js';
+import {noteKey                } from './cross-context/noteKey.js';
+import {takeKeys               } from './cross-context/takeKeys.js';
 import {repeatDeltaMessage     } from './cross-context/repeatDeltaMessage.js';
 import {crossContextPostMessage} from './crossContextPostMessage.js';
 /**
@@ -30,14 +32,11 @@ let flushScheduled = false;
  * @returns {number} Pending ticks for this key after recording.
  */
 function noteRepeat(key) {
-  try {
-    const next = (pendingRepeats.get(key) ?? 0) + 1;
-    pendingRepeats.set(key, next);
+  const next = noteKey(pendingRepeats, key);
+  if (next > 0) {
     scheduleRepeatFlush();
-    return next;
-  } catch {
-    return 0;
   }
+  return next;
 }
 /**
  * Drains the pending repeat ticks. Each entry carries its key plus how
@@ -46,9 +45,7 @@ function noteRepeat(key) {
  * @returns {Map<string, number>} Key to tick count, empty when nothing pends.
  */
 function takeRepeats() {
-  const out = new Map(pendingRepeats);
-  pendingRepeats.clear();
-  return out;
+  return takeKeys(pendingRepeats);
 }
 /**
  * Schedules the cross-context flush for the end of the current turn. One

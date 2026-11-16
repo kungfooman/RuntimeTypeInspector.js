@@ -1,3 +1,4 @@
+import {isDirectedEvent} from './isDirectedEvent.js';
 /**
  * True for panel bound traffic: RTI messages addressed at the user
  * interface. Foreign traffic (analytics, devtools, other libs) posts
@@ -8,19 +9,6 @@
  * @example isUiEvent({data: {type: 'rti', destination: 'ui'}}) // true
  */
 function isUiEvent(event) {
-  if (event === null || event === undefined) {
-    return false;
-  }
-  const {data} = event;
-  if (data === null || data === undefined) {
-    return false;
-  }
-  if (data.type !== 'rti') {
-    return false;
-  }
-  if (data.destination !== 'ui') {
-    return false;
-  }
-  return true;
+  return isDirectedEvent(event, 'rti', 'ui');
 }
 export {isUiEvent};

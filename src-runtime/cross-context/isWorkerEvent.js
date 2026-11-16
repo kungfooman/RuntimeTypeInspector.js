@@ -1,3 +1,4 @@
+import {isDirectedEvent} from './isDirectedEvent.js';
 /**
  * True for checking side traffic: RTI messages addressed at a worker,
  * iframe or any other runtime running checks. The panel fans option
@@ -7,19 +8,6 @@
  * @example isWorkerEvent({data: {type: 'rti', destination: 'worker'}}) // true
  */
 function isWorkerEvent(event) {
-  if (event === null || event === undefined) {
-    return false;
-  }
-  const {data} = event;
-  if (data === null || data === undefined) {
-    return false;
-  }
-  if (data.type !== 'rti') {
-    return false;
-  }
-  if (data.destination !== 'worker') {
-    return false;
-  }
-  return true;
+  return isDirectedEvent(event, 'rti', 'worker');
 }
 export {isWorkerEvent};
