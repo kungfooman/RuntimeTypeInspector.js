@@ -5,6 +5,16 @@ import {windowedOptions} from "./plugin-windowed/windowedOptions.js";
 const options = {
   enabled: true,
   /**
+   * Identity of this runtime evaluation, stamped onto every UI-bound
+   * message so one panel can attribute rows to the runtime that checked
+   * them. Same-document bundles share one evaluation (shared chunks), so
+   * they share the id and render untagged; workers, iframes and version
+   * mixes mint their own, and their rows carry the tag instead of
+   * blending silently into another registry's traffic.
+   * @type {string}
+   */
+  runtimeId: Math.random().toString(36).slice(2, 10),
+  /**
    * @type {'spam'|'once'|'never'} - In spam-mode every message is printed. In once-mode a cache is
    * looked up to check if it was printed already. Spam can be too noisy if there are too
    * many type errors, so the best way to keep it quiet is to fix the noisiest type issues first.

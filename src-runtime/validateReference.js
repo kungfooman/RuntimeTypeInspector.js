@@ -1314,6 +1314,12 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
     return recurse(value, typedefs[refName], loc, name, critical, warn, depth + 1);
   }
   if (classes[refName]) {
+    // A class reference with type arguments (e.g. three.js's `Node<vec4>`,
+    // whose class declares no `@template`): no generic definition exists to
+    // instantiate, so the arguments constrain nothing and validation stays
+    // nominal — the same `instanceof` rule the bare class takes. This keeps
+    // genuine nodes passing and plain objects failing for the right reason
+    // instead of falling through to `unchecked` below.
     if (value instanceof classes[refName]) {
       return true;
     }

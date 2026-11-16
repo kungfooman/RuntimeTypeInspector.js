@@ -41,6 +41,10 @@ import {Stringifier           } from './Stringifier.js';
  * @property {import('./parseJSDoc.js').ExpandType} [expandType] - Expands type shorthands.
  * @property {string} [filename] - The name of a file to which the instance pertains.
  * @property {boolean} [addHeader] - Whether to add import declarations headers. Defaults to true.
+ * @property {boolean} [reexportRuntime] - Whether the header re-exports the
+ * runtime (`export * from '@runtime-type-inspector/runtime'`). Defaults to
+ * true (UMD breakpoint builds rely on it); multi-entry bundling sets it to
+ * false so entries do not re-export every helper through every module.
  * @property {string[]} [ignoreLocations] - Ignore these locations, known false-positives.
  * @property {string} [projectVersion] - Host project version funneled into
  * the emitted header via `setProjectVersion(...)`, so `Download log` meta
@@ -62,6 +66,7 @@ class Asserter extends Stringifier {
     expandType = expandTypeDepFree,
     filename,
     addHeader = true,
+    reexportRuntime = true,
     ignoreLocations = [],
     projectVersion,
     docReader,
@@ -75,6 +80,7 @@ class Asserter extends Stringifier {
     this.expandType = expandType;
     this.filename = filename;
     this.addHeader = addHeader;
+    this.reexportRuntime = reexportRuntime;
     this.ignoreLocations = ignoreLocations;
     this.projectVersion = projectVersion;
     // Fail closed: only a real function probes. Garbage (a typo, a
@@ -457,7 +463,12 @@ class Asserter extends Stringifier {
     const wanted = names.filter((name) => !skip.has(name));
     header += `import {${wanted.join(', ')}} from '@runtime-type-inspector/runtime';\n`;
     // Prevent tree-shaking in UMD build so we can always "add a breakpoint here".
-    header += "export * from '@runtime-type-inspector/runtime';\n";
+    // Multi-entry bundling disables this: every instrumented module
+    // re-exporting the runtime turns every entry into a runtime exporter,
+    // and Rollup answers the cycle by cloning the runtime per entry.
+    if (this.reexportRuntime) {
+      header += "export * from '@runtime-type-inspector/runtime';\n";
+    }
     if (this.projectVersion !== undefined && this.projectVersion !== null) {
       header += `setProjectVersion(${JSON.stringify(this.projectVersion)});\n`;
     }
