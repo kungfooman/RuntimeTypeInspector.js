@@ -1,4 +1,7 @@
-import {options} from './options.js';
+import {options          } from './options.js';
+import {resolvePostTarget} from './cross-context/resolvePostTarget.js';
+import {stampSource      } from './cross-context/stampSource.js';
+import {postToTarget     } from './cross-context/postToTarget.js';
 /**
  * Works to post messages from inside <iframe>'s and Workers to the parent window,
  * which should be the user interface that can handle/display the messages in an
@@ -6,14 +9,13 @@ import {options} from './options.js';
  * `source` id (see `options.runtimeId`), so one panel can attribute rows to
  * the runtime that checked them instead of blending registries silently.
  * A caller-set `source` always wins, so tests and forwarders keep theirs.
+ * A missing bus (bare Node) or a broken bus (closed worker) stays silent:
+ * reporting must never break the check it reports.
  * @param {...any} args - The arguments.
  */
 function crossContextPostMessage(...args) {
-  const to = globalThis.parent || globalThis.self;
   const [first] = args;
-  if (first && typeof first === 'object' && first.type === 'rti' && first.source === undefined) {
-    first.source = options.runtimeId;
-  }
-  to.postMessage(...args);
+  stampSource(first, options.runtimeId);
+  postToTarget(resolvePostTarget(), ...args);
 }
 export {crossContextPostMessage};

@@ -1,16 +1,22 @@
-import {assertMode       } from "./assertMode.js";
-import {decodeBase64     } from "./decodeBase64.js";
-import {encodeBase64     } from "./encodeBase64.js";
-import {options          } from "./options.js";
-import {reportedKeys     } from "./reportedKeys.js";
-import {captureStackLines} from "./captureStack.js";
-import {createTable      } from "./warnedTable.js";
-import {stringifyValue   } from "./stringifyValue.js";
-import {RTI_INFO         } from "./version.js";
-import {formatCompare    } from "./formatCompare.js";
-import {compareText      } from "./compareText.js";
-import {copyText         } from "./copyText.js";
-import {logFilename      } from "./logFilename.js";
+import {assertMode          } from "./assertMode.js";
+import {decodeBase64        } from "./decodeBase64.js";
+import {encodeBase64        } from "./encodeBase64.js";
+import {options             } from "./options.js";
+import {reportedKeys        } from "./reportedKeys.js";
+import {isUiEvent           } from "./cross-context/isUiEvent.js";
+import {panelMessageKey     } from "./cross-context/panelMessageKey.js";
+import {applyRepeatDelta    } from "./cross-context/applyRepeatDelta.js";
+import {dispatchUiAction    } from "./cross-context/dispatchUiAction.js";
+import {fanoutToTargets     } from "./cross-context/fanoutToTargets.js";
+import {workerSettingMessage} from "./cross-context/workerSettingMessage.js";
+import {captureStackLines   } from "./captureStack.js";
+import {createTable         } from "./warnedTable.js";
+import {stringifyValue      } from "./stringifyValue.js";
+import {RTI_INFO            } from "./version.js";
+import {formatCompare       } from "./formatCompare.js";
+import {compareText         } from "./compareText.js";
+import {copyText            } from "./copyText.js";
+import {logFilename         } from "./logFilename.js";
 import {collectFailPaths, explainMismatch} from "./explainMismatch.js";
 import {isElementValue} from "./isElementValue.js";
 import {buildTypeTree } from "./typeTree.js";
@@ -1563,12 +1569,8 @@ class TypePanel {
       (e) => {
       // Foreign traffic (analytics, devtools, other libs) posts here too,
       // sometimes without any payload — only `rti`-shaped mail proceeds.
-        const {type, destination} = e.data ?? {};
       // console.log("TypePanel Message event", e);
-        if (type !== 'rti') {
-          return;
-        }
-        if (destination !== 'ui') {
+        if (!isUiEvent(e)) {
           return;
         }
         this.handleEvent(e);
@@ -3078,82 +3080,37 @@ class TypePanel {
     console.table(this.warnings);
   }
   lastKnownCountWithStatus = '0-true';
+  /**
+   * Fans one setting out to every known checking context: dead sinks
+   * drop one by one instead of aborting the fan-out at the first
+   * broken bus.
+   * @param {string} action - The setting action, e.g. `checkStats`.
+   * @param {*} value - The setting value.
+   * @returns {void}
+   */
+  sendSettingToWorkers(action, value) {
+    fanoutToTargets(this.eventSources, workerSettingMessage(action, value));
+  }
   sendStrictStateToWorker() {
-    const {eventSources} = this;
-    eventSources.forEach(eventSource => {
-      eventSource.postMessage({
-        type: 'rti',
-        action: 'strictNullChecks',
-        value: options.strictNullChecks,
-        destination: 'worker',
-      });
-    });
+    this.sendSettingToWorkers('strictNullChecks', options.strictNullChecks);
   }
   sendInfinityStateToWorker() {
-    const {eventSources} = this;
-    eventSources.forEach(eventSource => {
-      eventSource.postMessage({
-        type: 'rti',
-        action: 'checkInfinity',
-        value: options.checkInfinity,
-        destination: 'worker',
-      });
-    });
+    this.sendSettingToWorkers('checkInfinity', options.checkInfinity);
   }
   sendExactStateToWorker() {
-    const {eventSources} = this;
-    eventSources.forEach(eventSource => {
-      eventSource.postMessage({
-        type: 'rti',
-        action: 'exactObjects',
-        value: options.exactObjects,
-        destination: 'worker',
-      });
-    });
+    this.sendSettingToWorkers('exactObjects', options.exactObjects);
   }
   sendWindowedStateToWorker() {
-    const {eventSources} = this;
-    eventSources.forEach(eventSource => {
-      eventSource.postMessage({
-        type: 'rti',
-        action: 'windowedChecks',
-        value: options.windowedChecks,
-        destination: 'worker',
-      });
-    });
+    this.sendSettingToWorkers('windowedChecks', options.windowedChecks);
   }
   sendMapCheckWindowCapToWorker() {
-    const {eventSources} = this;
-    eventSources.forEach(eventSource => {
-      eventSource.postMessage({
-        type: 'rti',
-        action: 'mapCheckWindowCap',
-        value: options.mapCheckWindowCap,
-        destination: 'worker',
-      });
-    });
+    this.sendSettingToWorkers('mapCheckWindowCap', options.mapCheckWindowCap);
   }
   sendMapCheckWindowMinTotalMsToWorker() {
-    const {eventSources} = this;
-    eventSources.forEach(eventSource => {
-      eventSource.postMessage({
-        type: 'rti',
-        action: 'mapCheckWindowMinTotalMs',
-        value: options.mapCheckWindowMinTotalMs,
-        destination: 'worker',
-      });
-    });
+    this.sendSettingToWorkers('mapCheckWindowMinTotalMs', options.mapCheckWindowMinTotalMs);
   }
   sendCheckStatsStateToWorker() {
-    const {eventSources} = this;
-    eventSources.forEach(eventSource => {
-      eventSource.postMessage({
-        type: 'rti',
-        action: 'checkStats',
-        value: options.checkStats,
-        destination: 'worker',
-      });
-    });
+    this.sendSettingToWorkers('checkStats', options.checkStats);
   }
   sendEnabledDisabledStateToWorker() {
     // Problem: First time the worker may not even have started and `this.eventSources.size === 0`
@@ -3166,13 +3123,7 @@ class TypePanel {
     }
     this.lastKnownCountWithStatus = key;
     // console.log("Update state to eventSources", eventSources, "key", key);
-    this.eventSources.forEach(eventSource => {
-      eventSource.postMessage({
-        type: 'rti',
-        action: this.inputEnable.checked ? 'enable' : 'disable',
-        destination: 'worker',
-      });
-    });
+    this.sendSettingToWorkers(this.inputEnable.checked ? 'enable' : 'disable', undefined);
   }
   clear() {
     const {warnings} = this;
@@ -3632,21 +3583,16 @@ class TypePanel {
     // registry's failures to the other's types. Same-runtime traffic keeps
     // the bare key, so the common single-registry page renders and dedups
     // exactly like before.
-    const key = source === undefined || source === options.runtimeId ? eventKey : `${eventKey}@${source}`;
+    const key = panelMessageKey(eventKey, source, options.runtimeId);
     if (repeat) {
       // Checking-side dedup: the full report already sits under this key,
-      // so only the hit count advances — no value, no log churn. Coalesced
-      // flushes carry the tick count as `ticks`; legacy senders post one
-      // message per tick and bump by one. The totals counter needs no
-      // touch: the checking side already incremented it once per failure
-      // before the tick was noted. Unknown keys (panel reloaded after the
-      // report) have no row to bump.
-      const ticks = Number.isFinite(event.data.ticks) && event.data.ticks >= 1 ?
-        Math.floor(event.data.ticks) :
-        1;
-      const known = this.warnings[key];
-      if (known) {
-        known.hits += ticks;
+      // so only the hit count advances by the coalesced delta — no value,
+      // no log churn. The totals counter needs no touch: the checking side
+      // already incremented it once per failure before the tick was noted.
+      // Unknown keys (panel reloaded after the report) have no row to bump.
+      if (applyRepeatDelta(this.warnings, event.data, options.runtimeId) === null) {
+        this.updateErrorCount();
+        return;
       }
       this.updateErrorCount();
       return;
@@ -3752,16 +3698,23 @@ class TypePanel {
       }
     }
     this.lastEvent = event;
-    const {action} = event.data ?? {};
     // Unknown actions used to throw `this[action] is not a function`, taking
     // down the whole dispatch (e.g. worker-destined settings forwarded by a
     // host): warn and ignore instead, like the checking side already does
     // for unhandled action/destination combos.
-    if (typeof this[action] !== 'function') {
-      console.warn('TypePanel#handleEvent> unknown action, ignoring.', {action});
-      return;
-    }
-    this[action](event);
+    const {action} = event.data ?? {};
+    const handlers = new Map([
+      ['addError', (evt) => this.addError(evt)],
+      ['deleteBreakpoint', (evt) => this.deleteBreakpoint(evt)],
+      ['addBreakpoint', (evt) => this.addBreakpoint(evt)],
+    ]);
+    dispatchUiAction(event, handlers, ({
+      action: unknown,
+    }) => {
+      console.warn('TypePanel#handleEvent> unknown action, ignoring.', {
+        action: unknown,
+      });
+    });
     // Could be anywhere we know that a new worker is sending RTI messages.
     this.sendEnabledDisabledStateToWorker();
   }

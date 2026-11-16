@@ -1,7 +1,10 @@
-import {options        } from "./options.js";
-import {breakpoints    } from "./inspectType.js";
-import {copyText       } from "./copyText.js";
-import {DisplayAnything} from './DisplayAnything.js';
+import {options           } from "./options.js";
+import {breakpointMessage } from "./cross-context/breakpointMessage.js";
+import {postToTarget      } from "./cross-context/postToTarget.js";
+import {resolveEventTarget} from "./cross-context/resolveEventTarget.js";
+import {breakpoints       } from "./inspectType.js";
+import {copyText          } from "./copyText.js";
+import {DisplayAnything   } from './DisplayAnything.js';
 import {Tr, Td, Button, Details, Summary, Pre, Div, Span} from './jsx.js';
 import {humanizeExpect} from './humanizeExpect.js';
 import {stringifyType } from './stringifyType.js';
@@ -968,14 +971,9 @@ class Warning {
     // same for same-runtime, worker, iframe and version-mix traffic.
     const key = this.breakpointKey || `${this.loc}-${this.name}`;
     const to = this.eventSource;
-    if (to && typeof to.postMessage === 'function') {
+    if (to) {
       // Cross-context registries (worker, iframe) get the arm via the bus.
-      to.postMessage({
-        type: 'rti',
-        action: _ ? 'addBreakpoint' : 'deleteBreakpoint',
-        destination: 'worker',
-        key,
-      });
+      postToTarget(to, breakpointMessage(key, _));
       return;
     }
     // Same evaluation (panel and checker share this window): the arm goes
@@ -1008,13 +1006,7 @@ class Warning {
       // We have no event yet for restored state
       return null;
     }
-    // If event came from window:
-    /** @type {MessageEventSource | EventTarget | null} */
-    let to = event.source;
-    if (!to) {
-      // If the event came from a worker, we get access to worker via this:
-      to = event.srcElement;
-    }
+    const to = resolveEventTarget(event);
     if (!to) {
       console.log("Should not happen, why no event source?");
       debugger;

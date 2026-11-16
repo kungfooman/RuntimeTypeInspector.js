@@ -1,3 +1,5 @@
+import {bestEffort             } from './cross-context/bestEffort.js';
+import {repeatDeltaMessage     } from './cross-context/repeatDeltaMessage.js';
 import {crossContextPostMessage} from './crossContextPostMessage.js';
 /**
  * Coalesced same-shape repeat ticks, keyed by the bare `loc-name` the
@@ -95,18 +97,9 @@ function flushRepeats() {
     return;
   }
   for (const [key, ticks] of pendings) {
-    try {
-      crossContextPostMessage({
-        type: 'rti',
-        action: 'addError',
-        destination: 'ui',
-        key,
-        repeat: true,
-        ticks,
-      });
-    } catch {
-      // A broken bus drops this key's delta; the loop still posts the rest.
-    }
+    bestEffort(() => {
+      crossContextPostMessage(repeatDeltaMessage(key, ticks));
+    });
   }
 }
 export {pendingRepeats, noteRepeat, takeRepeats, flushRepeats};

@@ -56,4 +56,77 @@ export const tests = [
   testStampsOwnRuntimeId,
   testCallerSourceWins,
   testNonRtiUntouched,
+  testBareNodeStaysSilent,
+  testThrowingBusStaysSilent,
+  testExtraArgsPassThrough,
 ];
+function testBareNodeStaysSilent() {
+  // No message host (bare Node loading the runtime) never throws: the
+  // report is lost, the check that reported keeps running.
+  const origParent = globalThis.parent;
+  const origSelf = globalThis.self;
+  globalThis.parent = undefined;
+  globalThis.self = undefined;
+  try {
+    crossContextPostMessage({
+      type: 'rti',
+      action: 'addError',
+    });
+    return true;
+  } finally {
+    globalThis.parent = origParent;
+    globalThis.self = origSelf;
+  }
+}
+function testThrowingBusStaysSilent() {
+  // A closed worker or torn down iframe throws mid post: the error is
+  // lost, the check that reported keeps running.
+  const origParent = globalThis.parent;
+  const origSelf = globalThis.self;
+  globalThis.parent = undefined;
+  globalThis.self = {
+    postMessage: () => {
+      throw new Error('closed');
+    },
+  };
+  try {
+    crossContextPostMessage({
+      type: 'rti',
+      action: 'addError',
+    });
+    return true;
+  } finally {
+    globalThis.parent = origParent;
+    globalThis.self = origSelf;
+  }
+}
+function testExtraArgsPassThrough() {
+  // Worker style multi argument posts keep working: transfer lists and
+  // friends ride along behind the stamped message.
+  const got = [];
+  const origParent = globalThis.parent;
+  const origSelf = globalThis.self;
+  globalThis.parent = undefined;
+  globalThis.self = {
+    postMessage: (...args) => {
+      got.push(...args);
+    },
+  };
+  try {
+    const msg = {
+      type: 'rti',
+      action: 'addError',
+      destination: 'ui',
+    };
+    crossContextPostMessage(msg, 'transfer');
+    return (
+      got.length === 2 &&
+      got[0] === msg &&
+      got[1] === 'transfer' &&
+      msg.source === options.runtimeId
+    );
+  } finally {
+    globalThis.parent = origParent;
+    globalThis.self = origSelf;
+  }
+}

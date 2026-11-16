@@ -1,4 +1,8 @@
 import {crossContextPostMessage  } from './crossContextPostMessage.js';
+import {applyWorkerCommand       } from './cross-context/applyWorkerCommand.js';
+import {breakpointMessage        } from './cross-context/breakpointMessage.js';
+import {buildMessage             } from './cross-context/buildMessage.js';
+import {isWorkerEvent            } from './cross-context/isWorkerEvent.js';
 import {options                  } from './options.js';
 import {ignoredChecks            } from './ignoredChecks.js';
 import {customChecks             } from './customChecks.js';
@@ -33,78 +37,19 @@ const PANEL_SNAPSHOT_NODES = 20000;
 globalMessageHost()?.addEventListener?.(
   'message',
   (e) => {
-    const {data} = e;
-    const {type, action, destination} = data;
-  // console.log("Message event", e);
-  // console.log("Message data", data);
-    if (type !== 'rti') {
+    if (!isWorkerEvent(e)) {
       return;
     }
-  // Messages come from Worker/IFrame/window to update UI state:
-    if (destination === 'ui') {
-    // console.log("Ignoring UI events here, handled in TypePanel instead.");
-      return;
+    const applied = applyWorkerCommand(e, {breakpoints, options});
+    if (!applied) {
+      const {data} = e;
+      console.log('Unhandled action destination combo', {
+        action: data?.action,
+        destination: data?.destination,
+        e,
+        data,
+      });
     }
-  // Messages come from UI to control a few behaviours:
-    if (destination === 'worker') {
-      if (action === 'addError') {
-        console.warn('We are not keeping track of errors in workers at all.');
-        return;
-      }
-      if (action === 'deleteBreakpoint') {
-        const {key} = data;
-        breakpoints.delete(key);
-        return;
-      }
-      if (action === 'addBreakpoint') {
-        const {key} = data;
-        breakpoints.add(key);
-        return;
-      }
-      if (action === 'enable') {
-        options.enabled = true;
-        return;
-      }
-      if (action === 'disable') {
-        options.enabled = false;
-        return;
-      }
-      if (action === 'strictNullChecks') {
-        options.strictNullChecks = data.value !== false;
-        return;
-      }
-      if (action === 'checkInfinity') {
-        options.checkInfinity = data.value !== false;
-        return;
-      }
-      if (action === 'exactObjects') {
-        options.exactObjects = data.value === true;
-        return;
-      }
-      if (action === 'windowedChecks') {
-        options.windowedChecks = data.value !== false;
-        return;
-      }
-      if (action === 'mapCheckWindowCap') {
-        const cap = Math.floor(Number(data.value));
-        if (Number.isFinite(cap) && cap >= 1) {
-          options.mapCheckWindowCap = cap;
-        }
-        return;
-      }
-      if (action === 'mapCheckWindowMinTotalMs') {
-        const min = Number(data.value);
-        if (Number.isFinite(min) && min >= 0) {
-          options.mapCheckWindowMinTotalMs = min;
-        }
-        return;
-      }
-      if (action === 'checkStats') {
-        options.checkStats = data.value !== false;
-        return;
-      }
-    }
-    console.log('Unhandled action destination combo', {action, destination, e, data});
   },
 );
 /**
@@ -186,12 +131,7 @@ function inspectType(value, expect, loc, name, critical = true) {
       // console.log("breakpoints", breakpoints);
       debugger;
       breakpoints.delete(key); // trigger only once to quickly get app running again
-      crossContextPostMessage({
-        type: 'rti',
-        action: 'deleteBreakpoint',
-        destination: 'ui',
-        key,
-      });
+      crossContextPostMessage(breakpointMessage(key, false, 'ui'));
     }
     // Hot-loop repeat: the panel already holds this key's full report, so
     // rebuilding previews, probing clonability and reposting the value buys
@@ -273,10 +213,7 @@ function inspectType(value, expect, loc, name, critical = true) {
         }
       }
     }
-    const msg = {
-      type: 'rti',
-      action: 'addError',
-      destination: 'ui',
+    const msg = buildMessage('addError', 'ui', {
       value,
       expect,
       loc,
@@ -286,7 +223,7 @@ function inspectType(value, expect, loc, name, critical = true) {
       extras,
       key,
       stack,
-    };
+    });
     try {
       crossContextPostMessage(msg);
     } catch (e) {

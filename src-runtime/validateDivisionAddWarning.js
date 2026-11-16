@@ -1,3 +1,5 @@
+import {buildMessage           } from './cross-context/buildMessage.js';
+import {breakpointMessage      } from './cross-context/breakpointMessage.js';
 import {crossContextPostMessage} from './crossContextPostMessage.js';
 import {breakpoints            } from './inspectType.js';
 /**
@@ -15,18 +17,10 @@ function validateDivisionAddWarning(value, expect, loc, name, msg, details) {
     // console.log("breakpoints", breakpoints);
     debugger;
     breakpoints.delete(key); // trigger only once to quickly get app running again
-    crossContextPostMessage({
-      type: 'rti',
-      action: 'deleteBreakpoint',
-      destination: 'ui',
-      key,
-    });
+    crossContextPostMessage(breakpointMessage(key, false, 'ui'));
   }
   const strings = [msg];
-  crossContextPostMessage({
-    type: 'rti',
-    action: 'addError',
-    destination: 'ui',
+  crossContextPostMessage(buildMessage('addError', 'ui', {
     value,
     expect,
     loc,
@@ -36,6 +30,6 @@ function validateDivisionAddWarning(value, expect, loc, name, msg, details) {
     // validateDivision specific:
     // msg,
     details, // not handled in TypePanel
-  });
+  }));
 }
 export {validateDivisionAddWarning};

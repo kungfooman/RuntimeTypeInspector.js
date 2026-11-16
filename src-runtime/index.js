@@ -10,6 +10,7 @@ export * from './createTypeFromMapping.js';
 export * from './applyQuestionModifier.js';
 export * from './applyReadonlyModifier.js';
 export * from './crossContextPostMessage.js';
+export * from './cross-context/index.js';
 export * from './collectCandidates.js';
 export * from './literalOf.js';
 export * from './unwrapMember.js';
