@@ -1032,8 +1032,8 @@ class TypePanel {
    * How the downloaded log folds same-key full reports: `one` keeps a
    * single entry per check with the latest failure, `values` keeps one
    * entry per distinct value a check failed with, `full` logs every report
-   * unfolded. Panel-local only (no worker traffic depends on it): three
-   * toolbar buttons flip it, `setLogMode` applies it.
+   * unfolded. Panel-local only (no worker traffic depends on it): the
+   * Download button shows it, a settings-menu select switches it.
    * @type {'one'|'values'|'full'}
    */
   logMode = 'one';
@@ -1291,11 +1291,24 @@ class TypePanel {
       onclick: () => this.downloadLog(),
       onmouseenter: () => this.previewLogSize(),
     });
-    this.buttonLogMode = Button({
-      textContent: '[one]',
-      title: 'Log folding: one entry per check; cycles one, values, full',
-      onclick: () => this.cycleLogMode(),
+    this.option_log_one = Option({
+      text: 'one',
     });
+    this.option_log_values = Option({
+      text: 'values',
+    });
+    this.option_log_full = Option({
+      text: 'full',
+    });
+    this.selectLogMode = Select(
+      {
+        title: 'Log folding: one entry per check, one per distinct value, or every report unfolded',
+        onchange: () => this.setLogMode(this.selectLogMode.value),
+      },
+      this.option_log_one,
+      this.option_log_values,
+      this.option_log_full,
+    );
     this.buttonPopout = Button({
       textContent: '⧉',
       title: 'Pop out to own window',
@@ -1403,7 +1416,7 @@ class TypePanel {
         {
           className: 'rti-setting-row',
         },
-        Label({}, 'Log folding: ', this.buttonLogMode),
+        Label({}, 'Log folding: ', this.selectLogMode),
       ),
       Div(
         {
@@ -3195,21 +3208,7 @@ class TypePanel {
     }
     this.logMode = mode;
     this.buttonDownloadLog.textContent = `Download log [${mode}]`;
-    this.buttonLogMode.textContent = `[${mode}]`;
-  }
-  /**
-   * Advances the log folding one step: `one`, `values`, `full`, back to
-   * `one`. One button, one behavior to cycle, no mode-button row.
-   * @returns {void}
-   */
-  cycleLogMode() {
-    if (this.logMode === 'one') {
-      this.setLogMode('values');
-    } else if (this.logMode === 'values') {
-      this.setLogMode('full');
-    } else {
-      this.setLogMode('one');
-    }
+    this.selectLogMode.value = mode;
   }
   /**
    * Fresh hover preview for the Download button: the actual serialized log

@@ -2237,9 +2237,9 @@ function testFullModeLogsEveryReport() {
   });
 }
 function testLogModeButtonsFlipFolding() {
-  // One button, no mode-button row: the Download button itself carries the
-  // folding (`Download log [one]`), the settings menu cycles it, and the
-  // log header names the active mode for whoever reads the file.
+  // No mode-button row, no cycle toggle: a settings-menu select shows all
+  // three foldings at once, the Download button carries the active one
+  // (`Download log [one]`), and the log header names it for the reader.
   return withPanel((panel) => {
     const prevMode = options.mode;
     options.mode = 'never';
@@ -2252,20 +2252,21 @@ function testLogModeButtonsFlipFolding() {
       if (!fresh) {
         return false;
       }
-      panel.buttonLogMode.onclick();
+      const opts = panel.selectLogMode.children.map((_) => _.text ?? _.textContent).join();
+      if (opts !== 'one,values,full') {
+        return false;
+      }
+      panel.selectLogMode.value = 'values';
+      panel.selectLogMode.onchange();
       const values = panel.logMode === 'values' &&
         panel.buttonDownloadLog.textContent === 'Download log [values]';
       if (!values) {
         return false;
       }
       const hinted = panel.getLogMeta().llmHint.includes('Log mode is `values`');
-      panel.buttonLogMode.onclick();
-      panel.buttonLogMode.onclick();
-      const cycled = panel.logMode === 'one' &&
-        panel.buttonDownloadLog.textContent === 'Download log [one]';
       panel.setLogMode('bogus');
-      const kept = panel.logMode === 'one';
-      return values && hinted && cycled && kept;
+      const kept = panel.logMode === 'values' && panel.selectLogMode.value === 'values';
+      return values && hinted && kept;
     } finally {
       options.mode = prevMode;
     }
