@@ -49,18 +49,29 @@ function testRequiresExplicitSettings() {
   // No silent vocabulary: every project names its own net and id.
   let failures = 0;
   try {
-    new CrossContextBus({});
+    expectConstructed(new CrossContextBus({}));
   } catch {
     failures += 1;
   }
   try {
-    new CrossContextBus({
+    expectConstructed(new CrossContextBus({
       net: 'my-app',
-    });
+    }));
   } catch {
     failures += 1;
   }
   return failures === 2;
+}
+/**
+ * Binds a constructed peer so `no-new` stays quiet: the throw (or the
+ * binding) is the assertion, the value itself is never read.
+ * @param {CrossContextBus} bus - The constructed peer.
+ * @returns {void}
+ */
+function expectConstructed(bus) {
+  if (bus === null) {
+    throw new Error('unreachable');
+  }
 }
 function testMessageBuildsEnvelope() {
   // Tag plus sender stay fixed; recipient and payload ride along.
