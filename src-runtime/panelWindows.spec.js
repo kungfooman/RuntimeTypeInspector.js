@@ -2177,6 +2177,104 @@ function testDistinctKeysLogSeparately() {
     }
   });
 }
+function testValuesModeKeepsOneEntryPerValue() {
+  // `values` folding keeps alternating failures side by side instead of
+  // collapsing them: false, undefined, false lands two slots, and cycling
+  // back to false reuses its own slot with content refreshed and hits
+  // accumulated — the row still counts every firing.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      panel.setLogMode('values');
+      const key = 'L7-values';
+      panel.addError(fullAddError('L7', 'values', false, 'false', ['false fails']));
+      panel.addError(fullAddError('L7', 'values', undefined, 'undef', ['undefined fails']));
+      panel.addError(fullAddError('L7', 'values', false, 'false', ['false fails']));
+      const warnObj = panel.warnings[key];
+      return (
+        !!warnObj &&
+        warnObj.hits === 3 &&
+        panel.eventLog.length === 2 &&
+        panel.eventLog[0].key === key &&
+        panel.eventLog[0].valueToString === 'false' &&
+        panel.eventLog[0].hits === 2 &&
+        panel.eventLog[1].key === key &&
+        panel.eventLog[1].valueToString === 'undef' &&
+        panel.eventLog[1].hits === 1
+      );
+    } finally {
+      options.mode = prevMode;
+      panel.setLogMode('one');
+    }
+  });
+}
+function testFullModeLogsEveryReport() {
+  // `full` skips folding entirely: every report lands its own entry with
+  // its own single firing, mirroring the pre-fold log for full history.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      panel.setLogMode('full');
+      const key = 'L7-full';
+      panel.addError(fullAddError('L7', 'full', false, 'false', ['false fails']));
+      panel.addError(fullAddError('L7', 'full', undefined, 'undef', ['undefined fails']));
+      const warnObj = panel.warnings[key];
+      return (
+        !!warnObj &&
+        warnObj.hits === 2 &&
+        panel.eventLog.length === 2 &&
+        panel.eventLog[0].valueToString === 'false' &&
+        panel.eventLog[0].hits === 1 &&
+        panel.eventLog[1].valueToString === 'undef' &&
+        panel.eventLog[1].hits === 1
+      );
+    } finally {
+      options.mode = prevMode;
+      panel.setLogMode('one');
+    }
+  });
+}
+function testLogModeButtonsFlipFolding() {
+  // The toolbar carries the three log modes behind a `Log:` label with the
+  // active one painted disabled; clicking flips the folding, and the log
+  // header names the active mode for whoever reads the file.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      const labels = textOf(panel.toolbar);
+      if (!panel.spanLogMode.innerText.includes('Log:') || !findButtonByLabel(panel.toolbar, 'full')) {
+        return false;
+      }
+      if (!findButtonByLabel(panel.toolbar, 'values') || !findButtonByLabel(panel.toolbar, 'one')) {
+        return false;
+      }
+      const fresh = panel.logMode === 'one' && panel.buttonLogOne.disabled === true;
+      if (!fresh) {
+        return false;
+      }
+      panel.buttonLogValues.onclick();
+      const values = panel.logMode === 'values' && panel.buttonLogValues.disabled === true &&
+        panel.buttonLogOne.disabled === false;
+      if (!values) {
+        return false;
+      }
+      const hinted = panel.getLogMeta().llmHint.includes('Log mode is `values`');
+      panel.buttonLogFull.onclick();
+      const full = panel.logMode === 'full' && panel.buttonLogFull.disabled === true;
+      panel.buttonLogOne.onclick();
+      const back = panel.logMode === 'one' && panel.buttonLogOne.disabled === true &&
+        panel.buttonLogFull.disabled === false;
+      panel.setLogMode('bogus');
+      const kept = panel.logMode === 'one';
+      return values && hinted && full && back && kept;
+    } finally {
+      options.mode = prevMode;
+    }
+  });
+}
 function testDatalessMessageIgnored() {
   // Foreign traffic sometimes posts without any payload: ignore it
   // silently (warning per foreign message would spam), don't crash.
@@ -3590,6 +3688,9 @@ const tests = [
   testSamishFullReportsFoldIntoOneLogEntry,
   testRepeatDeltaSyncsFoldedLogHits,
   testDistinctKeysLogSeparately,
+  testValuesModeKeepsOneEntryPerValue,
+  testFullModeLogsEveryReport,
+  testLogModeButtonsFlipFolding,
   testDatalessMessageIgnored,
   testTransmittedStackPreferred,
   testMissingStackFallsBack,

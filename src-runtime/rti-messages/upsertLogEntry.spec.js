@@ -57,9 +57,77 @@ function testCapSkipsEvictOnSameKey() {
   upsertLogEntry(log, entry, 2);
   return log.length === 2 && log[0] === entry && log[1].key === 'b';
 }
+function testFoldInheritsStoredHits() {
+  // Folding replaces content, never the count: a fresh entry without `hits`
+  // keeps the accumulated firings of the slot it lands in.
+  const log = [{
+    key: 'a',
+    valueToString: 'false',
+    hits: 5,
+  }];
+  const entry = {
+    key: 'a',
+    valueToString: 'false',
+  };
+  const stored = upsertLogEntry(log, entry, 1000);
+  return stored === entry && stored.hits === 5;
+}
+function testFreshHitsWinOverStored() {
+  // An explicit count on the fresh entry stands: inheritance only fills a
+  // missing count, it never overwrites one the caller set.
+  const log = [{
+    key: 'a',
+    hits: 5,
+  }];
+  const entry = {
+    key: 'a',
+    hits: 7,
+  };
+  const stored = upsertLogEntry(log, entry, 1000);
+  return stored === entry && stored.hits === 7;
+}
+function testVariantAppendsNewSlot() {
+  // Same key, unseen value: the variant misses every fold and appends a
+  // fresh slot, so one check keeps one entry per distinct value.
+  const log = [{
+    key: 'a',
+    valueToString: 'false',
+    hits: 2,
+  }];
+  const entry = {
+    key: 'a',
+    valueToString: 'undef',
+  };
+  const stored = upsertLogEntry(log, entry, 1000, 'undef');
+  return stored === entry && log.length === 2 && log[1] === entry && log[0].hits === 2;
+}
+function testVariantFoldsSeenSlot() {
+  // Same key, seen value: the re-report folds into its own variant slot
+  // with content refreshed and the count inherited, leaving the sibling
+  // value's slot untouched.
+  const log = [{
+    key: 'a',
+    valueToString: 'false',
+    hits: 2,
+  }, {
+    key: 'a',
+    valueToString: 'undef',
+    hits: 1,
+  }];
+  const entry = {
+    key: 'a',
+    valueToString: 'false',
+  };
+  const stored = upsertLogEntry(log, entry, 1000, 'false');
+  return stored === entry && stored.hits === 2 && log.length === 2 && log[1].hits === 1;
+}
 export const tests = [
   testNewKeyAppends,
   testSameKeyReplacesInPlace,
   testCapDropsOldestOnNewKey,
   testCapSkipsEvictOnSameKey,
+  testFoldInheritsStoredHits,
+  testFreshHitsWinOverStored,
+  testVariantAppendsNewSlot,
+  testVariantFoldsSeenSlot,
 ];

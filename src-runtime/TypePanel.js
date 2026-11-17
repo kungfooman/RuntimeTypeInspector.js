@@ -7,6 +7,7 @@ import {isUiEvent           } from "./rti-messages/isUiEvent.js";
 import {panelMessageKey     } from "./rti-messages/panelMessageKey.js";
 import {applyRepeatDelta    } from "./rti-messages/applyRepeatDelta.js";
 import {findLogEntry        } from "./rti-messages/findLogEntry.js";
+import {repeatTickCount     } from "./rti-messages/repeatTickCount.js";
 import {upsertLogEntry      } from "./rti-messages/upsertLogEntry.js";
 import {dispatchUiAction    } from "./rti-messages/dispatchUiAction.js";
 import {fanoutToTargets     } from "./cross-context/fanoutToTargets.js";
@@ -1027,6 +1028,15 @@ class TypePanel {
   maxEventLogSize = 1000;
   maxStackFrames = 20;
   /**
+   * How the downloaded log folds same-key full reports: `one` keeps a
+   * single entry per check with the latest failure, `values` keeps one
+   * entry per distinct value a check failed with, `full` logs every report
+   * unfolded. Panel-local only (no worker traffic depends on it): three
+   * toolbar buttons flip it, `setLogMode` applies it.
+   * @type {'one'|'values'|'full'}
+   */
+  logMode = 'one';
+  /**
    * Last message object delivered: the same object twice means two listeners
    * on one target (e.g. a host forwarding `parent` when `parent === window`),
    * never two genuine failures — `postMessage` clones per call.
@@ -1278,6 +1288,24 @@ class TypePanel {
       textContent: 'Download log',
       onclick: () => this.downloadLog(),
     });
+    this.spanLogMode = Span({
+      innerText: ' Log:',
+    });
+    this.buttonLogFull = Button({
+      textContent: 'full',
+      title: 'Log every report unfolded (largest, keeps full history)',
+      onclick: () => this.setLogMode('full'),
+    });
+    this.buttonLogValues = Button({
+      textContent: 'values',
+      title: 'Log one entry per distinct value a check failed with',
+      onclick: () => this.setLogMode('values'),
+    });
+    this.buttonLogOne = Button({
+      textContent: 'one',
+      title: 'Log one entry per check with the latest failure (smallest)',
+      onclick: () => this.setLogMode('one'),
+    });
     this.buttonPopout = Button({
       textContent: '⧉',
       title: 'Pop out to own window',
@@ -1411,6 +1439,10 @@ class TypePanel {
       this.spanErrors,
       this.buttonClear,
       this.buttonDownloadLog,
+      this.spanLogMode,
+      this.buttonLogFull,
+      this.buttonLogValues,
+      this.buttonLogOne,
       this.buttonStats,
       this.menuButton,
       this.menu,
@@ -1521,6 +1553,7 @@ class TypePanel {
     inputWindowCap.onchange();
     inputWindowMinTotal.onchange();
     inputCheckStats.onchange();
+    this.setLogMode('one');
     const spamTypeReports = localStorage.getItem('rti-spam-type-reports');
     select.value = options.mode;
     if (spamTypeReports !== null) {
@@ -3157,6 +3190,22 @@ class TypePanel {
     return captureStackLines(this.maxStackFrames);
   }
   /**
+   * Switches how the downloaded log folds same-key full reports, painting
+   * the active mode button disabled so it reads as selected. Unknown modes
+   * are ignored: a miswired caller must not blank the log folding.
+   * @param {'one'|'values'|'full'} mode - The log folding to apply.
+   * @returns {void}
+   */
+  setLogMode(mode) {
+    if (mode !== 'one' && mode !== 'values' && mode !== 'full') {
+      return;
+    }
+    this.logMode = mode;
+    this.buttonLogOne.disabled = mode === 'one';
+    this.buttonLogValues.disabled = mode === 'values';
+    this.buttonLogFull.disabled = mode === 'full';
+  }
+  /**
    * Human- and LLM-oriented header for the downloaded log: not every entry is
    * a bug (strict-null and Infinity hits depend on the settings below), so the
    * header records exactly what produced this file.
@@ -3167,7 +3216,15 @@ class TypePanel {
     const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : undefined;
     const hints = [
       'This is a RuntimeTypeInspector error log. Each entry in `errors` is one failed runtime type check.',
-      'Entries are deduplicated by `key` (`loc`-`name` plus the reporting runtime): one check appears once, showing its latest failure with `hits` counting how often it fired.',
+    ];
+    if (this.logMode === 'full') {
+      hints.push('Log mode is `full`: every report is logged, so one hot check may appear many times; each entry counts its own firings in `hits`.');
+    } else if (this.logMode === 'values') {
+      hints.push('Log mode is `values`: entries are deduplicated by `key` (`loc`-`name` plus the reporting runtime) plus the offending value, so one check appears once per distinct value it failed with; `hits` counts the firings folded into each entry.');
+    } else {
+      hints.push('Log mode is `one`: entries are deduplicated by `key` (`loc`-`name` plus the reporting runtime), so one check appears once with its latest failure; `hits` counts how often it fired.');
+    }
+    hints.push(
       '`meta.settings` matters: `strictNullChecks: false` means null/undefined pass every type,',
       '`checkInfinity: false` means +-Infinity passes `number`.',
       '`exactObjects: true` means excess keys fail (stricter than tsc, which only checks fresh literals).',
@@ -3176,7 +3233,7 @@ class TypePanel {
       '`checkStats: false` turns the per call site hotspot recording off.',
       'Those are settings, not bugs.',
       '`meta.rti` identifies the RTI build: version is always present, commit/subject are stamped by `npm run build` (null from unstamped source).',
-    ];
+    );
     if (options.projectVersion === null || options.projectVersion === undefined) {
       hints.push('`meta.projectVersion` is NOT set — pass `projectVersion` to your RTI bundler plugin (rollup/webpack loader option) or call `setProjectVersion(...)` so logs identify the app build.');
     }
@@ -3598,10 +3655,11 @@ class TypePanel {
         this.updateErrorCount();
         return;
       }
-      // The folded log entry stays truthful: its hit count follows the row.
+      // The folded log entry stays truthful: the latest fold for the key
+      // absorbs the coalesced delta, so each entry reports its own firings.
       const folded = findLogEntry(this.eventLog, bumped);
       if (folded !== undefined) {
-        folded.hits = this.warnings[bumped].hits;
+        folded.hits = (folded.hits ?? 0) + repeatTickCount(event.data);
       }
       this.updateErrorCount();
       return;
@@ -3614,17 +3672,16 @@ class TypePanel {
     // Keep a capped, serializable log for download/AI context. Recorded
     // first so a UI rendering failure below can't lose the error. Values
     // are snapshotted bounded instead of referenced, so later mutation and
-    // unserializable shapes can't corrupt the log. Same-key ("samish")
-    // full reports fold into the stored entry in place: the checking side
-    // re-reports whenever the failure mode flips (false then undefined for
-    // one argument), and without folding a hot loop buries the log in
-    // near-identical entries. The row already coalesces the same way, so
-    // the log mirrors it: latest value, messages and stack win, `hits`
-    // follows the row below.
+    // unserializable shapes can't corrupt the log. How same-key ("samish")
+    // full reports land depends on `logMode`: `one` folds every re-report
+    // into the stored entry in place, `values` folds per distinct offending
+    // value (cycling back to a seen value reuses its slot), `full` logs
+    // every report unfolded. The fold inherits the accumulated `hits`, and
+    // each firing adds one below, so an entry counts its own reports.
     // Prefer the checking-side stack (real call site, captured synchronously
     // at the check); fall back to a local capture for senders that predate
     // it (indexed-access/division warnings) or run older runtimes.
-    const stored = upsertLogEntry(this.eventLog, {
+    const record = {
       timestamp: Date.now(),
       loc,
       name,
@@ -3637,7 +3694,18 @@ class TypePanel {
       detail,
       message: msg,
       stack: stack ?? this.captureStack(),
-    }, this.maxEventLogSize);
+    };
+    let stored;
+    if (this.logMode === 'full') {
+      this.eventLog.push(record);
+      if (this.eventLog.length > this.maxEventLogSize) {
+        this.eventLog.splice(0, this.eventLog.length - this.maxEventLogSize);
+      }
+      stored = record;
+    } else {
+      const variant = this.logMode === 'values' ? valueToString : undefined;
+      stored = upsertLogEntry(this.eventLog, record, this.maxEventLogSize, variant);
+    }
     let warnObj = this.warnings[key];
     if (!warnObj) {
       warnObj = new Warning(
@@ -3664,7 +3732,7 @@ class TypePanel {
     warnObj.onCompare = () => this.openComparator(warnObj);
     warnObj.event = event;
     warnObj.hits++;
-    stored.hits = warnObj.hits;
+    stored.hits = (stored.hits ?? 0) + 1;
     warnObj.warn(msg, {expect, value, valueToString}, ...extras);
     refreshWarning(warnObj, {
       value,

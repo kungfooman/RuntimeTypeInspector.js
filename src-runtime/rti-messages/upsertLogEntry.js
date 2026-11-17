@@ -10,14 +10,22 @@ import {findLogEntry} from './findLogEntry.js';
  * @param {object[]} log - The panel `eventLog`, mutated in place.
  * @param {object} entry - The fresh entry, carrying the panel `key`.
  * @param {number} maxSize - Kept entries ceiling before oldest are dropped.
+ * @param {string} [variant] - Optional value discriminator passed through to
+ * `findLogEntry`: when present only a fold with the same key and value
+ * merges, so one check can keep one entry per distinct value it failed
+ * with. The fresh entry inherits the stored fold's `hits` unless it carries
+ * its own, so folding never resets the accumulated count.
  * @returns {object} The stored entry (the fresh one when the log was
  * hostile or the key was new).
  * @example upsertLogEntry([], {key: 'a', hits: 1}, 1000) // {key: 'a', hits: 1}
  */
-function upsertLogEntry(log, entry, maxSize) {
+function upsertLogEntry(log, entry, maxSize, variant) {
   try {
-    const stored = findLogEntry(log, entry?.key);
+    const stored = findLogEntry(log, entry?.key, variant);
     if (stored !== undefined) {
+      if (entry.hits === undefined) {
+        entry.hits = stored.hits;
+      }
       const at = log.indexOf(stored);
       log[at] = entry;
       return entry;
