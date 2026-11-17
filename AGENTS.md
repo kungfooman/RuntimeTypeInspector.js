@@ -53,6 +53,17 @@ the PR without the session context; the description is the changelog.
 - Cover the net change only, never the intra-branch churn: helpers created and deleted mid-branch, reverted experiments, and renamed-then-merged files are session scaffolding, not changelog. The reader needs the final point of view (what the branch holds versus its base), with each entry naming the surviving files and the proof. A file that never appears in a commit boundary does not appear in the doc.
 - Round the primer off with a worked demonstration: docs in, emission out, runtime behavior stated call by call (what passes, what warns, which metadata survives and why). Copy the emission verbatim from the working tree (`run-jsdoc.js --emit` on a minimal input), not from memory. The demo is the pedagogical pre-text made concrete: a future reader who never runs the branch should still see exactly what the transpiler does.
 
+## Upstream PRs
+
+When an RTI finding becomes a fix in someone else's repo, the PR text leads the reviewer to deduce the fix themselves instead of asking for trust. Draft it in `tmp/<repo>-pr.md` (git-ignored, like the PR files above). Precedent: a two-line JSDoc fix that named the wrong pipeline class, merged within minutes.
+- Pin every link to a rev: `https://github.com/<org>/<repo>/blob/<rev>/<path>#L<line>` with `<rev>` from `git rev-parse`. A branch link rots on the next push; a pinned rev stays click-verifiable.
+- Name both sides up front: link each confused class to its definition and state the distinguishing fields in one breath, so the reviewer holds the shapes before the argument starts.
+- Follow the value as a numbered chain: construction site (`new X(...)`), assignment into the field, then each consumer that touches the value. Number the steps so a reviewer can cite one step in a comment.
+- Lead with the strongest evidence: a constructor call plus the assignment on adjacent lines proves the type at creation with no inference needed. Put that step first, not last.
+- Close the grep: name every same-name site the fix does not touch and say why it is correct as is. A reviewer who greps the old name and finds an untouched annotation will otherwise file the PR as incomplete.
+- Every claim earns its keep only with the links in place: a sentence that stays true when the file names are blanked out is a boring changelog entry. Delete it and write what actually happened instead.
+- State the double proof: RTI reported it, `tsc --strict` agrees on a minimal mirror fixture with the same shapes. One checker is a report; two independent checkers are a verdict.
+
 ## Scratch files
 
 Always use the repo-local `./tmp/` directory for scratch, repro and

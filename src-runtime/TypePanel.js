@@ -1,16 +1,22 @@
-import {assertMode       } from "./assertMode.js";
-import {decodeBase64     } from "./decodeBase64.js";
-import {encodeBase64     } from "./encodeBase64.js";
-import {options          } from "./options.js";
-import {reportedKeys     } from "./reportedKeys.js";
-import {captureStackLines} from "./captureStack.js";
-import {createTable      } from "./warnedTable.js";
-import {stringifyValue   } from "./stringifyValue.js";
-import {RTI_INFO         } from "./version.js";
-import {formatCompare    } from "./formatCompare.js";
-import {compareText      } from "./compareText.js";
-import {copyText         } from "./copyText.js";
-import {logFilename      } from "./logFilename.js";
+import {assertMode          } from "./assertMode.js";
+import {decodeBase64        } from "./decodeBase64.js";
+import {encodeBase64        } from "./encodeBase64.js";
+import {options             } from "./options.js";
+import {reportedKeys        } from "./reportedKeys.js";
+import {isUiEvent           } from "./rti-messages/isUiEvent.js";
+import {panelMessageKey     } from "./rti-messages/panelMessageKey.js";
+import {applyRepeatDelta    } from "./rti-messages/applyRepeatDelta.js";
+import {dispatchUiAction    } from "./rti-messages/dispatchUiAction.js";
+import {fanoutToTargets     } from "./cross-context/fanoutToTargets.js";
+import {workerSettingMessage} from "./rti-messages/workerSettingMessage.js";
+import {captureStackLines   } from "./captureStack.js";
+import {createTable         } from "./warnedTable.js";
+import {stringifyValue      } from "./stringifyValue.js";
+import {RTI_INFO            } from "./version.js";
+import {formatCompare       } from "./formatCompare.js";
+import {compareText         } from "./compareText.js";
+import {copyText            } from "./copyText.js";
+import {logFilename         } from "./logFilename.js";
 import {collectFailPaths, explainMismatch} from "./explainMismatch.js";
 import {isElementValue} from "./isElementValue.js";
 import {buildTypeTree } from "./typeTree.js";
@@ -1005,6 +1011,10 @@ class TypePanel {
   winSeq = 0;
   /** @type {Set<Document>} */
   escDocs = new Set();
+  /** @type {boolean} */
+  attachQueued = false;
+  /** @type {boolean} */
+  positionRestored = false;
   /** @type {Set<Document>} */
   focusDocs = new Set();
   warnedTable;
@@ -1025,14 +1035,18 @@ class TypePanel {
   warnedDuplicate = false;
   constructor() {
     // Single panel by design (one shared wrapper, one message stream):
-    // re-evaluating `new TypePanel()` (REPL Shift-Enter) refreshes and
-    // reveals the existing panel instead of stacking dead twins whose
-    // identical windows made clicks appear to do nothing. But a detached
-    // wrapper (closed pop-out, wiped body, replaced root) is a corpse:
-    // handing it back would keep appending new errors into dead nodes
-    // where nobody can see them, so that rebuilds fresh instead.
-    if (TypePanel.instance && TypePanel.divAll?.isConnected) {
+    // re-evaluating `new TypePanel()` (REPL Shift-Enter, or a second entry
+    // chunk on the same page) refreshes and reveals the existing panel
+    // instead of stacking dead twins whose identical windows made clicks
+    // appear to do nothing. The hand-back is unconditional on purpose: entry
+    // chunks evaluate before `DOMContentLoaded`, so a connectedness check
+    // here would miss a panel whose body append is still scheduled and
+    // build a twin. A detached wrapper (closed pop-out, wiped body,
+    // replaced root) is a corpse, so the attach step re-appends it instead
+    // of handing back dead nodes nobody can see.
+    if (TypePanel.instance) {
       TypePanel.instance.reattachStranded();
+      TypePanel.instance.ensureAttached();
       TypePanel.instance.clear();
       TypePanel.instance.show();
       // Singleton hand-back: returning an object overrides `this` by design.
@@ -1522,6 +1536,7 @@ class TypePanel {
     }
     divAll.append(div);
     const positionRestored = this.applyGeometry();
+    this.positionRestored = positionRestored;
     this.selectPosition.value = options.panelPosition;
     const storedPosition = localStorage.getItem('rti-panel-position');
     if (storedPosition !== null) {
@@ -1540,27 +1555,11 @@ class TypePanel {
       () => this.div?.dataset?.maximized === 'true',
     );
     this.observeGeometry(div);
-    const finalFunc = () => {
-      document.body.append(divAll);
-      document.body.append(this.taskbar);
-      this.buildStatsWindow();
-      if (this.statsWin) {
-        divAll.append(this.statsWin);
-        this.statsWin.style.display = 'none';
-        this.statsWinHidden = true;
-      }
-      if (!positionRestored) {
-        // Center needs layout: re-dock fresh panels once measurable.
-        this.applyStartPosition();
-      }
-    };
-    // Add our <div> to <body> when possible
-    if (document.readyState === "complete") {
-      finalFunc();
-    } else {
-      // add when page is loaded
-      document.addEventListener("DOMContentLoaded", finalFunc);
-    }
+    // Body append runs once per panel lifetime, now or on DOMContentLoaded:
+    // entry chunks evaluate before the body exists, and second chunks must
+    // not schedule a twin append. A wiped body later re-appends through
+    // the same path (reattachStranded docks, ensureAttached re-appends).
+    this.ensureAttached();
     this.loadState();
     this.updateTaskbarVisibility();
     // In the simplest case RTI sends its errors onto `window` to update UI state.
@@ -1570,12 +1569,8 @@ class TypePanel {
       (e) => {
       // Foreign traffic (analytics, devtools, other libs) posts here too,
       // sometimes without any payload — only `rti`-shaped mail proceeds.
-        const {type, destination} = e.data ?? {};
       // console.log("TypePanel Message event", e);
-        if (type !== 'rti') {
-          return;
-        }
-        if (destination !== 'ui') {
+        if (!isUiEvent(e)) {
           return;
         }
         this.handleEvent(e);
@@ -1591,9 +1586,63 @@ class TypePanel {
     this.refreshCompareTaskbar();
     this.settleActive();
   }
+  /**
+   * Appends the panel wrapper and taskbar to the body once the body exists:
+   * now when possible, otherwise on the first `DOMContentLoaded`. Later
+   * calls only re-append after a body wipe (the corpse case the
+   * constructor hand-back used to rebuild for). Never throws: a missing
+   * body simply waits for content load.
+   */
+  ensureAttached() {
+    const {divAll} = TypePanel;
+    if (divAll?.isConnected) {
+      return;
+    }
+    if (typeof document === 'undefined' || !document.body) {
+      return;
+    }
+    if (document.readyState === 'complete') {
+      this.attachNow();
+      return;
+    }
+    if (this.attachQueued) {
+      return;
+    }
+    this.attachQueued = true;
+    // add when page is loaded
+    document.addEventListener('DOMContentLoaded', () => this.attachNow());
+  }
+  /**
+   * Moves the wrapper, taskbar and stats window into the live body.
+   * Appends are moves and the stats window builds once, so repeats are safe.
+   */
+  attachNow() {
+    const {divAll} = TypePanel;
+    if (!divAll || typeof document === 'undefined' || !document.body) {
+      return;
+    }
+    document.body.append(divAll);
+    document.body.append(this.taskbar);
+    this.buildStatsWindow();
+    if (this.statsWin) {
+      divAll.append(this.statsWin);
+      this.statsWin.style.display = 'none';
+      this.statsWinHidden = true;
+    }
+    if (!this.positionRestored) {
+      // Center needs layout: re-dock fresh panels once measurable.
+      this.applyStartPosition();
+    }
+  }
   show() {
     this.reattachStranded();
-    this.div.style.display = '';
+    // Restore the flex column, not the blank default: the panel div carries
+    // no class, so clearing to '' falls back to `block`, which silently
+    // disables the flex cap the scrollable body depends on — the body then
+    // grows to full content height and paints over the page with no
+    // scrollbar. `niceDiv` sets the same value at build time; hide/show
+    // round-trips through `none` back to it.
+    this.div.style.display = 'flex';
     this.updateTaskbarVisibility();
     this.refreshCompareTaskbar();
     this.frontPanel();
@@ -3031,82 +3080,37 @@ class TypePanel {
     console.table(this.warnings);
   }
   lastKnownCountWithStatus = '0-true';
+  /**
+   * Fans one setting out to every known checking context: dead sinks
+   * drop one by one instead of aborting the fan-out at the first
+   * broken bus.
+   * @param {string} action - The setting action, e.g. `checkStats`.
+   * @param {*} value - The setting value.
+   * @returns {void}
+   */
+  sendSettingToWorkers(action, value) {
+    fanoutToTargets(this.eventSources, workerSettingMessage(action, value));
+  }
   sendStrictStateToWorker() {
-    const {eventSources} = this;
-    eventSources.forEach(eventSource => {
-      eventSource.postMessage({
-        type: 'rti',
-        action: 'strictNullChecks',
-        value: options.strictNullChecks,
-        destination: 'worker',
-      });
-    });
+    this.sendSettingToWorkers('strictNullChecks', options.strictNullChecks);
   }
   sendInfinityStateToWorker() {
-    const {eventSources} = this;
-    eventSources.forEach(eventSource => {
-      eventSource.postMessage({
-        type: 'rti',
-        action: 'checkInfinity',
-        value: options.checkInfinity,
-        destination: 'worker',
-      });
-    });
+    this.sendSettingToWorkers('checkInfinity', options.checkInfinity);
   }
   sendExactStateToWorker() {
-    const {eventSources} = this;
-    eventSources.forEach(eventSource => {
-      eventSource.postMessage({
-        type: 'rti',
-        action: 'exactObjects',
-        value: options.exactObjects,
-        destination: 'worker',
-      });
-    });
+    this.sendSettingToWorkers('exactObjects', options.exactObjects);
   }
   sendWindowedStateToWorker() {
-    const {eventSources} = this;
-    eventSources.forEach(eventSource => {
-      eventSource.postMessage({
-        type: 'rti',
-        action: 'windowedChecks',
-        value: options.windowedChecks,
-        destination: 'worker',
-      });
-    });
+    this.sendSettingToWorkers('windowedChecks', options.windowedChecks);
   }
   sendMapCheckWindowCapToWorker() {
-    const {eventSources} = this;
-    eventSources.forEach(eventSource => {
-      eventSource.postMessage({
-        type: 'rti',
-        action: 'mapCheckWindowCap',
-        value: options.mapCheckWindowCap,
-        destination: 'worker',
-      });
-    });
+    this.sendSettingToWorkers('mapCheckWindowCap', options.mapCheckWindowCap);
   }
   sendMapCheckWindowMinTotalMsToWorker() {
-    const {eventSources} = this;
-    eventSources.forEach(eventSource => {
-      eventSource.postMessage({
-        type: 'rti',
-        action: 'mapCheckWindowMinTotalMs',
-        value: options.mapCheckWindowMinTotalMs,
-        destination: 'worker',
-      });
-    });
+    this.sendSettingToWorkers('mapCheckWindowMinTotalMs', options.mapCheckWindowMinTotalMs);
   }
   sendCheckStatsStateToWorker() {
-    const {eventSources} = this;
-    eventSources.forEach(eventSource => {
-      eventSource.postMessage({
-        type: 'rti',
-        action: 'checkStats',
-        value: options.checkStats,
-        destination: 'worker',
-      });
-    });
+    this.sendSettingToWorkers('checkStats', options.checkStats);
   }
   sendEnabledDisabledStateToWorker() {
     // Problem: First time the worker may not even have started and `this.eventSources.size === 0`
@@ -3119,13 +3123,7 @@ class TypePanel {
     }
     this.lastKnownCountWithStatus = key;
     // console.log("Update state to eventSources", eventSources, "key", key);
-    this.eventSources.forEach(eventSource => {
-      eventSource.postMessage({
-        type: 'rti',
-        action: this.inputEnable.checked ? 'enable' : 'disable',
-        destination: 'worker',
-      });
-    });
+    this.sendSettingToWorkers(this.inputEnable.checked ? 'enable' : 'disable', undefined);
   }
   clear() {
     const {warnings} = this;
@@ -3372,7 +3370,12 @@ class TypePanel {
   }
   updateCheckStats() {
     this.updateStatsButton();
-    if (!this.checksTable) {
+    // The stats table lives inside the pop-out stats window: rebuilding it
+    // while hidden burns main-thread time per error arrival (full sort plus
+    // node churn per row) for a table nobody can see. Hidden stays cheap —
+    // the button label above already carries the live totals — and opening
+    // the window rebuilds from the same rows.
+    if (!this.checksTable || this.statsWinHidden !== false) {
       return;
     }
     const [, ...stale] = this.checksTable.children;
@@ -3569,17 +3572,27 @@ class TypePanel {
       valueToString,
       strings,
       extras = [],
-      key,
+      key: eventKey,
       repeat,
       stack,
+      source,
     } = event.data;
+    // Rows are keyed per reporting runtime: two registries can hold
+    // different shapes behind the same `loc-name` (worker, iframe, or a
+    // version mix on one page), and merging them would attribute one
+    // registry's failures to the other's types. Same-runtime traffic keeps
+    // the bare key, so the common single-registry page renders and dedups
+    // exactly like before.
+    const key = panelMessageKey(eventKey, source, options.runtimeId);
     if (repeat) {
       // Checking-side dedup: the full report already sits under this key,
-      // so only the hit count and totals advance — no value, no log churn.
+      // so only the hit count advances by the coalesced delta — no value,
+      // no log churn. The totals counter needs no touch: the checking side
+      // already incremented it once per failure before the tick was noted.
       // Unknown keys (panel reloaded after the report) have no row to bump.
-      const known = this.warnings[key];
-      if (known) {
-        known.hits++;
+      if (applyRepeatDelta(this.warnings, event.data, options.runtimeId) === null) {
+        this.updateErrorCount();
+        return;
       }
       this.updateErrorCount();
       return;
@@ -3601,6 +3614,7 @@ class TypePanel {
       loc,
       name,
       key,
+      source,
       expect,
       value: stringifyValue(value),
       valueToString,
@@ -3621,7 +3635,17 @@ class TypePanel {
         loc,
         name,
         () => this.openComparator(warnObj),
+        // The checking side arms breakpoints under the bare `loc-name`
+        // key, so the row carries which key to arm however it is stored
+        // here (foreign registries suffix the panel key with `@source`).
+        eventKey,
       );
+      // Foreign registries tag the Loc cell with their short source id, so
+      // rows from a worker/iframe/version mix read as attributed instead of
+      // blended. Local rows keep the bare loc (and every existing spec).
+      if (source !== undefined && source !== options.runtimeId) {
+        warnObj.td_location.textContent = `${loc} @${source}`;
+      }
       this.warnedTable?.append(warnObj.tr);
       this.warnings[key] = warnObj;
     }
@@ -3674,16 +3698,23 @@ class TypePanel {
       }
     }
     this.lastEvent = event;
-    const {action} = event.data ?? {};
     // Unknown actions used to throw `this[action] is not a function`, taking
     // down the whole dispatch (e.g. worker-destined settings forwarded by a
     // host): warn and ignore instead, like the checking side already does
     // for unhandled action/destination combos.
-    if (typeof this[action] !== 'function') {
-      console.warn('TypePanel#handleEvent> unknown action, ignoring.', {action});
-      return;
-    }
-    this[action](event);
+    const {action} = event.data ?? {};
+    const handlers = new Map([
+      ['addError', (evt) => this.addError(evt)],
+      ['deleteBreakpoint', (evt) => this.deleteBreakpoint(evt)],
+      ['addBreakpoint', (evt) => this.addBreakpoint(evt)],
+    ]);
+    dispatchUiAction(event, handlers, ({
+      action: unknown,
+    }) => {
+      console.warn('TypePanel#handleEvent> unknown action, ignoring.', {
+        action: unknown,
+      });
+    });
     // Could be anywhere we know that a new worker is sending RTI messages.
     this.sendEnabledDisabledStateToWorker();
   }

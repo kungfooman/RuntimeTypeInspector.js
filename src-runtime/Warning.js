@@ -1,6 +1,10 @@
-import {options        } from "./options.js";
-import {copyText       } from "./copyText.js";
-import {DisplayAnything} from './DisplayAnything.js';
+import {options           } from "./options.js";
+import {breakpointMessage } from "./rti-messages/breakpointMessage.js";
+import {postToTarget      } from "./cross-context/postToTarget.js";
+import {resolveEventTarget} from "./cross-context/resolveEventTarget.js";
+import {breakpoints       } from "./inspectType.js";
+import {copyText          } from "./copyText.js";
+import {DisplayAnything   } from './DisplayAnything.js';
 import {Tr, Td, Button, Details, Summary, Pre, Div, Span} from './jsx.js';
 import {humanizeExpect} from './humanizeExpect.js';
 import {stringifyType } from './stringifyType.js';
@@ -861,6 +865,12 @@ class Warning {
   button_inspect;
   /** @type {HTMLButtonElement} */
   button_copy;
+  /**
+   * Bare `loc-name` key the checking side arms breakpoints under
+   * (`inspectType`), independent of the `@source`-suffixed panel key.
+   * @type {string}
+   */
+  breakpointKey = '';
   /** @type {HTMLButtonElement} */
   button_dbgInput;
   /** @type {HTMLButtonElement} */
@@ -885,11 +895,22 @@ class Warning {
   detailStrings = [];
   /** @type {import('./validateType.js').Type} */
   _expect;
-  constructor(msg, value, expect, loc, name, onCompare) {
+  /**
+   * @param {string} msg - The message.
+   * @param {*} value - The value.
+   * @param {import('./validateType.js').Type} expect - The expected type.
+   * @param {string} loc - String like `BoundingBox#compute`.
+   * @param {string} name - Name of the argument.
+   * @param {(() => void) | undefined} onCompare - Callback opening the comparator.
+   * @param {string} breakpointKey - Bare `loc-name` key the checking side
+   * arms breakpoints under (the panel key may carry `@source`).
+   */
+  constructor(msg, value, expect, loc, name, onCompare, breakpointKey = '') {
     this.loc = loc;
     this.name = name;
     this._expect = expect;
     this.onCompare = onCompare;
+    this.breakpointKey = breakpointKey;
     this.button_dbgInput = Button({
       textContent: '🧐',
       onclick: () => this.dbg = !this.dbg,
@@ -943,12 +964,27 @@ class Warning {
   set dbg(_) {
     this._dbg = _;
     this.button_dbgInput.textContent = _ ? '🐞' : '🧐';
-    this.eventSource?.postMessage({
-      type: 'rti',
-      action: _ ? 'addBreakpoint' : 'deleteBreakpoint',
-      destination: 'worker',
-      key: `${this.loc}-${this.name}`,
-    });
+    // The checking side keys armed breakpoints by the bare `loc-name` it
+    // computes itself (`inspectType`), while the panel stores the row under
+    // a per-source key (`loc-name@source` for foreign registries). Arming
+    // must use the bare key the checker will look up, so Debug works the
+    // same for same-runtime, worker, iframe and version-mix traffic.
+    const key = this.breakpointKey || `${this.loc}-${this.name}`;
+    const to = this.eventSource;
+    if (to) {
+      // Cross-context registries (worker, iframe) get the arm via the bus.
+      postToTarget(to, breakpointMessage(key, _));
+      return;
+    }
+    // Same evaluation (panel and checker share this window): the arm goes
+    // straight into the checking-side set — posting it back onto `window`
+    // would only echo it into the panel's own inbox, where `addBreakpoint`
+    // deliberately refuses UI-originated breakpoint traffic.
+    if (_) {
+      breakpoints.add(key);
+      return;
+    }
+    breakpoints.delete(key);
   }
   /**
    * Trigger `debugger;` next time this error is hit.
@@ -970,13 +1006,7 @@ class Warning {
       // We have no event yet for restored state
       return null;
     }
-    // If event came from window:
-    /** @type {MessageEventSource | EventTarget | null} */
-    let to = event.source;
-    if (!to) {
-      // If the event came from a worker, we get access to worker via this:
-      to = event.srcElement;
-    }
+    const to = resolveEventTarget(event);
     if (!to) {
       console.log("Should not happen, why no event source?");
       debugger;

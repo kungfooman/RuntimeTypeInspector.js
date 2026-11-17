@@ -1,8 +1,9 @@
 import {inspectType } from './inspectType.js';
 import {breakpoints } from './inspectType.js';
 import {reportedKeys} from './reportedKeys.js';
-import {options     } from './options.js';
-import {expandType  } from '../src-transpiler/expandType.js';
+import {takeRepeats, flushRepeats} from './pendingRepeats.js';
+import {options   } from './options.js';
+import {expandType} from '../src-transpiler/expandType.js';
 /**
  * Collects every RTI error message posted for the checks run inside.
  * @param {Function} fn - The checks to run.
@@ -44,11 +45,13 @@ function testFirstFailurePostsFull() {
 }
 function testRepeatPostsKeyOnly() {
   // A hot-loop repeat skips previews, clonability probes and the value post:
-  // only the key travels, for the panel hits counter.
+  // the tick is counted for the coalesced flush, which posts one delta
+  // message per key carrying the tick count.
   try {
     const posted = capturePosts(() => {
       inspectType(['a'], expandType('Array<number>'), 'repeatB', 'x');
       inspectType(['b'], expandType('Array<number>'), 'repeatB', 'x');
+      flushRepeats();
     });
     if (posted.length !== 2) {
       return false;
@@ -57,6 +60,7 @@ function testRepeatPostsKeyOnly() {
     return (
       repeat.repeat === true &&
       repeat.key === 'repeatB-x' &&
+      repeat.ticks === 1 &&
       !('value' in repeat) &&
       !('valueToString' in repeat) &&
       !('strings' in repeat) &&
@@ -65,6 +69,32 @@ function testRepeatPostsKeyOnly() {
     );
   } finally {
     reportedKeys.clear();
+    takeRepeats();
+  }
+}
+function testRepeatCoalescesToOneDelta() {
+  // Many hot-loop ticks flush as one message: N repeats become one delta
+  // post carrying N, so per-turn traffic is per-key, not per-check.
+  try {
+    const posted = capturePosts(() => {
+      inspectType(['a'], expandType('Array<number>'), 'repeatCoal', 'x');
+      for (let i = 0; i < 9; i++) {
+        inspectType([`v${i}`], expandType('Array<number>'), 'repeatCoal', 'x');
+      }
+      flushRepeats();
+    });
+    if (posted.length !== 2) {
+      return false;
+    }
+    const [, delta] = posted;
+    return (
+      delta.repeat === true &&
+      delta.key === 'repeatCoal-x' &&
+      delta.ticks === 9
+    );
+  } finally {
+    reportedKeys.clear();
+    takeRepeats();
   }
 }
 function testRepeatStillValidates() {
@@ -79,6 +109,7 @@ function testRepeatStillValidates() {
       first = inspectType(['a'], expandType('Array<number>'), 'repeatC', 'x');
       second = inspectType(['b'], expandType('Array<number>'), 'repeatC', 'x');
       third = inspectType([1], expandType('Array<number>'), 'repeatC', 'x');
+      flushRepeats();
     });
     return (
       first === false &&
@@ -89,6 +120,7 @@ function testRepeatStillValidates() {
     );
   } finally {
     reportedKeys.clear();
+    takeRepeats();
   }
 }
 function testSpamSendsFullTwice() {
@@ -114,6 +146,7 @@ function testNeverDedups() {
     const posted = capturePosts(() => {
       inspectType(['a'], expandType('Array<number>'), 'repeatE', 'x');
       inspectType(['b'], expandType('Array<number>'), 'repeatE', 'x');
+      flushRepeats();
     });
     return (
       posted.length === 2 &&
@@ -123,6 +156,7 @@ function testNeverDedups() {
   } finally {
     options.mode = prevMode;
     reportedKeys.clear();
+    takeRepeats();
   }
 }
 function testBreakpointFiresOnRepeat() {
@@ -133,12 +167,14 @@ function testBreakpointFiresOnRepeat() {
       inspectType(['a'], expandType('Array<number>'), 'repeatF', 'x');
       breakpoints.add('repeatF-x');
       inspectType(['b'], expandType('Array<number>'), 'repeatF', 'x');
+      flushRepeats();
     });
     return posted.some((_) => _.action === 'deleteBreakpoint' && _.key === 'repeatF-x') &&
       !breakpoints.has('repeatF-x');
   } finally {
     breakpoints.delete('repeatF-x');
     reportedKeys.clear();
+    takeRepeats();
   }
 }
 function testDistinctArgsEachReportFull() {
@@ -149,6 +185,7 @@ function testDistinctArgsEachReportFull() {
       inspectType('x', expandType('number'), 'takeTwo', 'first');
       inspectType('y', expandType('number'), 'takeTwo', 'second');
       inspectType('z', expandType('number'), 'takeTwo', 'first');
+      flushRepeats();
     });
     if (posted.length !== 3) {
       return false;
@@ -164,6 +201,7 @@ function testDistinctArgsEachReportFull() {
     );
   } finally {
     reportedKeys.clear();
+    takeRepeats();
   }
 }
 function testModeChangeRepostsFull() {
@@ -178,6 +216,7 @@ function testModeChangeRepostsFull() {
       }, expandType('number'), 'takeModes', 'v');
       inspectType('y', expandType('number'), 'takeModes', 'v');
       inspectType('z', expandType('number'), 'takeModes', 'v');
+      flushRepeats();
     });
     if (posted.length !== 4) {
       return false;
@@ -192,6 +231,7 @@ function testModeChangeRepostsFull() {
     );
   } finally {
     reportedKeys.clear();
+    takeRepeats();
   }
 }
 function testFirstPostsStack() {
@@ -209,15 +249,17 @@ function testFirstPostsStack() {
     return text.includes('inspectType') && text.includes('testFirstPostsStack');
   } finally {
     reportedKeys.clear();
+    takeRepeats();
   }
 }
 function testRepeatSkipsStack() {
-  // Repeats skip the capture cost along with the previews: key-only ticks
+  // Repeats skip the capture cost along with the previews: coalesced ticks
   // carry no stack.
   try {
     const posted = capturePosts(() => {
       inspectType(['a'], expandType('Array<number>'), 'repeatNoStack', 'x');
       inspectType(['b'], expandType('Array<number>'), 'repeatNoStack', 'x');
+      flushRepeats();
     });
     return (
       posted.length === 2 &&
@@ -226,6 +268,7 @@ function testRepeatSkipsStack() {
     );
   } finally {
     reportedKeys.clear();
+    takeRepeats();
   }
 }
 function testRepeatsStayCheap() {
@@ -261,11 +304,13 @@ function testRepeatsStayCheap() {
     return repeatMs * margin < fullMs;
   } finally {
     reportedKeys.clear();
+    takeRepeats();
   }
 }
 const tests = [
   testFirstFailurePostsFull,
   testRepeatPostsKeyOnly,
+  testRepeatCoalescesToOneDelta,
   testRepeatStillValidates,
   testSpamSendsFullTwice,
   testNeverDedups,

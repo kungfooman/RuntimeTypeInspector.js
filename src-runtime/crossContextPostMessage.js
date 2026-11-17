@@ -1,11 +1,23 @@
+import {options          } from './options.js';
+import {resolvePostTarget} from './cross-context/resolvePostTarget.js';
+import {stampSource      } from './rti-messages/stampSource.js';
+import {postToTarget     } from './cross-context/postToTarget.js';
 /**
  * Works to post messages from inside <iframe>'s and Workers to the parent window,
  * which should be the user interface that can handle/display the messages in an
- * integrated matter.
+ * integrated matter. Every `type: 'rti'` message carries this evaluation's
+ * `source` id (see `options.runtimeId`), so one panel can attribute rows to
+ * the runtime that checked them instead of blending registries silently.
+ * A caller-set `source` always wins, so tests and forwarders keep theirs.
+ * Copy-on-stamp in `stampSource`: mail that needs no stamp passes through
+ * by reference, stamped mail travels as a fresh copy, so the caller's
+ * object stays untouched and frozen messages post fine.
+ * A missing bus (bare Node) or a broken bus (closed worker) stays silent:
+ * reporting must never break the check it reports.
  * @param {...any} args - The arguments.
  */
 function crossContextPostMessage(...args) {
-  const to = globalThis.parent || globalThis.self;
-  to.postMessage(...args);
+  const [first, ...rest] = args;
+  postToTarget(resolvePostTarget(), stampSource(first, options.runtimeId), ...rest);
 }
 export {crossContextPostMessage};

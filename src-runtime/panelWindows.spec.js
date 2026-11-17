@@ -1,5 +1,6 @@
 import {TypePanel, storedMapCheckWindowCap, storedMapCheckWindowMinTotalMs} from './TypePanel.js';
-import {options} from './options.js';
+import {options    } from './options.js';
+import {breakpoints} from './inspectType.js';
 import {recordCheck, recordMapRide, recordSkip, recordMapScan, recordSetScan, recordArrayScan, recordObjectScan, getCheckStats, resetCheckStats} from './checkStats.js';
 import {reportedKeys} from './reportedKeys.js';
 import {expandType  } from '../src-transpiler/expandType.js';
@@ -1534,10 +1535,11 @@ function testSecondInstantiationStillFetchesErrors() {
   });
 }
 /**
- * A detached panel wrapper (closed pop-out, wiped body) is a corpse:
- * re-instantiating rebuilds live instead of appending new errors into
- * dead nodes, and the corpse's leaked listener stays muted.
- * @returns {boolean} True when the rebuild fetches and the corpse ignores.
+ * A detached panel wrapper (closed pop-out, wiped body) is revived, not
+ * rebuilt: re-instantiating hands back the same panel and re-appends its
+ * wrapper, so rows and listeners survive the wipe instead of stacking a
+ * twin that orphans the old state.
+ * @returns {boolean} True when the same panel revives and fetches.
  */
 function testCorpsePanelRebuildsLive() {
   return withPanel((panel) => {
@@ -1546,7 +1548,7 @@ function testCorpsePanelRebuildsLive() {
     try {
       TypePanel.divAll.remove();
       const revived = new TypePanel();
-      const alive = revived !== panel && TypePanel.divAll.isConnected && TypePanel.instance === revived;
+      const alive = revived === panel && TypePanel.divAll.isConnected && TypePanel.instance === panel;
       if (!alive) {
         return false;
       }
@@ -1574,11 +1576,190 @@ function testCorpsePanelRebuildsLive() {
       };
       globalThis.window.fire('message', msg);
       const warnObj = revived.warnings['L1-a'];
-      const fetched = !!warnObj && revived.warnedTable.contains(warnObj.tr);
-      return fetched && !panel.warnings['L1-a'];
+      return !!warnObj && revived.warnedTable.contains(warnObj.tr);
     } finally {
       options.mode = prevMode;
     }
+  });
+}
+/**
+ * Entry chunks evaluate before `DOMContentLoaded` (two bundles on one
+ * page): the second `new TypePanel()` must hand back the still-unscheduled
+ * first panel instead of building a twin, and the single scheduled attach
+ * must land exactly one panel div in the wrapper.
+ * @returns {boolean} True when one panel survives two pre-load constructions.
+ */
+function testPreLoadTwinEntryHandsBackSinglePanel() {
+  const restore = installFakeBrowser();
+  try {
+    TypePanel.instance = null;
+    TypePanel.divAll = null;
+    globalThis.document.readyState = 'loading';
+    const first = new TypePanel();
+    const second = new TypePanel();
+    if (second !== first || TypePanel.instance !== first) {
+      return false;
+    }
+    globalThis.document.readyState = 'complete';
+    globalThis.document.fire('DOMContentLoaded');
+    // One wrapper holding exactly the panel div plus its stats window:
+    // a twin construction would have appended a second panel div.
+    const kids = TypePanel.divAll.children;
+    return (
+      TypePanel.divAll.isConnected &&
+      kids.filter((kid) => kid === first.div).length === 1 &&
+      kids.length === 2
+    );
+  } finally {
+    restore();
+  }
+}
+/**
+ * Own-runtime rows keep the bare `loc-name` key and the bare loc text:
+ * a single registry on the page renders exactly like before the source
+ * stamp existed.
+ * @returns {boolean} True when local traffic is untagged and unkeyed plainly.
+ */
+function testLocalSourceKeepsBareKeyAndLoc() {
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      const sink = {
+        postMessage: () => {},
+      };
+      const msg = {
+        source: null,
+        srcElement: sink,
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          value: 1,
+          expect: 'string',
+          loc: 'L1',
+          name: 'a',
+          valueToString: '1',
+          strings: ['boom'],
+          extras: [],
+          key: 'L1-a',
+          source: options.runtimeId,
+        },
+      };
+      globalThis.window.fire('message', msg);
+      const warnObj = panel.warnings['L1-a'];
+      return (
+        !!warnObj &&
+        warnObj.td_location.textContent === 'L1' &&
+        panel.eventLog[panel.eventLog.length - 1].key === 'L1-a'
+      );
+    } finally {
+      options.mode = prevMode;
+    }
+  });
+}
+/**
+ * Foreign-runtime rows (worker, iframe, version mix) land under an
+ * `@source`-suffixed key with the source id on the Loc cell, so two
+ * registries never merge one row or blend their failures silently.
+ * @returns {boolean} True when foreign traffic is keyed and tagged.
+ */
+function testForeignSourceKeysAndTagsRow() {
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      const sink = {
+        postMessage: () => {},
+      };
+      const msg = {
+        source: null,
+        srcElement: sink,
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          value: 1,
+          expect: 'string',
+          loc: 'L1',
+          name: 'a',
+          valueToString: '1',
+          strings: ['boom'],
+          extras: [],
+          key: 'L1-a',
+          source: 'foreign-registry',
+        },
+      };
+      globalThis.window.fire('message', msg);
+      const warnObj = panel.warnings['L1-a@foreign-registry'];
+      const rowIsForeignTagged = (
+        !!warnObj &&
+        !panel.warnings['L1-a'] &&
+        warnObj.td_location.textContent === 'L1 @foreign-registry'
+      );
+      if (!rowIsForeignTagged) {
+        return false;
+      }
+      // The Debug button must arm the bare key the checker looks up, not
+      // the `@source`-suffixed panel key: otherwise foreign rows toggle
+      // the icon yet never break, and local rows would break only by
+      // accident of sharing the same string. Foreign registries get the
+      // arm over the bus; the same-evaluation row arms the checking-side
+      // set straight away (posting back onto `window` would only echo
+      // into the panel's own inbox, which refuses UI breakpoint traffic),
+      // so the next same-runtime trip hits `debugger` either way.
+      const armed = [];
+      warnObj.event = {
+        source: {
+          postMessage: (sent) => armed.push(sent),
+        },
+      };
+      warnObj.button_dbgInput.onclick();
+      const foreignArmedOverBus = (
+        warnObj.dbg === true &&
+        armed.length === 1 &&
+        armed[0].action === 'addBreakpoint' &&
+        armed[0].key === 'L1-a'
+      );
+      if (!foreignArmedOverBus) {
+        return false;
+      }
+      warnObj.event = {
+        source: null,
+        srcElement: null,
+      };
+      warnObj.button_dbgInput.onclick();
+      warnObj.button_dbgInput.onclick();
+      return warnObj.dbg === true && breakpoints.has('L1-a');
+    } finally {
+      options.mode = prevMode;
+    }
+  });
+}
+/**
+ * Hide/show round-trips through the flex column, never the blank default:
+ * the panel div carries no class, so `display = ''` falls back to `block`,
+ * which silently disables the flex cap the scrollable body depends on —
+ * the body then grows to full content height and paints over the page with
+ * no scrollbar. A second entry-chunk construction (same page, two bundles)
+ * takes the same path through `show()`, so it must preserve flex too.
+ * @returns {boolean} True when flex survives hide/show and re-construction.
+ */
+function testShowRestoresFlexColumn() {
+  return withPanel((panel) => {
+    if (panel.div.style.display !== 'flex') {
+      return false;
+    }
+    panel.hide();
+    if (panel.div.style.display !== 'none') {
+      return false;
+    }
+    panel.show();
+    if (panel.div.style.display !== 'flex') {
+      return false;
+    }
+    const again = new TypePanel();
+    return again === panel && panel.div.style.display === 'flex';
   });
 }
 /**
@@ -1702,6 +1883,53 @@ function testRepeatBumpsHitsWithoutLogChurn() {
       return (
         !!warnObj &&
         warnObj.hits === 2 &&
+        panel.eventLog.length === 1
+      );
+    } finally {
+      options.mode = prevMode;
+    }
+  });
+}
+function testCoalescedDeltaBumpsHitsAndCount() {
+  // A coalesced flush carries the tick count as `ticks`: the row bumps by
+  // the delta while the event log still keeps just the first full
+  // occurrence. Totals need no panel touch: the checking side already
+  // counted every failure before the tick was noted.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      panel.addError({
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          value: 1,
+          expect: 'string',
+          loc: 'L2d',
+          name: 'b',
+          valueToString: '1',
+          strings: ['boom'],
+          extras: [],
+          key: 'L2d-b',
+        },
+      });
+      const before = options.count;
+      panel.addError({
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          key: 'L2d-b',
+          repeat: true,
+          ticks: 41,
+        },
+      });
+      const warnObj = panel.warnings['L2d-b'];
+      return (
+        !!warnObj &&
+        warnObj.hits === 42 &&
+        options.count === before &&
         panel.eventLog.length === 1
       );
     } finally {
@@ -2517,6 +2745,12 @@ function testCheckStatsCheckboxWiresOptionStorageAndWorker() {
     }
   });
 }
+function showStats(panel) {
+  // The stats table rebuilds only while its window is open: open it like
+  // the toolbar Stats button does, so the specs below exercise the live
+  // path instead of the cheap hidden skip.
+  panel.showStatsWin();
+}
 function testCheckStatsTableRendersHotspotsSorted() {
   return withPanel((panel) => {
     resetCheckStats();
@@ -2524,7 +2758,7 @@ function testCheckStatsTableRendersHotspotsSorted() {
       recordCheck('Zzz#checks', 'v', 5);
       recordMapScan('Aaa#scan-heavy', 'v', 50);
       recordMapScan('Bbb#scan-light', 'v', 1);
-      panel.updateCheckStats();
+      showStats(panel);
       const rows = panel.checksTable.children.slice(1);
       return (
         rows.length === 3 &&
@@ -2536,12 +2770,47 @@ function testCheckStatsTableRendersHotspotsSorted() {
     }
   });
 }
+function testCheckStatsHiddenSkipsRebuild() {
+  // Error arrivals must not rebuild a table nobody can see: hidden stays
+  // cheap (button label only), and opening rebuilds from the same rows.
+  return withPanel((panel) => {
+    resetCheckStats();
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      recordCheck('Hid#x', 'v', 1);
+      panel.addError({
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          value: 1,
+          expect: 'string',
+          loc: 'Hid',
+          name: 'x',
+          valueToString: '1',
+          strings: ['boom'],
+          extras: [],
+          key: 'Hid-x',
+        },
+      });
+      const skipped = panel.checksTable.children.length === 1;
+      showStats(panel);
+      const rebuilt = panel.checksTable.children.length === 2 &&
+        textOf(panel.checksTable.children[1]).includes('Hid#x');
+      return skipped && rebuilt;
+    } finally {
+      options.mode = prevMode;
+      resetCheckStats();
+    }
+  });
+}
 function testCheckStatsResetButtonEmptiesTable() {
   return withPanel((panel) => {
     resetCheckStats();
     try {
       recordCheck('Rst#x', 'v', 1);
-      panel.updateCheckStats();
+      showStats(panel);
       if (panel.checksTable.children.length !== 2) {
         return false;
       }
@@ -2562,7 +2831,7 @@ function testAllRowsAlwaysRender() {
       for (let i = 0; i < 205; i++) {
         recordCheck(`Flood#${i}`, 1);
       }
-      panel.updateCheckStats();
+      showStats(panel);
       const rows = panel.checksTable.children.slice(1);
       return rows.length === 205 && rows.every(_ => !textOf(_).includes('more locs'));
     } finally {
@@ -2678,23 +2947,23 @@ function testStatsButtonShowsSkippedCount() {
   return withPanel((panel) => {
     resetCheckStats();
     try {
-      panel.updateCheckStats();
+      showStats(panel);
       const plain = panel.buttonStats.textContent === 'Stats' &&
         panel.buttonStats.title === 'Check stats (hotspots)';
       recordMapRide('B#x', 'v');
       recordMapRide('B#x', 'v');
-      panel.updateCheckStats();
+      showStats(panel);
       const ridesOnly = panel.buttonStats.textContent === 'Stats (2 skipped)';
       recordSkip('B#y', 'v');
-      panel.updateCheckStats();
+      showStats(panel);
       const both = panel.buttonStats.textContent === 'Stats (2 skipped, 1 suppressed)' &&
         panel.buttonStats.title === 'Check stats (hotspots): 2 skipped, 1 suppressed';
       resetCheckStats();
       recordSkip('B#z', 'v');
-      panel.updateCheckStats();
+      showStats(panel);
       const suppressedOnly = panel.buttonStats.textContent === 'Stats (1 suppressed)';
       resetCheckStats();
-      panel.updateCheckStats();
+      showStats(panel);
       const cleared = panel.buttonStats.textContent === 'Stats';
       return (
         plain &&
@@ -2726,7 +2995,7 @@ function testStatsLocCellIsButtonWithTitle() {
     resetCheckStats();
     try {
       recordCheck('get', 'v', 1);
-      panel.updateCheckStats();
+      showStats(panel);
       const [cell] = panel.checksTable.children[1].children;
       const [btn] = cell.children;
       return (
@@ -2763,7 +3032,7 @@ function testStatsTableShowsSkippedPercent() {
       recordSkip('Skp#m', 'v');
       // No map activity at all: dash.
       recordCheck('Flat#x', 'v', 1);
-      panel.updateCheckStats();
+      showStats(panel);
       return (
         statsCell(panel, 'Skp#m', 'skipPct') === '75.0%' &&
         statsCell(panel, 'Flat#x', 'skipPct') === '—' &&
@@ -2788,7 +3057,7 @@ function testStatsTableFormatsCompactTimes() {
       recordMapScan('Fmt#tiny', 'v', 0.0004);      // 0.4µs -> "0.4µs"
       recordMapScan('Fmt#mid', 'v', 2.345);        // ms -> "2.35ms"
       recordMapScan('Fmt#big', 'v', 42.6);         // ms -> "42.6ms"
-      panel.updateCheckStats();
+      showStats(panel);
       return (
         statsCell(panel, 'Fmt#tiny', 'scanMs') === '0.4µs' &&
         statsCell(panel, 'Fmt#mid', 'scanMs') === '2.35ms' &&
@@ -2808,7 +3077,7 @@ function testNeverRanTimeCellsShowDash() {
     try {
       recordCheck('Chk#only', 'v', 1);
       recordMapScan('Scn#only', 'v', 2);
-      panel.updateCheckStats();
+      showStats(panel);
       return (
         statsCell(panel, 'Chk#only', 'scanMs') === '—' &&
         statsCell(panel, 'Chk#only', 'maxScanMs') === '—' &&
@@ -2833,7 +3102,7 @@ function testKindColumnNamesWalkKind() {
       recordArrayScan('Kind#array', 'v', 4);
       recordObjectScan('Kind#object', 'v', 5);
       recordMapScan('Kind#map', 'v', 6);
-      panel.updateCheckStats();
+      showStats(panel);
       return (
         statsCell(panel, 'Kind#plain', 'kind') === '—' &&
         statsCell(panel, 'Kind#set', 'kind') === 'set' &&
@@ -2855,7 +3124,7 @@ function testWalkColumnsUnifyContainerTime() {
     try {
       recordSetScan('Kind#set', 'v', 3);
       recordMapScan('Kind#map', 'v', 50);
-      panel.updateCheckStats();
+      showStats(panel);
       return (
         statsCell(panel, 'Kind#set', 'scans') === '1' &&
         statsCell(panel, 'Kind#set', 'scanMs') === '3.00ms' &&
@@ -2881,7 +3150,7 @@ function testWalkTimeSortsAcrossKinds() {
         id: 'scanMs',
         desc: true,
       };
-      panel.updateCheckStats();
+      showStats(panel);
       const first = textOf(panel.checksTable.children[1]).includes('Kind#mapheavy');
       return first;
     } finally {
@@ -2904,13 +3173,13 @@ function testSkippedColumnsFollowWindowing() {
     try {
       options.windowedChecks = false;
       recordCheck('Off#x', 'v', 1);
-      panel.updateCheckStats();
+      showStats(panel);
       const hidden = statsColIndex(panel, 'skipped') === -1 &&
         statsColIndex(panel, 'suppressed') === -1 &&
         statsColIndex(panel, 'skipPct') === -1 &&
         panel.checksTable.children[1].children.length === 8;
       options.windowedChecks = true;
-      panel.updateCheckStats();
+      showStats(panel);
       const shown = statsColIndex(panel, 'skipped') !== -1 &&
         statsColIndex(panel, 'suppressed') !== -1 &&
         statsColIndex(panel, 'skipPct') !== -1 &&
@@ -2951,11 +3220,11 @@ function testStatsRebuildToleratesRealDomChildren() {
     try {
       recordCheck('Zzz#checks', 'v', 5);
       recordMapScan('Aaa#scan-heavy', 'v', 50);
-      panel.updateCheckStats();
+      showStats(panel);
       const table = panel.checksTable;
       table.children = collectionShaped(table.children.slice());
       table.children[0].children = collectionShaped(table.children[0].children.slice());
-      panel.updateCheckStats();
+      showStats(panel);
       const rows = Array.prototype.slice.call(table.children, 1);
       return rows.length === 2 && textOf(rows[0]).includes('Aaa#scan-heavy');
     } finally {
@@ -2986,7 +3255,7 @@ function testStatsHeadersSortOnClick() {
         id: 'scanMs',
         desc: true,
       };
-      panel.updateCheckStats();
+      showStats(panel);
       const firstByScan = textOf(panel.checksTable.children[1]).includes('Aaa#scan-heavy');
       const scanArrow = headText(panel, 'scanMs').includes('▼');
       // Click Loc: alphabetical ascending.
@@ -3097,7 +3366,7 @@ function testStatsHeaderCellsCarryTooltips() {
     resetCheckStats();
     try {
       recordCheck('Tip#x', 'v', 1);
-      panel.updateCheckStats();
+      showStats(panel);
       const [header] = panel.checksTable.children;
       const ids = [];
       for (let i = 0; i < header.children.length; i++) {
@@ -3124,7 +3393,7 @@ function testStatsLocClickShowsCallStack() {
     resetCheckStats();
     try {
       recordCheck('Where#x', 'v', 1);
-      panel.updateCheckStats();
+      showStats(panel);
       const [btn] = panel.checksTable.children[1].children[0].children;
       btn.onclick();
       const [, , detail] = panel.checksTable.children;
@@ -3134,7 +3403,7 @@ function testStatsLocClickShowsCallStack() {
       btn.onclick();
       const toggled = panel.checksTable.children.length === 2;
       btn.onclick();
-      panel.updateCheckStats();
+      showStats(panel);
       const kept = panel.checksTable.children.length === 3 &&
         panel.checksTable.children[2].className === 'rti-checks-loc-detail';
       panel.buttonResetCheckStats.onclick();
@@ -3171,6 +3440,10 @@ const tests = [
   testPersistedPositionWinsOverStart,
   testSecondInstantiationStillFetchesErrors,
   testCorpsePanelRebuildsLive,
+  testPreLoadTwinEntryHandsBackSinglePanel,
+  testLocalSourceKeepsBareKeyAndLoc,
+  testForeignSourceKeysAndTagsRow,
+  testShowRestoresFlexColumn,
   testClearResetsErrorCount,
   testRtiEntryFocusesPanelWithCount,
   testTaskbarActiveFollowsFront,
@@ -3197,6 +3470,7 @@ const tests = [
   testActualBranchHeaders,
   testActualCustomClassHighlighted,
   testRepeatBumpsHitsWithoutLogChurn,
+  testCoalescedDeltaBumpsHitsAndCount,
   testRepeatUnknownKeyDropped,
   testClearResetsReportedKeys,
   testUnknownActionWarnsInsteadOfThrowing,
@@ -3225,6 +3499,7 @@ const tests = [
   testResetStorageForgetsPanelSettings,
   testStateButtonsAreShortVerbsWithReset,
   testCheckStatsTableRendersHotspotsSorted,
+  testCheckStatsHiddenSkipsRebuild,
   testCheckStatsResetButtonEmptiesTable,
   testAllRowsAlwaysRender,
   testLogMetaCarriesWindowSettings,

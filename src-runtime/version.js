@@ -7,7 +7,7 @@
  */
 const RTI_INFO = {
   "version": "6.0.0",
-  "commit": "1c4e20a723c51b0a7054056243f86edb747e776b",
-  "subject": "Surface skip counts on the Stats button, rides split from suppressions",
+  "commit": "91b59684495dbecaf46102cb01b4bb0ef5d03d60",
+  "subject": "Static blocks, full node coverage (#324)",
 };
 export {RTI_INFO};

@@ -1,3 +1,5 @@
+import {buildMessage           } from './rti-messages/buildMessage.js';
+import {breakpointMessage      } from './rti-messages/breakpointMessage.js';
 import {crossContextPostMessage} from './crossContextPostMessage.js';
 import {breakpoints            } from './inspectType.js';
 import {options                } from './options.js';
@@ -17,18 +19,10 @@ function addIndexedAccessWarning(value, index, loc, msg, details) {
     // console.log("breakpoints", breakpoints);
     debugger;
     breakpoints.delete(key); // trigger only once to quickly get app running again
-    crossContextPostMessage({
-      type: 'rti',
-      action: 'deleteBreakpoint',
-      destination: 'ui',
-      key,
-    });
+    crossContextPostMessage(breakpointMessage(key, false, 'ui'));
   }
   const strings = [msg];
-  crossContextPostMessage({
-    type: 'rti',
-    action: 'addError',
-    destination: 'ui',
+  crossContextPostMessage(buildMessage('addError', 'ui', {
     value,
     index,
     loc,
@@ -36,7 +30,7 @@ function addIndexedAccessWarning(value, index, loc, msg, details) {
     strings,
     key,
     details,
-  });
+  }));
 }
 /**
  * Pass-through wrapper for `value[index]` that validates array indexing.

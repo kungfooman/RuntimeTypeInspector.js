@@ -67,6 +67,22 @@ function testExportStarUnaffected() {
   const out = convert("export * from '@runtime-type-inspector/runtime';\n/** @param {number} x - The value. */\nfunction takeIt(x) {\n return x;\n}");
   return headerLine(out) === legacyHeader;
 }
+function testReexportRuntimeDisabled() {
+  // Multi-entry bundling disables the `export *` re-export: the helper
+  // import stays (checks still call in), but no module re-exports the
+  // runtime, so entries cannot become runtime exporters through the cycle.
+  const asserter = new Asserter({
+    expandType,
+    filename: 'test.js',
+    reexportRuntime: false,
+  });
+  const ast = parse("/** @param {number} x - The value. */\nfunction takeIt(x) {\n return x;\n}", parserOptions);
+  const out = asserter.getHeader(ast) + asserter.toSource(ast);
+  return (
+    headerLine(out) === legacyHeader &&
+    !out.includes("export * from '@runtime-type-inspector/runtime';")
+  );
+}
 export const tests = [
   testOwnRuntimeImportOmitted,
   testUnrelatedFileHeaderUnchanged,
@@ -74,4 +90,5 @@ export const tests = [
   testForeignModuleImportKeepsHeader,
   testNoArgHeaderUnchanged,
   testExportStarUnaffected,
+  testReexportRuntimeDisabled,
 ];
