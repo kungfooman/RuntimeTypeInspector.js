@@ -6,6 +6,8 @@ import {reportedKeys        } from "./reportedKeys.js";
 import {isUiEvent           } from "./rti-messages/isUiEvent.js";
 import {panelMessageKey     } from "./rti-messages/panelMessageKey.js";
 import {applyRepeatDelta    } from "./rti-messages/applyRepeatDelta.js";
+import {findLogEntry        } from "./rti-messages/findLogEntry.js";
+import {upsertLogEntry      } from "./rti-messages/upsertLogEntry.js";
 import {dispatchUiAction    } from "./rti-messages/dispatchUiAction.js";
 import {fanoutToTargets     } from "./cross-context/fanoutToTargets.js";
 import {workerSettingMessage} from "./rti-messages/workerSettingMessage.js";
@@ -3165,6 +3167,7 @@ class TypePanel {
     const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : undefined;
     const hints = [
       'This is a RuntimeTypeInspector error log. Each entry in `errors` is one failed runtime type check.',
+      'Entries are deduplicated by `key` (`loc`-`name` plus the reporting runtime): one check appears once, showing its latest failure with `hits` counting how often it fired.',
       '`meta.settings` matters: `strictNullChecks: false` means null/undefined pass every type,',
       '`checkInfinity: false` means +-Infinity passes `number`.',
       '`exactObjects: true` means excess keys fail (stricter than tsc, which only checks fresh literals).',
@@ -3590,9 +3593,15 @@ class TypePanel {
       // no log churn. The totals counter needs no touch: the checking side
       // already incremented it once per failure before the tick was noted.
       // Unknown keys (panel reloaded after the report) have no row to bump.
-      if (applyRepeatDelta(this.warnings, event.data, options.runtimeId) === null) {
+      const bumped = applyRepeatDelta(this.warnings, event.data, options.runtimeId);
+      if (bumped === null) {
         this.updateErrorCount();
         return;
+      }
+      // The folded log entry stays truthful: its hit count follows the row.
+      const folded = findLogEntry(this.eventLog, bumped);
+      if (folded !== undefined) {
+        folded.hits = this.warnings[bumped].hits;
       }
       this.updateErrorCount();
       return;
@@ -3605,11 +3614,17 @@ class TypePanel {
     // Keep a capped, serializable log for download/AI context. Recorded
     // first so a UI rendering failure below can't lose the error. Values
     // are snapshotted bounded instead of referenced, so later mutation and
-    // unserializable shapes can't corrupt the log.
+    // unserializable shapes can't corrupt the log. Same-key ("samish")
+    // full reports fold into the stored entry in place: the checking side
+    // re-reports whenever the failure mode flips (false then undefined for
+    // one argument), and without folding a hot loop buries the log in
+    // near-identical entries. The row already coalesces the same way, so
+    // the log mirrors it: latest value, messages and stack win, `hits`
+    // follows the row below.
     // Prefer the checking-side stack (real call site, captured synchronously
     // at the check); fall back to a local capture for senders that predate
     // it (indexed-access/division warnings) or run older runtimes.
-    this.eventLog.push({
+    const stored = upsertLogEntry(this.eventLog, {
       timestamp: Date.now(),
       loc,
       name,
@@ -3622,10 +3637,7 @@ class TypePanel {
       detail,
       message: msg,
       stack: stack ?? this.captureStack(),
-    });
-    if (this.eventLog.length > this.maxEventLogSize) {
-      this.eventLog.splice(0, this.eventLog.length - this.maxEventLogSize);
-    }
+    }, this.maxEventLogSize);
     let warnObj = this.warnings[key];
     if (!warnObj) {
       warnObj = new Warning(
@@ -3652,6 +3664,7 @@ class TypePanel {
     warnObj.onCompare = () => this.openComparator(warnObj);
     warnObj.event = event;
     warnObj.hits++;
+    stored.hits = warnObj.hits;
     warnObj.warn(msg, {expect, value, valueToString}, ...extras);
     refreshWarning(warnObj, {
       value,

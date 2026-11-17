@@ -170,6 +170,8 @@ const tests = [
   ...(await import('./src-runtime/rti-messages/applyWorkerCommand.spec.js'       )).tests,
   ...(await import('./src-runtime/rti-messages/dispatchUiAction.spec.js'         )).tests,
   ...(await import('./src-runtime/rti-messages/applyRepeatDelta.spec.js'         )).tests,
+  ...(await import('./src-runtime/rti-messages/findLogEntry.spec.js'            )).tests,
+  ...(await import('./src-runtime/rti-messages/upsertLogEntry.spec.js'          )).tests,
   ...(await import('./src-runtime/cross-context/isDirectedEvent.spec.js'          )).tests,
   ...(await import('./src-runtime/cross-context/buildEnvelope.spec.js'            )).tests,
   ...(await import('./src-runtime/cross-context/noteKey.spec.js'                  )).tests,

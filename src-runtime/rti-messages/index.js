@@ -11,3 +11,5 @@ export * from './repeatDeltaMessage.js';
 export * from './applyWorkerCommand.js';
 export * from './dispatchUiAction.js';
 export * from './applyRepeatDelta.js';
+export * from './findLogEntry.js';
+export * from './upsertLogEntry.js';

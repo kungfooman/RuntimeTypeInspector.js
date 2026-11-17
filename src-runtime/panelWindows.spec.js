@@ -2024,7 +2024,9 @@ function testUnknownActionWarnsInsteadOfThrowing() {
 function testDuplicateDeliveryWarnsOnce() {
   // One object twice is two listeners on one target (e.g. a redundant
   // `parent` forward when `parent === window`), never two failures:
-  // warn once, process unchanged (no silent drops).
+  // warn once, process unchanged (no silent drops). Both deliveries still
+  // bump the row, but the log folds the samish second report into the
+  // first entry instead of logging the same error twice.
   return withPanel((panel) => {
     const prevMode = options.mode;
     options.mode = 'never';
@@ -2058,7 +2060,117 @@ function testDuplicateDeliveryWarnsOnce() {
         warns.length === 1 &&
         !!warnObj &&
         warnObj.hits === 2 &&
-        panel.eventLog.length === 2
+        panel.eventLog.length === 1 &&
+        panel.eventLog[0].hits === 2
+      );
+    } finally {
+      options.mode = prevMode;
+    }
+  });
+}
+/**
+ * Builds one full addError envelope for a loc/name pair, mirroring what
+ * the checking side posts on a first-seen (or mode-changed) failure.
+ * @param {string} loc - String like `WebGLState#setMaterial`.
+ * @param {string} name - Name of the argument.
+ * @param {*} value - The offending value.
+ * @param {string} valueToString - The value preview.
+ * @param {string[]} strings - The validator messages.
+ * @returns {object} The message event payload wrapper.
+ */
+function fullAddError(loc, name, value, valueToString, strings) {
+  return {
+    data: {
+      type: 'rti',
+      destination: 'ui',
+      action: 'addError',
+      value,
+      expect: 'number',
+      loc,
+      name,
+      valueToString,
+      strings,
+      extras: [],
+      key: `${loc}-${name}`,
+      stack: ['Error', 'at setMaterial (app.js:1:1)'],
+    },
+  };
+}
+function testSamishFullReportsFoldIntoOneLogEntry() {
+  // One check failing with alternating values (false, undefined, false for
+  // one argument) used to log every mode flip as its own entry; now the
+  // samish reports fold into the stored entry like the row already does:
+  // one entry, the latest failure visible, hits following the row.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      const key = 'L7-samish';
+      panel.addError(fullAddError('L7', 'samish', false, 'false', ['false fails']));
+      panel.addError(fullAddError('L7', 'samish', undefined, 'undef', ['undefined fails']));
+      panel.addError(fullAddError('L7', 'samish', false, 'false', ['false fails']));
+      const warnObj = panel.warnings[key];
+      return (
+        !!warnObj &&
+        warnObj.hits === 3 &&
+        panel.eventLog.length === 1 &&
+        panel.eventLog[0].key === key &&
+        panel.eventLog[0].hits === 3 &&
+        panel.eventLog[0].valueToString === 'false' &&
+        panel.eventLog[0].messages.join() === 'false fails'
+      );
+    } finally {
+      options.mode = prevMode;
+    }
+  });
+}
+function testRepeatDeltaSyncsFoldedLogHits() {
+  // A coalesced repeat tick bumps the row without logging; the folded log
+  // entry still follows so the single entry reports the true fire count.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      const key = 'L7-repeat';
+      panel.addError(fullAddError('L7', 'repeat', false, 'false', ['false fails']));
+      panel.addError({
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          key,
+          repeat: true,
+          ticks: 41,
+        },
+      });
+      const warnObj = panel.warnings[key];
+      return (
+        !!warnObj &&
+        warnObj.hits === 42 &&
+        panel.eventLog.length === 1 &&
+        panel.eventLog[0].hits === 42
+      );
+    } finally {
+      options.mode = prevMode;
+    }
+  });
+}
+function testDistinctKeysLogSeparately() {
+  // Folding is per key: two different checks still log two entries, and a
+  // re-report of the first folds into its own slot without touching order.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      panel.addError(fullAddError('L8', 'first', 1, '1', ['one fails']));
+      panel.addError(fullAddError('L8', 'second', 2, '2', ['two fails']));
+      panel.addError(fullAddError('L8', 'first', 3, '3', ['three fails']));
+      return (
+        panel.eventLog.length === 2 &&
+        panel.eventLog[0].key === 'L8-first' &&
+        panel.eventLog[0].valueToString === '3' &&
+        panel.eventLog[0].hits === 2 &&
+        panel.eventLog[1].key === 'L8-second'
       );
     } finally {
       options.mode = prevMode;
@@ -3475,6 +3587,9 @@ const tests = [
   testClearResetsReportedKeys,
   testUnknownActionWarnsInsteadOfThrowing,
   testDuplicateDeliveryWarnsOnce,
+  testSamishFullReportsFoldIntoOneLogEntry,
+  testRepeatDeltaSyncsFoldedLogHits,
+  testDistinctKeysLogSeparately,
   testDatalessMessageIgnored,
   testTransmittedStackPreferred,
   testMissingStackFallsBack,
