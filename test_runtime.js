@@ -207,6 +207,7 @@ const tests = [
   ...(await import('./src-runtime/copyText.spec.js'               )).tests,
   ...(await import('./src-runtime/compareText.spec.js'            )).tests,
   ...(await import('./src-runtime/reportedDiagnosis.spec.js'     )).tests,
+  ...(await import('./src-runtime/formatBytes.spec.js'            )).tests,
   ...(await import('./src-runtime/logFilename.spec.js'            )).tests,
   ...(await import('./src-runtime/globalMessageHost.spec.js'      )).tests,
   ...(await import('./src-runtime/customValidations.spec.js'          )).tests,

@@ -19,6 +19,7 @@ import {RTI_INFO            } from "./version.js";
 import {formatCompare       } from "./formatCompare.js";
 import {compareText         } from "./compareText.js";
 import {copyText            } from "./copyText.js";
+import {formatBytes         } from "./formatBytes.js";
 import {logFilename         } from "./logFilename.js";
 import {collectFailPaths, explainMismatch} from "./explainMismatch.js";
 import {isElementValue} from "./isElementValue.js";
@@ -1285,26 +1286,15 @@ class TypePanel {
       onclick: () => this.clear(),
     });
     this.buttonDownloadLog = Button({
-      textContent: 'Download log',
+      textContent: 'Download log [one]',
+      title: 'Download the log in the shown folding',
       onclick: () => this.downloadLog(),
+      onmouseenter: () => this.previewLogSize(),
     });
-    this.spanLogMode = Span({
-      innerText: ' Log:',
-    });
-    this.buttonLogFull = Button({
-      textContent: 'full',
-      title: 'Log every report unfolded (largest, keeps full history)',
-      onclick: () => this.setLogMode('full'),
-    });
-    this.buttonLogValues = Button({
-      textContent: 'values',
-      title: 'Log one entry per distinct value a check failed with',
-      onclick: () => this.setLogMode('values'),
-    });
-    this.buttonLogOne = Button({
-      textContent: 'one',
-      title: 'Log one entry per check with the latest failure (smallest)',
-      onclick: () => this.setLogMode('one'),
+    this.buttonLogMode = Button({
+      textContent: '[one]',
+      title: 'Log folding: one entry per check; cycles one, values, full',
+      onclick: () => this.cycleLogMode(),
     });
     this.buttonPopout = Button({
       textContent: '⧉',
@@ -1413,6 +1403,12 @@ class TypePanel {
         {
           className: 'rti-setting-row',
         },
+        Label({}, 'Log folding: ', this.buttonLogMode),
+      ),
+      Div(
+        {
+          className: 'rti-setting-row',
+        },
         this.buttonLoadState,
         this.buttonSaveState,
         this.buttonResetStorage,
@@ -1439,10 +1435,6 @@ class TypePanel {
       this.spanErrors,
       this.buttonClear,
       this.buttonDownloadLog,
-      this.spanLogMode,
-      this.buttonLogFull,
-      this.buttonLogValues,
-      this.buttonLogOne,
       this.buttonStats,
       this.menuButton,
       this.menu,
@@ -3190,9 +3182,10 @@ class TypePanel {
     return captureStackLines(this.maxStackFrames);
   }
   /**
-   * Switches how the downloaded log folds same-key full reports, painting
-   * the active mode button disabled so it reads as selected. Unknown modes
-   * are ignored: a miswired caller must not blank the log folding.
+   * Switches how the downloaded log folds same-key full reports. The mode
+   * rides on the Download button itself (`Download log [one]`): no extra
+   * toolbar chrome for one button's behavior. Unknown modes are ignored:
+   * a miswired caller must not blank the log folding.
    * @param {'one'|'values'|'full'} mode - The log folding to apply.
    * @returns {void}
    */
@@ -3201,9 +3194,46 @@ class TypePanel {
       return;
     }
     this.logMode = mode;
-    this.buttonLogOne.disabled = mode === 'one';
-    this.buttonLogValues.disabled = mode === 'values';
-    this.buttonLogFull.disabled = mode === 'full';
+    this.buttonDownloadLog.textContent = `Download log [${mode}]`;
+    this.buttonLogMode.textContent = `[${mode}]`;
+  }
+  /**
+   * Advances the log folding one step: `one`, `values`, `full`, back to
+   * `one`. One button, one behavior to cycle, no mode-button row.
+   * @returns {void}
+   */
+  cycleLogMode() {
+    if (this.logMode === 'one') {
+      this.setLogMode('values');
+    } else if (this.logMode === 'values') {
+      this.setLogMode('full');
+    } else {
+      this.setLogMode('one');
+    }
+  }
+  /**
+   * Fresh hover preview for the Download button: the actual serialized log
+   * size plus entry count, so the folding choice reads in bytes before the
+   * click. Hover-only: serializing per error arrival would tax the hot
+   * loop the fold exists to keep quiet. Never throws; a failed measure
+   * keeps the previous title.
+   * @returns {void}
+   */
+  previewLogSize() {
+    try {
+      const text = this.exportLog();
+      let size = text.length;
+      try {
+        size = new Blob([text]).size;
+      } catch {
+        // No Blob (bare Node without globals): string length approximates.
+      }
+      const count = this.eventLog.length;
+      const noun = count === 1 ? 'entry' : 'entries';
+      this.buttonDownloadLog.title = `Download log [${this.logMode}]: ${formatBytes(size)}, ${count} ${noun}`;
+    } catch {
+      // Keep the previous title; the click still downloads.
+    }
   }
   /**
    * Human- and LLM-oriented header for the downloaded log: not every entry is

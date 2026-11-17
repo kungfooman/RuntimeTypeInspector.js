@@ -2237,41 +2237,63 @@ function testFullModeLogsEveryReport() {
   });
 }
 function testLogModeButtonsFlipFolding() {
-  // The toolbar carries the three log modes behind a `Log:` label with the
-  // active one painted disabled; clicking flips the folding, and the log
-  // header names the active mode for whoever reads the file.
+  // One button, no mode-button row: the Download button itself carries the
+  // folding (`Download log [one]`), the settings menu cycles it, and the
+  // log header names the active mode for whoever reads the file.
   return withPanel((panel) => {
     const prevMode = options.mode;
     options.mode = 'never';
     try {
-      const labels = textOf(panel.toolbar);
-      if (!panel.spanLogMode.innerText.includes('Log:') || !findButtonByLabel(panel.toolbar, 'full')) {
+      if (findButtonByLabel(panel.toolbar, 'full') || findButtonByLabel(panel.toolbar, 'values')) {
         return false;
       }
-      if (!findButtonByLabel(panel.toolbar, 'values') || !findButtonByLabel(panel.toolbar, 'one')) {
-        return false;
-      }
-      const fresh = panel.logMode === 'one' && panel.buttonLogOne.disabled === true;
+      const download = findButtonByLabel(panel.toolbar, 'Download log [one]');
+      const fresh = !!download && panel.logMode === 'one' && download === panel.buttonDownloadLog;
       if (!fresh) {
         return false;
       }
-      panel.buttonLogValues.onclick();
-      const values = panel.logMode === 'values' && panel.buttonLogValues.disabled === true &&
-        panel.buttonLogOne.disabled === false;
+      panel.buttonLogMode.onclick();
+      const values = panel.logMode === 'values' &&
+        panel.buttonDownloadLog.textContent === 'Download log [values]';
       if (!values) {
         return false;
       }
       const hinted = panel.getLogMeta().llmHint.includes('Log mode is `values`');
-      panel.buttonLogFull.onclick();
-      const full = panel.logMode === 'full' && panel.buttonLogFull.disabled === true;
-      panel.buttonLogOne.onclick();
-      const back = panel.logMode === 'one' && panel.buttonLogOne.disabled === true &&
-        panel.buttonLogFull.disabled === false;
+      panel.buttonLogMode.onclick();
+      panel.buttonLogMode.onclick();
+      const cycled = panel.logMode === 'one' &&
+        panel.buttonDownloadLog.textContent === 'Download log [one]';
       panel.setLogMode('bogus');
       const kept = panel.logMode === 'one';
-      return values && hinted && full && back && kept;
+      return values && hinted && cycled && kept;
     } finally {
       options.mode = prevMode;
+    }
+  });
+}
+function testDownloadHoverPreviewsLogSize() {
+  // Hovering Download measures the actual serialized log into the title,
+  // so the folding choice reads in bytes before the click: entry count
+  // plus a human size for the active mode.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      panel.addError(fullAddError('L8', 'hover', 1, '1', ['one fails']));
+      panel.buttonDownloadLog.onmouseenter();
+      const {title} = panel.buttonDownloadLog;
+      const previewed = title.includes('Download log [one]:') && title.includes('1 entry') &&
+        title.includes('B');
+      if (!previewed) {
+        return false;
+      }
+      panel.setLogMode('values');
+      panel.buttonDownloadLog.onmouseenter();
+      const switched = panel.buttonDownloadLog.title.includes('Download log [values]:');
+      return switched;
+    } finally {
+      options.mode = prevMode;
+      panel.setLogMode('one');
     }
   });
 }
@@ -3691,6 +3713,7 @@ const tests = [
   testValuesModeKeepsOneEntryPerValue,
   testFullModeLogsEveryReport,
   testLogModeButtonsFlipFolding,
+  testDownloadHoverPreviewsLogSize,
   testDatalessMessageIgnored,
   testTransmittedStackPreferred,
   testMissingStackFallsBack,
