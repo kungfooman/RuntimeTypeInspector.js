@@ -1,8 +1,8 @@
 import {crossContextPostMessage  } from './crossContextPostMessage.js';
-import {applyWorkerCommand       } from './cross-context/applyWorkerCommand.js';
-import {breakpointMessage        } from './cross-context/breakpointMessage.js';
-import {buildMessage             } from './cross-context/buildMessage.js';
-import {isWorkerEvent            } from './cross-context/isWorkerEvent.js';
+import {applyWorkerCommand       } from './rti-messages/applyWorkerCommand.js';
+import {breakpointMessage        } from './rti-messages/breakpointMessage.js';
+import {buildMessage             } from './rti-messages/buildMessage.js';
+import {isWorkerEvent            } from './rti-messages/isWorkerEvent.js';
 import {options                  } from './options.js';
 import {ignoredChecks            } from './ignoredChecks.js';
 import {customChecks             } from './customChecks.js';

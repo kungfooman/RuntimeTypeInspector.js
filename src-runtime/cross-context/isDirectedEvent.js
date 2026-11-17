@@ -5,7 +5,7 @@
  * Foreign traffic sometimes posts without any payload, so the check
  * tolerates missing shapes and only addressed mail proceeds.
  * @param {*} event - The message event from a worker, iframe or window.
- * @param {string} tag - The bus tag, e.g. `rti` or `my-app`.
+ * @param {string} tag - The bus tag, e.g. `my-app`.
  * @param {string} destination - The destination, e.g. `ui` or `worker`.
  * @returns {boolean} True when the event carries addressed bus mail.
  * @example isDirectedEvent({data: {type: 'my-app', destination: 'ui'}}, 'my-app', 'ui') // true

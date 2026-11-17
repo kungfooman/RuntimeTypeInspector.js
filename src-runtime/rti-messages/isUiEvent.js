@@ -1,4 +1,4 @@
-import {isDirectedEvent} from './isDirectedEvent.js';
+import {isDirectedEvent} from '../cross-context/isDirectedEvent.js';
 /**
  * True for panel bound traffic: RTI messages addressed at the user
  * interface. Foreign traffic (analytics, devtools, other libs) posts

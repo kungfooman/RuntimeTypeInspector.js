@@ -1,45 +1,49 @@
 import {bestEffort        } from './bestEffort.js';
-import {buildEnvelope     } from './buildEnvelope.js';
-import {fanoutToTargets   } from './fanoutToTargets.js';
-import {isDirectedEvent   } from './isDirectedEvent.js';
+import {netDeliver        } from './netDeliver.js';
+import {netEnvelope       } from './netEnvelope.js';
+import {netFanout         } from './netFanout.js';
+import {netListen         } from './netListen.js';
+import {netMatch          } from './netMatch.js';
+import {netPost           } from './netPost.js';
 import {noteKey           } from './noteKey.js';
-import {postToTarget      } from './postToTarget.js';
 import {resolveEventTarget} from './resolveEventTarget.js';
 import {resolvePostTarget } from './resolvePostTarget.js';
+import {postToTarget      } from './postToTarget.js';
+import {stampEnvelope     } from './stampEnvelope.js';
 import {takeKeys          } from './takeKeys.js';
 /**
- * One thin bus over `postMessage` traffic between contexts (window,
- * worker, iframe): stamping, posting, listening, replying, fan-out
- * and coalescing in one place. Construct with a tag plus the two lane
- * names (`new CrossContextBus({tag: 'my-app'})` already works), then
- * either call the pieces directly or use the recipe methods. RTI runs
- * the same layer with `{tag: 'rti', ui: 'ui', worker: 'worker'}`, so
- * every RTI message path below stays a thin call into this class.
+ * One thin peer on a `postMessage` network between contexts (window,
+ * worker, iframe): envelope building, stamping, posting, listening,
+ * replying, fan-out and coalescing in one place. Every project names
+ * its own network tag plus its channel vocabulary and its own peer
+ * id — nobody inherits another project's roles.
  * @example
- * const bus = new CrossContextBus({tag: 'my-app'});
- * bus.post({action: 'ping'});
+ * const bus = new CrossContextBus({net: 'my-app', id: 'panel'});
+ * bus.post(bus.message('checks', 'frame'));
  */
 class CrossContextBus {
   /**
-   * @param {object} [settings] - Bus settings.
-   * @param {string} [settings.tag] - Bus tag stamped on every message.
-   * @param {string} [settings.ui] - Lane the display side listens on.
-   * @param {string} [settings.worker] - Lane the checking side listens on.
-   * @param {string} [settings.sourceKey] - Stamp field, e.g. `source`.
-   * @param {string} [settings.runtimeId] - Identity of this evaluation.
+   * @param {object} settings - Bus settings, all explicit.
+   * @param {string} settings.net - Network tag stamped on every message.
+   * @param {string} settings.id - This peer's id on the network.
+   * @param {string} [settings.sourceKey] - Stamp field, `from` by default.
    */
-  constructor({
-    tag = 'rti',
-    ui = 'ui',
-    worker = 'worker',
-    sourceKey = 'source',
-    runtimeId,
-  } = {}) {
-    this.tag = tag;
-    this.ui = ui;
-    this.worker = worker;
+  constructor(settings = {}) {
+    const {
+      net,
+      id,
+      sourceKey = 'from',
+    } = settings;
+    if (typeof net !== 'string' || net.length === 0) {
+      throw new Error('CrossContextBus> explicit `net` required, e.g. {net: \'my-app\', id: \'panel\'}');
+    }
+    if (typeof id !== 'string' || id.length === 0) {
+      throw new Error('CrossContextBus> explicit `id` required');
+    }
+    this.net = net;
+    this.id = id;
     this.sourceKey = sourceKey;
-    this.runtimeId = runtimeId ?? Math.random().toString(36).slice(2, 10);
+    this.runtimeId = this.id;
     /**
      * Coalesced ticks by key: `note` counts, `drain` takes.
      * @type {Map<string, number>}
@@ -47,38 +51,34 @@ class CrossContextBus {
     this.pendings = new Map();
   }
   /**
-   * Builds one envelope on this bus: tag plus destination stay fixed,
-   * every payload field rides along untouched.
-   * @param {string} action - The action, e.g. `ping`.
-   * @param {string} [destination] - The lane, the UI lane by default.
+   * Builds one envelope on this net: tag plus sender stay fixed,
+   * every payload field rides along untouched. `to` stays null
+   * for broadcasts, or names one peer for point to point mail.
+   * @param {string} channel - The channel, e.g. `checks`.
+   * @param {string} verb - What happened, e.g. `frame`.
+   * @param {string|null} [to] - Recipient id, or null to broadcast.
    * @param {object} [payload] - Extra message fields.
-   * @returns {object} The message envelope.
+   * @returns {object} The network envelope.
    */
-  message(action, destination = this.ui, payload = {}) {
-    return buildEnvelope(this.tag, action, destination, payload);
+  message(channel, verb, to = null, payload = {}) {
+    return netEnvelope({
+      net: this.net,
+      channel,
+      verb,
+      from: this.id,
+      to,
+      payload,
+    });
   }
   /**
-   * Stamps one envelope with this runtime's id, so the display side
-   * can attribute rows to the context that sent them. A caller set
+   * Stamps one envelope with this peer's id, so receivers can
+   * attribute rows to the context that sent them. A caller set
    * stamp always wins.
    * @param {object} message - The envelope to stamp.
    * @returns {object} The same message, stamped when it was unstamped.
    */
   stamp(message) {
-    if (message === null || message === undefined) {
-      return message;
-    }
-    if (typeof message !== 'object') {
-      return message;
-    }
-    if (message.type !== this.tag) {
-      return message;
-    }
-    if (message[this.sourceKey] !== undefined) {
-      return message;
-    }
-    message[this.sourceKey] = this.runtimeId;
-    return message;
+    return stampEnvelope(message, this.net, this.id, this.sourceKey);
   }
   /**
    * Posts one envelope to the cross context target (the embedding
@@ -92,71 +92,44 @@ class CrossContextBus {
     postToTarget(resolvePostTarget(), this.stamp(message), ...rest);
   }
   /**
-   * True for display bound traffic on this bus.
+   * True when an event is our mail on a channel: same network tag,
+   * same channel, addressed to us or broadcast.
    * @param {*} event - The message event.
-   * @returns {boolean} True when the event carries display bound mail.
+   * @param {string} channel - The channel to match.
+   * @returns {boolean} True when the event is our mail.
    */
-  isDisplay(event) {
-    return isDirectedEvent(event, this.tag, this.ui);
+  isOurs(event, channel) {
+    return netMatch(event, this.net, channel, this.id);
   }
   /**
-   * True for checker bound traffic on this bus.
+   * Dispatches one event to its verb handler on a channel: the verb
+   * table maps verbs to functions, so unknown verbs warn instead of
+   * throwing and taking down the whole dispatch.
    * @param {*} event - The message event.
-   * @returns {boolean} True when the event carries checker bound mail.
-   */
-  isChecker(event) {
-    return isDirectedEvent(event, this.tag, this.worker);
-  }
-  /**
-   * Dispatches one display bound message to its handler by action:
-   * the handler table maps names to functions, so unknown actions
-   * warn instead of throwing and taking down the whole dispatch.
-   * @param {*} event - The message event.
-   * @param {Map<string, Function>|object} handlers - Action to handler.
-   * @param {Function} warn - Called with the unknown action payload.
+   * @param {string} channel - The channel to match.
+   * @param {Map<string, Function>|object} verbs - Verb to handler.
+   * @param {Function} warn - Called with the unknown verb payload.
    * @returns {boolean} True when a handler ran.
    */
-  dispatch(event, handlers, warn) {
-    if (!this.isDisplay(event)) {
-      return false;
-    }
-    const {action} = event.data ?? {};
-    const get = typeof handlers.get === 'function' ? (key) => handlers.get(key) : (key) => handlers[key];
-    const handler = get(action);
-    if (typeof handler !== 'function') {
-      warn({action});
-      return false;
-    }
-    if (typeof handlers.get === 'function') {
-      handler(event);
-    } else {
-      handler.call(handlers, event);
-    }
-    return true;
+  dispatch(event, channel, verbs, warn) {
+    return netDeliver(event, this.net, channel, this.id, verbs, warn);
   }
   /**
-   * Runs one checker bound command table against an event: returns
-   * true when a known action applied, false when the caller should
-   * warn once instead of throwing mid dispatch.
-   * @param {*} event - The message event from the display side.
-   * @param {object<string, Function>} commands - Action to command.
-   * @returns {boolean} True when a command applied.
+   * Subscribes one verb table to a channel: every matching event
+   * runs its verb handler. Returns the unsubscribe closure, so short
+   * lived contexts never leak a listener after teardown.
+   * @param {*} host - The bus host carrying `addEventListener`, if any.
+   * @param {string} channel - The channel to listen on.
+   * @param {Map<string, Function>|object} verbs - Verb to handler.
+   * @param {Function} warn - Called with the unknown verb payload.
+   * @returns {Function} Unsubscribe closure.
    */
-  apply(event, commands) {
-    if (!this.isChecker(event)) {
-      return false;
-    }
-    const {action} = event.data ?? {};
-    const command = commands[action];
-    if (typeof command !== 'function') {
-      return false;
-    }
-    command(event.data, event);
-    return true;
+  listen(host, channel, verbs, warn) {
+    return netListen(host, this.net, channel, this.id, verbs, warn);
   }
   /**
-   * Resolves the reply target of a display bound message event:
-   * `source` for worker and iframe traffic, `srcElement` fallback.
+   * Resolves the reply target of an event: `source` for worker and
+   * iframe traffic, `srcElement` fallback.
    * @param {*} event - The message event.
    * @returns {*} The reply target, or null when unreachable.
    */
@@ -164,15 +137,14 @@ class CrossContextBus {
     return resolveEventTarget(event);
   }
   /**
-   * Fans one checker bound message out to every known context,
-   * skipping dead sinks one by one instead of aborting at the
-   * first broken bus.
-   * @param {Iterable<*>} targets - The event sources to post to.
-   * @param {object} message - The message to post to each target.
+   * Broadcasts one envelope to every known peer, skipping dead
+   * sinks one by one instead of aborting at the first broken bus.
+   * @param {Iterable<*>} targets - The peer buses to post to.
+   * @param {object} message - The envelope to send to each target.
    * @returns {void}
    */
   fanout(targets, message) {
-    fanoutToTargets(targets, message);
+    netFanout(targets, message);
   }
   /**
    * Counts one tick per key for later flushing: hot loop traffic

@@ -8,7 +8,7 @@ import {bestEffort} from './bestEffort.js';
  * @param {...any} args - The arguments to post.
  * @returns {void}
  * @example
- * postToTarget({postMessage() {}}, {type: 'rti'});
+ * postToTarget({postMessage() {}}, {net: 'net'});
  */
 function postToTarget(target, ...args) {
   if (target === null || target === undefined) {

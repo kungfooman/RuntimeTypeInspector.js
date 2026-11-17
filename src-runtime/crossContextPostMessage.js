@@ -1,6 +1,6 @@
 import {options          } from './options.js';
 import {resolvePostTarget} from './cross-context/resolvePostTarget.js';
-import {stampSource      } from './cross-context/stampSource.js';
+import {stampSource      } from './rti-messages/stampSource.js';
 import {postToTarget     } from './cross-context/postToTarget.js';
 /**
  * Works to post messages from inside <iframe>'s and Workers to the parent window,

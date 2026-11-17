@@ -1,5 +1,5 @@
 import {options           } from "./options.js";
-import {breakpointMessage } from "./cross-context/breakpointMessage.js";
+import {breakpointMessage } from "./rti-messages/breakpointMessage.js";
 import {postToTarget      } from "./cross-context/postToTarget.js";
 import {resolveEventTarget} from "./cross-context/resolveEventTarget.js";
 import {breakpoints       } from "./inspectType.js";

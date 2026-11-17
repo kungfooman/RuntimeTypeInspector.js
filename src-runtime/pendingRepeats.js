@@ -1,7 +1,7 @@
 import {bestEffort             } from './cross-context/bestEffort.js';
 import {noteKey                } from './cross-context/noteKey.js';
 import {takeKeys               } from './cross-context/takeKeys.js';
-import {repeatDeltaMessage     } from './cross-context/repeatDeltaMessage.js';
+import {repeatDeltaMessage     } from './rti-messages/repeatDeltaMessage.js';
 import {crossContextPostMessage} from './crossContextPostMessage.js';
 /**
  * Coalesced same-shape repeat ticks, keyed by the bare `loc-name` the

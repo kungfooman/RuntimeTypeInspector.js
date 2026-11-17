@@ -13,7 +13,7 @@ function testFansOutToAll() {
     },
   };
   const message = {
-    type: 'rti',
+    net: 'net',
   };
   fanoutToTargets([first, second], message);
   return (
@@ -37,7 +37,7 @@ function testBrokenSinkSkipped() {
     },
   };
   const message = {
-    type: 'rti',
+    net: 'net',
   };
   fanoutToTargets([broken, live], message);
   return got.length === 1 && got[0] === message;
@@ -45,10 +45,10 @@ function testBrokenSinkSkipped() {
 function testEmptyFanoutIsSilent() {
   // No known contexts yet (worker not started) is a no-op, not a throw.
   fanoutToTargets([], {
-    type: 'rti',
+    net: 'net',
   });
   fanoutToTargets(null, {
-    type: 'rti',
+    net: 'net',
   });
   return true;
 }

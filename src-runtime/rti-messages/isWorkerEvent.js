@@ -1,4 +1,4 @@
-import {isDirectedEvent} from './isDirectedEvent.js';
+import {isDirectedEvent} from '../cross-context/isDirectedEvent.js';
 /**
  * True for checking side traffic: RTI messages addressed at a worker,
  * iframe or any other runtime running checks. The panel fans option

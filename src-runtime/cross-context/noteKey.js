@@ -1,6 +1,6 @@
 /**
  * Counts one tick per key into a caller owned map: the unhardcoded
- * core behind the RTI repeat coalescer, so other projects collapse
+ * core behind repeat coalescing: collapsing
  * any hot loop traffic (progress pings, log repeats, presence beats)
  * from per event to per key per flush. Never throws: the reporting
  * path must survive hostile keys without breaking the sender.

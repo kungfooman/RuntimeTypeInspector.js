@@ -1,4 +1,4 @@
-import {buildEnvelope} from './buildEnvelope.js';
+import {buildEnvelope} from '../cross-context/buildEnvelope.js';
 /**
  * Builds one UI bound RTI message envelope: the `type` plus the
  * destination stay fixed, every payload field rides along untouched.

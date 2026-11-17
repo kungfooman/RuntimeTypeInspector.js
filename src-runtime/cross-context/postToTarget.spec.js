@@ -8,7 +8,7 @@ function testPostsToBus() {
     },
   };
   const message = {
-    type: 'rti',
+    net: 'net',
   };
   postToTarget(target, message);
   return got === message;
@@ -16,22 +16,22 @@ function testPostsToBus() {
 function testNullTargetIsSilent() {
   // A missing bus (bare Node, wiped globals) never throws.
   postToTarget(null, {
-    type: 'rti',
+    net: 'net',
   });
   postToTarget(undefined, {
-    type: 'rti',
+    net: 'net',
   });
   return true;
 }
 function testBusWithoutPostSwallowed() {
   // A target without a post function (typo, half built stub) is skipped.
   postToTarget({}, {
-    type: 'rti',
+    net: 'net',
   });
   postToTarget({
     postMessage: 'nope',
   }, {
-    type: 'rti',
+    net: 'net',
   });
   return true;
 }
@@ -44,7 +44,7 @@ function testThrowingBusSwallowed() {
     },
   };
   postToTarget(target, {
-    type: 'rti',
+    net: 'net',
   });
   return true;
 }
@@ -58,7 +58,7 @@ function testExtraArgsPassThrough() {
     },
   };
   const message = {
-    type: 'rti',
+    net: 'net',
   };
   postToTarget(target, message, 'transfer');
   return (

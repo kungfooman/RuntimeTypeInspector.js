@@ -4,7 +4,7 @@
  * A caller set source always wins, so tests and forwarders keep theirs.
  * The stamp mutates in place like the legacy bus: structured clone
  * snapshots the message at post time, so callers must not reuse the
- * object after posting anyway.
+ * object after posting anyway. RTI's legacy `type` envelope binding.
  * @param {object} message - The UI bound RTI message.
  * @param {string} runtimeId - Identity of this runtime evaluation.
  * @returns {object} The same message, stamped when it was unstamped RTI mail.

@@ -8,7 +8,7 @@ import {postToTarget} from './postToTarget.js';
  * @param {object} message - The message to post to each target.
  * @returns {void}
  * @example
- * fanoutToTargets([], {type: 'rti'});
+ * fanoutToTargets([], {net: 'net'});
  */
 function fanoutToTargets(targets, message) {
   if (targets === null || targets === undefined) {

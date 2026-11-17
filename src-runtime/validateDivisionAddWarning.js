@@ -1,5 +1,5 @@
-import {buildMessage           } from './cross-context/buildMessage.js';
-import {breakpointMessage      } from './cross-context/breakpointMessage.js';
+import {buildMessage           } from './rti-messages/buildMessage.js';
+import {breakpointMessage      } from './rti-messages/breakpointMessage.js';
 import {crossContextPostMessage} from './crossContextPostMessage.js';
 import {breakpoints            } from './inspectType.js';
 /**

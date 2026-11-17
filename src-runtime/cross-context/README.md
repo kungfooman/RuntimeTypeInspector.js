@@ -1,65 +1,57 @@
-# Cross context messaging
+# Cross context networking
 
-One thin layer over `postMessage` traffic between contexts (window, worker, iframe): stamped envelopes, lane guards, dispatch, fan-out and coalescing. RTI eats its own cooking here — every message path in the runtime (`inspectType`, `TypePanel`, `Warning`, `pendingRepeats`) calls into this directory — but nothing in the core is RTI specific. Bring your own tag and lane names; the same shapes carry any project's traffic.
+One thin `postMessage` network between contexts (window, worker, iframe, pop-out): addressed envelopes, channel subscriptions, fan-out and coalescing. It knows peers, channels and verbs — nothing else. Every project names its own network tag, its own peer ids and its own channel vocabulary.
 
 ## The likeable API
 
-Most projects need exactly one object:
+Most projects need exactly one peer:
 
 ```js
 import {CrossContextBus} from './cross-context/CrossContextBus.js';
 
-const bus = new CrossContextBus({tag: 'my-app'});
+const panel = new CrossContextBus({net: 'my-app', id: 'panel'});
+const checker = new CrossContextBus({net: 'my-app', id: 'checker'});
 
-// checking side: stamp + post, never throws (bare Node, closed worker)
-bus.post(bus.message('frame', 'panel', {n}));
+// checker side: stamp + post, never throws (bare host, closed bus)
+checker.post(checker.message('checks', 'frame', null, {n}));
 
-// display side: guard, dispatch by action, unknown warns instead of throwing
-globalThis.addEventListener?.('message', (event) => {
-  bus.dispatch(event, {
-    frame: (evt) => render(evt.data.n),
-  }, ({action}) => console.warn('unknown action, ignoring', {action}));
-});
+// panel side: subscribe one verb table to a channel, unknown verbs warn
+const off = panel.listen(globalThis, 'checks', {
+  frame: (envelope) => render(envelope.n),
+}, ({verb}) => console.warn('unknown verb, ignoring', {verb}));
+// ...later: off();
 
-// display side answering one checker: fan-out skips dead sinks one by one
-bus.fanout(sources, bus.message('setQuality', 'checker', {value: 'high'}));
+// panel side answering: broadcast reaches every peer on the channel,
+// point to point mail names its recipient and nobody else picks it up
+panel.fanout(sources, panel.message('checks', 'set-quality', null, {value: 'high'}));
+panel.post(panel.message('checks', 'ping', 'checker'));
 
 // hot loop traffic: count per key, flush one delta per key per turn
-bus.note(key);
+checker.note(key);
 // ...later, once per turn:
-for (const [key, ticks] of bus.drain()) {
-  bus.post(bus.message('ticks', 'panel', {key, ticks}));
+for (const [key, ticks] of checker.drain()) {
+  checker.post(checker.message('checks', 'ticks', null, {key, ticks}));
 }
 ```
 
-Defaults are RTI's (`tag: 'rti'`, lanes `ui`/`worker`), so RTI code constructs nothing and calls the same layer through its recipe helpers. Other projects pass their own names:
+No inherited vocabulary: the constructor requires an explicit `net` and `id`, and throws otherwise. Every other word (channels, verbs, peer ids, stamp field) is yours.
 
-```js
-const bus = new CrossContextBus({tag: 'editor', ui: 'panel', worker: 'checker'});
-```
+## Pieces, when the peer is too much
 
-## Pieces, when the class is too much
+The peer is a thin consolidation; every step stays importable alone. One file per function, each with its own spec next to it (`*.spec.js`), following the repo's one-function-per-file rule.
 
-The facade is a thin consolidation; every step stays importable alone. One file per function, each with its own spec next to it (`*.spec.js`), following the repo's one-function-per-file rule.
-
-- `isDirectedEvent(event, tag, destination)` — the shape guard. `isUiEvent`/`isWorkerEvent` are RTI's two calls with `('rti', 'ui'/'worker')` baked in.
-- `buildEnvelope(tag, action, destination, payload)` — the envelope. `buildMessage` is RTI's call with `'rti'` baked in.
-- `stampSource(message, runtimeId)` and `CrossContextBus#stamp` — attribute traffic to the sending evaluation. Caller stamps always win, so forwarders keep theirs.
-- `resolvePostTarget()` — parent when framed, else self, else undefined in bare Node. Never throws on missing globals.
-- `postToTarget(target, ...args)` and `CrossContextBus#post` — post without ever throwing. Extra args ride along (transfer lists and friends).
+- `netEnvelope({net, channel, verb, from, to, payload})` — the envelope. `to: null` broadcasts, a named `to` is point to point.
+- `netMatch(event, net, channel, id)` — the shape guard: same net, same channel, addressed to us or broadcast. Missing shapes degrade to false.
+- `netListen(host, net, channel, id, verbs, warn)` — subscribe a verb table, get the unsubscribe closure back. Bare hosts degrade into a no-op.
+- `netDeliver(event, net, channel, id, verbs, warn)` — the testable half of `netListen`: same match plus warn, no host needed.
+- `netPost(fields)` — build, post at the framed parent (else self), never throw. Returns the envelope as posted.
+- `netFanout(targets, message)` — one envelope to every known peer; dead sinks drop one by one.
+- `isDirectedEvent(event, tag, destination)` — the legacy lane guard behind project bindings.
+- `buildEnvelope(tag, action, destination, payload)` — the legacy envelope behind project bindings.
+- `stampEnvelope(message, net, id, sourceKey)` and `CrossContextBus#stamp` — attribute mail to the sending peer. Caller stamps always win.
+- `resolvePostTarget()` — parent when framed, else self, else undefined in a bare host. Never throws on missing globals.
+- `postToTarget(target, ...args)` and `CrossContextBus#post` — post without ever throwing. Extra args ride along.
 - `resolveEventTarget(event)` — reply target of an event: `source`, else `srcElement`, else null.
-- `dispatchUiAction` and `CrossContextBus#dispatch` — dispatch display mail by action from a handler table. Unknown actions warn, never `handler[action] is not a function`.
-- `applyWorkerCommand` and `CrossContextBus#apply` — run checker mail against a command table. Unknown stays false so the caller warns once instead of throwing mid dispatch.
-- `fanoutToTargets` and `CrossContextBus#fanout` — one message to every known context; dead sinks drop one by one.
-- `bestEffort(fn)` — run a reporting action, swallow sync throws.
-- `noteKey(store, key)` / `takeKeys(store)` and `bus.note` / `bus.drain` — count ticks per key, drain one delta per key. Never throws on hostile stores.
-- RTI recipes on top: `workerSettingMessage`, `breakpointMessage`, `repeatDeltaMessage`, `panelMessageKey`, `repeatTickCount`, `applyRepeatDelta`, `pendingRepeats` (`noteRepeat`/`takeRepeats`/`flushRepeats` on a shared store with microtask scheduling).
-
-## RTI wiring (proof the core holds)
-
-- `src-runtime/crossContextPostMessage.js` — `stampSource` + `resolvePostTarget` + `postToTarget`.
-- `src-runtime/inspectType.js` — checker listener via `isWorkerEvent` + `applyWorkerCommand`; reports via `buildMessage` + `breakpointMessage`.
-- `src-runtime/TypePanel.js` — panel listener via `isUiEvent`; repeats via `panelMessageKey` + `applyRepeatDelta`; dispatch via `dispatchUiAction`; eight `send*StateToWorker` loops collapsed into `sendSettingToWorkers` over `fanoutToTargets` + `workerSettingMessage`.
-- `src-runtime/Warning.js` — breakpoint arm over `postToTarget` + `breakpointMessage`; reply target via `resolveEventTarget`.
-- `src-runtime/pendingRepeats.js` — the shared coalescing store over `noteKey` + `takeKeys` + `repeatDeltaMessage`.
-- `test_runtime.js` — every helper plus `CrossContextBus` speced; `npm run lint` owns import alignment and brace style.
+- `fanoutToTargets(targets, message)` and `CrossContextBus#fanout` — one message to every known peer; dead sinks drop one by one.
+- `bestEffort(fn)` — run an action, swallow sync throws.
+- `noteKey(store, key)` / `takeKeys(store)` and peer `note` / `drain` — count ticks per key, drain one delta per key.

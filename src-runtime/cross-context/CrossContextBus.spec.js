@@ -34,53 +34,85 @@ function withTargets(parentValue, selfValue, fn) {
     }
   }
 }
-function testDefaultsAreRti() {
-  // No settings: the bus speaks RTI out of the box, so existing code
-  // migrates by deleting its hand rolled helpers, not by configuring.
-  const bus = new CrossContextBus({});
-  return (
-    bus.tag === 'rti' &&
-    bus.ui === 'ui' &&
-    bus.worker === 'worker' &&
-    typeof bus.runtimeId === 'string' &&
-    bus.runtimeId.length > 0
-  );
+/**
+ * Builds one test peer with no shared vocabulary, so no spec can
+ * pass by accident of sharing another project's words.
+ * @returns {CrossContextBus} Test peer with its own net and id.
+ */
+function testBus() {
+  return new CrossContextBus({
+    net: 'my-app',
+    id: 'panel',
+  });
+}
+function testRequiresExplicitSettings() {
+  // No silent vocabulary: every project names its own net and id.
+  let failures = 0;
+  try {
+    new CrossContextBus({});
+  } catch {
+    failures += 1;
+  }
+  try {
+    new CrossContextBus({
+      net: 'my-app',
+    });
+  } catch {
+    failures += 1;
+  }
+  return failures === 2;
 }
 function testMessageBuildsEnvelope() {
-  // One envelope builder: tag plus lane stay fixed, payload rides along.
-  const bus = new CrossContextBus({
-    tag: 'my-app',
-  });
-  const message = bus.message('ping', 'panel', {
+  // Tag plus sender stay fixed; recipient and payload ride along.
+  const bus = testBus();
+  const message = bus.message('checks', 'frame', 'checker', {
     n: 1,
   });
   return (
-    message.type === 'my-app' &&
-    message.action === 'ping' &&
-    message.destination === 'panel' &&
+    message.net === 'my-app' &&
+    message.channel === 'checks' &&
+    message.verb === 'frame' &&
+    message.from === 'panel' &&
+    message.to === 'checker' &&
     message.n === 1
   );
 }
+function testMessageBroadcastsByDefault() {
+  // No recipient: every listener on the channel receives it.
+  const bus = testBus();
+  const message = bus.message('checks', 'frame');
+  return message.to === null && message.from === 'panel';
+}
 function testStampKeepsCallerStamp() {
-  // Same run stamps its id; forwarders and tests keep their own stamp.
-  const bus = new CrossContextBus({
-    tag: 'my-app',
-  });
+  // Same peer stamps its id; forwarders keep their own stamp.
+  const bus = testBus();
   const own = bus.stamp({
-    type: 'my-app',
+    net: 'my-app',
   });
   const foreign = bus.stamp({
-    type: 'my-app',
-    source: 'other',
+    net: 'my-app',
+    from: 'other',
   });
-  const otherTag = bus.stamp({
-    type: 'other',
+  const otherNet = bus.stamp({
+    net: 'other',
   });
   return (
-    own.source === bus.runtimeId &&
-    foreign.source === 'other' &&
-    otherTag.source === undefined
+    own.from === bus.id &&
+    foreign.from === 'other' &&
+    otherNet.from === undefined
   );
+}
+function testCustomSourceKey() {
+  // Projects pick their own stamp field instead of inheriting ours.
+  const bus = new CrossContextBus({
+    net: 'my-app',
+    id: 'panel',
+    sourceKey: 'sender',
+  });
+  const message = bus.stamp({
+    net: 'my-app',
+  });
+  return message.sender === 'panel' && message.from === undefined;
 }
 function testPostStampsAndTargetsParent() {
   // Posting stamps and targets the parent when framed: one call, same object.
@@ -90,132 +122,139 @@ function testPostStampsAndTargetsParent() {
       this.posted.push(message);
     },
   };
-  const bus = new CrossContextBus({
-    tag: 'my-app',
-  });
+  const bus = testBus();
   return withTargets(parent, {
     postMessage() {},
   }, () => {
     const message = {
-      type: 'my-app',
-      action: 'ping',
-      destination: 'panel',
+      net: 'my-app',
+      channel: 'checks',
+      verb: 'frame',
+      from: 'panel',
     };
     bus.post(message);
     return (
       parent.posted.length === 1 &&
       parent.posted[0] === message &&
-      message.source === bus.runtimeId
+      message.from === bus.id
     );
   });
 }
-function testGuardsStayPerBus() {
-  // Display and checker guards follow this bus's tag and lanes only.
-  const bus = new CrossContextBus({
-    tag: 'my-app',
-  });
-  const displayEvent = {
+function testIsOursMatchesAddressing() {
+  // Broadcasts reach every peer; named mail reaches only its recipient;
+  // other nets and channels stay deaf.
+  const bus = testBus();
+  const broadcast = {
     data: {
-      type: 'my-app',
-      destination: 'ui',
+      net: 'my-app',
+      channel: 'checks',
+      to: null,
     },
   };
-  const checkerEvent = {
+  const named = {
     data: {
-      type: 'my-app',
-      destination: 'worker',
+      net: 'my-app',
+      channel: 'checks',
+      to: 'panel',
     },
   };
-  const rtiEvent = {
+  const foreign = {
     data: {
-      type: 'rti',
-      destination: 'ui',
+      net: 'other',
+      channel: 'checks',
+      to: null,
+    },
+  };
+  const wrongChannel = {
+    data: {
+      net: 'my-app',
+      channel: 'other',
+      to: null,
     },
   };
   return (
-    bus.isDisplay(displayEvent) === true &&
-    bus.isDisplay(checkerEvent) === false &&
-    bus.isDisplay(rtiEvent) === false &&
-    bus.isChecker(checkerEvent) === true &&
-    bus.isChecker(displayEvent) === false
+    bus.isOurs(broadcast, 'checks') === true &&
+    bus.isOurs(named, 'checks') === true &&
+    bus.isOurs(foreign, 'checks') === false &&
+    bus.isOurs(broadcast, 'other') === false &&
+    bus.isOurs(wrongChannel, 'checks') === false
   );
 }
-function testDispatchRunsHandler() {
-  // Dispatch runs the handler by action; unknown actions warn once.
-  const bus = new CrossContextBus({
-    tag: 'my-app',
-  });
+function testDispatchRunsVerb() {
+  // Dispatch runs the verb on the channel; unknown verbs warn once.
+  const bus = testBus();
   let got;
-  const handlers = new Map([
-    ['ping', (event) => {
-      got = event;
-    }],
-  ]);
+  const verbs = new Map([['frame', (data) => {
+    got = data;
+  }]]);
   const event = {
     data: {
-      type: 'my-app',
-      destination: 'ui',
-      action: 'ping',
+      net: 'my-app',
+      channel: 'checks',
+      verb: 'frame',
+      from: 'checker',
+      to: null,
     },
   };
   const warns = [];
-  const ran = bus.dispatch(event, handlers, ({action}) => warns.push(action));
+  const ran = bus.dispatch(event, 'checks', verbs, ({verb}) => warns.push(verb));
   const unknown = {
     data: {
-      type: 'my-app',
-      destination: 'ui',
-      action: 'bogus',
+      net: 'my-app',
+      channel: 'checks',
+      verb: 'bogus',
+      from: 'checker',
+      to: null,
     },
   };
-  const missed = bus.dispatch(unknown, handlers, ({action}) => warns.push(action));
+  const missed = bus.dispatch(unknown, 'checks', verbs, ({verb}) => warns.push(verb));
   return (
     ran === true &&
-    got === event &&
+    got === event.data &&
     missed === false &&
     warns.length === 1 &&
     warns[0] === 'bogus'
   );
 }
-function testApplyRunsCommand() {
-  // Checker commands run keyed by action; unknown stays false for the
-  // caller to warn once instead of throwing mid dispatch.
-  const bus = new CrossContextBus({
-    tag: 'my-app',
-  });
-  let got;
-  const commands = {
-    enable(data) {
-      got = data;
+function testListenSubscribes() {
+  // Listening wires the host and returns the unsubscribe closure.
+  const bus = testBus();
+  const host = {
+    added: [],
+    removed: [],
+    addEventListener(type, fn) {
+      this.added.push([type, fn]);
+    },
+    removeEventListener(type, fn) {
+      this.removed.push([type, fn]);
     },
   };
+  let got;
+  const verbs = new Map([['frame', (data) => {
+    got = data;
+  }]]);
+  const off = bus.listen(host, 'checks', verbs, () => {});
   const event = {
     data: {
-      type: 'my-app',
-      destination: 'worker',
-      action: 'enable',
-      value: true,
+      net: 'my-app',
+      channel: 'checks',
+      verb: 'frame',
+      from: 'checker',
+      to: null,
     },
   };
-  const ran = bus.apply(event, commands);
-  const missed = bus.apply({
-    data: {
-      type: 'my-app',
-      destination: 'worker',
-      action: 'bogus',
-    },
-  }, commands);
+  host.added[0][1](event);
+  off();
   return (
-    ran === true &&
-    got.value === true &&
-    missed === false
+    host.added.length === 1 &&
+    host.removed.length === 1 &&
+    got === event.data
   );
 }
 function testFanoutSkipsBrokenSink() {
-  // One dead sink never aborts the fan-out: live contexts behind it
+  // One dead sink never aborts the fan-out: live peers behind it
   // still get the message.
-  const bus = new CrossContextBus({
-    tag: 'my-app',
-  });
+  const bus = testBus();
   const got = [];
   const broken = {
     postMessage() {
@@ -227,15 +266,13 @@ function testFanoutSkipsBrokenSink() {
       got.push(message);
     },
   };
-  const message = bus.message('ping', 'worker');
+  const message = bus.message('checks', 'ping');
   bus.fanout([broken, live], message);
   return got.length === 1 && got[0] === message;
 }
 function testNoteAndDrainCoalesce() {
   // Hot loop ticks collapse per key: the flush posts one delta per key.
-  const bus = new CrossContextBus({
-    tag: 'my-app',
-  });
+  const bus = testBus();
   bus.note('frame');
   bus.note('frame');
   bus.note('tick');
@@ -247,13 +284,15 @@ function testNoteAndDrainCoalesce() {
   );
 }
 export const tests = [
-  testDefaultsAreRti,
+  testRequiresExplicitSettings,
   testMessageBuildsEnvelope,
+  testMessageBroadcastsByDefault,
   testStampKeepsCallerStamp,
+  testCustomSourceKey,
   testPostStampsAndTargetsParent,
-  testGuardsStayPerBus,
-  testDispatchRunsHandler,
-  testApplyRunsCommand,
+  testIsOursMatchesAddressing,
+  testDispatchRunsVerb,
+  testListenSubscribes,
   testFanoutSkipsBrokenSink,
   testNoteAndDrainCoalesce,
 ];
