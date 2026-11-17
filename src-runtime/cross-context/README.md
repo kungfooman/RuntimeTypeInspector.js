@@ -12,8 +12,8 @@ import {CrossContextBus} from './cross-context/CrossContextBus.js';
 const panel = new CrossContextBus({net: 'my-app', id: 'panel'});
 const checker = new CrossContextBus({net: 'my-app', id: 'checker'});
 
-// checker side: stamp + post, never throws (bare host, closed bus)
-checker.post(checker.message('checks', 'frame', null, {n}));
+// checker side: one call builds, stamps and posts (bare host, closed bus)
+checker.send('checks', 'frame', null, {n});
 
 // panel side: subscribe one verb table to a channel, unknown verbs warn
 const off = panel.listen(globalThis, 'checks', {
@@ -24,14 +24,17 @@ const off = panel.listen(globalThis, 'checks', {
 // panel side answering: broadcast reaches every peer on the channel,
 // point to point mail names its recipient and nobody else picks it up
 panel.fanout(sources, panel.message('checks', 'set-quality', null, {value: 'high'}));
-panel.post(panel.message('checks', 'ping', 'checker'));
+panel.send('checks', 'ping', 'checker');
 
 // hot loop traffic: count per key, flush one delta per key per turn
 checker.note(key);
 // ...later, once per turn:
 for (const [key, ticks] of checker.drain()) {
-  checker.post(checker.message('checks', 'ticks', null, {key, ticks}));
+  checker.send('checks', 'ticks', null, {key, ticks});
 }
+```
+
+`message` plus `post` stay for the pieces: build or inspect an envelope first, then send it.
 ```
 
 No inherited vocabulary: the constructor requires an explicit `net` and `id`, and throws otherwise. Every other word (channels, verbs, peer ids, stamp field) is yours.

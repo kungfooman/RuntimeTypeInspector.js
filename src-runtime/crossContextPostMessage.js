@@ -9,13 +9,15 @@ import {postToTarget     } from './cross-context/postToTarget.js';
  * `source` id (see `options.runtimeId`), so one panel can attribute rows to
  * the runtime that checked them instead of blending registries silently.
  * A caller-set `source` always wins, so tests and forwarders keep theirs.
+ * Copy-on-stamp in `stampSource`: mail that needs no stamp passes through
+ * by reference, stamped mail travels as a fresh copy, so the caller's
+ * object stays untouched and frozen messages post fine.
  * A missing bus (bare Node) or a broken bus (closed worker) stays silent:
  * reporting must never break the check it reports.
  * @param {...any} args - The arguments.
  */
 function crossContextPostMessage(...args) {
-  const [first] = args;
-  stampSource(first, options.runtimeId);
-  postToTarget(resolvePostTarget(), ...args);
+  const [first, ...rest] = args;
+  postToTarget(resolvePostTarget(), stampSource(first, options.runtimeId), ...rest);
 }
 export {crossContextPostMessage};

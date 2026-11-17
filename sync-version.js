@@ -30,7 +30,11 @@ try {
     commit: gitLog('%H'),
     subject: gitLog('%s'),
   };
-  writeFileSync('src-runtime/version.js',
+  // JSON.stringify emits no trailing comma, but `comma-dangle:
+  // always-multiline` requires one in multiline literals.
+  const literal = JSON.stringify(info, null, 2).replace(/\n}$/, ',\n}');
+  writeFileSync(
+    'src-runtime/version.js',
     '/**\n' +
     ' * Build meta info: one plain object, rewritten by `node sync-version.js`\n' +
     ' * (which `npm run build` runs first). No placeholders, no environment\n' +
@@ -38,8 +42,9 @@ try {
     ' * iframes, REPL, node tests, and foreign bundles that vendor RTI source\n' +
     ' * with their own pipeline.\n' +
     ' */\n' +
-    `const RTI_INFO = ${JSON.stringify(info, null, 2)};\n` +
-    'export {RTI_INFO};\n');
+    `const RTI_INFO = ${literal};\n` +
+    'export {RTI_INFO};\n',
+  );
   console.log(`sync-version: RTI_INFO.version=${version} commit=${info.commit}`);
 } catch (error) {
   console.warn('sync-version: leaving version.js untouched:', error?.message ?? error);

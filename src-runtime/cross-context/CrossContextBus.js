@@ -19,7 +19,7 @@ import {takeKeys          } from './takeKeys.js';
  * id — nobody inherits another project's roles.
  * @example
  * const bus = new CrossContextBus({net: 'my-app', id: 'panel'});
- * bus.post(bus.message('checks', 'frame'));
+ * bus.send('checks', 'frame');
  */
 class CrossContextBus {
   /**
@@ -90,6 +90,23 @@ class CrossContextBus {
    */
   post(message, ...rest) {
     postToTarget(resolvePostTarget(), this.stamp(message), ...rest);
+  }
+  /**
+   * Builds, stamps and posts in one call: the likeable path for the
+   * common case, where no caller owned envelope needs reposting.
+   * `message` plus `post` stay for the pieces (build or inspect first,
+   * then send). Returns the envelope as posted for local bookkeeping.
+   * @param {string} channel - The channel, e.g. `checks`.
+   * @param {string} verb - What happened, e.g. `frame`.
+   * @param {string|null} [to] - Recipient id, or null to broadcast.
+   * @param {object} [payload] - Extra message fields.
+   * @param {...any} rest - Extra arguments riding along untouched.
+   * @returns {object} The envelope as posted.
+   */
+  send(channel, verb, to = null, payload = {}, ...rest) {
+    const message = this.message(channel, verb, to, payload);
+    this.post(message, ...rest);
+    return message;
   }
   /**
    * True when an event is our mail on a channel: same network tag,

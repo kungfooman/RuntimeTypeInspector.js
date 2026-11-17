@@ -125,6 +125,53 @@ function testCustomSourceKey() {
   });
   return message.sender === 'panel' && message.from === undefined;
 }
+function testSendComposesBuildAndPost() {
+  // One call builds, stamps and posts: the likeable path for the common
+  // case. Reuse still flows through `message` plus `post` (build or
+  // inspect first, then send).
+  const parent = {
+    posted: [],
+    postMessage(message) {
+      this.posted.push(message);
+    },
+  };
+  const bus = testBus();
+  return withTargets(parent, {
+    postMessage() {},
+  }, () => {
+    const out = bus.send('checks', 'frame', null, {
+      n: 1,
+    });
+    return (
+      parent.posted.length === 1 &&
+      parent.posted[0] === out &&
+      out.net === 'my-app' &&
+      out.channel === 'checks' &&
+      out.verb === 'frame' &&
+      out.from === 'panel' &&
+      out.to === null &&
+      out.n === 1
+    );
+  });
+}
+function testSendTargetsNamedPeer() {
+  // Point to point mail names its recipient and nobody else picks it up.
+  const parent = {
+    posted: [],
+    postMessage(message) {
+      this.posted.push(message);
+    },
+  };
+  const bus = testBus();
+  return withTargets(parent, undefined, () => {
+    const out = bus.send('checks', 'ping', 'checker');
+    return (
+      parent.posted.length === 1 &&
+      parent.posted[0] === out &&
+      out.to === 'checker'
+    );
+  });
+}
 function testPostStampsAndTargetsParent() {
   // Posting stamps and targets the parent when framed: one call, same object.
   const parent = {
@@ -298,6 +345,8 @@ export const tests = [
   testRequiresExplicitSettings,
   testMessageBuildsEnvelope,
   testMessageBroadcastsByDefault,
+  testSendComposesBuildAndPost,
+  testSendTargetsNamedPeer,
   testStampKeepsCallerStamp,
   testCustomSourceKey,
   testPostStampsAndTargetsParent,

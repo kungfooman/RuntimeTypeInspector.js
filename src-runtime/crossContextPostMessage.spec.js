@@ -59,6 +59,7 @@ export const tests = [
   testBareNodeStaysSilent,
   testThrowingBusStaysSilent,
   testExtraArgsPassThrough,
+  testLeavesCallerUntouched,
 ];
 function testBareNodeStaysSilent() {
   // No message host (bare Node loading the runtime) never throws: the
@@ -121,9 +122,39 @@ function testExtraArgsPassThrough() {
     crossContextPostMessage(msg, 'transfer');
     return (
       got.length === 2 &&
-      got[0] === msg &&
+      got[0] !== msg &&
+      got[0].source === options.runtimeId &&
       got[1] === 'transfer' &&
-      msg.source === options.runtimeId
+      msg.source === undefined
+    );
+  } finally {
+    globalThis.parent = origParent;
+    globalThis.self = origSelf;
+  }
+}
+function testLeavesCallerUntouched() {
+  // The stamp lands on a copy, never on the caller's object: posting a
+  // frozen message works, and reuse after posting stays safe.
+  let got;
+  const origParent = globalThis.parent;
+  const origSelf = globalThis.self;
+  globalThis.parent = undefined;
+  globalThis.self = {
+    postMessage: (sent) => {
+      got = sent;
+    },
+  };
+  try {
+    const msg = Object.freeze({
+      type: 'rti',
+      action: 'addError',
+      destination: 'ui',
+    });
+    crossContextPostMessage(msg);
+    return (
+      got !== msg &&
+      got.source === options.runtimeId &&
+      msg.source === undefined
     );
   } finally {
     globalThis.parent = origParent;
