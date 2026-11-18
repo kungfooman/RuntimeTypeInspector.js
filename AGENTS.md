@@ -16,15 +16,10 @@ only the intended files, and write the message in the established repo style.
 When you believe the issue is 100 percent completed, write `tmp/pr-<id>.md`
 (where `<id>` is the issue number or branch slug). Put `Fixes #<id>`
 on its own line right under the title.
-Format: pedagogical
-pre-text first (pedagogical: bring everyone on the same page by teaching
-the construct, why it exists, and what broke, under a `## Primer` heading), then the normal description
-of everything fixed,
-with file references. The pre-text is for the future reader who lands on
-the PR without the session context; the description is the changelog.
-`tmp/` is git-ignored, so the file never leaks into commits.
-- The description earns its keep with mechanism, not adjectives: every claim
-  names the file, the shape before and after, and the proof (which fixture
+Format: primer, then what is new, then the description of everything fixed, with file references. The primer is for the future reader who lands on the PR without the session context; the what-is-new section tells that reader what the user gets; the description is the changelog. `tmp/` is git-ignored, so the file never leaks into commits.
+- Open with the pedagogical pre-text under a `## Primer` heading: teach the construct, why it exists, and what broke. Round the primer off with a worked demonstration: docs in, emission out, runtime behavior stated call by call (what passes, what warns, which metadata survives and why). Copy the emission verbatim from the working tree (`run-jsdoc.js --emit` on a minimal input), not from memory. The demo is the pedagogical pre-text made concrete: a future reader who never runs the branch should still see exactly what the transpiler does.
+- Follow the primer with a `## What is new` overview, before any mechanism: one list item per user-visible change, in words the user would recognize. Name the control, the setting, the downloaded file, the behavior the user touches ("a `Log entries` number input in the settings menu caps the downloaded file at N entries, newest wins"), never the mechanism behind it. No file internals, no before/after shapes, no proof or counts here; that evidence lives in the description. A reader who stops after this section knows exactly what changed for them. A sentence that only earns its keep with the file names in place belongs in the description, not here.
+- Then the `## Description` of everything fixed, with file references. The description earns its keep with mechanism, not adjectives: every claim names the file, the shape before and after, and the proof (which fixture
   broke, which mutation fails, which counts agree). A sentence that stays
   true when the file names are blanked out is a boring changelog entry:
   delete it and write what actually happened instead. Never restate CI:
@@ -51,7 +46,6 @@ the PR without the session context; the description is the changelog.
   changed, no placeholder, no `(none)`. An empty section is noise that
   trains the reader to skip sections.
 - Cover the net change only, never the intra-branch churn: helpers created and deleted mid-branch, reverted experiments, and renamed-then-merged files are session scaffolding, not changelog. The reader needs the final point of view (what the branch holds versus its base), with each entry naming the surviving files and the proof. A file that never appears in a commit boundary does not appear in the doc.
-- Round the primer off with a worked demonstration: docs in, emission out, runtime behavior stated call by call (what passes, what warns, which metadata survives and why). Copy the emission verbatim from the working tree (`run-jsdoc.js --emit` on a minimal input), not from memory. The demo is the pedagogical pre-text made concrete: a future reader who never runs the branch should still see exactly what the transpiler does.
 
 ## Upstream PRs
 
