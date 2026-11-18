@@ -1,4 +1,4 @@
-import {TypePanel, storedMapCheckWindowCap, storedMapCheckWindowMinTotalMs} from './TypePanel.js';
+import {TypePanel, storedMapCheckWindowCap, storedMapCheckWindowMinTotalMs, storedMaxEventLogSize} from './TypePanel.js';
 import {options    } from './options.js';
 import {breakpoints} from './inspectType.js';
 import {recordCheck, recordMapRide, recordSkip, recordMapScan, recordSetScan, recordArrayScan, recordObjectScan, getCheckStats, resetCheckStats} from './checkStats.js';
@@ -2024,7 +2024,9 @@ function testUnknownActionWarnsInsteadOfThrowing() {
 function testDuplicateDeliveryWarnsOnce() {
   // One object twice is two listeners on one target (e.g. a redundant
   // `parent` forward when `parent === window`), never two failures:
-  // warn once, process unchanged (no silent drops).
+  // warn once, process unchanged (no silent drops). Both deliveries still
+  // bump the row, but the log folds the samish second report into the
+  // first entry instead of logging the same error twice.
   return withPanel((panel) => {
     const prevMode = options.mode;
     options.mode = 'never';
@@ -2058,10 +2060,326 @@ function testDuplicateDeliveryWarnsOnce() {
         warns.length === 1 &&
         !!warnObj &&
         warnObj.hits === 2 &&
-        panel.eventLog.length === 2
+        panel.eventLog.length === 1 &&
+        panel.eventLog[0].hits === 2
       );
     } finally {
       options.mode = prevMode;
+    }
+  });
+}
+/**
+ * Builds one full addError envelope for a loc/name pair, mirroring what
+ * the checking side posts on a first-seen (or mode-changed) failure.
+ * @param {string} loc - String like `WebGLState#setMaterial`.
+ * @param {string} name - Name of the argument.
+ * @param {*} value - The offending value.
+ * @param {string} valueToString - The value preview.
+ * @param {string[]} strings - The validator messages.
+ * @returns {object} The message event payload wrapper.
+ */
+function fullAddError(loc, name, value, valueToString, strings) {
+  return {
+    data: {
+      type: 'rti',
+      destination: 'ui',
+      action: 'addError',
+      value,
+      expect: 'number',
+      loc,
+      name,
+      valueToString,
+      strings,
+      extras: [],
+      key: `${loc}-${name}`,
+      stack: ['Error', 'at setMaterial (app.js:1:1)'],
+    },
+  };
+}
+function testSamishFullReportsFoldIntoOneLogEntry() {
+  // One check failing with alternating values (false, undefined, false for
+  // one argument) used to log every mode flip as its own entry; now the
+  // samish reports fold into the stored entry like the row already does:
+  // one entry, the latest failure visible, hits following the row.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      const key = 'L7-samish';
+      panel.addError(fullAddError('L7', 'samish', false, 'false', ['false fails']));
+      panel.addError(fullAddError('L7', 'samish', undefined, 'undef', ['undefined fails']));
+      panel.addError(fullAddError('L7', 'samish', false, 'false', ['false fails']));
+      const warnObj = panel.warnings[key];
+      return (
+        !!warnObj &&
+        warnObj.hits === 3 &&
+        panel.eventLog.length === 1 &&
+        panel.eventLog[0].key === key &&
+        panel.eventLog[0].hits === 3 &&
+        panel.eventLog[0].valueToString === 'false' &&
+        panel.eventLog[0].messages.join() === 'false fails'
+      );
+    } finally {
+      options.mode = prevMode;
+    }
+  });
+}
+function testRepeatDeltaSyncsFoldedLogHits() {
+  // A coalesced repeat tick bumps the row without logging; the folded log
+  // entry still follows so the single entry reports the true fire count.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      const key = 'L7-repeat';
+      panel.addError(fullAddError('L7', 'repeat', false, 'false', ['false fails']));
+      panel.addError({
+        data: {
+          type: 'rti',
+          destination: 'ui',
+          action: 'addError',
+          key,
+          repeat: true,
+          ticks: 41,
+        },
+      });
+      const warnObj = panel.warnings[key];
+      return (
+        !!warnObj &&
+        warnObj.hits === 42 &&
+        panel.eventLog.length === 1 &&
+        panel.eventLog[0].hits === 42
+      );
+    } finally {
+      options.mode = prevMode;
+    }
+  });
+}
+function testDistinctKeysLogSeparately() {
+  // Folding is per key: two different checks still log two entries, and a
+  // re-report of the first folds into its own slot without touching order.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      panel.addError(fullAddError('L8', 'first', 1, '1', ['one fails']));
+      panel.addError(fullAddError('L8', 'second', 2, '2', ['two fails']));
+      panel.addError(fullAddError('L8', 'first', 3, '3', ['three fails']));
+      return (
+        panel.eventLog.length === 2 &&
+        panel.eventLog[0].key === 'L8-first' &&
+        panel.eventLog[0].valueToString === '3' &&
+        panel.eventLog[0].hits === 2 &&
+        panel.eventLog[1].key === 'L8-second'
+      );
+    } finally {
+      options.mode = prevMode;
+    }
+  });
+}
+function testValuesModeKeepsOneEntryPerValue() {
+  // `values` folding keeps alternating failures side by side instead of
+  // collapsing them: false, undefined, false lands two slots, and cycling
+  // back to false reuses its own slot with content refreshed and hits
+  // accumulated — the row still counts every firing.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      panel.setLogMode('values');
+      const key = 'L7-values';
+      panel.addError(fullAddError('L7', 'values', false, 'false', ['false fails']));
+      panel.addError(fullAddError('L7', 'values', undefined, 'undef', ['undefined fails']));
+      panel.addError(fullAddError('L7', 'values', false, 'false', ['false fails']));
+      const warnObj = panel.warnings[key];
+      return (
+        !!warnObj &&
+        warnObj.hits === 3 &&
+        panel.eventLog.length === 2 &&
+        panel.eventLog[0].key === key &&
+        panel.eventLog[0].valueToString === 'false' &&
+        panel.eventLog[0].hits === 2 &&
+        panel.eventLog[1].key === key &&
+        panel.eventLog[1].valueToString === 'undef' &&
+        panel.eventLog[1].hits === 1
+      );
+    } finally {
+      options.mode = prevMode;
+      panel.setLogMode('one');
+    }
+  });
+}
+function testFullModeLogsEveryReport() {
+  // `full` skips folding entirely: every report lands its own entry with
+  // its own single firing, mirroring the pre-fold log for full history.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      panel.setLogMode('full');
+      const key = 'L7-full';
+      panel.addError(fullAddError('L7', 'full', false, 'false', ['false fails']));
+      panel.addError(fullAddError('L7', 'full', undefined, 'undef', ['undefined fails']));
+      const warnObj = panel.warnings[key];
+      return (
+        !!warnObj &&
+        warnObj.hits === 2 &&
+        panel.eventLog.length === 2 &&
+        panel.eventLog[0].valueToString === 'false' &&
+        panel.eventLog[0].hits === 1 &&
+        panel.eventLog[1].valueToString === 'undef' &&
+        panel.eventLog[1].hits === 1
+      );
+    } finally {
+      options.mode = prevMode;
+      panel.setLogMode('one');
+    }
+  });
+}
+function testLogModeButtonsFlipFolding() {
+  // The toolbar button stays exactly like main (`Download log`): only the
+  // settings-menu select switches the folding, and the log header names it
+  // for the reader.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      if (findButtonByLabel(panel.toolbar, 'full') || findButtonByLabel(panel.toolbar, 'values')) {
+        return false;
+      }
+      const download = findButtonByLabel(panel.toolbar, 'Download log');
+      const fresh = !!download && panel.logMode === 'one' && download === panel.buttonDownloadLog;
+      if (!fresh) {
+        return false;
+      }
+      const opts = panel.selectLogMode.children.map((_) => _.text ?? _.textContent).join();
+      if (opts !== 'one,values,full') {
+        return false;
+      }
+      panel.selectLogMode.value = 'values';
+      panel.selectLogMode.onchange();
+      const values = panel.logMode === 'values' &&
+        panel.buttonDownloadLog.textContent === 'Download log';
+      if (!values) {
+        return false;
+      }
+      const hinted = panel.getLogMeta().llmHint.includes('Log mode is `values`');
+      panel.setLogMode('bogus');
+      const kept = panel.logMode === 'values' && panel.selectLogMode.value === 'values';
+      return values && hinted && kept;
+    } finally {
+      options.mode = prevMode;
+    }
+  });
+}
+function testModeSwitchRefoldsAccumulatedLog() {
+  // The 4.2 MB pattern: `full` accumulates every report unfolded, then
+  // switching back to `one` collapses what is already logged, so the next
+  // download carries one entry per key instead of the whole history.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      panel.setLogMode('full');
+      const key = 'L7-reswitch';
+      panel.addError(fullAddError('L7', 'reswitch', false, 'false', ['false fails']));
+      panel.addError(fullAddError('L7', 'reswitch', undefined, 'undef', ['undefined fails']));
+      panel.addError(fullAddError('L7', 'reswitch', false, 'false', ['false fails']));
+      if (panel.eventLog.length !== 3) {
+        return false;
+      }
+      panel.setLogMode('one');
+      return (
+        panel.eventLog.length === 1 &&
+        panel.eventLog[0].key === key &&
+        panel.eventLog[0].valueToString === 'false' &&
+        panel.eventLog[0].hits === 3
+      );
+    } finally {
+      options.mode = prevMode;
+      panel.setLogMode('one');
+    }
+  });
+}
+function testFullOverflowToOneKeepsEveryKey() {
+  // The empty-download pattern: `full` past the cap used to evict quiet
+  // keys off the front while hot keys hogged the log, so switching back to
+  // `one` downloaded two entries for 114 rows. Now every key's latest
+  // entry survives the cap, and the refold stamps the exact row counts.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    const prevCap = panel.maxEventLogSize;
+    options.mode = 'never';
+    try {
+      panel.maxEventLogSize = 3;
+      panel.setLogMode('full');
+      panel.addError(fullAddError('L7', 'quiet', 1, '1', ['one fails']));
+      panel.addError(fullAddError('L7', 'hot', false, 'false', ['false fails']));
+      panel.addError(fullAddError('L7', 'hot', undefined, 'undef', ['undefined fails']));
+      panel.addError(fullAddError('L7', 'hot', false, 'false', ['false fails']));
+      panel.addError(fullAddError('L7', 'hot', undefined, 'undef', ['undefined fails']));
+      const quietKey = 'L7-quiet';
+      const hotKey = 'L7-hot';
+      if (panel.eventLog.length !== 3 || findEntry(panel, quietKey) === undefined) {
+        return false;
+      }
+      panel.setLogMode('one');
+      if (panel.eventLog.length !== 2) {
+        return false;
+      }
+      const quiet = findEntry(panel, quietKey);
+      const hot = findEntry(panel, hotKey);
+      const warnQuiet = panel.warnings[quietKey];
+      const warnHot = panel.warnings[hotKey];
+      return (
+        quiet !== undefined &&
+        quiet.hits === warnQuiet.hits &&
+        warnQuiet.hits === 1 &&
+        hot !== undefined &&
+        hot.hits === warnHot.hits &&
+        warnHot.hits === 4
+      );
+    } finally {
+      panel.maxEventLogSize = prevCap;
+      options.mode = prevMode;
+      panel.setLogMode('one');
+    }
+  });
+  function findEntry(target, key) {
+    return target.eventLog.find((entry) => entry.key === key);
+  }
+}
+function testFullCapDropsOldestDistinctKeys() {
+  // The ceiling holds even with no duplicates to fold: three distinct keys
+  // at cap 2 keep the two newest, so the download never exceeds the knob.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      const prevCap = panel.maxEventLogSize;
+      panel.maxEventLogSize = 2;
+      panel.setLogMode('full');
+      panel.addError(fullAddError('L7', 'first', 1, '1', ['one fails']));
+      panel.addError(fullAddError('L7', 'second', 2, '2', ['two fails']));
+      panel.addError(fullAddError('L7', 'third', 3, '3', ['three fails']));
+      const kept = (
+        panel.eventLog.length === 2 &&
+        panel.eventLog[0].key === 'L7-second' &&
+        panel.eventLog[1].key === 'L7-third'
+      );
+      if (!kept) {
+        return false;
+      }
+      const meta = panel.getLogMeta().counts;
+      return (
+        meta.events === 2 &&
+        meta.loggedReports === 3 &&
+        meta.distinctWarnings === 3
+      );
+    } finally {
+      options.mode = prevMode;
+      panel.maxEventLogSize = storedMaxEventLogSize();
+      panel.setLogMode('one');
     }
   });
 }
@@ -2692,6 +3010,45 @@ function testStoredTweakSurvivesReloadStaleHealsCodeWins() {
     }
   });
 }
+function testLogSizeInputClampsAndRefolds() {
+  // A user log size trims the live log on the spot (duplicates first, every
+  // key keeps its latest entry) and persists stamped, while garbage input
+  // never clobbers the live value.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      panel.setLogMode('full');
+      panel.addError(fullAddError('L7', 'quiet', 1, '1', ['one fails']));
+      panel.addError(fullAddError('L7', 'hot', false, 'false', ['false fails']));
+      panel.addError(fullAddError('L7', 'hot', undefined, 'undef', ['undefined fails']));
+      panel.addError(fullAddError('L7', 'hot', false, 'false', ['false fails']));
+      if (panel.eventLog.length !== 4) {
+        return false;
+      }
+      panel.inputLogSize.value = '2';
+      panel.inputLogSize.onchange();
+      const quietKey = 'L7-quiet';
+      const hotKey = 'L7-hot';
+      const trimmed = panel.maxEventLogSize === 2 &&
+        panel.eventLog.length === 2 &&
+        panel.eventLog.some((entry) => entry.key === quietKey) &&
+        panel.eventLog.some((entry) => entry.key === hotKey) &&
+        localStorage.getItem('rti-log-size') === '2|1000';
+      panel.inputLogSize.value = '';
+      panel.inputLogSize.onchange();
+      const kept = panel.maxEventLogSize === 2;
+      panel.inputLogSize.value = '-5';
+      panel.inputLogSize.onchange();
+      const noNegative = panel.maxEventLogSize === 2;
+      return trimmed && kept && noNegative;
+    } finally {
+      options.mode = prevMode;
+      panel.maxEventLogSize = storedMaxEventLogSize();
+      panel.setLogMode('one');
+    }
+  });
+}
 function testResetStorageForgetsPanelSettings() {
   // RESET is the fresh test button: every `rti-*` key goes, URL hash and
   // live options stay. A stale budget entry is gone, so the next stored
@@ -2862,6 +3219,41 @@ function testLogMetaCarriesWindowSettings() {
       options.mapCheckWindowCap = prevCap;
       options.mapCheckWindowMinTotalMs = prevMin;
       options.checkStats = prevStats;
+    }
+  });
+}
+function testLogMetaCountsKeptOfReported() {
+  // The download header says what the file holds: folded entries kept of
+  // the full reports received, so "5 of 114" reads honestly next to the
+  // capped `errors` array. Clear resets the received count with the log.
+  return withPanel((panel) => {
+    const prevMode = options.mode;
+    options.mode = 'never';
+    try {
+      panel.setLogMode('full');
+      panel.addError(fullAddError('L7', 'first', 1, '1', ['one fails']));
+      panel.addError(fullAddError('L7', 'second', 2, '2', ['two fails']));
+      panel.setLogMode('one');
+      const meta = panel.getLogMeta();
+      const counts = (
+        meta.counts.events === 2 &&
+        meta.counts.loggedReports === 2 &&
+        meta.counts.distinctWarnings === 2 &&
+        meta.counts.logSize === panel.maxEventLogSize
+      );
+      if (!counts) {
+        return false;
+      }
+      panel.clear();
+      const cleared = panel.getLogMeta().counts;
+      return (
+        cleared.events === 0 &&
+        cleared.loggedReports === 0 &&
+        cleared.distinctWarnings === 0
+      );
+    } finally {
+      options.mode = prevMode;
+      panel.setLogMode('one');
     }
   });
 }
@@ -3475,6 +3867,15 @@ const tests = [
   testClearResetsReportedKeys,
   testUnknownActionWarnsInsteadOfThrowing,
   testDuplicateDeliveryWarnsOnce,
+  testSamishFullReportsFoldIntoOneLogEntry,
+  testRepeatDeltaSyncsFoldedLogHits,
+  testDistinctKeysLogSeparately,
+  testValuesModeKeepsOneEntryPerValue,
+  testFullModeLogsEveryReport,
+  testLogModeButtonsFlipFolding,
+  testModeSwitchRefoldsAccumulatedLog,
+  testFullOverflowToOneKeepsEveryKey,
+  testFullCapDropsOldestDistinctKeys,
   testDatalessMessageIgnored,
   testTransmittedStackPreferred,
   testMissingStackFallsBack,
@@ -3493,6 +3894,7 @@ const tests = [
   testPageshowRecoversStrandedPanel,
   testWindowedCheckboxWiresOptionStorageAndWorker,
   testWindowCapInputClampsAndForwards,
+  testLogSizeInputClampsAndRefolds,
   testWindowMinTotalInputClampsAndForwards,
   testCheckStatsCheckboxWiresOptionStorageAndWorker,
   testStoredTweakSurvivesReloadStaleHealsCodeWins,
@@ -3503,6 +3905,7 @@ const tests = [
   testCheckStatsResetButtonEmptiesTable,
   testAllRowsAlwaysRender,
   testLogMetaCarriesWindowSettings,
+  testLogMetaCountsKeptOfReported,
   testStatsWinHiddenByDefault,
   testStatsButtonSitsInToolbarAndOpensWindow,
   testStatsButtonShowsSkippedCount,

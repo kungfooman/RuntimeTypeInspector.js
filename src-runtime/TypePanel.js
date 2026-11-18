@@ -6,6 +6,13 @@ import {reportedKeys        } from "./reportedKeys.js";
 import {isUiEvent           } from "./rti-messages/isUiEvent.js";
 import {panelMessageKey     } from "./rti-messages/panelMessageKey.js";
 import {applyRepeatDelta    } from "./rti-messages/applyRepeatDelta.js";
+import {findLogEntry        } from "./rti-messages/findLogEntry.js";
+import {repeatTickCount     } from "./rti-messages/repeatTickCount.js";
+import {evictLogOverflow    } from "./rti-messages/evictLogOverflow.js";
+import {latestEntriesByKey  } from "./rti-messages/latestEntriesByKey.js";
+import {readRowHits         } from "./rti-messages/readRowHits.js";
+import {refoldLogEntries    } from "./rti-messages/refoldLogEntries.js";
+import {upsertLogEntry      } from "./rti-messages/upsertLogEntry.js";
 import {dispatchUiAction    } from "./rti-messages/dispatchUiAction.js";
 import {fanoutToTargets     } from "./cross-context/fanoutToTargets.js";
 import {workerSettingMessage} from "./rti-messages/workerSettingMessage.js";
@@ -896,6 +903,9 @@ function storedMapCheckWindowCap() {
 function storedMapCheckWindowMinTotalMs() {
   return storedNumberKnob('rti-window-min-total-ms', options.mapCheckWindowMinTotalMs, (n) => n >= 0);
 }
+function storedMaxEventLogSize() {
+  return storedNumberKnob('rti-log-size', 1000, (n) => n >= 1);
+}
 function isCheckStats() {
   const tmp = localStorage.getItem('rti-check-stats');
   return tmp === null ? options.checkStats === true : tmp === 'true';
@@ -1022,8 +1032,21 @@ class TypePanel {
   warnings = {};
   /** @type {object[]} */
   eventLog = [];
-  maxEventLogSize = 1000;
+  /** @type {number} Full reports the panel received this session, including evicted ones. */
+  loggedReports = 0;
+  /** @type {Map<string, object>} */
+  latestLogByKey = new Map();
+  maxEventLogSize = storedMaxEventLogSize();
   maxStackFrames = 20;
+  /**
+   * How the downloaded log folds same-key full reports: `one` keeps a
+   * single entry per check with the latest failure, `values` keeps one
+   * entry per distinct value a check failed with, `full` logs every report
+   * unfolded. Panel-local only (no worker traffic depends on it): the
+   * Download button shows it, a settings-menu select switches it.
+   * @type {'one'|'values'|'full'}
+   */
+  logMode = 'one';
   /**
    * Last message object delivered: the same object twice means two listeners
    * on one target (e.g. a host forwarding `parent` when `parent === window`),
@@ -1195,6 +1218,9 @@ class TypePanel {
     this.spanWindowMinTotal = Span({
       innerText: ' Min scan time (ms)',
     });
+    this.spanLogSize = Span({
+      innerText: ' Log entries',
+    });
     this.spanCheckStats = Span({
       innerText: ' Collect check stats',
     });
@@ -1275,6 +1301,45 @@ class TypePanel {
     this.buttonDownloadLog = Button({
       textContent: 'Download log',
       onclick: () => this.downloadLog(),
+    });
+    this.option_log_one = Option({
+      text: 'one',
+    });
+    this.option_log_values = Option({
+      text: 'values',
+    });
+    this.option_log_full = Option({
+      text: 'full',
+    });
+    this.selectLogMode = Select(
+      {
+        title: 'Log folding: one entry per check, one per distinct value, or every report unfolded',
+        onchange: () => this.setLogMode(this.selectLogMode.value),
+      },
+      this.option_log_one,
+      this.option_log_values,
+      this.option_log_full,
+    );
+    this.inputLogSize = Input({
+      type: 'number',
+      value: String(this.maxEventLogSize),
+      min: '1',
+      step: '1',
+      title: 'Downloaded log entries ceiling: newest entries win, oldest fall out when over cap',
+      onchange: () => {
+        const n = Math.floor(Number(this.inputLogSize.value));
+        if (Number.isFinite(n) && n >= 1) {
+          this.maxEventLogSize = n;
+          rememberNumberKnob('rti-log-size', n, 1000);
+          this.eventLog = refoldLogEntries({
+            log: this.eventLog,
+            mode: this.logMode,
+            maxSize: this.maxEventLogSize,
+            hitsByKey: readRowHits(this.warnings),
+          });
+          this.latestLogByKey = latestEntriesByKey(this.eventLog);
+        }
+      },
     });
     this.buttonPopout = Button({
       textContent: '⧉',
@@ -1378,6 +1443,18 @@ class TypePanel {
           className: 'rti-setting-row',
         },
         Label({}, this.inputCheckStats, this.spanCheckStats),
+      ),
+      Div(
+        {
+          className: 'rti-setting-row',
+        },
+        Label({}, 'Log folding: ', this.selectLogMode),
+      ),
+      Div(
+        {
+          className: 'rti-setting-row',
+        },
+        Label({}, this.spanLogSize, this.inputLogSize),
       ),
       Div(
         {
@@ -1519,6 +1596,7 @@ class TypePanel {
     inputWindowCap.onchange();
     inputWindowMinTotal.onchange();
     inputCheckStats.onchange();
+    this.setLogMode('one');
     const spamTypeReports = localStorage.getItem('rti-spam-type-reports');
     select.value = options.mode;
     if (spamTypeReports !== null) {
@@ -3133,6 +3211,8 @@ class TypePanel {
       delete warnings[key];
     }
     this.eventLog.length = 0;
+    this.latestLogByKey = new Map();
+    this.loggedReports = 0;
     // Fresh session, fresh numbers: the counter is session state like the
     // rows, or the badge keeps bragging about dead runs while the table
     // only shows the latest ones.
@@ -3155,6 +3235,30 @@ class TypePanel {
     return captureStackLines(this.maxStackFrames);
   }
   /**
+   * Switches how the downloaded log folds same-key full reports. The
+   * settings-menu select owns the choice: the toolbar Download button stays
+   * exactly like main (`Download log`). Unknown modes are ignored: a
+   * miswired caller must not blank the log folding. Switching refolds what
+   * is already logged, so `full` then `one` still downloads the folded file
+   * instead of everything accumulated so far.
+   * @param {'one'|'values'|'full'} mode - The log folding to apply.
+   * @returns {void}
+   */
+  setLogMode(mode) {
+    if (mode !== 'one' && mode !== 'values' && mode !== 'full') {
+      return;
+    }
+    this.logMode = mode;
+    this.eventLog = refoldLogEntries({
+      log: this.eventLog,
+      mode,
+      maxSize: this.maxEventLogSize,
+      hitsByKey: readRowHits(this.warnings),
+    });
+    this.latestLogByKey = latestEntriesByKey(this.eventLog);
+    this.selectLogMode.value = mode;
+  }
+  /**
    * Human- and LLM-oriented header for the downloaded log: not every entry is
    * a bug (strict-null and Infinity hits depend on the settings below), so the
    * header records exactly what produced this file.
@@ -3165,6 +3269,15 @@ class TypePanel {
     const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : undefined;
     const hints = [
       'This is a RuntimeTypeInspector error log. Each entry in `errors` is one failed runtime type check.',
+    ];
+    if (this.logMode === 'full') {
+      hints.push('Log mode is `full`: every report is logged, so one hot check may appear many times; each entry counts its own firings in `hits`.');
+    } else if (this.logMode === 'values') {
+      hints.push('Log mode is `values`: entries are deduplicated by `key` (`loc`-`name` plus the reporting runtime) plus the offending value, so one check appears once per distinct value it failed with; `hits` counts the firings folded into each entry.');
+    } else {
+      hints.push('Log mode is `one`: entries are deduplicated by `key` (`loc`-`name` plus the reporting runtime), so one check appears once with its latest failure; `hits` counts how often it fired.');
+    }
+    hints.push(
       '`meta.settings` matters: `strictNullChecks: false` means null/undefined pass every type,',
       '`checkInfinity: false` means +-Infinity passes `number`.',
       '`exactObjects: true` means excess keys fail (stricter than tsc, which only checks fresh literals).',
@@ -3173,7 +3286,7 @@ class TypePanel {
       '`checkStats: false` turns the per call site hotspot recording off.',
       'Those are settings, not bugs.',
       '`meta.rti` identifies the RTI build: version is always present, commit/subject are stamped by `npm run build` (null from unstamped source).',
-    ];
+    );
     if (options.projectVersion === null || options.projectVersion === undefined) {
       hints.push('`meta.projectVersion` is NOT set — pass `projectVersion` to your RTI bundler plugin (rollup/webpack loader option) or call `setProjectVersion(...)` so logs identify the app build.');
     }
@@ -3198,7 +3311,9 @@ class TypePanel {
       counts: {
         totalValidations: options.count,
         distinctWarnings: Object.keys(this.warnings).length,
+        loggedReports: this.loggedReports,
         events: this.eventLog.length,
+        logSize: this.maxEventLogSize,
       },
       llmHint: [...hints,
         'Fix the underlying JSDoc/type or value; `stack` points at the check site, `loc`/`name` at the argument.'].join(' '),
@@ -3590,9 +3705,16 @@ class TypePanel {
       // no log churn. The totals counter needs no touch: the checking side
       // already incremented it once per failure before the tick was noted.
       // Unknown keys (panel reloaded after the report) have no row to bump.
-      if (applyRepeatDelta(this.warnings, event.data, options.runtimeId) === null) {
+      const bumped = applyRepeatDelta(this.warnings, event.data, options.runtimeId);
+      if (bumped === null) {
         this.updateErrorCount();
         return;
+      }
+      // The folded log entry stays truthful: the latest fold for the key
+      // absorbs the coalesced delta, so each entry reports its own firings.
+      const folded = findLogEntry(this.eventLog, bumped);
+      if (folded !== undefined) {
+        folded.hits = (folded.hits ?? 0) + repeatTickCount(event.data);
       }
       this.updateErrorCount();
       return;
@@ -3605,11 +3727,16 @@ class TypePanel {
     // Keep a capped, serializable log for download/AI context. Recorded
     // first so a UI rendering failure below can't lose the error. Values
     // are snapshotted bounded instead of referenced, so later mutation and
-    // unserializable shapes can't corrupt the log.
+    // unserializable shapes can't corrupt the log. How same-key ("samish")
+    // full reports land depends on `logMode`: `one` folds every re-report
+    // into the stored entry in place, `values` folds per distinct offending
+    // value (cycling back to a seen value reuses its slot), `full` logs
+    // every report unfolded. The fold inherits the accumulated `hits`, and
+    // each firing adds one below, so an entry counts its own reports.
     // Prefer the checking-side stack (real call site, captured synchronously
     // at the check); fall back to a local capture for senders that predate
     // it (indexed-access/division warnings) or run older runtimes.
-    this.eventLog.push({
+    const record = {
       timestamp: Date.now(),
       loc,
       name,
@@ -3622,10 +3749,19 @@ class TypePanel {
       detail,
       message: msg,
       stack: stack ?? this.captureStack(),
-    });
-    if (this.eventLog.length > this.maxEventLogSize) {
-      this.eventLog.splice(0, this.eventLog.length - this.maxEventLogSize);
+    };
+    let stored;
+    if (this.logMode === 'full') {
+      this.eventLog.push(record);
+      this.latestLogByKey.set(key, record);
+      evictLogOverflow(this.eventLog, this.maxEventLogSize, new Set(this.latestLogByKey.values()));
+      stored = record;
+    } else {
+      const variant = this.logMode === 'values' ? valueToString : undefined;
+      stored = upsertLogEntry(this.eventLog, record, this.maxEventLogSize, variant);
+      this.latestLogByKey.set(key, stored);
     }
+    this.loggedReports++;
     let warnObj = this.warnings[key];
     if (!warnObj) {
       warnObj = new Warning(
@@ -3652,6 +3788,7 @@ class TypePanel {
     warnObj.onCompare = () => this.openComparator(warnObj);
     warnObj.event = event;
     warnObj.hits++;
+    stored.hits = (stored.hits ?? 0) + 1;
     warnObj.warn(msg, {expect, value, valueToString}, ...extras);
     refreshWarning(warnObj, {
       value,
@@ -3725,6 +3862,7 @@ export {
   refreshWarning,
   storedMapCheckWindowCap,
   storedMapCheckWindowMinTotalMs,
+  storedMaxEventLogSize,
   storedNumberKnob,
   rememberNumberKnob,
 };
