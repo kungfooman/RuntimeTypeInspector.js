@@ -8,6 +8,10 @@ import {panelMessageKey     } from "./rti-messages/panelMessageKey.js";
 import {applyRepeatDelta    } from "./rti-messages/applyRepeatDelta.js";
 import {findLogEntry        } from "./rti-messages/findLogEntry.js";
 import {repeatTickCount     } from "./rti-messages/repeatTickCount.js";
+import {evictLogOverflow    } from "./rti-messages/evictLogOverflow.js";
+import {latestEntriesByKey  } from "./rti-messages/latestEntriesByKey.js";
+import {readRowHits         } from "./rti-messages/readRowHits.js";
+import {refoldLogEntries    } from "./rti-messages/refoldLogEntries.js";
 import {upsertLogEntry      } from "./rti-messages/upsertLogEntry.js";
 import {dispatchUiAction    } from "./rti-messages/dispatchUiAction.js";
 import {fanoutToTargets     } from "./cross-context/fanoutToTargets.js";
@@ -19,7 +23,6 @@ import {RTI_INFO            } from "./version.js";
 import {formatCompare       } from "./formatCompare.js";
 import {compareText         } from "./compareText.js";
 import {copyText            } from "./copyText.js";
-import {formatBytes         } from "./formatBytes.js";
 import {logFilename         } from "./logFilename.js";
 import {collectFailPaths, explainMismatch} from "./explainMismatch.js";
 import {isElementValue} from "./isElementValue.js";
@@ -900,6 +903,9 @@ function storedMapCheckWindowCap() {
 function storedMapCheckWindowMinTotalMs() {
   return storedNumberKnob('rti-window-min-total-ms', options.mapCheckWindowMinTotalMs, (n) => n >= 0);
 }
+function storedMaxEventLogSize() {
+  return storedNumberKnob('rti-log-size', 1000, (n) => n >= 1);
+}
 function isCheckStats() {
   const tmp = localStorage.getItem('rti-check-stats');
   return tmp === null ? options.checkStats === true : tmp === 'true';
@@ -1026,7 +1032,11 @@ class TypePanel {
   warnings = {};
   /** @type {object[]} */
   eventLog = [];
-  maxEventLogSize = 1000;
+  /** @type {number} Full reports the panel received this session, including evicted ones. */
+  loggedReports = 0;
+  /** @type {Map<string, object>} */
+  latestLogByKey = new Map();
+  maxEventLogSize = storedMaxEventLogSize();
   maxStackFrames = 20;
   /**
    * How the downloaded log folds same-key full reports: `one` keeps a
@@ -1208,6 +1218,9 @@ class TypePanel {
     this.spanWindowMinTotal = Span({
       innerText: ' Min scan time (ms)',
     });
+    this.spanLogSize = Span({
+      innerText: ' Log entries',
+    });
     this.spanCheckStats = Span({
       innerText: ' Collect check stats',
     });
@@ -1286,10 +1299,8 @@ class TypePanel {
       onclick: () => this.clear(),
     });
     this.buttonDownloadLog = Button({
-      textContent: 'Download log [one]',
-      title: 'Download the log in the shown folding',
+      textContent: 'Download log',
       onclick: () => this.downloadLog(),
-      onmouseenter: () => this.previewLogSize(),
     });
     this.option_log_one = Option({
       text: 'one',
@@ -1309,6 +1320,27 @@ class TypePanel {
       this.option_log_values,
       this.option_log_full,
     );
+    this.inputLogSize = Input({
+      type: 'number',
+      value: String(this.maxEventLogSize),
+      min: '1',
+      step: '1',
+      title: 'Downloaded log entries ceiling: newest entries win, oldest fall out when over cap',
+      onchange: () => {
+        const n = Math.floor(Number(this.inputLogSize.value));
+        if (Number.isFinite(n) && n >= 1) {
+          this.maxEventLogSize = n;
+          rememberNumberKnob('rti-log-size', n, 1000);
+          this.eventLog = refoldLogEntries({
+            log: this.eventLog,
+            mode: this.logMode,
+            maxSize: this.maxEventLogSize,
+            hitsByKey: readRowHits(this.warnings),
+          });
+          this.latestLogByKey = latestEntriesByKey(this.eventLog);
+        }
+      },
+    });
     this.buttonPopout = Button({
       textContent: '⧉',
       title: 'Pop out to own window',
@@ -1417,6 +1449,12 @@ class TypePanel {
           className: 'rti-setting-row',
         },
         Label({}, 'Log folding: ', this.selectLogMode),
+      ),
+      Div(
+        {
+          className: 'rti-setting-row',
+        },
+        Label({}, this.spanLogSize, this.inputLogSize),
       ),
       Div(
         {
@@ -3173,6 +3211,8 @@ class TypePanel {
       delete warnings[key];
     }
     this.eventLog.length = 0;
+    this.latestLogByKey = new Map();
+    this.loggedReports = 0;
     // Fresh session, fresh numbers: the counter is session state like the
     // rows, or the badge keeps bragging about dead runs while the table
     // only shows the latest ones.
@@ -3195,10 +3235,12 @@ class TypePanel {
     return captureStackLines(this.maxStackFrames);
   }
   /**
-   * Switches how the downloaded log folds same-key full reports. The mode
-   * rides on the Download button itself (`Download log [one]`): no extra
-   * toolbar chrome for one button's behavior. Unknown modes are ignored:
-   * a miswired caller must not blank the log folding.
+   * Switches how the downloaded log folds same-key full reports. The
+   * settings-menu select owns the choice: the toolbar Download button stays
+   * exactly like main (`Download log`). Unknown modes are ignored: a
+   * miswired caller must not blank the log folding. Switching refolds what
+   * is already logged, so `full` then `one` still downloads the folded file
+   * instead of everything accumulated so far.
    * @param {'one'|'values'|'full'} mode - The log folding to apply.
    * @returns {void}
    */
@@ -3207,32 +3249,14 @@ class TypePanel {
       return;
     }
     this.logMode = mode;
-    this.buttonDownloadLog.textContent = `Download log [${mode}]`;
+    this.eventLog = refoldLogEntries({
+      log: this.eventLog,
+      mode,
+      maxSize: this.maxEventLogSize,
+      hitsByKey: readRowHits(this.warnings),
+    });
+    this.latestLogByKey = latestEntriesByKey(this.eventLog);
     this.selectLogMode.value = mode;
-  }
-  /**
-   * Fresh hover preview for the Download button: the actual serialized log
-   * size plus entry count, so the folding choice reads in bytes before the
-   * click. Hover-only: serializing per error arrival would tax the hot
-   * loop the fold exists to keep quiet. Never throws; a failed measure
-   * keeps the previous title.
-   * @returns {void}
-   */
-  previewLogSize() {
-    try {
-      const text = this.exportLog();
-      let size = text.length;
-      try {
-        size = new Blob([text]).size;
-      } catch {
-        // No Blob (bare Node without globals): string length approximates.
-      }
-      const count = this.eventLog.length;
-      const noun = count === 1 ? 'entry' : 'entries';
-      this.buttonDownloadLog.title = `Download log [${this.logMode}]: ${formatBytes(size)}, ${count} ${noun}`;
-    } catch {
-      // Keep the previous title; the click still downloads.
-    }
   }
   /**
    * Human- and LLM-oriented header for the downloaded log: not every entry is
@@ -3287,7 +3311,9 @@ class TypePanel {
       counts: {
         totalValidations: options.count,
         distinctWarnings: Object.keys(this.warnings).length,
+        loggedReports: this.loggedReports,
         events: this.eventLog.length,
+        logSize: this.maxEventLogSize,
       },
       llmHint: [...hints,
         'Fix the underlying JSDoc/type or value; `stack` points at the check site, `loc`/`name` at the argument.'].join(' '),
@@ -3727,14 +3753,15 @@ class TypePanel {
     let stored;
     if (this.logMode === 'full') {
       this.eventLog.push(record);
-      if (this.eventLog.length > this.maxEventLogSize) {
-        this.eventLog.splice(0, this.eventLog.length - this.maxEventLogSize);
-      }
+      this.latestLogByKey.set(key, record);
+      evictLogOverflow(this.eventLog, this.maxEventLogSize, new Set(this.latestLogByKey.values()));
       stored = record;
     } else {
       const variant = this.logMode === 'values' ? valueToString : undefined;
       stored = upsertLogEntry(this.eventLog, record, this.maxEventLogSize, variant);
+      this.latestLogByKey.set(key, stored);
     }
+    this.loggedReports++;
     let warnObj = this.warnings[key];
     if (!warnObj) {
       warnObj = new Warning(
@@ -3835,6 +3862,7 @@ export {
   refreshWarning,
   storedMapCheckWindowCap,
   storedMapCheckWindowMinTotalMs,
+  storedMaxEventLogSize,
   storedNumberKnob,
   rememberNumberKnob,
 };

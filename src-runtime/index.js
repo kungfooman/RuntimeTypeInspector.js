@@ -21,7 +21,6 @@ export * from './customChecks.js';
 export * from './checkStats.js';
 export * from './describeValue.js';
 export * from './formatMapKey.js';
-export * from './formatBytes.js';
 export * from './previewValue.js';
 export * from './formatCompare.js';
 export * from './compareText.js';

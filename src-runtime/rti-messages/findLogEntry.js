@@ -13,15 +13,24 @@
  */
 function findLogEntry(log, key, variant) {
   try {
-    for (let i = log.length - 1; i >= 0; i--) {
-      const entry = log[i];
+    const entries = Array.isArray(log) ? log : [];
+    for (let i = entries.length - 1; i >= 0; i--) {
+      const entry = entries[i];
       if (entry === null || entry === undefined) {
         continue;
       }
-      if (entry.key !== key) {
+      let entryKey;
+      let entryVariant;
+      try {
+        entryKey = entry.key;
+        entryVariant = entry.valueToString;
+      } catch {
         continue;
       }
-      if (variant !== undefined && entry.valueToString !== variant) {
+      if (entryKey !== key) {
+        continue;
+      }
+      if (variant !== undefined && entryVariant !== variant) {
         continue;
       }
       return entry;
