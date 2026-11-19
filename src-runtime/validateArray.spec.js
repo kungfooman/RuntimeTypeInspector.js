@@ -44,6 +44,19 @@ function testExtraPropsPass() {
   extra.note = 'x';
   return validateType(extra, numbers(), 'loc', 'name', true, warn, 0) === true;
 }
+function testBareArrayPassesAnyContents() {
+  // Bare `{array}` names no element type (cannon.js `ConvexPolyhedron`
+  // documents `@param {array} points`): tsc reads it as `any[]`, so any
+  // dense contents pass and, critically, validation never crashes on the
+  // missing element type.
+  return validateType([1, 'x', {}], expandType('array'), 'loc', 'name', true, warn, 0) === true &&
+    validateType([], expandType('array'), 'loc', 'name', true, warn, 0) === true;
+}
+function testBareArrayStillRejectsNonArrays() {
+  // The container check stays: only the element loop is skipped.
+  return validateType('nope', expandType('array'), 'loc', 'name', true, warn, 0) === false &&
+    validateType({}, expandType('array'), 'loc', 'name', true, warn, 0) === false;
+}
 const tests = [
   testDensePasses,
   testWrongElementFails,
@@ -53,5 +66,7 @@ const tests = [
   testFrozenPasses,
   testTypedArraysFail,
   testExtraPropsPass,
+  testBareArrayPassesAnyContents,
+  testBareArrayStillRejectsNonArrays,
 ];
 export {tests};

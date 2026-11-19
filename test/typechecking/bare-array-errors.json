@@ -1,0 +1,39 @@
+{
+  "throws": [
+    {
+      "loc": "bareCapital",
+      "name": "a",
+      "value": 123
+    },
+    {
+      "loc": "bareUnion",
+      "name": "a",
+      "value": "nope"
+    },
+    {
+      "loc": "bareNested",
+      "name": "a",
+      "value": [
+        [
+          1
+        ],
+        42
+      ]
+    },
+    {
+      "loc": "bareTuple",
+      "name": "a",
+      "value": [
+        [
+          1
+        ],
+        "nope"
+      ]
+    },
+    {
+      "loc": "bare",
+      "name": "a",
+      "value": 123
+    }
+  ]
+}
