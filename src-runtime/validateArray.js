@@ -17,6 +17,12 @@ function validateArray(value, expect, loc, name, critical, warn, depth) {
     return false;
   }
   const {elementType} = expect;
+  if (elementType === undefined) {
+    // Bare `{array}` carries no element type (tsc reads it as `any[]`):
+    // the container check above is the whole verdict, so there is no
+    // per-element recursion that would crash on an `undefined` type.
+    return true;
+  }
   const n = value.length;
   // some that not validate -> type error
   // todo unit test for arrays with holes

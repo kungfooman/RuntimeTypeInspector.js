@@ -60,6 +60,10 @@
     "output": "./test/typechecking/arguments-output.mjs"
   },
   {
+    "input": "./test/typechecking/bare-array-input.mjs",
+    "output": "./test/typechecking/bare-array-output.mjs"
+  },
+  {
     "input": "./test/typechecking/builtin-utilities-input.mjs",
     "output": "./test/typechecking/builtin-utilities-output.mjs"
   },

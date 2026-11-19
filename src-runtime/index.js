@@ -30,6 +30,7 @@ export * from './globalMessageHost.js';
 export * from './instantiateReference.js';
 export * from './canonicalKey.js';
 export * from './canonicalize.js';
+export * from './chainMatchesName.js';
 export * from './deepEqualType.js';
 export * from './registeredNameOf.js';
 export * from './resolveTemplateLiteralCandidates.js';
