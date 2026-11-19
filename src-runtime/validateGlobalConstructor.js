@@ -1,4 +1,5 @@
-import {validators} from "./validators.js";
+import {validators      } from "./validators.js";
+import {chainMatchesName} from "./chainMatchesName.js";
 /**
  * Probe: true when `value` is an instance of the globally-resolvable
  * constructor named by `expect` — platform constructors beyond the class
@@ -26,9 +27,10 @@ function validateGlobalConstructor(value, expect, loc, name, critical, warn, dep
   // Realm-safe in two steps: same-realm instances match by prototype chain
   // (subclasses included), while live-shared cross-realm instances fail
   // `instanceof` (each realm owns the constructor) but still carry the
-  // universal constructor name. Nominal classes never reach this probe
-  // with a same-named foreign twin, so the name fallback cannot confuse
-  // two different user classes.
+  // chain: the foreign `Array.prototype` link names `Array`, and a
+  // foreign subclass names it one link further up. Nominal classes never
+  // reach this probe with a same-named foreign twin, so the chain walk
+  // cannot confuse two different user classes.
   try {
     if (value instanceof ctor) {
       return true;
@@ -36,10 +38,6 @@ function validateGlobalConstructor(value, expect, loc, name, critical, warn, dep
   } catch {
     return false;
   }
-  try {
-    return value?.constructor?.name === type;
-  } catch {
-    return false;
-  }
+  return chainMatchesName(value, type);
 }
 export {validateGlobalConstructor};
