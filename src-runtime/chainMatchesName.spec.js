@@ -34,6 +34,19 @@ function testForgedConstructorFails() {
   };
   return chainMatchesName(forged, arrayName) === false;
 }
+// A bundler-renamed link (`Equation$6`) matches its JSDoc spelling: the
+// comparison strips the trailing `$<digits>` Rollup appends to duplicates.
+function testRenamedLinkMatches() {
+  function BaseEquation() {}
+  function ChildEquation() {}
+  Object.defineProperty(BaseEquation, 'name', {value: 'Equation$6'});
+  Object.defineProperty(ChildEquation, 'name', {value: 'ContactEquation$4'});
+  ChildEquation.prototype = new BaseEquation();
+  ChildEquation.prototype.constructor = ChildEquation;
+  return chainMatchesName(new ChildEquation(), 'Equation') === true &&
+    chainMatchesName(new ChildEquation(), 'ContactEquation') === true &&
+    chainMatchesName(new ChildEquation(), 'FrictionEquation') === false;
+}
 // Null-prototype objects and nullish values have no chain to walk.
 function testNullishFailsClosed() {
   return chainMatchesName(Object.create(null), arrayName) === false &&
@@ -46,6 +59,7 @@ const tests = [
   testForeignSubclassMatches,
   testForeignPlainMatches,
   testForgedConstructorFails,
+  testRenamedLinkMatches,
   testNullishFailsClosed,
 ];
 export {tests};

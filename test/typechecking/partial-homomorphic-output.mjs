@@ -114,7 +114,7 @@ class Color {
     this.a = 1;
   }
 }
-registerClass(Color);
+registerClass(Color, 'Color');
 registerTypedef('Color', {
   "type": "object",
   "properties": {
@@ -942,7 +942,7 @@ class Animal {
     this.legs = 0;
   }
 }
-registerClass(Animal);
+registerClass(Animal, 'Animal');
 registerTypedef('Animal', {
   "type": "object",
   "properties": {
@@ -957,7 +957,7 @@ class Dog extends Animal {
     this.bark = 'woof';
   }
 }
-registerClass(Dog);
+registerClass(Dog, 'Dog');
 registerTypedef('Dog', {
   "type": "object",
   "properties": {

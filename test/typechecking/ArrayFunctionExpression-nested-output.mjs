@@ -26,7 +26,7 @@ class XrManager {
     };
   }
 }
-registerClass(XrManager);
+registerClass(XrManager, 'XrManager');
 registerTypedef('XrManager', {
   "type": "object",
   "properties": {

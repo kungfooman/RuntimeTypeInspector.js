@@ -75,7 +75,7 @@ class Component {
     this.enabled = true;
   }
 }
-registerClass(Component);
+registerClass(Component, 'Component');
 registerTypedef('Component', {
   "type": "object",
   "properties": {
@@ -90,7 +90,7 @@ class Color {
     this.a = 1;
   }
 }
-registerClass(Color);
+registerClass(Color, 'Color');
 registerTypedef('Color', {
   "type": "object",
   "properties": {
@@ -124,7 +124,7 @@ class CameraComponent extends Component {
     this._clearColor = value;
   }
 }
-registerClass(CameraComponent);
+registerClass(CameraComponent, 'CameraComponent');
 registerTypedef('CameraComponent', {
   "type": "object",
   "properties": {
@@ -156,7 +156,7 @@ class LightComponent extends Component {
     this._intensity = value;
   }
 }
-registerClass(LightComponent);
+registerClass(LightComponent, 'LightComponent');
 registerTypedef('LightComponent', {
   "type": "object",
   "properties": {
@@ -245,7 +245,7 @@ class Entity {
     return [type, data];
   }
 }
-registerClass(Entity);
+registerClass(Entity, 'Entity');
 registerTypedef('Entity', {
   "type": "object",
   "properties": {

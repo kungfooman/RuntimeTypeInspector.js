@@ -187,7 +187,7 @@ class Scripts {
     return label;
   }
 }
-registerClass(Scripts);
+registerClass(Scripts, 'Scripts');
 registerTypedef('Scripts', {
   "type": "object",
   "properties": {

@@ -154,7 +154,7 @@ class TakesString {
     this.x = x;
   }
 }
-registerClass(TakesString);
+registerClass(TakesString, 'TakesString');
 
 /**
  * @param {string} s - Plain string.

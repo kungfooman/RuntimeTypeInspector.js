@@ -43,11 +43,11 @@ class Pool {
     this._size = size;
   }
 }
-registerClass(Pool);
+registerClass(Pool, 'Pool');
 class ContactPoint {
 
 }
-registerClass(ContactPoint);
+registerClass(ContactPoint, 'ContactPoint');
 const pool = new Pool(ContactPoint, 5); // ok
 
 // @ts-expect-error: 42 is no constructor function

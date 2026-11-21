@@ -6,4 +6,4 @@ class VertexIteratorAccessor {
     }
   }
 }
-registerClass(VertexIteratorAccessor);
+registerClass(VertexIteratorAccessor, 'VertexIteratorAccessor');

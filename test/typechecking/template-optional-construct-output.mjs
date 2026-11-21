@@ -42,11 +42,11 @@ class MaybePool {
     this._c = constructorFunc;
   }
 }
-registerClass(MaybePool);
+registerClass(MaybePool, 'MaybePool');
 class ContactPoint {
 
 }
-registerClass(ContactPoint);
+registerClass(ContactPoint, 'ContactPoint');
 const absent = new MaybePool(); // ok: optional
 
 const present = new MaybePool(ContactPoint); // ok
