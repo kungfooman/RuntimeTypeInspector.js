@@ -17,7 +17,7 @@ class Test {
     this._abc = val;
   }
 }
-registerClass(Test);
+registerClass(Test, 'Test');
 registerTypedef('Test', {
   "type": "object",
   "properties": {

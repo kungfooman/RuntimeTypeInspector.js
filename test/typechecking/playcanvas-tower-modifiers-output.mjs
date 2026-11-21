@@ -101,7 +101,7 @@ registerTypedef('ReqBox', {
 class Component {
 
 }
-registerClass(Component);
+registerClass(Component, 'Component');
 class Color {
   constructor() {
     this.r = 0.5;
@@ -110,7 +110,7 @@ class Color {
     this.a = 1;
   }
 }
-registerClass(Color);
+registerClass(Color, 'Color');
 registerTypedef('Color', {
   "type": "object",
   "properties": {
@@ -217,7 +217,7 @@ class CameraComponent extends Component {
     return this._label;
   }
 }
-registerClass(CameraComponent);
+registerClass(CameraComponent, 'CameraComponent');
 registerTypedef('CameraComponent', {
   "type": "object",
   "properties": {

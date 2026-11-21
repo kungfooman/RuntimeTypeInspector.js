@@ -5,7 +5,7 @@ class Test {
     yield 3;
   }
 }
-registerClass(Test);
+registerClass(Test, 'Test');
 const test = new Test();
 const ret = [...test];
 console.log('ret', ret);

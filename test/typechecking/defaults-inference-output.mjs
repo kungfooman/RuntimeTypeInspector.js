@@ -26,7 +26,7 @@ class Vec3 {
     this.z = z;
   }
 }
-registerClass(Vec3);
+registerClass(Vec3, 'Vec3');
 
 /**
  * @param {string} name - The name.

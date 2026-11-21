@@ -311,7 +311,7 @@ registerTypedef('ComponentOptions', {
 class Component {
 
 }
-registerClass(Component);
+registerClass(Component, 'Component');
 class CameraComponent extends Component {
   constructor() {
     super();
@@ -320,7 +320,7 @@ class CameraComponent extends Component {
     this.clearColor = [0, 0, 0, 1];
   }
 }
-registerClass(CameraComponent);
+registerClass(CameraComponent, 'CameraComponent');
 registerTypedef('CameraComponent', {
   "type": "object",
   "properties": {
@@ -336,7 +336,7 @@ class LightComponent extends Component {
     this.intensity = 1;
   }
 }
-registerClass(LightComponent);
+registerClass(LightComponent, 'LightComponent');
 registerTypedef('LightComponent', {
   "type": "object",
   "properties": {
@@ -375,7 +375,7 @@ class Entity {
     return [name, options];
   }
 }
-registerClass(Entity);
+registerClass(Entity, 'Entity');
 registerTypedef('Entity', {
   "type": "object",
   "properties": {

@@ -134,7 +134,7 @@ class OverloadFields {
     return this.#privateAction;
   }
 }
-registerClass(OverloadFields);
+registerClass(OverloadFields, 'OverloadFields');
 registerTypedef('OverloadFields', {
   "type": "object",
   "properties": {

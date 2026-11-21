@@ -36,4 +36,4 @@ class Tokenizer {
     return new this(...info);
   }
 }
-registerClass(Tokenizer);
+registerClass(Tokenizer, 'Tokenizer');

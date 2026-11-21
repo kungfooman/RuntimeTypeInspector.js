@@ -8,11 +8,13 @@ import {nominalClassOf} from "./nominalClassOf.js";
 import {getTypeKeys, resolveUtilityShape} from "./getTypeKeys.js";
 import {instantiateReference} from "./instantiateReference.js";
 import {extendsCheck, resolveForExtends, stripLiteral} from "./evaluateCondition.js";
-import {evaluateCondition} from "./evaluateCondition.js";
-import {deepEqualType    } from "./deepEqualType.js";
-import {atomStripOptional} from "./atomStripOptional.js";
-import {snapshotMatches  } from "./snapshotMatches.js";
-import {isArrayValue     } from "./isArrayValue.js";
+import {evaluateCondition } from "./evaluateCondition.js";
+import {deepEqualType     } from "./deepEqualType.js";
+import {atomStripOptional } from "./atomStripOptional.js";
+import {snapshotMatches   } from "./snapshotMatches.js";
+import {snapshotTag       } from "./snapshotTag.js";
+import {stripBundlerSuffix} from "./stripBundlerSuffix.js";
+import {isArrayValue      } from "./isArrayValue.js";
 /**
  * Follows strings through typedefs (and materializes mappings) to object
  * shapes, distributing over unions like homomorphic mapped types do.
@@ -238,7 +240,37 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
   const {
     name: refName,
     args,
+    ref: refCtor,
   } = expect;
+  // Live binding fast path (no type arguments): the transpiler emitted
+  // the in-scope constructor next to the name, so minified/bundled
+  // renames don't matter — identity survives every rename. With type
+  // arguments the reference takes the normal path below (the generic
+  // instantiation still needs to check the arguments).
+  if (typeof refCtor === 'function' && !args?.length) {
+    try {
+      if (value instanceof refCtor) {
+        return true;
+      }
+    } catch {
+      // Exotic values (revoked proxies) fail instanceof: name paths decide.
+    }
+    // A genuine instance of a *different* class with the same shape must
+    // not pass: nominal means identity, not structure. Only continue to
+    // the name paths for snapshots (prototypes stripped in transit) —
+    // live values that fail instanceof are done.
+    if (value !== null && (typeof value === 'object' || typeof value === 'function')) {
+      try {
+        if (Object.getPrototypeOf(value) !== Object.prototype && snapshotTag(value) === undefined) {
+          return false;
+        }
+      } catch {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
   const firstArg = args?.[0];
   switch (refName) {
     case 'ArrayLike':
@@ -1329,7 +1361,12 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
     // `$type` tags gain nothing a hand-built shape would not already give.
     return snapshotMatches(value, refName);
   }
-  if (value && value.constructor && value.constructor.name === refName) {
+  const refCtorName = value && value.constructor ? value.constructor.name : undefined;
+  // Bundlers append `$<digits>` to duplicate locals (`ContactEquation$4`
+  // for JSDoc `ContactEquation`), so the suffix strips before comparing.
+  const refSpelled = refCtorName === refName ||
+    (typeof refCtorName === 'string' && stripBundlerSuffix(refCtorName) === refName);
+  if (refSpelled) {
     return true;
   }
   if (typeof globalThis !== 'undefined') {

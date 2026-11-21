@@ -59,7 +59,7 @@ class Component {
     this.enabled = true;
   }
 }
-registerClass(Component);
+registerClass(Component, 'Component');
 registerTypedef('Component', {
   "type": "object",
   "properties": {
@@ -90,7 +90,7 @@ class CameraComponent extends Component {
     this._fov = value;
   }
 }
-registerClass(CameraComponent);
+registerClass(CameraComponent, 'CameraComponent');
 registerTypedef('CameraComponent', {
   "type": "object",
   "properties": {
@@ -122,7 +122,7 @@ class LightComponent extends Component {
     this._intensity = value;
   }
 }
-registerClass(LightComponent);
+registerClass(LightComponent, 'LightComponent');
 registerTypedef('LightComponent', {
   "type": "object",
   "properties": {
@@ -229,7 +229,7 @@ class Entity {
     return /** @type {any} */ ([new Component()]);
   }
 }
-registerClass(Entity);
+registerClass(Entity, 'Entity');
 registerTypedef('Entity', {
   "type": "object",
   "properties": {
@@ -300,7 +300,12 @@ function takeCamera(cam) {
  */
 
 function takeComponent(comp) {
-  if (!inspectType(comp, "Component", 'takeComponent', 'comp')) {
+  if (!inspectType(comp, {
+    "type": "reference",
+    "name": "Component",
+    "args": [],
+    "ref": Component
+  }, 'takeComponent', 'comp')) {
     youCanAddABreakpointHere();
   }
   return comp;

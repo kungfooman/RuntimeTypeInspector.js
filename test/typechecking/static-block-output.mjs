@@ -28,7 +28,7 @@ class Vec3 {
     this.x = x;
   }
 }
-registerClass(Vec3);
+registerClass(Vec3, 'Vec3');
 const vec = new Vec3();
 vec.x; // ok
 

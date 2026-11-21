@@ -10,7 +10,7 @@
 class MyFloat32Array extends Float32Array {
 
 }
-registerClass(MyFloat32Array);
+registerClass(MyFloat32Array, 'MyFloat32Array');
 
 /**
  * @param {Float32Array} data - The data.

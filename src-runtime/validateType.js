@@ -33,8 +33,11 @@ import {validateTypeof             } from "./validateTypeof.js";
 import {validateTypedef            } from "./validateTypedef.js";
 import {validateUnion              } from "./validateUnion.js";
 import {createTypeFromIndexedAccess} from "./createTypeFromIndexedAccess.js";
+import {chainMatchesName           } from "./chainMatchesName.js";
+import {globallyVisible            } from "./globallyVisible.js";
 import {atomUnwrap                 } from "./atomUnwrap.js";
 import {snapshotMatches            } from "./snapshotMatches.js";
+import {stripBundlerSuffix         } from "./stripBundlerSuffix.js";
 import {validators                 } from "./validators.js";
 import {installWalkTimers          } from "./plugin-walk-timers/installWalkTimers.js";
 /**
@@ -281,6 +284,10 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
   //  console.warn('type !== null already, so this can only be false');
   //  return false;
   //} else
+  const ctorName = value && value.constructor ? value.constructor.name : undefined;
+  // Bundlers append `$<digits>` to duplicate locals (`ContactEquation$4`
+  // for JSDoc `ContactEquation`), so the suffix strips before comparing.
+  const spelled = ctorName === type || (typeof ctorName === 'string' && stripBundlerSuffix(ctorName) === type);
   if (type[0] === '"' && type[type.length - 1] === '"') {
     const typeSlice = type.slice(1, -1);
     const ret = value === typeSlice;
@@ -295,7 +302,7 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
       warn(`Expected literal ${type}.`, {value, expect});
     }
     return ret;
-  } else if (value && value.constructor && value.constructor.name === type) {
+  } else if (spelled) {
     // Camera, Float32Array etc.
     return true;
   } else if (classes[type]) {
@@ -326,6 +333,19 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
         return value instanceof windowClass;
       }
     }
+  }
+  if (typeof type === 'string' && value && (typeof value === 'object' || typeof value === 'function') &&
+    !globallyVisible(type) && chainMatchesName(value, type)) {
+    // Old-style hierarchies (cannon.js `X.prototype = new Base()`) never
+    // register their constructors, and bundlers rename the survivors
+    // (`ContactEquation$4`), so neither the direct-name check nor the
+    // registry branch can see them. The chain walk reads real prototype
+    // links (forgeries fail: see chainMatchesName) with suffix tolerance,
+    // so a renamed subclass still satisfies its JSDoc base spelling.
+    // Platform names never reach this walk: they own the overridable
+    // lookup gate above (blinding it fails closed), and the walk must not
+    // reopen what the gate closed.
+    return true;
   }
   warn('unchecked', {value, type, loc, name});
   return false;

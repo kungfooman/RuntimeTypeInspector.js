@@ -13,7 +13,7 @@ class Box {
     this.v = 1;
   }
 }
-registerClass(Box);
+registerClass(Box, 'Box');
 registerTypedef('Box', {
   "type": "object",
   "properties": {

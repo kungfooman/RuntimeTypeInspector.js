@@ -25,4 +25,4 @@ class ShaderProcessor {
     return {};
   }
 }
-registerClass(ShaderProcessor);
+registerClass(ShaderProcessor, 'ShaderProcessor');

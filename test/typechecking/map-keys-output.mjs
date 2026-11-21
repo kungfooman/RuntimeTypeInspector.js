@@ -12,7 +12,7 @@ class Texture {
     this.label = 'x';
   }
 }
-registerClass(Texture);
+registerClass(Texture, 'Texture');
 registerTypedef('Texture', {
   "type": "object",
   "properties": {

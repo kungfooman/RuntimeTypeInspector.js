@@ -20,7 +20,7 @@ class ConditionBase {
     this.name = 'x';
   }
 }
-registerClass(ConditionBase);
+registerClass(ConditionBase, 'ConditionBase');
 registerTypedef('ConditionBase', {
   "type": "object",
   "properties": {
@@ -35,7 +35,7 @@ class ConditionWidget extends ConditionBase {
     this.size = 1;
   }
 }
-registerClass(ConditionWidget);
+registerClass(ConditionWidget, 'ConditionWidget');
 registerTypedef('ConditionWidget', {
   "type": "object",
   "properties": {

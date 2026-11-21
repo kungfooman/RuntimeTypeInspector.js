@@ -69,7 +69,7 @@ class BitPacker {
     return storage;
   }
 }
-registerClass(BitPacker);
+registerClass(BitPacker, 'BitPacker');
 registerTypedef('BitPacker', {
   "type": "object",
   "properties": {
