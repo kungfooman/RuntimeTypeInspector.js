@@ -1,7 +1,7 @@
 import {expandType} from '../src-transpiler/expandType.js';
 import {registerTypedef, typedefs, typedefTemplates} from './registerTypedef.js';
 import {registerClass, classes} from './registerClass.js';
-import {options      } from './options.js';
+import {markFresh    } from './freshObjects.js';
 import {buildTypeTree} from './typeTree.js';
 import {suggestKey   } from './suggestKey.js';
 function reset() {
@@ -239,11 +239,11 @@ function testTreeExtrasOmit() {
   registerTypedef('User', expandType('{id: number, name: string, email: string}'));
   const tree = buildTypeTree(
     expandType('Pick<User, "name" | "email">'),
-    {
+    markFresh({
       name: 1,
       email: 'a',
       id: 2,
-    },
+    }),
     'userInfo',
     undefined,
     'userInfo',
@@ -264,10 +264,10 @@ function testTreeExtrasPlain() {
   reset();
   const tree = buildTypeTree(
     expandType('{fov: number}'),
-    {
+    markFresh({
       fov: 60,
       fovv: 1,
-    },
+    }),
     'options',
     undefined,
     'options',
@@ -297,28 +297,22 @@ function testAbsentOptionalUnionPasses() {
 }
 function testTreeExtrasUnmarkedWhenLenient() {
   reset();
-  const prev = options.exactObjects;
-  options.exactObjects = false;
-  try {
-    const tree = buildTypeTree(
-      expandType('{fov: number}'),
-      {
-        fov: 60,
-        fovv: 1,
-      },
-      'options',
-      undefined,
-      'options',
-    );
-    const extra = tree.children?.find((_) => _.kind === 'extra');
-    return (
-      !!extra &&
-      extra.passes === undefined &&
-      !extra.fix
-    );
-  } finally {
-    options.exactObjects = prev;
-  }
+  const tree = buildTypeTree(
+    expandType('{fov: number}'),
+    {
+      fov: 60,
+      fovv: 1,
+    },
+    'options',
+    undefined,
+    'options',
+  );
+  const extra = tree.children?.find((_) => _.kind === 'extra');
+  return (
+    !!extra &&
+    extra.passes === undefined &&
+    !extra.fix
+  );
 }
 /**
  * A `Set` with a failing member admits its shape: the root reads `'shape'`

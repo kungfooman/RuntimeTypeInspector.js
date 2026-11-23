@@ -6,6 +6,7 @@ import {classes              } from './registerClass.js';
 import {mergedClassShape     } from './classShape.js';
 import {createTypeFromMapping} from './createTypeFromMapping.js';
 import {recurse, validators} from './validators.js';
+import {isFresh} from './freshObjects.js';
 import {options} from './options.js';
 import {describeExcess, snip} from './explainMismatch.js';
 import {formatMapKey} from './formatMapKey.js';
@@ -421,12 +422,12 @@ function buildObjectNode(expect, value, node, sub) {
       };
       node.children = keys.map(childNode);
       // Excess actual keys render too — otherwise the tree hides half the
-      // errors the Diagnosis lists. Marks follow Exact objects: unmarked
-      // when excess passes validation.
-      // Fail closed when the option is missing: a deleted or undefined
-      // flag must not silently widen validation to accept excess keys.
-      const exact = options.exactObjects === true;
-      const offNote = '(informational: Exact objects is off, so this passes validation)';
+      // errors the Diagnosis lists. Marks follow freshness and provenance:
+      // fresh extras and deliberately removed (Omit) keys fail validation,
+      // stale or merely unselected (Pick) extras render informational.
+      const fresh = isFresh(childValue);
+      const offNote = '(informational: stale value, so this passes validation)';
+      const removedNote = '(informational: not validated as excess)';
       for (const key of Object.keys(childValue)) {
         if (expect.properties[key] !== undefined || typeof key !== 'string') {
           continue;
@@ -435,14 +436,15 @@ function buildObjectNode(expect, value, node, sub) {
         const knownKeys = Object.keys(expect.properties);
         const origin = expect.__provenance ?? null;
         const rendered = describeExcess(childPath(key), key, actual, knownKeys, origin);
+        const strict = fresh || origin?.removed === true;
         node.children.push({
           label: `${key}: ${actual}`,
           kind: 'extra',
           summary: actual,
           full: actual,
-          passes: exact ? false : undefined,
-          fix: exact ? rendered.fix : undefined,
-          detail: exact ? rendered.detail : `${rendered.detail} ${offNote}`,
+          passes: strict ? false : undefined,
+          fix: strict ? rendered.fix : undefined,
+          detail: strict ? rendered.detail : `${rendered.detail} ${origin ? removedNote : offNote}`,
         });
       }
       // A real object with failing properties: right shape, bad contents.

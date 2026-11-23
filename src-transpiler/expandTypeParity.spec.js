@@ -1,6 +1,7 @@
 import {expandType       } from './expandType.js';
 import {expandTypeBabelTS} from './expandTypeBabelTS.js';
 import {expandTypeDepFree} from './expandTypeDepFree.js';
+import {markFresh        } from '../src-runtime/freshObjects.js';
 import {validateType     } from '../src-runtime/validateType.js';
 import {deepEqualType    } from '../src-runtime/deepEqualType.js';
 const warn = () => undefined;
@@ -243,14 +244,16 @@ function testJSDocAllParity() {
 function testBabelIndexSignatureValidates() {
   // End-to-end: Babel-parsed `{[n: number]: string}` validates canonical
   // numeric keys and rejects non-numeric ones, like the TS-parsed shape.
+  // Index signatures opt out of the weak-type gate, so stale probes reading
+  // `{0: 'hi'}` validate structurally; only fresh excess fails.
   const expect = expandTypeBabelTS('{[n: number]: string}');
   const rightEntry = {
     0: 'a',
   };
   const passesRight = validateType(rightEntry, expect, 'test', 'a', true, warn, 0);
-  const wrongEntry = {
+  const wrongEntry = markFresh({
     a: 'x',
-  };
+  });
   const acceptsWrong = validateType(wrongEntry, expect, 'test', 'a', true, warn, 0);
   if (passesRight === false || acceptsWrong) {
     return false;

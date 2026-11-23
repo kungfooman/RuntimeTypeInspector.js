@@ -1,4 +1,5 @@
 import {validateType} from './validateType.js';
+import {markFresh   } from './freshObjects.js';
 import {registerTypedef, typedefs} from './registerTypedef.js';
 import {registerClass} from './registerClass.js';
 import {expandType   } from '../src-transpiler/expandType.js';
@@ -482,7 +483,9 @@ function testNestedPartialPickValidates() {
 }
 // End to end: the merged tower materializes every key (class-derived plus
 // overrides), accepts `Color` and array forms, and rejects wrong types,
-// unknown options and bad component names. The outer conditional decides.
+// unknown options and bad component names. Unknown options fail fresh on
+// excess and stale on the weak-type gate (`tsc --strict` TS2559), exactly
+// like tsc. The outer conditional decides.
 function testMergedTowerEndToEnd() {
   prepareCameraTower();
   const keys = getTypeKeys(expandType('CamMerged<"camera">'), warn);
@@ -521,6 +524,9 @@ function testMergedTowerEndToEnd() {
     {
       nope: 1,
     },
+    markFresh({
+      nope: 1,
+    }),
   ];
   for (const value of failing) {
     if (validateType(value, expect, 'loc', 'data', true, warn, 0)) {
@@ -535,7 +541,8 @@ function testMergedTowerEndToEnd() {
 // intersection (not the `CamOptions` mapping, which flattens members
 // during materialization and never reaches per-member validation).
 // Override keys pass through the Omit member; keys no member declares
-// still fail; wrong types fail both.
+// still fail fresh on excess and stale on the weak-type gate; wrong types
+// fail both.
 function testMergedIntersectionWholeExcess() {
   prepareCameraTower();
   const expect = expandType('CamMerged<"camera">');
@@ -553,7 +560,9 @@ function testMergedIntersectionWholeExcess() {
       return false;
     }
   }
-  const failing = [{
+  const failing = [markFresh({
+    nope: 1,
+  }), {
     nope: 1,
   }, {
     clearColor: 'x',

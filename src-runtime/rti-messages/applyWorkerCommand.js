@@ -47,7 +47,6 @@ function applyWorkerCommand(event, {breakpoints, options}) {
     return true;
   }
   if (action === 'exactObjects') {
-    options.exactObjects = data.value === true;
     return true;
   }
   if (action === 'windowedChecks') {

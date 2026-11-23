@@ -1,6 +1,7 @@
-import {parse        } from '@babel/parser';
-import {Asserter     } from './Asserter.js';
-import {parserOptions} from './parserOptions.js';
+import {parse            } from '@babel/parser';
+import {Asserter         } from './Asserter.js';
+import {parserOptions    } from './parserOptions.js';
+import {markFreshCallArgs} from './markFreshCallArgs.js';
 /**
  * Simple facade which does all the processing. Processes the input
  * source string, adding runtime type checks based on JSDoc comments.
@@ -22,6 +23,9 @@ function addTypeChecks(src, options) {
     const asserter = new Asserter(options);
     const ast = parse(src, parserOptions);
     // Must be called before getHeader since it's keeping an eye open for JSX elements.
+    // Fresh literals wrap on the AST before emission, so closers, probe
+    // metadata and member suffixes survive by construction.
+    markFreshCallArgs(ast);
     const source = asserter.toSource(ast);
     const out = asserter.getHeader(ast) + source;
     return out;

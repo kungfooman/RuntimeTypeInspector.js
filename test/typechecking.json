@@ -108,6 +108,10 @@
     "output": "./test/typechecking/empty-object-output.mjs"
   },
   {
+    "input": "./test/typechecking/excess-freshness-input.mjs",
+    "output": "./test/typechecking/excess-freshness-output.mjs"
+  },
+  {
     "input": "./test/typechecking/export-input.mjs",
     "output": "./test/typechecking/export-output.mjs"
   },

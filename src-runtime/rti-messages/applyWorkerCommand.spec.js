@@ -11,7 +11,6 @@ function freshDeps() {
       enabled: true,
       strictNullChecks: true,
       checkInfinity: true,
-      exactObjects: true,
       windowedChecks: false,
       mapCheckWindowCap: 8,
       mapCheckWindowMinTotalMs: 0,
@@ -93,7 +92,7 @@ function testOptionValues() {
     stats === true &&
     deps.options.checkStats === true &&
     exact === true &&
-    deps.options.exactObjects === true
+    deps.options.exactObjects === undefined
   );
 }
 function testWindowCapsGuarded() {
