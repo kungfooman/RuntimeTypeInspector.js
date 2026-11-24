@@ -34,9 +34,48 @@ function testStaleToleratesNothing() {
   };
   return isToleratedSpreadKey(value, 'a') === false && isToleratedSpreadKey(null, 'a') === false;
 }
+// We want: primitives to pass through the spread marker untouched, because
+// only objects can carry excess keys and the wrapper must never change values.
+function testSpreadMarkPassesPrimitivesThrough() {
+  return markFreshSpread(1, ['a']) === 1 && markFreshSpread('s') === 's' && markFreshSpread(null) === null && markFreshSpread(undefined) === undefined;
+}
+// We want: garbage key lists to degrade to tolerating everything, because
+// the written set derives from the transpiled shape and a missing array
+// means no key was provably written.
+function testSpreadMarkWithoutKeysToleratesAll() {
+  const value = markFreshSpread({
+    a: 1,
+  });
+  return isFresh(value) === true && isToleratedSpreadKey(value, 'a') === true && isToleratedSpreadKey(value, 'zzz') === true;
+}
+// We want: revoked proxies to read stale and tolerated-nothing, because
+// every probe traps and fail-closed keeps validation narrowing, never widening.
+function testRevokedProxyReadsStale() {
+  const target = markFreshSpread({
+    a: 1,
+  }, ['a']);
+  const {proxy, revoke} = Proxy.revocable(target, {});
+  revoke();
+  return isFresh(proxy) === false && isToleratedSpreadKey(proxy, 'b') === false;
+}
+// We want: double marking to keep the latest written set, because each
+// literal marks at its own call site and re-marking replaces the record.
+function testSpreadMarkOverwritesWrittenSet() {
+  const value = {
+    a: 1,
+    b: 2,
+  };
+  markFreshSpread(value, ['a', 'b']);
+  markFreshSpread(value, ['a']);
+  return isToleratedSpreadKey(value, 'a') === false && isToleratedSpreadKey(value, 'b') === true;
+}
 export const tests = [
   testSpreadMarkKeepsFresh,
   testSpreadKeyTolerated,
   testPlainMarkToleratesNothing,
   testStaleToleratesNothing,
+  testSpreadMarkPassesPrimitivesThrough,
+  testSpreadMarkWithoutKeysToleratesAll,
+  testRevokedProxyReadsStale,
+  testSpreadMarkOverwritesWrittenSet,
 ];
