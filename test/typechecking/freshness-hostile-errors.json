@@ -62,6 +62,38 @@
       "value": {
         "zzz": 9
       }
+    },
+    {
+      "loc": "FreshBox#constructor",
+      "name": "o",
+      "value": {
+        "x": 1,
+        "extra": 9
+      }
+    },
+    {
+      "loc": "takeFresh",
+      "name": "o",
+      "value": {
+        "x": 1,
+        "extra": 10
+      }
+    },
+    {
+      "loc": "takeFresh",
+      "name": "o",
+      "value": {
+        "x": 1,
+        "extra": 11
+      }
+    },
+    {
+      "loc": "takeMap",
+      "name": "m",
+      "value": {
+        "x": 1,
+        "y": "s"
+      }
     }
   ]
 }

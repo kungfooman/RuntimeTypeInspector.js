@@ -22,7 +22,9 @@ registerTypedef('HHPartial', {
  * branches statically), and literals that never reach a checked call (a
  * factory return, an element pushed then read back) keep the mark of their
  * creation site instead of the use site. Spread results still run the
- * weak-type gate, and symbol keys plus non-object spreads stay out of scope.
+ * weak-type gate, sequence tails, logical fallbacks, parenthesized
+ * literals, new-expression args and index-signature values, and symbol
+ * keys plus non-object spreads stay out of scope.
  */
 
 /**
@@ -171,3 +173,118 @@ takeFresh({
   x: 1,
   [nextKey()]: 3
 }); /* ok: impure computed names are not statically written */ 
+class FreshBox {
+  /** @param {{x: number}} o */
+  constructor(o) {
+    if (!inspectType(o, {
+      "type": "object",
+      "properties": {
+        "x": "number"
+      },
+      "optional": false
+    }, 'FreshBox#constructor', 'o')) {
+      youCanAddABreakpointHere();
+    }
+    this.o = o;
+  }
+}
+registerClass(FreshBox);
+/* @ts-expect-error: new-expression args are fresh too */
+
+const made = new FreshBox({
+  x: 1,
+  extra: 9
+});
+function flag() {
+  return true;
+}
+/* @ts-expect-error: sequence tails are fresh at the call site */
+
+takeFresh((flag(), {
+  x: 1,
+  extra: 10
+}));
+/* @ts-expect-error: parenthesized literals stay fresh */
+
+takeFresh(({
+  x: 1,
+  extra: 11
+}));
+
+/**
+ * @param {{[key: string]: number}} m
+ */
+
+function takeMap(m) {
+  if (!inspectType(m, {
+    "type": "object",
+    "indexSignatures": [
+      {
+        "type": "indexSignature",
+        "indexType": "number",
+        "indexParameters": [
+          {
+            "type": "parameter",
+            "paramType": "string",
+            "name": "key"
+          }
+        ]
+      }
+    ],
+    "optional": false
+  }, 'takeMap', 'm')) {
+    youCanAddABreakpointHere();
+  }
+  return m;
+}
+takeMap({
+  x: 1
+}); /* ok: values match the index signature */ 
+const strBag = {
+  y: 's'
+};
+/* @ts-expect-error: index value mismatch still throws through a spread */
+
+takeMap({
+  x: 1,
+...strBag
+});
+
+/**
+ * @param {{a: number} | {b: string}} u
+ */
+
+function takeUnion(u) {
+  if (!inspectType(u, {
+    "type": "union",
+    "members": [
+      {
+        "type": "object",
+        "properties": {
+          "a": "number"
+        }
+      },
+      {
+        "type": "object",
+        "properties": {
+          "b": "string"
+        }
+      }
+    ],
+    "optional": false
+  }, 'takeUnion', 'u')) {
+    youCanAddABreakpointHere();
+  }
+  return u;
+}
+takeUnion({
+  a: 1
+}); /* ok: one member matches */ 
+const mixBag = {
+  b: 's',
+  zzz: 9
+};
+takeUnion({
+  a: 1,
+...mixBag
+}); /* ok: spread keys never count as excess per member */ 

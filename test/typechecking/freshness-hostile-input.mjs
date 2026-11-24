@@ -7,7 +7,9 @@
  * branches statically), and literals that never reach a checked call (a
  * factory return, an element pushed then read back) keep the mark of their
  * creation site instead of the use site. Spread results still run the
- * weak-type gate, and symbol keys plus non-object spreads stay out of scope.
+ * weak-type gate, sequence tails, logical fallbacks, parenthesized
+ * literals, new-expression args and index-signature values, and symbol
+ * keys plus non-object spreads stay out of scope.
  */
 /**
   * @param {{x: number}} o
@@ -66,3 +68,37 @@ let tick = 0;
 const nextKey = () => tick++;
 takeFresh({x: 1, ...{[nextKey()]: 2}}); /* ok: impure keys are tolerated, never double-run */
 takeFresh({x: 1, [nextKey()]: 3}); /* ok: impure computed names are not statically written */
+class FreshBox {
+  /** @param {{x: number}} o */
+  constructor(o) {
+    this.o = o;
+  }
+}
+/* @ts-expect-error: new-expression args are fresh too */
+const made = new FreshBox({x: 1, extra: 9});
+function flag() {
+  return true;
+}
+/* @ts-expect-error: sequence tails are fresh at the call site */
+takeFresh((flag(), {x: 1, extra: 10}));
+/* @ts-expect-error: parenthesized literals stay fresh */
+takeFresh(({x: 1, extra: 11}));
+/**
+ * @param {{[key: string]: number}} m
+ */
+function takeMap(m) {
+  return m;
+}
+takeMap({x: 1}); /* ok: values match the index signature */
+const strBag = {y: 's'};
+/* @ts-expect-error: index value mismatch still throws through a spread */
+takeMap({x: 1, ...strBag});
+/**
+ * @param {{a: number} | {b: string}} u
+ */
+function takeUnion(u) {
+  return u;
+}
+takeUnion({a: 1}); /* ok: one member matches */
+const mixBag = {b: 's', zzz: 9};
+takeUnion({a: 1, ...mixBag}); /* ok: spread keys never count as excess per member */
