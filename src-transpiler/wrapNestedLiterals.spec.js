@@ -35,10 +35,24 @@ function testArrowStaysStale() {
   const actual = wrapNestedLiterals(firstArgument('f((x) => x)'));
   return actual.type === 'ArrowFunctionExpression';
 }
+// Assignment values wrap: `f(v = {a: 1})` assigns a fresh literal.
+function testAssignmentRightWraps() {
+  const actual = wrapNestedLiterals(firstArgument('f(v = {b: 1})'));
+  return actual.type === 'AssignmentExpression' && actual.right.type === 'CallExpression';
+}
+// Yielded values wrap: the yielded literal is fresh at its position.
+function testYieldArgumentWraps() {
+  const ast = parse('function* g() { yield {b: 1}; }', parserOptions);
+  const yielded = ast.program.body[0].body.body[0].expression;
+  const actual = wrapNestedLiterals(yielded);
+  return actual.type === 'YieldExpression' && actual.argument.type === 'CallExpression';
+}
 export const tests = [
   testConditionalBranchesWrap,
   testLogicalSidesWrap,
   testStalePassesThrough,
   testNestedCallDescends,
   testArrowStaysStale,
+  testAssignmentRightWraps,
+  testYieldArgumentWraps,
 ];

@@ -5,7 +5,7 @@ import {classes             } from './registerClass.js';
 import {mergedClassShape    } from './classShape.js';
 import {instantiateReference} from './instantiateReference.js';
 import {recurse, validators} from './validators.js';
-import {isFresh            } from './freshObjects.js';
+import {isFresh, isToleratedSpreadKey} from './freshObjects.js';
 import {tupleEffective     } from './tupleEffective.js';
 import {tupleOptional      } from './tupleOptional.js';
 import {expandTupleElements} from './expandTupleElements.js';
@@ -840,13 +840,15 @@ function diffValue(value, expect, path, depth, memberOf) {
         const info = mat.__provenance ?? removalInfo(expect, key);
         const rendered = describeExcess(subPath, key, snip(value[key]), knownKeys, info);
         const offNote = ' (informational: stale value passes validation)';
+        const spreadNote = ' (informational: spread key passes validation)';
         const removedNote = info?.removed ? '' : ' (informational: not validated as excess)';
-        const strict = fresh || info?.removed === true;
+        const spread = fresh && isToleratedSpreadKey(value, key);
+        const strict = (fresh && !spread) || info?.removed === true;
         findings.push({
           path: subPath,
           ...rendered,
           fix: strict ? rendered.fix : undefined,
-          detail: strict ? rendered.detail : `${rendered.detail}${info ? removedNote : offNote}`,
+          detail: strict ? rendered.detail : `${rendered.detail}${info ? removedNote : spread ? spreadNote : offNote}`,
           info: strict ? undefined : true,
         });
       }

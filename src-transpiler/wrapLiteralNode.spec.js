@@ -37,9 +37,38 @@ function testCallPassesThrough() {
   };
   return wrapLiteralNode(node) === node;
 }
+// Spread-carrying objects wrap with their written keys: tsc forgives
+// spread keys, so only literally written names can fail downstream.
+function testSpreadObjectWrapsWithKeys() {
+  const inner = {
+    type: 'ObjectExpression',
+    properties: [
+      {
+        type: 'ObjectProperty',
+        key: {
+          type: 'Identifier',
+          name: 'a',
+        },
+        computed: false,
+      },
+      {
+        type: 'SpreadElement',
+        argument: {
+          type: 'Identifier',
+          name: 'o',
+        },
+      },
+    ],
+  };
+  const actual = wrapLiteralNode(inner);
+  const keys = actual.arguments[1];
+  const spelled = keys.elements.length === 1 && keys.elements[0].value === 'a' && keys.elements[0].extra?.raw === '"a"';
+  return actual.type === 'CallExpression' && actual.callee.name === 'markFreshSpread' && actual.arguments[0] === inner && keys.type === 'ArrayExpression' && spelled;
+}
 export const tests = [
   testIdentifierPassesThrough,
   testObjectWraps,
+  testSpreadObjectWrapsWithKeys,
   testArrayWraps,
   testCallPassesThrough,
 ];

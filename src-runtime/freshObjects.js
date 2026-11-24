@@ -18,6 +18,14 @@
  */
 const freshObjects = new WeakSet();
 /**
+ * Spread-tolerated keys per fresh literal. `tsc` never excess-checks keys
+ * arriving through `...spread`: only keys written literally in the fresh
+ * object count. The transpiler records the statically written key names
+ * beside the mark; validators forgive every other key on that value.
+ * @type {WeakMap<object, Set<string>>}
+ */
+const toleratedKeys = new WeakMap();
+/**
  * Tags a value as a fresh object literal, returning it for inline wrapping.
  * Primitives pass through untouched: only objects can carry excess keys.
  * @param {*} value - The value to tag.
@@ -45,4 +53,50 @@ function isFresh(value) {
     return false;
   }
 }
-export {markFresh, isFresh};
+/**
+ * Tags a fresh literal carrying spread elements: only keys written
+ * literally in the fresh object count as excess, every other key on the
+ * runtime value came through a spread and reads tolerated. Own keys are
+ * fixed at emit time, so the written set is derived from the transpiled
+ * shape instead of trusting a runtime array.
+ * Never throws: exotic values keep their plain fresh mark.
+ * @param {*} value - The fresh literal value.
+ * @param {string[]} [ownKeys] - Key names written literally in the source.
+ * @returns {*} The same value.
+ */
+function markFreshSpread(value, ownKeys) {
+  markFresh(value);
+  if (value !== null && (typeof value === 'object' || typeof value === 'function')) {
+    try {
+      const written = new Set(Array.isArray(ownKeys) ? ownKeys : []);
+      toleratedKeys.set(value, written);
+    } catch {
+      // fall through: the plain fresh mark above still applies
+    }
+  }
+  return value;
+}
+/**
+ * Reports whether an excess key on a fresh value arrived through a spread
+ * and is therefore tolerated. Values marked without a spread record (or
+ * never marked at all) tolerate nothing: every unknown key counts.
+ * Never throws: revoked proxies and exotic values tolerate nothing.
+ * @param {*} value - The fresh literal value.
+ * @param {string} key - The excess key to test.
+ * @returns {boolean} True when the key came through a spread.
+ */
+function isToleratedSpreadKey(value, key) {
+  if (value === null || (typeof value !== 'object' && typeof value !== 'function')) {
+    return false;
+  }
+  try {
+    const written = toleratedKeys.get(value);
+    if (written === undefined) {
+      return false;
+    }
+    return !written.has(key);
+  } catch {
+    return false;
+  }
+}
+export {markFresh, isFresh, markFreshSpread, isToleratedSpreadKey};

@@ -40,9 +40,11 @@ function testGuardsUntouched() {
   const out = wrapped('if (o) {\n  f(o);\n}');
   return !out.includes('markFresh');
 }
-// Spread literals read as fresh in tsc and wrap.
+// Spread literals read as fresh in tsc and wrap with spread tolerance:
+// only the literally written keys count, spread keys are forgiven.
 function testSpreadLiteralWraps() {
-  return wrapped('f({...o});').includes('f(markFresh({');
+  const out = wrapped('f({...o});');
+  return out.includes('f(markFreshSpread({') && out.includes('}, []');
 }
 // Conditional branches wrap independently.
 function testConditionalBranchesWrap() {
@@ -61,6 +63,17 @@ function testNewExpressionWraps() {
 function testNestedCallPassthrough() {
   const out = wrapped('f(g(1), {a: 2});');
   return out.includes('g(1)') && out.includes('markFresh({');
+}
+// Calls nested inside function bodies wrap: each call site decides its
+// own freshness, so a literal inside a body still marks.
+function testNestedFunctionBodyWraps() {
+  const out = wrapped('function outer() { f({a: 1}); }');
+  return out.includes('f(markFresh({');
+}
+// Assignment expressions wrap their value: `f(v = ...)` is a call site.
+function testAssignmentExpressionWraps() {
+  const out = wrapped('f(v = {a: 1});');
+  return out.includes('markFresh({');
 }
 // Probe metadata never wraps: it is compiler output, not a user argument.
 function testProbeCallUntouched() {
@@ -90,6 +103,8 @@ export const tests = [
   testOptionalCallWraps,
   testNewExpressionWraps,
   testNestedCallPassthrough,
+  testNestedFunctionBodyWraps,
+  testAssignmentExpressionWraps,
   testProbeCallUntouched,
   testArrowInvocationSurvives,
   testRepeatedCallsScale,

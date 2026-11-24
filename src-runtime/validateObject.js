@@ -1,6 +1,6 @@
-import {recurse            } from "./validators.js";
-import {options            } from "./options.js";
-import {isFresh            } from "./freshObjects.js";
+import {recurse} from "./validators.js";
+import {options} from "./options.js";
+import {isFresh, isToleratedSpreadKey} from "./freshObjects.js";
 import {hasNoCommonKeys    } from "./hasNoCommonKeys.js";
 import {isObject           } from "./isObject.js";
 import {matchIndexSignature} from "./matchIndexSignature.js";
@@ -45,9 +45,10 @@ function validateObject(value, expect, loc, name, critical, warn, depth) {
       const fresh = isFresh(value);
       // Weak-type gate (`tsc --strict` TS2559): a non-empty value with no
       // key in common with an all-optional shape fails at any freshness.
-      // Fresh literals already fail on excess below; this only bites stale
-      // probes, which structural checking would otherwise accept.
-      if (!fresh && hasNoCommonKeys(value, expect)) {
+      // Fresh literals usually fail on excess below, but spread-carried
+      // keys are tolerated there, so the gate must also run for fresh
+      // values: `takeP({...unknown})` shares no key and fails in tsc too.
+      if (hasNoCommonKeys(value, expect)) {
         warn(`Given value has no properties in common with type.`, {properties, value});
         return false;
       }
@@ -89,13 +90,15 @@ function validateObject(value, expect, loc, name, critical, warn, depth) {
           // explanation wording downstream, never the verdict: `tsc`
           // accepts `{a: 1}` against `Omit<Partial<TwBox|TwBox2>, "a">`
           // at any freshness (verified `--strict`), so RTI must too.
-          if (fresh) {
+          // Spread keys never count: `tsc` forgives every key arriving
+          // through `...spread`, so only literally written keys fail.
+          if (fresh && !isToleratedSpreadKey(value, key)) {
             const excess = `Excess property '${name}.${key}' is not allowed`;
             warn(`${excess} (fresh object literal).`, {properties, value});
+            bare = true;
           } else if (options.logSuperfluousProperty) {
             warn(`Superfluous property: ${name}.${key}`, {properties, value});
           }
-          bare = true;
         }
       });
       if (failed) {
@@ -119,13 +122,13 @@ function validateObject(value, expect, loc, name, critical, warn, depth) {
         }
         const signature = matchIndexSignature(expect, key);
         if (!signature) {
-          if (fresh) {
+          if (fresh && !isToleratedSpreadKey(value, key)) {
             const excess = `Excess property '${name}.${key}' is not allowed`;
             warn(`${excess} (fresh object literal).`, {properties, value});
+            bare = true;
           } else if (options.logSuperfluousProperty) {
             warn(`Superfluous property: ${name}.${key}`, {properties, value});
           }
-          bare = true;
           continue;
         }
         const leafDepth = depth + 1;

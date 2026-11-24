@@ -56,8 +56,13 @@ function wrapNestedLiterals(node) {
     node.argument = wrapNestedLiterals(node.argument);
     return node;
   }
-  if (node?.type === 'AwaitExpression' || node?.type === 'UnaryExpression' || node?.type === 'UpdateExpression') {
+  if (node?.type === 'AwaitExpression' || node?.type === 'UnaryExpression' || node?.type === 'UpdateExpression' || node?.type === 'YieldExpression') {
     node.argument = wrapNestedLiterals(node.argument);
+    return node;
+  }
+  if (node?.type === 'AssignmentExpression') {
+    // `f(v = {a: 1})` assigns a fresh literal: tsc excess-checks it.
+    node.right = wrapNestedLiterals(node.right);
     return node;
   }
   if (node?.type === 'ParenthesizedExpression') {

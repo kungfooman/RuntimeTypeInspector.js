@@ -6,7 +6,7 @@ import {classes              } from './registerClass.js';
 import {mergedClassShape     } from './classShape.js';
 import {createTypeFromMapping} from './createTypeFromMapping.js';
 import {recurse, validators} from './validators.js';
-import {isFresh} from './freshObjects.js';
+import {isFresh, isToleratedSpreadKey} from './freshObjects.js';
 import {options} from './options.js';
 import {describeExcess, snip} from './explainMismatch.js';
 import {formatMapKey} from './formatMapKey.js';
@@ -427,6 +427,7 @@ function buildObjectNode(expect, value, node, sub) {
       // stale or merely unselected (Pick) extras render informational.
       const fresh = isFresh(childValue);
       const offNote = '(informational: stale value, so this passes validation)';
+      const spreadNote = '(informational: spread key, so this passes validation)';
       const removedNote = '(informational: not validated as excess)';
       for (const key of Object.keys(childValue)) {
         if (expect.properties[key] !== undefined || typeof key !== 'string') {
@@ -436,7 +437,9 @@ function buildObjectNode(expect, value, node, sub) {
         const knownKeys = Object.keys(expect.properties);
         const origin = expect.__provenance ?? null;
         const rendered = describeExcess(childPath(key), key, actual, knownKeys, origin);
-        const strict = fresh || origin?.removed === true;
+        const spread = fresh && isToleratedSpreadKey(childValue, key);
+        const strict = (fresh && !spread) || origin?.removed === true;
+        const note = origin ? removedNote : spread ? spreadNote : offNote;
         node.children.push({
           label: `${key}: ${actual}`,
           kind: 'extra',
@@ -444,7 +447,7 @@ function buildObjectNode(expect, value, node, sub) {
           full: actual,
           passes: strict ? false : undefined,
           fix: strict ? rendered.fix : undefined,
-          detail: strict ? rendered.detail : `${rendered.detail} ${origin ? removedNote : offNote}`,
+          detail: strict ? rendered.detail : `${rendered.detail} ${note}`,
         });
       }
       // A real object with failing properties: right shape, bad contents.

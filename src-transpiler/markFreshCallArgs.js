@@ -56,6 +56,21 @@ function markFreshCallArgs(node) {
     node.quasi = wrapNestedLiterals(node.quasi);
   }
   if (nodeIsFunctionLike(node)) {
+    // Function boundaries stop the walk for bodies and default values, but
+    // calls nested inside still take fresh literals: a caller's freshness
+    // is decided at each call site, never by the enclosing scope.
+    const params = node.params ?? [];
+    for (const param of params) {
+      if (param?.type === 'AssignmentPattern' && param.right) {
+        // Default values read as fresh literals in tsc, so they wrap.
+        param.right = wrapNestedLiterals(param.right);
+      } else {
+        markFreshCallArgs(param);
+      }
+    }
+    if (node.body) {
+      markFreshCallArgs(node.body);
+    }
     return node;
   }
   const keys = VISITOR_KEYS[node.type] ?? [];

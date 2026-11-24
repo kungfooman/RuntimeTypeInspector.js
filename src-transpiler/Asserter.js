@@ -447,6 +447,7 @@ class Asserter extends Stringifier {
       'inspectType',
       'inspectTypeWithTemplates',
       'markFresh',
+      'markFreshSpread',
       'youCanAddABreakpointHere',
       'registerVariable',
     ];

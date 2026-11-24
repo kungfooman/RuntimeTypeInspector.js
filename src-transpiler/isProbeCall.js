@@ -18,6 +18,7 @@ const sharedProbeCalls = new Set([
   'inspectIndexedAccess',
   'youCanAddABreakpointHere',
   'markFresh',
+  'markFreshSpread',
   'overloadPropertyKey',
   'registerVariable',
   'registerTypedef',

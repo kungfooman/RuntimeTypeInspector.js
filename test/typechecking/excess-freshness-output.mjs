@@ -168,10 +168,12 @@ takePartial({
 const staleUnknown = {
   zzz: 9
 };
-takePartial(staleUnknown); /* ok: unknown excess is not a weak-type fail */ 
+/* @ts-expect-error: stale probe shares no key with the weak shape (tsc TS2559) */
+
+takePartial(staleUnknown); /* throws: no key in common (tsc TS2559) */ 
 /** @param {CCPick} x */
 
-/* ok: unknown excess is not a weak-type fail */ /** @param {CCPick} x */
+/* throws: no key in common (tsc TS2559) */ /** @param {CCPick} x */
 function takePick(x) {
   if (!inspectType(x, "CCPick", 'takePick', 'x')) {
     youCanAddABreakpointHere();
@@ -188,6 +190,8 @@ takePick({
 const stalePickedAway = {
   b: 's'
 };
+/* @ts-expect-error: stale probe shares no key with the weak shape (tsc TS2559) */
+
 takePick(stalePickedAway); /* throws: no key in common (tsc TS2559) */ 
 /** @param {CCOmit} x */
 
@@ -210,4 +214,6 @@ takeOmit({
 const staleOmitted = {
   a: 1
 };
+/* @ts-expect-error: stale probe shares no key with the weak shape (tsc TS2559) */
+
 takeOmit(staleOmitted); /* throws: no key in common (tsc TS2559) */ 

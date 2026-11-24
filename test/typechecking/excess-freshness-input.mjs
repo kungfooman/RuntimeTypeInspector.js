@@ -43,7 +43,8 @@ takePartial({}); /* ok: empty is assignable to every weak shape */
 /* @ts-expect-error: fresh excess key */
 takePartial({a: 1, zzz: 9});
 const staleUnknown = {zzz: 9};
-takePartial(staleUnknown); /* ok: unknown excess is not a weak-type fail */
+/* @ts-expect-error: stale probe shares no key with the weak shape (tsc TS2559) */
+takePartial(staleUnknown); /* throws: no key in common (tsc TS2559) */
 /** @param {CCPick} x */
 function takePick(x) {
   return x;
@@ -52,6 +53,7 @@ takePick({}); /* ok */
 /* @ts-expect-error: fresh picked-away key */
 takePick({b: 's'});
 const stalePickedAway = {b: 's'};
+/* @ts-expect-error: stale probe shares no key with the weak shape (tsc TS2559) */
 takePick(stalePickedAway); /* throws: no key in common (tsc TS2559) */
 /** @param {CCOmit} x */
 function takeOmit(x) {
@@ -61,4 +63,5 @@ takeOmit({b: 's'}); /* ok: surviving key */
 /* @ts-expect-error: fresh omitted key */
 takeOmit({a: 1});
 const staleOmitted = {a: 1};
+/* @ts-expect-error: stale probe shares no key with the weak shape (tsc TS2559) */
 takeOmit(staleOmitted); /* throws: no key in common (tsc TS2559) */
