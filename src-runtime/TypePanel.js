@@ -838,9 +838,6 @@ function isCheckInfinity() {
   const tmp = localStorage.getItem('rti-check-infinity');
   return tmp === null || tmp === 'true';
 }
-function isExactObjects() {
-  return localStorage.getItem('rti-exact-objects') !== 'false';
-}
 function isWindowedChecks() {
   const tmp = localStorage.getItem('rti-windowed-checks');
   // No stored choice keeps the current option value, so an engine
@@ -945,8 +942,6 @@ class TypePanel {
   inputStrict;
   /** @type {HTMLInputElement} */
   inputInfinity;
-  /** @type {HTMLInputElement} */
-  inputExact;
   /** @type {HTMLSpanElement} */
   spanErrors;
   /** @type {HTMLSpanElement} */
@@ -955,8 +950,6 @@ class TypePanel {
   spanStrict;
   /** @type {HTMLSpanElement} */
   spanInfinity;
-  /** @type {HTMLSpanElement} */
-  spanExact;
   /** @type {HTMLSelectElement} */
   select;
   /** @type {HTMLOptionElement} */
@@ -1117,15 +1110,6 @@ class TypePanel {
         this.sendInfinityStateToWorker();
       },
     });
-    this.inputExact = Input({
-      type: 'checkbox',
-      checked: isExactObjects(),
-      onchange: () => {
-        options.exactObjects = this.inputExact.checked;
-        localStorage.setItem('rti-exact-objects', String(this.inputExact.checked));
-        this.sendExactStateToWorker();
-      },
-    });
     this.inputWindowed = Input({
       type: 'checkbox',
       checked: isWindowedChecks(),
@@ -1205,9 +1189,6 @@ class TypePanel {
     });
     this.spanInfinity = Span({
       innerText: ' Check Infinity',
-    });
-    this.spanExact = Span({
-      innerText: ' Exact objects',
     });
     this.spanWindowed = Span({
       innerText: ' Windowed checks',
@@ -1416,12 +1397,6 @@ class TypePanel {
         {
           className: 'rti-setting-row',
         },
-        Label({}, this.inputExact, this.spanExact),
-      ),
-      Div(
-        {
-          className: 'rti-setting-row',
-        },
         Label({}, this.inputWindowed, this.spanWindowed),
       ),
       Div(
@@ -1563,13 +1538,9 @@ class TypePanel {
       this.taskbarWins,
     );
     const {
-      div, titlebar, toolbar, body,
-    } = this;
-    const {
       inputEnable,
       inputStrict,
       inputInfinity,
-      inputExact,
       inputWindowed,
       inputWindowCap,
       inputWindowMinTotal,
@@ -1587,11 +1558,11 @@ class TypePanel {
       },
     });
     const {divAll} = TypePanel;
+    const {div, titlebar, toolbar, body} = this;
     niceDiv(div);
     inputEnable.onchange();
     inputStrict.onchange();
     inputInfinity.onchange();
-    inputExact.onchange();
     inputWindowed.onchange();
     inputWindowCap.onchange();
     inputWindowMinTotal.onchange();
@@ -3175,9 +3146,6 @@ class TypePanel {
   sendInfinityStateToWorker() {
     this.sendSettingToWorkers('checkInfinity', options.checkInfinity);
   }
-  sendExactStateToWorker() {
-    this.sendSettingToWorkers('exactObjects', options.exactObjects);
-  }
   sendWindowedStateToWorker() {
     this.sendSettingToWorkers('windowedChecks', options.windowedChecks);
   }
@@ -3280,7 +3248,7 @@ class TypePanel {
     hints.push(
       '`meta.settings` matters: `strictNullChecks: false` means null/undefined pass every type,',
       '`checkInfinity: false` means +-Infinity passes `number`.',
-      '`exactObjects: true` means excess keys fail (stricter than tsc, which only checks fresh literals).',
+      'Excess keys fail only on fresh object literals, like tsc.',
       '`windowedChecks: true` means map checks ride doubling rescan windows: persistent drift is reported within one window (mapCheckWindowCap checks worst case).',
       '`mapCheckWindowMinTotalMs` is the scan spend budget for those rides: a map whose scans accumulated less validates every check, so `0` means ride without any budget.',
       '`checkStats: false` turns the per call site hotspot recording off.',
@@ -3301,7 +3269,6 @@ class TypePanel {
         mode: options.mode,
         strictNullChecks: options.strictNullChecks,
         checkInfinity: options.checkInfinity,
-        exactObjects: options.exactObjects,
         logSuperfluousProperty: options.logSuperfluousProperty,
         windowedChecks: options.windowedChecks,
         mapCheckWindowCap: options.mapCheckWindowCap,

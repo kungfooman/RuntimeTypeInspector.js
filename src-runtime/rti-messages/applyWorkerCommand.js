@@ -46,10 +46,6 @@ function applyWorkerCommand(event, {breakpoints, options}) {
     options.checkInfinity = data.value !== false;
     return true;
   }
-  if (action === 'exactObjects') {
-    options.exactObjects = data.value === true;
-    return true;
-  }
   if (action === 'windowedChecks') {
     options.windowedChecks = data.value !== false;
     return true;

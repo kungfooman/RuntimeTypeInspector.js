@@ -1,7 +1,8 @@
-import {parse        } from '@babel/parser';
-import {parserOptions} from './parserOptions.js';
-import {Asserter     } from './Asserter.js';
-import {expandType   } from './expandType.js';
+import {parse            } from '@babel/parser';
+import {parserOptions    } from './parserOptions.js';
+import {Asserter         } from './Asserter.js';
+import {expandType       } from './expandType.js';
+import {markFreshCallArgs} from './markFreshCallArgs.js';
 import * as runtime from '../src-runtime/index.js';
 /**
  * Transpiles `src` with the real pipeline (same as `test.js`), executes it
@@ -24,7 +25,9 @@ function runChecks(src, expose, body) {
     addHeader: false,
     filename: 'test.js',
   });
-  let out = asserter.toSource(parse(src, parserOptions));
+  const ast = parse(src, parserOptions);
+  markFreshCallArgs(ast);
+  let out = asserter.toSource(ast);
   // `export` cannot run inside `new Function`: strip it. Export only affects
   // how the transpiler attaches JSDoc (already done above), never the checks.
   out = out.replace(/^export default /gm, '').replace(/^export /gm, '');
@@ -40,6 +43,8 @@ function runChecks(src, expose, body) {
       'inspectType',
       'inspectTypeWithTemplates',
       'inspectOverloads',
+      'markFresh',
+      'markFreshSpread',
       'overloadPropertyKey',
       'youCanAddABreakpointHere',
       'registerClass',
@@ -61,6 +66,8 @@ function runChecks(src, expose, body) {
       runtime.inspectType,
       runtime.inspectTypeWithTemplates,
       runtime.inspectOverloads,
+      runtime.markFresh,
+      runtime.markFreshSpread,
       runtime.overloadPropertyKey,
       recordHit,
       runtime.registerClass,

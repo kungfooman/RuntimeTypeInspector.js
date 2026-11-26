@@ -1,11 +1,12 @@
 import {typedefs, typedefTemplates} from "./registerTypedef.js";
 import {classes} from "./registerClass.js";
 import {validators, recurse} from "./validators.js";
+import {isFresh                    } from "./freshObjects.js";
 import {createTypeFromMapping      } from "./createTypeFromMapping.js";
 import {createTypeFromIndexedAccess} from "./createTypeFromIndexedAccess.js";
 import {mergedClassShape, prototypeShape} from "./classShape.js";
 import {nominalClassOf} from "./nominalClassOf.js";
-import {getTypeKeys, resolveUtilityShape} from "./getTypeKeys.js";
+import {getTypeKeys, resolveUtilityShape, provenanceHint} from "./getTypeKeys.js";
 import {instantiateReference} from "./instantiateReference.js";
 import {extendsCheck, resolveForExtends, stripLiteral} from "./evaluateCondition.js";
 import {evaluateCondition } from "./evaluateCondition.js";
@@ -112,8 +113,26 @@ function resolveObjectArgs(type, warn) {
         // Nested utilities (e.g. `Partial<Pick<...>>` inside
         // `ComponentOptionsOf`): materialize to shapes, then fall through
         // to the union/object handling below so homomorphic distribution
-        // over unions is preserved.
+        // over unions is preserved. Pick/Omit tagging must survive one
+        // more nesting level (`Omit<Partial<...>>`): re-tag unmarked
+        // members so the failure rendering keeps naming the source.
+        // Partial/Required map over optionality only and never remove
+        // keys, so they leave existing tags (including none) alone.
         current = resolveUtilityShape(name, args, warn);
+        if ((isPick || isOmit) && current) {
+          const hint = provenanceHint(name, args);
+          const members = current.type === 'union' && Array.isArray(current.members) ? current.members : [current];
+          for (const member of members) {
+            if (member && typeof member === 'object' && !member.__provenance) {
+              Object.defineProperty(member, '__provenance', {
+                value: hint,
+                enumerable: false,
+                writable: true,
+                configurable: true,
+              });
+            }
+          }
+        }
         break;
       }
       if (typedefs[name]) {
@@ -560,12 +579,22 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
           }
           // Index signatures carry over untouched: validation reads them
           // off the shape exactly like it does for the unmapped base.
+          // Utility provenance (Omit/Pick removal) carries over too, so
+          // explanation renderers keep naming the source spelling.
           const out = {
             type: 'object',
             properties,
           };
           if (Array.isArray(object.indexSignatures)) {
             out.indexSignatures = object.indexSignatures;
+          }
+          if (Object.hasOwn(object, '__provenance')) {
+            Object.defineProperty(out, '__provenance', {
+              value: object.__provenance,
+              enumerable: false,
+              writable: true,
+              configurable: true,
+            });
           }
           return out;
         });
@@ -789,6 +818,7 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         return false;
       }
       const wanted = new Set(names);
+      const tagged = provenanceHint(refName, args);
       const members = objects.map((object) => {
         const properties = {};
         for (const key of Object.keys(object.properties ?? {})) {
@@ -796,6 +826,10 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
             properties[key] = object.properties[key];
           }
         }
+        // Omit/Pick members always carry their exclusion tag (explainer
+        // wording and stale/fresh verdicts alike read it downstream):
+        // validation fails fresh-only while stale passes, but the tag
+        // itself is verdict-independent.
         const out = {
           type: 'object',
           properties,
@@ -803,6 +837,12 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
         if (Array.isArray(object.indexSignatures)) {
           out.indexSignatures = object.indexSignatures;
         }
+        Object.defineProperty(out, '__provenance', {
+          value: tagged,
+          enumerable: false,
+          writable: true,
+          configurable: true,
+        });
         return out;
       });
       return recurse(

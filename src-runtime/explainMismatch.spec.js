@@ -1,7 +1,7 @@
 import {expandType} from '../src-transpiler/expandType.js';
 import {registerTypedef, typedefs, typedefTemplates} from './registerTypedef.js';
 import {registerClass, classes} from './registerClass.js';
-import {options} from './options.js';
+import {markFresh} from './freshObjects.js';
 import {collectFailPaths, explainMismatch, materializeExpect} from './explainMismatch.js';
 function reset() {
   Object.keys(typedefs).forEach((_) => delete typedefs[_]);
@@ -186,11 +186,11 @@ function testOmitExcessNamesRemoval() {
   reset();
   registerTypedef('Account', expandType('{id: string, email: string, role: string}'));
   const {findings} = explainMismatch(
-    {
+    markFresh({
       email: 'a',
       role: 'b',
       id: 1,
-    },
+    }),
     expandType('Omit<Account, "id">'),
     'payload',
   );
@@ -209,10 +209,10 @@ function testPickExcessNamesSelection() {
   reset();
   registerTypedef('User', expandType('{id: number, name: string}'));
   const {findings} = explainMismatch(
-    {
+    markFresh({
       name: 'x',
       id: 1,
-    },
+    }),
     expandType('Pick<User, "name">'),
     'user',
   );
@@ -228,6 +228,21 @@ function testPickExcessNamesSelection() {
 function testPlainExcessStillSuspectsTypo() {
   reset();
   const {findings} = explainMismatch(
+    markFresh({
+      fov: 60,
+      fovv: 1,
+    }),
+    expandType('{fov: number}'),
+    'options',
+  );
+  const extra = findings.find((_) => _.path === 'options.fovv');
+  return !!extra && extra.detail.includes('check spelling');
+}
+function testExtrasInformationalWhenLenient() {
+  // Stale values: excess still renders (nothing silently vanishes) but
+  // marked informational, without a fix imperative.
+  reset();
+  const {findings} = explainMismatch(
     {
       fov: 60,
       fovv: 1,
@@ -236,33 +251,12 @@ function testPlainExcessStillSuspectsTypo() {
     'options',
   );
   const extra = findings.find((_) => _.path === 'options.fovv');
-  return !!extra && extra.detail.includes('check spelling');
-}
-function testExtrasInformationalWhenLenient() {
-  // Exact off: excess still renders (nothing silently vanishes) but marked
-  // informational, without a fix imperative.
-  reset();
-  const prev = options.exactObjects;
-  options.exactObjects = false;
-  try {
-    const {findings} = explainMismatch(
-      {
-        fov: 60,
-        fovv: 1,
-      },
-      expandType('{fov: number}'),
-      'options',
-    );
-    const extra = findings.find((_) => _.path === 'options.fovv');
-    return (
-      !!extra &&
-      extra.info === true &&
-      !extra.fix &&
-      extra.detail.includes('informational')
-    );
-  } finally {
-    options.exactObjects = prev;
-  }
+  return (
+    !!extra &&
+    extra.info === true &&
+    !extra.fix &&
+    extra.detail.includes('informational')
+  );
 }
 /**
  * Failure paths drive the Actual-pane highlight: every finding path lands

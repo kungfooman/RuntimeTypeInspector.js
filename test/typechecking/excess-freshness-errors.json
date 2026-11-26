@@ -1,0 +1,67 @@
+{
+  "throws": [
+    {
+      "loc": "takeColor",
+      "name": "color",
+      "value": {
+        "a": 4,
+        "b": 3,
+        "g": 2,
+        "r": 1
+      }
+    },
+    {
+      "loc": "takeNested",
+      "name": "o",
+      "value": {
+        "nested": {
+          "extra": 2,
+          "x": 1
+        }
+      }
+    },
+    {
+      "loc": "takePartial",
+      "name": "x",
+      "value": {
+        "a": 1,
+        "zzz": 9
+      }
+    },
+    {
+      "loc": "takePartial",
+      "name": "x",
+      "value": {
+        "zzz": 9
+      }
+    },
+    {
+      "loc": "takePick",
+      "name": "x",
+      "value": {
+        "b": "s"
+      }
+    },
+    {
+      "loc": "takePick",
+      "name": "x",
+      "value": {
+        "b": "s"
+      }
+    },
+    {
+      "loc": "takeOmit",
+      "name": "x",
+      "value": {
+        "a": 1
+      }
+    },
+    {
+      "loc": "takeOmit",
+      "name": "x",
+      "value": {
+        "a": 1
+      }
+    }
+  ]
+}

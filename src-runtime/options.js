@@ -37,12 +37,12 @@ const options = {
    */
   checkInfinity: true,
   /**
-   * When `true` (default), object keys outside the expected shape fail with
-   * an excess-property error, so `Omit`/`Pick` actually reject. Strictly
-   * speaking this exceeds tsc, whose excess check only fires for fresh
-   * literals (wider variables pass) — runtime values carry no such
-   * provenance. Disable per project if wide-variable passing must stay
-   * quiet. Toggleable via the TypePanel checkbox.
+   * Excess keys fail only on fresh object literals, matching `tsc`
+   * (a stale variable or class instance passes structurally).
+   * Kept as a legacy alias so old `setOptions({exactObjects})`
+   * calls keep validating instead of throwing on an unknown key.
+   * The panel no longer surfaces it and workers ignore it.
+   * @type {boolean}
    */
   exactObjects: true,
   /**

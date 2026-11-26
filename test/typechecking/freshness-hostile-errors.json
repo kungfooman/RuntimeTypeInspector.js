@@ -1,0 +1,99 @@
+{
+  "throws": [
+    {
+      "loc": "takeFresh",
+      "name": "o",
+      "value": {
+        "x": 1,
+        "extra": 1
+      }
+    },
+    {
+      "loc": "takeFresh",
+      "name": "o",
+      "value": {
+        "x": 1,
+        "extra": 2
+      }
+    },
+    {
+      "loc": "takeFresh",
+      "name": "o",
+      "value": {
+        "x": 1,
+        "extra": 3
+      }
+    },
+    {
+      "loc": "takeFresh",
+      "name": "o",
+      "value": {
+        "x": 1,
+        "extra": 4
+      }
+    },
+    {
+      "loc": "takeDefault",
+      "name": "o",
+      "value": {
+        "x": 1,
+        "extra": 5
+      }
+    },
+    {
+      "loc": "takeFresh",
+      "name": "o",
+      "value": {
+        "x": 1,
+        "extra": 6,
+        "y": 1
+      }
+    },
+    {
+      "loc": "takeFresh",
+      "name": "o",
+      "value": {
+        "y": 1
+      }
+    },
+    {
+      "loc": "takeWeak",
+      "name": "x",
+      "value": {
+        "zzz": 9
+      }
+    },
+    {
+      "loc": "FreshBox#constructor",
+      "name": "o",
+      "value": {
+        "x": 1,
+        "extra": 9
+      }
+    },
+    {
+      "loc": "takeFresh",
+      "name": "o",
+      "value": {
+        "x": 1,
+        "extra": 10
+      }
+    },
+    {
+      "loc": "takeFresh",
+      "name": "o",
+      "value": {
+        "x": 1,
+        "extra": 11
+      }
+    },
+    {
+      "loc": "takeMap",
+      "name": "m",
+      "value": {
+        "x": 1,
+        "y": "s"
+      }
+    }
+  ]
+}

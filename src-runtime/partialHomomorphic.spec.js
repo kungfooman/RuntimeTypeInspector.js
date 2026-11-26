@@ -1,3 +1,4 @@
+import {markFresh   } from './freshObjects.js';
 import {validateType} from './validateType.js';
 import './resolveTemplateLiteralCandidates.js';
 import './resolveTemplateLiteralValues.js';
@@ -376,18 +377,25 @@ function testPartialGenericAlias() {
   return validateType(probe, expect, 'loc', 'name', true, warn, 0) === false;
 }
 function testMixedUnionExcessDeliberate() {
-  // Mixed literals against a Partial union are rejected by exactObjects while tsc accepts them structurally.
+  // A fresh mixed literal against a Partial union fails on excess (tsc
+  // parity: each member flags the keys it does not declare), while the
+  // same shape in a stale variable passes structurally.
   prepare();
   registerTypedef('PhOther', expandType('{c: boolean}'));
   const expect = expandType('Partial<PhSmall | PhOther>');
   if (validateType({}, expect, 'loc', 'name', true, warn, 0) !== true) {
     return false;
   }
+  const freshValue = markFresh({
+    a: 1,
+    c: true,
+  });
+  const freshFails = validateType(freshValue, expect, 'loc', 'name', true, warn, 0) === false;
   const probe = {
     a: 1,
     c: true,
   };
-  return validateType(probe, expect, 'loc', 'name', true, warn, 0) === false;
+  return freshFails && validateType(probe, expect, 'loc', 'name', true, warn, 0);
 }
 class SubAnimal {
   constructor() {

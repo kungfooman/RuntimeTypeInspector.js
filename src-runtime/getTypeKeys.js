@@ -160,17 +160,15 @@ function asOptionalProp(prop) {
   };
 }
 /**
- * Stamps Omit/Pick provenance onto a materialized shape so renderers know
- * WHY a key is absent (deliberately removed / never selected) instead of
- * guessing typos. Non-enumerable: invisible to `Object.keys`, `JSON` and
- * `structuredClone` consumers. Shapes are freshly built per call, never
- * registry-shared.
- * @param {object} result - Materialized shape or union of shapes.
+ * Builds shared Omit/Pick provenance info from the unresolved spelling, so
+ * validators and renderers name the same source (`tagProvenance` stamps
+ * shapes, `tagProvenanceHint` feeds direct validation paths that never
+ * materialize through `resolveUtilityShape`).
  * @param {string} name - Omit or Pick.
  * @param {any[]} args - Type arguments (for the source spelling).
- * @returns {object} Same result, tagged.
+ * @returns {{removed: boolean, source: string}} Provenance info.
  */
-function tagProvenance(result, name, args) {
+function provenanceHint(name, args) {
   let source;
   try {
     source = stringifyType({
@@ -184,10 +182,24 @@ function tagProvenance(result, name, args) {
   } catch {
     source = name;
   }
-  const info = {
+  return {
     removed: name === 'Omit',
     source,
   };
+}
+/**
+ * Stamps Omit/Pick provenance onto a materialized shape so renderers know
+ * WHY a key is absent (deliberately removed / never selected) instead of
+ * guessing typos. Non-enumerable: invisible to `Object.keys`, `JSON` and
+ * `structuredClone` consumers. Shapes are freshly built per call, never
+ * registry-shared.
+ * @param {object} result - Materialized shape or union of shapes.
+ * @param {string} name - Omit or Pick.
+ * @param {any[]} args - Type arguments (for the source spelling).
+ * @returns {object} Same result, tagged.
+ */
+function tagProvenance(result, name, args) {
+  const info = provenanceHint(name, args);
   const isUnion = result?.type === 'union' && Array.isArray(result?.members);
   const members = isUnion ? result.members : [result];
   for (const member of members) {
@@ -891,4 +903,4 @@ function getTypeKeys(expect, warn, depth = 0) {
   }
   warn(`Couldn't get keys for type`, expect);
 }
-export {getTypeKeys, resolveObject, resolveUtilityShape, keyNames};
+export {getTypeKeys, resolveObject, resolveUtilityShape, keyNames, provenanceHint};

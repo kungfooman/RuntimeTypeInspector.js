@@ -1,5 +1,7 @@
-import {recurse            } from "./validators.js";
-import {options            } from "./options.js";
+import {recurse} from "./validators.js";
+import {options} from "./options.js";
+import {isFresh, isToleratedSpreadKey} from "./freshObjects.js";
+import {hasNoCommonKeys    } from "./hasNoCommonKeys.js";
 import {isObject           } from "./isObject.js";
 import {matchIndexSignature} from "./matchIndexSignature.js";
 /**
@@ -40,6 +42,16 @@ function validateObject(value, expect, loc, name, critical, warn, depth) {
   }
   if (properties && Object.keys(properties).length) {
     if (loc !== 'sortPriority' && loc !== 'getResource' && loc !== 'cmpPriority') {
+      const fresh = isFresh(value);
+      // Weak-type gate (`tsc --strict` TS2559): a non-empty value with no
+      // key in common with an all-optional shape fails at any freshness.
+      // Fresh literals usually fail on excess below, but spread-carried
+      // keys are tolerated there, so the gate must also run for fresh
+      // values: `takeP({...unknown})` shares no key and fails in tsc too.
+      if (hasNoCommonKeys(value, expect)) {
+        warn(`Given value has no properties in common with type.`, {properties, value});
+        return false;
+      }
       let failed = false;
       let bare = false;
       Object.keys(value).forEach((key) => {
@@ -73,19 +85,26 @@ function validateObject(value, expect, loc, name, critical, warn, depth) {
             }
             return;
           }
-          if (options.exactObjects) {
+          // Excess fails only on fresh literals; stale values pass
+          // structurally like tsc. Omit/Pick provenance only changes the
+          // explanation wording downstream, never the verdict: `tsc`
+          // accepts `{a: 1}` against `Omit<Partial<TwBox|TwBox2>, "a">`
+          // at any freshness (verified `--strict`), so RTI must too.
+          // Spread keys never count: `tsc` forgives every key arriving
+          // through `...spread`, so only literally written keys fail.
+          if (fresh && !isToleratedSpreadKey(value, key)) {
             const excess = `Excess property '${name}.${key}' is not allowed`;
-            warn(`${excess} (exact object check).`, {properties, value});
+            warn(`${excess} (fresh object literal).`, {properties, value});
+            bare = true;
           } else if (options.logSuperfluousProperty) {
             warn(`Superfluous property: ${name}.${key}`, {properties, value});
           }
-          bare = true;
         }
       });
       if (failed) {
         return false;
       }
-      if (options.exactObjects && bare) {
+      if (fresh && bare) {
         return false;
       }
     }
@@ -94,6 +113,7 @@ function validateObject(value, expect, loc, name, critical, warn, depth) {
     // signature-covered keys validate, uncovered ones count as excess
     // exactly like above.
     if (loc !== 'sortPriority' && loc !== 'getResource' && loc !== 'cmpPriority') {
+      const fresh = isFresh(value);
       let failed = false;
       let bare = false;
       for (const key of Object.keys(value)) {
@@ -102,13 +122,13 @@ function validateObject(value, expect, loc, name, critical, warn, depth) {
         }
         const signature = matchIndexSignature(expect, key);
         if (!signature) {
-          if (options.exactObjects) {
+          if (fresh && !isToleratedSpreadKey(value, key)) {
             const excess = `Excess property '${name}.${key}' is not allowed`;
-            warn(`${excess} (exact object check).`, {properties, value});
+            warn(`${excess} (fresh object literal).`, {properties, value});
+            bare = true;
           } else if (options.logSuperfluousProperty) {
             warn(`Superfluous property: ${name}.${key}`, {properties, value});
           }
-          bare = true;
           continue;
         }
         const leafDepth = depth + 1;
@@ -135,7 +155,7 @@ function validateObject(value, expect, loc, name, critical, warn, depth) {
       if (failed) {
         return false;
       }
-      if (options.exactObjects && bare) {
+      if (fresh && bare) {
         return false;
       }
     }

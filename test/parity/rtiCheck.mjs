@@ -11,6 +11,7 @@ import {randomUUID} from 'crypto';
 import {parse} from '@babel/parser';
 import {Asserter} from '../../src-transpiler/Asserter.js';
 import {expandType} from '../../src-transpiler/expandType.js';
+import {markFreshCallArgs} from '../../src-transpiler/markFreshCallArgs.js';
 import {parserOptions} from '../../src-transpiler/parserOptions.js';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -71,6 +72,7 @@ function transpileModule(input, output, generated, written, runId) {
     source.value = specifier;
     source.extra = {raw: JSON.stringify(specifier), rawValue: specifier};
   }
+  markFreshCallArgs(ast);
   const body = asserter.toSource(ast);
   let out = asserter.getHeader(ast) + body;
   const runtimeAbs = join(repoRoot, 'src-runtime', 'index.js');

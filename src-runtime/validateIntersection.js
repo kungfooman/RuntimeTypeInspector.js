@@ -1,5 +1,4 @@
 import {recurse      } from "./validators.js";
-import {options      } from "./options.js";
 import {classes      } from "./registerClass.js";
 import {resolveObject} from "./getTypeKeys.js";
 /**
@@ -17,17 +16,20 @@ function validateIntersection(value, expect, loc, name, critical, warn, depth) {
   // console.log('validateIntersection', {value, expect, loc, name, critical, warn});
   // Per-member excess would reject keys sibling members declare (the
   // `Omit<Base, Keys> & Overrides` idiom: the Omit side omits `anchor`
-  // exactly because the override side provides it). Validate each member
-  // against its resolved shape augmented with siblings' props as
-  // optional, so `exactObjects` judges excess against the whole
-  // intersection like tsc does. Only when every member resolves to a
-  // plain object shape and no raw member is a class name (nominal
-  // instanceof verdicts must not degrade to structural ones);
-  // otherwise keep today's per-member behavior instead of guessing.
+  // exactly because the override side provides it). Every member shape is
+  // augmented with siblings' props as optional, so excess is judged
+  // against the whole intersection like tsc does. Members carrying
+  // Omit/Pick provenance always reject their excluded keys while
+  // present (they name a deliberately removed key); every other excess
+  // fails only on fresh literals, stale values pass structurally.
+  // Only when every member resolves to a plain object shape and no raw
+  // member is a class name (nominal instanceof verdicts must not degrade
+  // to structural ones); otherwise keep today's per-member behavior
+  // instead of guessing.
   let checking = members;
   const isObject = value !== null && typeof value === 'object' && !Array.isArray(value);
   const isNominal = (member) => typeof member === 'string' && classes[member];
-  if (options.exactObjects === true && isObject && !members.some(isNominal)) {
+  if (isObject && !members.some(isNominal)) {
     const shapes = members.map((member) => resolveObject(member, warn, depth + 1));
     if (shapes.every((shape) => shape && shape.type === 'object' && shape.properties)) {
       checking = shapes.map((shape, i) => {

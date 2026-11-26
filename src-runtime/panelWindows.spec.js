@@ -4,6 +4,7 @@ import {breakpoints} from './inspectType.js';
 import {recordCheck, recordMapRide, recordSkip, recordMapScan, recordSetScan, recordArrayScan, recordObjectScan, getCheckStats, resetCheckStats} from './checkStats.js';
 import {reportedKeys} from './reportedKeys.js';
 import {expandType  } from '../src-transpiler/expandType.js';
+import {markFresh   } from './freshObjects.js';
 import {collectFailPaths, explainMismatch} from './explainMismatch.js';
 import {buildTypeTree} from './typeTree.js';
 import {registerClass, classes} from './registerClass.js';
@@ -829,7 +830,7 @@ function testActualCustomClassHighlighted() {
   registerClass(Boss);
   try {
     return withPanel(() => {
-      const bad = new Boss();
+      const bad = markFresh(new Boss());
       bad.hp = 1;
       const node = actualFor(bad, 'Boss', 'boss');
       if (!node || !textOf(node).includes('Boss {1}') || textOf(node).includes('$type')) {
