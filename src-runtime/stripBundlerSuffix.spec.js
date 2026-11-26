@@ -6,7 +6,9 @@ import {stripBundlerSuffix} from './stripBundlerSuffix.js';
 // chain, never an own `constructor` property.
 function testRenamedDirectHit() {
   function Equation() {}
-  Object.defineProperty(Equation, 'name', {value: 'Equation$6'});
+  Object.defineProperty(Equation, 'name', {
+    value: 'Equation$6',
+  });
   const value = new Equation();
   return stripBundlerSuffix(value.constructor.name) === 'Equation';
 }

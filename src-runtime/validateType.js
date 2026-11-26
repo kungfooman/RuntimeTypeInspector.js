@@ -334,8 +334,10 @@ function validateType(value, expect, loc, name, critical = true, warn, depth) {
       }
     }
   }
-  if (typeof type === 'string' && value && (typeof value === 'object' || typeof value === 'function') &&
-    !globallyVisible(type) && chainMatchesName(value, type)) {
+  const isUserObject = typeof value === 'object' || typeof value === 'function';
+  const chainNamesBase = typeof type === 'string' && value !== null && value !== undefined &&
+    isUserObject && globallyVisible(type) === false && chainMatchesName(value, type);
+  if (chainNamesBase) {
     // Old-style hierarchies (cannon.js `X.prototype = new Base()`) never
     // register their constructors, and bundlers rename the survivors
     // (`ContactEquation$4`), so neither the direct-name check nor the

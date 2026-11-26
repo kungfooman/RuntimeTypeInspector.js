@@ -1878,6 +1878,9 @@ class Asserter extends Stringifier {
     for (const name of this.addLaterImportNamespaceSpecifier) {
       out += `\nregisterImportNamespaceSpecifier('${name}', ${name});`;
     }
+    // Flushed per statement: without the reset every later import in the
+    // same module re-emits every earlier registration.
+    this.addLaterImportNamespaceSpecifier = [];
     return out;
   }
   /**

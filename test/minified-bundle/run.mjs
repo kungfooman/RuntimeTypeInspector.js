@@ -14,7 +14,7 @@ import {runBundle} from './runBundle.mjs';
 // Both intentional negatives, nothing else: `lengthSquared(42)` rejects a
 // number for `Vec`; `boot(world, {x, y})` rejects a plain object at the
 // `boot` call boundary and again inside `World.prototype.setGravity`
-// (RTI checks every annotated boundary it crosses — in both bundles).
+// (RTI checks every annotated boundary it crosses, in both bundles).
 const expectedKeys = new Set(['World.prototype.setGravity-gravity', 'boot-gravity', 'lengthSquared-v']);
 /**
  * Summarizes captured errors by their dedup key.

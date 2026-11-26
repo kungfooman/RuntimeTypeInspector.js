@@ -16,8 +16,10 @@ function globallyVisible(name) {
   if (typeof name !== 'string') {
     return false;
   }
+  /** @type {Record<string, any>} */
+  const scope = globalThis;
   try {
-    if (typeof globalThis !== 'undefined' && typeof globalThis[name] === 'function') {
+    if (typeof globalThis !== 'undefined' && typeof scope[name] === 'function') {
       return true;
     }
   } catch {
@@ -25,12 +27,14 @@ function globallyVisible(name) {
   }
   try {
     if (typeof window !== 'undefined') {
-      if (typeof window[name] === 'function') {
+      /** @type {Record<string, any>} */
+      const win = window;
+      if (typeof win[name] === 'function') {
         return true;
       }
       if (name.startsWith('globalThis.')) {
         const inner = name.slice(11);
-        if (typeof window[inner] === 'function') {
+        if (typeof win[inner] === 'function') {
           return true;
         }
       }

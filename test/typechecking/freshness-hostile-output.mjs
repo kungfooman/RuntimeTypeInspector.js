@@ -188,7 +188,7 @@ class FreshBox {
     this.o = o;
   }
 }
-registerClass(FreshBox);
+registerClass(FreshBox, 'FreshBox');
 /* @ts-expect-error: new-expression args are fresh too */
 
 const made = new FreshBox({

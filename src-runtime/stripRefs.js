@@ -3,7 +3,7 @@
  * do not survive `structuredClone`/`postMessage`, so a posted envelope
  * carrying a `ref` would throw `DataCloneError` (swallowed by bestEffort
  * into a silently lost report). Validation already ran on the live tree;
- * the panel only needs names, which stay. Plain data passes by value —
+ * the panel only needs names, which stay. Plain data passes by value, so
  * callers keep their (possibly frozen) tree untouched. Cycles cannot
  * occur in emitted trees, but a `seen` guard fails closed regardless.
  * @param {*} expect - The expect tree (possibly holding `ref` bindings).
@@ -45,9 +45,13 @@ function stripRefs(expect, seen) {
       changed = true;
       continue;
     }
-    const cleaned = stripRefs(expect[key], known);
-    out[key] = cleaned;
-    if (cleaned !== expect[key]) {
+    /** @type {Record<string, any>} */
+    const writable = out;
+    /** @type {Record<string, any>} */
+    const readable = expect;
+    const cleaned = stripRefs(readable[key], known);
+    writable[key] = cleaned;
+    if (cleaned !== readable[key]) {
       changed = true;
     }
   }

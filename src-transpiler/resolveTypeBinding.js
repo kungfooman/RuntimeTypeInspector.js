@@ -36,7 +36,7 @@ function resolveTypeBinding(asserter, node, name) {
       continue;
     }
     // Block-level declarations: const/let/var/function/class in any block.
-    const found = declarationIn(scope, name, asserter);
+    const found = declarationIn(scope, name);
     if (found) {
       return found;
     }
@@ -48,8 +48,8 @@ function resolveTypeBinding(asserter, node, name) {
       }
     }
     // Function params shadow outer bindings but are values, never
-    // constructor bindings: stop only if a param *is* the name? No —
-    // params cannot be types, keep walking outward past them.
+    // constructor bindings, so the walk keeps going outward past them:
+    // params cannot be types.
   }
   return undefined;
 }
@@ -58,7 +58,6 @@ function resolveTypeBinding(asserter, node, name) {
  * caller walks outward level by level, so inner shadowing wins).
  * @param {object} scope - Babel block/program/function node.
  * @param {string} name - Binding name.
- * @param {object} asserter - For toSource (unused, kept for symmetry).
  * @returns {string|undefined} The name when declared, else undefined.
  */
 function declarationIn(scope, name) {

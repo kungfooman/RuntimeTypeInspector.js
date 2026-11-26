@@ -123,11 +123,56 @@ function testGenericRefStillChecksArgs() {
     cleanup(['Box']);
   }
 }
+function testRefRejectsShadowedSameName() {
+  // A same-named class from another scope shares the spelling but not the
+  // identity: the fast path compares the live constructor, so the inner
+  // duplicate fails instead of riding the registered name.
+  class Vec {}
+  registerClass(Vec, 'Vec');
+  try {
+    class InnerVec {}
+    Object.defineProperty(InnerVec, 'name', {
+      value: 'Vec',
+    });
+    const expect = {
+      type: 'reference',
+      name: 'Vec',
+      args: [],
+      ref: Vec,
+    };
+    return validateType(new InnerVec(), expect, 'loc', 'arg', true, warn, 0) === false;
+  } finally {
+    cleanup(['Vec']);
+  }
+}
+function testRefValidatesFrozenExpect() {
+  // Emitted expect trees are frozen before validation in some pipelines:
+  // the live `ref` survives freezing (freezing stops at the key) and the
+  // identity check reads it normally.
+  function MangledVec() {}
+  Object.defineProperty(MangledVec, 'name', {
+    value: 'e',
+  });
+  registerClass(MangledVec, 'Vec');
+  try {
+    const expect = Object.freeze({
+      type: 'reference',
+      name: 'Vec',
+      args: Object.freeze([]),
+      ref: MangledVec,
+    });
+    return validateType(new MangledVec(), expect, 'loc', 'arg', true, warn, 0) === true;
+  } finally {
+    cleanup(['Vec']);
+  }
+}
 const tests = [
   testRefSurvivesMangledName,
   testRefRejectsWrongClass,
   testRefAcceptsSnapshotTag,
   testCanonicalNameRegistered,
   testGenericRefStillChecksArgs,
+  testRefRejectsShadowedSameName,
+  testRefValidatesFrozenExpect,
 ];
 export {tests};

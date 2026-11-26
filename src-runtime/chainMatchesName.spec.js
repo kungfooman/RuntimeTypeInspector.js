@@ -39,8 +39,12 @@ function testForgedConstructorFails() {
 function testRenamedLinkMatches() {
   function BaseEquation() {}
   function ChildEquation() {}
-  Object.defineProperty(BaseEquation, 'name', {value: 'Equation$6'});
-  Object.defineProperty(ChildEquation, 'name', {value: 'ContactEquation$4'});
+  Object.defineProperty(BaseEquation, 'name', {
+    value: 'Equation$6',
+  });
+  Object.defineProperty(ChildEquation, 'name', {
+    value: 'ContactEquation$4',
+  });
   ChildEquation.prototype = new BaseEquation();
   ChildEquation.prototype.constructor = ChildEquation;
   return chainMatchesName(new ChildEquation(), 'Equation') === true &&

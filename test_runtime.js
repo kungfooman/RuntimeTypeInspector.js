@@ -222,6 +222,7 @@ const tests = [
   ...(await import('./src-runtime/customValidations.spec.js'          )).tests,
   ...(await import('./src-transpiler/ignoreRti.spec.js'               )).tests,
   ...(await import('./src-transpiler/headerImports.spec.js'             )).tests,
+  ...(await import('./src-transpiler/headerDuplicate.spec.js'           )).tests,
   ...(await import('./src-transpiler/docReaderOption.spec.js'           )).tests,  ...(await import('./src-transpiler/jsdoc-parsing-depfree/braceDepth.spec.js'                )).tests,
   ...(await import('./src-transpiler/extractCurlyContent.spec.js'       )).tests,
   ...(await import('./src-transpiler/markTypeofRequirements.spec.js'    )).tests,

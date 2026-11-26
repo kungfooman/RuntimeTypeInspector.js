@@ -263,7 +263,7 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
   } = expect;
   // Live binding fast path (no type arguments): the transpiler emitted
   // the in-scope constructor next to the name, so minified/bundled
-  // renames don't matter — identity survives every rename. With type
+  // renames do not matter since identity survives every rename. With type
   // arguments the reference takes the normal path below (the generic
   // instantiation still needs to check the arguments).
   if (typeof refCtor === 'function' && !args?.length) {
@@ -276,7 +276,7 @@ function validateReference(value, expect, loc, name, critical, warn, depth) {
     }
     // A genuine instance of a *different* class with the same shape must
     // not pass: nominal means identity, not structure. Only continue to
-    // the name paths for snapshots (prototypes stripped in transit) —
+    // the name paths for snapshots (prototypes stripped in transit), while
     // live values that fail instanceof are done.
     if (value !== null && (typeof value === 'object' || typeof value === 'function')) {
       try {
