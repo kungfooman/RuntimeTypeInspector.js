@@ -5,6 +5,7 @@ import {classes             } from './registerClass.js';
 import {mergedClassShape    } from './classShape.js';
 import {instantiateReference} from './instantiateReference.js';
 import {recurse, validators} from './validators.js';
+import {isFresh, isToleratedSpreadKey} from './freshObjects.js';
 import {tupleEffective     } from './tupleEffective.js';
 import {tupleOptional      } from './tupleOptional.js';
 import {expandTupleElements} from './expandTupleElements.js';
@@ -827,22 +828,27 @@ function diffValue(value, expect, path, depth, memberOf) {
         continue;
       }
       if (!mat.properties[key]) {
-        // Excess keys fail validation only with Exact objects on — but the
-        // Diagnosis lists everything known, marking lenient extras as
-        // informational instead of dropping them silently.
-        // Fail closed when the option is missing: a deleted or undefined
-        // flag must not silently widen validation to accept excess keys.
-        const strict = options.exactObjects === true;
+        // Excess keys fail validation only on fresh literals — but the
+        // Diagnosis lists everything known, marking stale extras and
+        // deliberately removed (Omit/Pick) extras as informational instead
+        // of dropping them silently. Removed keys are known by provenance,
+        // not by failure: the validator never consults `__provenance`, so
+        // the wording must not claim a failure the check did not see.
+        const fresh = isFresh(value);
         const subPath = path ? `${path}.${key}` : key;
         const knownKeys = Object.keys(mat.properties);
         const info = mat.__provenance ?? removalInfo(expect, key);
         const rendered = describeExcess(subPath, key, snip(value[key]), knownKeys, info);
-        const offNote = ' (informational: passes validation with Exact objects off)';
+        const offNote = ' (informational: stale value passes validation)';
+        const spreadNote = ' (informational: spread key passes validation)';
+        const removedNote = info?.removed ? '' : ' (informational: not validated as excess)';
+        const spread = fresh && isToleratedSpreadKey(value, key);
+        const strict = (fresh && !spread) || info?.removed === true;
         findings.push({
           path: subPath,
           ...rendered,
           fix: strict ? rendered.fix : undefined,
-          detail: strict ? rendered.detail : `${rendered.detail}${offNote}`,
+          detail: strict ? rendered.detail : `${rendered.detail}${info ? removedNote : spread ? spreadNote : offNote}`,
           info: strict ? undefined : true,
         });
       }

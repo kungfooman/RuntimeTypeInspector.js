@@ -150,6 +150,8 @@ export * from './validateTuple.js';
 export * from './tupleEffective.js';
 export * from './tupleOptional.js';
 export * from './expandTupleElements.js';
+export * from './freshObjects.js';
+export * from './hasNoCommonKeys.js';
 export * from './validateType.js';
 export * from './validateTypedef.js';
 export * from './validateUnion.js';

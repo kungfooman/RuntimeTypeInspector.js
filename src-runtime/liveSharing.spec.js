@@ -336,33 +336,21 @@ function testForeignDisplaysSurvive() {
   ];
   return values.every((value) => typeof describeValueType(value) === 'string');
 }
-// A value the validator accepts must never grow a union row: with Exact
-// objects off, excess keys are informational, so a union whose members
-// only flag the extra key would print "matches no union member" for a
-// passing value. The union last-resort passes-gate converts exactly this
+// A value the validator accepts must never grow a union row: stale
+// excess keys are informational, so a union whose members only flag
+// the extra key would print "matches no union member" for a passing
+// value. The union last-resort passes-gate converts exactly this
 // class to clean. Revert the gate and the phantom row returns.
 function testExcessUnionStaysClean() {
   const unionExpect = expandType('{a: number} | {b: string}');
-  const prev = options.exactObjects;
-  setOptions({
-    exactObjects: false,
-  });
-  let verdict;
-  let rows;
-  try {
-    verdict = validateType({
-      a: 1,
-      typo: 2,
-    }, unionExpect, 'loc', 'name', true, silent, 0);
-    rows = explainMismatch({
-      a: 1,
-      typo: 2,
-    }, unionExpect, 'v').findings.length;
-  } finally {
-    setOptions({
-      exactObjects: prev,
-    });
-  }
+  const verdict = validateType({
+    a: 1,
+    typo: 2,
+  }, unionExpect, 'loc', 'name', true, silent, 0);
+  const rows = explainMismatch({
+    a: 1,
+    typo: 2,
+  }, unionExpect, 'v').findings.length;
   return verdict === true && rows === 0;
 }
 // A foreign array never contributes object-property candidates, even

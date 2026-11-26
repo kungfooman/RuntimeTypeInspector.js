@@ -11,7 +11,6 @@ function freshDeps() {
       enabled: true,
       strictNullChecks: true,
       checkInfinity: true,
-      exactObjects: true,
       windowedChecks: false,
       mapCheckWindowCap: 8,
       mapCheckWindowMinTotalMs: 0,
@@ -62,6 +61,7 @@ function testBreakpoints() {
 }
 function testOptionValues() {
   // Fail closed: only real values flip, garbage reads as off or is refused.
+  // Removed actions stay removed: the retired exactObjects toggle applies nothing.
   const deps = freshDeps();
   const strict = applyWorkerCommand({
     data: {
@@ -79,7 +79,7 @@ function testOptionValues() {
       value: undefined,
     },
   }, deps);
-  const exact = applyWorkerCommand({
+  const unknown = applyWorkerCommand({
     data: {
       type: 'rti',
       destination: 'worker',
@@ -92,8 +92,7 @@ function testOptionValues() {
     deps.options.strictNullChecks === true &&
     stats === true &&
     deps.options.checkStats === true &&
-    exact === true &&
-    deps.options.exactObjects === true
+    unknown === false
   );
 }
 function testWindowCapsGuarded() {

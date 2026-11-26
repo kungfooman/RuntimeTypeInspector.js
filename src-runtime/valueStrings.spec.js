@@ -1,31 +1,24 @@
 import {inspectType    } from './inspectType.js';
-import {options        } from './options.js';
+import {markFresh      } from './freshObjects.js';
 import {captureMessages} from '../src-unittest/index.js';
 function testUnclonableStaysStructured() {
   // Issue #134 item 8: class instances with methods (functions) are not
   // structured-cloneable; the log must carry content, not "[object Object]".
-  const prev = options.exactObjects;
-  options.exactObjects = false;
-  let msgs;
-  try {
-    msgs = captureMessages(() => {
-      inspectType(
-        {
-          type: 'sphere',
-          material: {
-            name: 'Untitled',
-            update() {},
-          },
-          castShadows: false,
+  const msgs = captureMessages(() => {
+    inspectType(
+      {
+        type: 'sphere',
+        material: {
+          name: 'Untitled',
+          update() {},
         },
-        'number',
-        'loc',
-        'unclonable',
-      );
-    });
-  } finally {
-    options.exactObjects = prev;
-  }
+        castShadows: false,
+      },
+      'number',
+      'loc',
+      'unclonable',
+    );
+  });
   if (msgs.length !== 1) {
     return false;
   }
@@ -50,29 +43,22 @@ function testPreviewNeverBareObject() {
   );
 }
 function testExtrasSnapshotted() {
-  const prev = options.exactObjects;
-  options.exactObjects = true;
-  let msgs;
-  try {
-    msgs = captureMessages(() => {
-      inspectType(
-        {
-          a: 1,
-          f: () => {},
+  const msgs = captureMessages(() => {
+    inspectType(
+      markFresh({
+        a: 1,
+        f: () => {},
+      }),
+      {
+        type: 'object',
+        properties: {
+          a: 'number',
         },
-        {
-          type: 'object',
-          properties: {
-            a: 'number',
-          },
-        },
-        'loc',
-        'extras',
-      );
-    });
-  } finally {
-    options.exactObjects = prev;
-  }
+      },
+      'loc',
+      'extras',
+    );
+  });
   if (msgs.length !== 1) {
     return false;
   }

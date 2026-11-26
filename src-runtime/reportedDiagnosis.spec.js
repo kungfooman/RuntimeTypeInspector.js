@@ -226,12 +226,10 @@ function testOptionDriftShowsInLocalDiff() {
   const prev = {
     strictNullChecks: options.strictNullChecks,
     checkInfinity: options.checkInfinity,
-    exactObjects: options.exactObjects,
   };
   setOptions({
     strictNullChecks: true,
     checkInfinity: false,
-    exactObjects: false,
   });
   let posted;
   try {
@@ -263,7 +261,6 @@ function testOptionDriftShowsInLocalDiff() {
   setOptions({
     strictNullChecks: true,
     checkInfinity: true,
-    exactObjects: true,
   });
   let rendered;
   try {

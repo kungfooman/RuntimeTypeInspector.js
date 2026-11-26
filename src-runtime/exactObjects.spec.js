@@ -1,150 +1,97 @@
-import {options     } from './options.js';
+import {markFresh   } from './freshObjects.js';
 import {validateType} from './validateType.js';
 import {expandType  } from '../src-transpiler/expandType.js';
 const warn = () => undefined;
-/**
- * Runs a check with `exactObjects` forced to a value, restoring after.
- * @param {boolean} exact - The flag value during the check.
- * @param {Function} fn - The check returning boolean.
- * @returns {boolean} The check result.
- */
-function withExact(exact, fn) {
-  const prev = options.exactObjects;
-  options.exactObjects = exact;
-  try {
-    return fn();
-  } finally {
-    options.exactObjects = prev;
-  }
-}
-function testOnByDefault() {
-  const prev = options.exactObjects;
-  options.exactObjects = true;
-  const value = {
+// Fresh literals with excess keys fail, stale objects pass like tsc.
+function testFreshExcessFailsStalePasses() {
+  const expect = expandType('{a: number}');
+  const freshValue = markFresh({
+    a: 1,
+    extra: true,
+  });
+  const staleValue = {
     a: 1,
     extra: true,
   };
+  const freshFails = validateType(freshValue, expect, 'loc', 'name', true, warn, 0) === false;
+  return freshFails && validateType(staleValue, expect, 'loc', 'name', true, warn, 0);
+}
+// Stale values always pass: no flag re-enables excess failures.
+function testStaleAlwaysPasses() {
   const expect = expandType('{a: number}');
-  let ret;
-  try {
-    ret = validateType(value, expect, 'loc', 'name', true, warn, 0) === false;
-  } finally {
-    options.exactObjects = prev;
-  }
-  return ret && prev === true;
-}
-function testOffWhenDisabled() {
-  return withExact(
-    false,
-    () => validateType(
-      {
-        a: 1,
-        extra: true,
-      },
-      expandType('{a: number}'),
-      'loc',
-      'name',
-      true,
-      warn,
-      0,
-    ),
-  );
-}
-function testExcessFailsWhenExact() {
-  const value = {
+  const staleValue = {
     a: 1,
     extra: true,
   };
-  const expect = expandType('{a: number}');
-  const check = () => validateType(value, expect, 'loc', 'name', true, warn, 0) === false;
-  return withExact(true, check);
+  return validateType(staleValue, expect, 'loc', 'name', true, warn, 0);
 }
+// Clean literals pass at any freshness.
 function testExactPassesClean() {
-  return withExact(
-    true,
-    () => validateType(
-      {
-        a: 1,
-      },
-      expandType('{a: number}'),
-      'loc',
-      'name',
-      true,
-      warn,
-      0,
-    ),
-  );
-}
-function testNestedExcessFails() {
-  const value = {
-    sub: {
-      a: 1,
-      extra: 2,
-    },
+  const expect = expandType('{a: number}');
+  const freshValue = markFresh({
+    a: 1,
+  });
+  const staleValue = {
+    a: 1,
   };
+  const freshPasses = validateType(freshValue, expect, 'loc', 'name', true, warn, 0);
+  return freshPasses && validateType(staleValue, expect, 'loc', 'name', true, warn, 0);
+}
+// Nested split: outer fresh with stale inner reads per node, like tsc.
+function testNestedExcessFails() {
   const expect = expandType('{sub: {a: number}}');
-  const check = () => validateType(value, expect, 'loc', 'name', true, warn, 0) === false;
-  return withExact(true, check);
+  const innerFresh = markFresh({
+    a: 1,
+    extra: 2,
+  });
+  const freshOuter = markFresh({
+    sub: innerFresh,
+  });
+  const freshFails = validateType(freshOuter, expect, 'loc', 'name', true, warn, 0) === false;
+  const inner = {
+    a: 1,
+    extra: 2,
+  };
+  const staleOuter = markFresh({
+    sub: inner,
+  });
+  const stalePasses = validateType(staleOuter, expect, 'loc', 'name', true, warn, 0);
+  return freshFails && stalePasses;
 }
+// Excess in one member must not poison the other: a clean value still matches.
 function testUnionPicksCleanMember() {
-  // Excess in one member must not poison the other: `{a}` still matches.
-  return withExact(
-    true,
-    () => validateType(
-      {
-        a: 1,
-      },
-      expandType('{a: number} | {b: string}'),
-      'loc',
-      'name',
-      true,
-      warn,
-      0,
-    ),
-  );
+  return validateType({
+    a: 1,
+  }, expandType('{a: number} | {b: string}'), 'loc', 'name', true, warn, 0);
 }
+// The failure names the offending key, so the log points at the probe.
 function testExcessMessageNamesKey() {
-  return withExact(
-    true,
-    () => {
-      const messages = [];
-      validateType(
-        {
-          a: 1,
-          bogus: 2,
-        },
-        expandType('{a: number}'),
-        'loc',
-        'name',
-        true,
-        (...args) => messages.push(args[0]),
-        0,
-      );
-      return messages.some((_) => typeof _ === 'string' && _.includes('bogus'));
-    },
-  );
+  const messages = [];
+  const freshValue = markFresh({
+    a: 1,
+    bogus: 2,
+  });
+  const record = (...args) => messages.push(args[0]);
+  validateType(freshValue, expandType('{a: number}'), 'loc', 'name', true, record, 0);
+  return messages.some((entry) => typeof entry === 'string' && entry.includes('bogus'));
 }
+// Profiler metadata never counts as excess at any freshness.
 function testProfilerHintStillIgnored() {
-  return withExact(
-    true,
-    () => validateType(
-      {
-        a: 1,
-        profilerHint: 'x',
-      },
-      expandType('{a: number}'),
-      'loc',
-      'name',
-      true,
-      warn,
-      0,
-    ),
-  );
+  const expect = expandType('{a: number}');
+  const freshValue = markFresh({
+    a: 1,
+    profilerHint: 'x',
+  });
+  const staleValue = {
+    a: 1,
+    profilerHint: 'x',
+  };
+  const freshPasses = validateType(freshValue, expect, 'loc', 'name', true, warn, 0);
+  return freshPasses && validateType(staleValue, expect, 'loc', 'name', true, warn, 0);
 }
 const tests = [
-  testOnByDefault,
-  testOffWhenDisabled,
-  testExcessFailsWhenExact,
+  testFreshExcessFailsStalePasses,
+  testStaleAlwaysPasses,
   testExactPassesClean,
   testNestedExcessFails,
   testUnionPicksCleanMember,
