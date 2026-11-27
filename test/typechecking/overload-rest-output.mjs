@@ -1,3 +1,4 @@
+
 /**
  * Rest-spelling parity: the overload tuple marks `...T[]` variadic, keeps
  * `...T` variadic over the gathered element, rejects optional rest

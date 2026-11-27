@@ -3,7 +3,7 @@ class Test {
     return validateDivision(123, 0, "Test#test");
   }
 }
-registerClass(Test);
+registerClass(Test, 'Test');
 registerTypedef('Test', {
   "type": "object",
   "properties": {

@@ -14,6 +14,12 @@ function deepFreeze(value) {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
     Object.freeze(value);
     for (const key of Object.keys(value)) {
+      // Live `ref` bindings ride on `reference` nodes for identity checks:
+      // freezing a user constructor would be an observable side effect
+      // (no more static patching), so the tree freezes around them.
+      if (key === 'ref') {
+        continue;
+      }
       deepFreeze(value[key]);
     }
   }

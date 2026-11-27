@@ -122,7 +122,7 @@ class Tokenizer {
     return kwargs;
   }
 }
-registerClass(Tokenizer);
+registerClass(Tokenizer, 'Tokenizer');
 registerTypedef('Tokenizer', {
   "type": "object",
   "properties": {

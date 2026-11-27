@@ -28,5 +28,5 @@ class ObjectPool {
     this._constructor = constructorFunc;
   }
 }
-registerClass(ObjectPool);
+registerClass(ObjectPool, 'ObjectPool');
 const objectPool = new ObjectPool(Float32Array);

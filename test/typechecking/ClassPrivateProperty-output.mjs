@@ -5,5 +5,5 @@ class Test {
   static #d;
   static #e = 1;
 }
-registerClass(Test);
+registerClass(Test, 'Test');
 const test = new Test();

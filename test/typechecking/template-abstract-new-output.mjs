@@ -39,11 +39,11 @@ class AbstractPool {
     this._c = constructorFunc;
   }
 }
-registerClass(AbstractPool);
+registerClass(AbstractPool, 'AbstractPool');
 class Base {
 
 }
-registerClass(Base);
+registerClass(Base, 'Base');
 const okAbs = new AbstractPool(Base); // ok
 
 // @ts-expect-error: 42 is no constructor

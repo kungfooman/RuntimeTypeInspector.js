@@ -6,14 +6,18 @@ import {
 } from '@runtime-type-inspector/transpiler';
 /**
  * Host project version funneled into the emitted header (`setProjectVersion`
- * in `Download log` meta): explicit option wins, else the version from the
- * host package.json in the build working directory, else unset (the log
- * then nudges toward setting it).
- * @param {string} [explicit] - Explicit `projectVersion` option.
+ * in `Download log` meta). Explicit `null` switches the header off (shared
+ * runtimes stamp one version, not one call per module); `undefined` (absent
+ * option) resolves the version from the host package.json in the build
+ * working directory, else unset (the log then nudges toward setting it).
+ * @param {string|null} [explicit] - Explicit `projectVersion` option.
  * @returns {string|undefined} Resolved version or undefined.
  */
 function resolveProjectVersion(explicit) {
-  if (explicit !== undefined && explicit !== null) {
+  if (explicit === null) {
+    return undefined;
+  }
+  if (explicit !== undefined) {
     return explicit;
   }
   try {
@@ -41,9 +45,10 @@ function resolveProjectVersion(explicit) {
  * @property {boolean} [inspectIndexedAccess] - Whether indexed accesses like
  * `arr[i]` are wrapped for bounds and integer validation. Disable to drop
  * indexed access inspection entirely. Defaults to true.
- * @property {string} [projectVersion] - Host project version for `Download
- * log` meta. Defaults to the host package.json version in the build working
- * directory; unset when none is readable (the log then nudges to set it).
+ * @property {string|null} [projectVersion] - Host project version for `Download
+ * log` meta. `null` switches the header off, unset defaults to the host
+ * package.json version in the build working directory; unset when none is
+ * readable (the log then nudges to set it).
  */
 /**
  * @typedef {OptionsProps & import('@runtime-type-inspector/transpiler').Options} Options

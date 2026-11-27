@@ -10,6 +10,7 @@ import {describeValueType        } from './describeValue.js';
 import {stringifyType            } from './stringifyType.js';
 import {previewValue             } from './previewValue.js';
 import {stringifyValue           } from './stringifyValue.js';
+import {stripRefs                } from './stripRefs.js';
 import {validateType             } from './validateType.js';
 import {partition                } from './partition.js';
 import {importNamespaceSpecifiers} from './registerImportNamespaceSpecifier.js';
@@ -215,7 +216,7 @@ function inspectType(value, expect, loc, name, critical = true) {
     }
     const msg = buildMessage('addError', 'ui', {
       value,
-      expect,
+      expect: stripRefs(expect),
       loc,
       name,
       valueToString,

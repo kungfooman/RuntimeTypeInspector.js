@@ -109,7 +109,7 @@ class Component {
     this.enabled = true;
   }
 }
-registerClass(Component);
+registerClass(Component, 'Component');
 registerTypedef('Component', {
   "type": "object",
   "properties": {
@@ -124,7 +124,7 @@ class Color {
     this.a = 1;
   }
 }
-registerClass(Color);
+registerClass(Color, 'Color');
 registerTypedef('Color', {
   "type": "object",
   "properties": {
@@ -177,7 +177,7 @@ class CameraComponent extends Component {
     this._fov = value;
   }
 }
-registerClass(CameraComponent);
+registerClass(CameraComponent, 'CameraComponent');
 registerTypedef('CameraComponent', {
   "type": "object",
   "properties": {

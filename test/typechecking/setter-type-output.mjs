@@ -14,7 +14,7 @@ class Test {
     });
   }
 }
-registerClass(Test);
+registerClass(Test, 'Test');
 registerTypedef('Test', {
   "type": "object",
   "properties": {

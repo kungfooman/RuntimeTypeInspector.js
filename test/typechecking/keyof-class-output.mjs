@@ -26,7 +26,7 @@ class KeyBox {
     this._key = key;
   }
 }
-registerClass(KeyBox);
+registerClass(KeyBox, 'KeyBox');
 const okKey = new KeyBox('getTime'); // ok
 
 // @ts-expect-error: no such key

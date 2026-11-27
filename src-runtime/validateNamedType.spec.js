@@ -79,6 +79,58 @@ function testUnknownNameFailsClosed() {
   const ret = validateType({}, 'NoSuchNamedType', 'loc', 'name', true, (...args) => warnings.push(args[0]), 0);
   return ret === false && warnings.includes('unchecked');
 }
+/**
+ * Bundler-renamed old-style hierarchy: Rollup appends `$<digits>` to every
+ * duplicate local (`Equation` ships as `Equation$6`), so the constructor
+ * name no longer matches the JSDoc spelling and nothing is registered.
+ * @returns {{value: object, clean: Function}} A renamed subclass instance plus cleanup.
+ */
+function makeRenamedHierarchy() {
+  function BaseEquation() {}
+  function ChildEquation() {}
+  Object.defineProperty(BaseEquation, 'name', {
+    value: 'Equation$6',
+  });
+  Object.defineProperty(ChildEquation, 'name', {
+    value: 'ContactEquation$4',
+  });
+  ChildEquation.prototype = new BaseEquation();
+  ChildEquation.prototype.constructor = ChildEquation;
+  const value = new ChildEquation();
+  const clean = () => undefined;
+  return {
+    value,
+    clean,
+  };
+}
+function testRenamedSubclassSatisfiesBase() {
+  // A renamed subclass satisfies its JSDoc base spelling via the chain walk.
+  const {value} = makeRenamedHierarchy();
+  const warnings = [];
+  const ret = validateType(value, 'Equation', 'loc', 'eq', true, (...args) => warnings.push(args[0]), 0);
+  return ret === true && warnings.length === 0;
+}
+function testRenamedUnrelatedStillFails() {
+  // Suffix tolerance never invents a match: a renamed outsider still fails.
+  function Other() {}
+  Object.defineProperty(Other, 'name', {
+    value: 'Other$2',
+  });
+  const value = new Other();
+  const warnings = [];
+  const ret = validateType(value, 'Equation', 'loc', 'eq', true, (...args) => warnings.push(args[0]), 0);
+  return ret === false && warnings.includes('unchecked');
+}
+function testDoublySuffixedMatchesSingleSuffix() {
+  // A bundler appends one `$<digits>` group per colliding scope: a local
+  // literally named `A$1` ships as `A$1$2`, and the single strip peels the
+  // outer group back to the declared spelling.
+  function Doubled() {}
+  Object.defineProperty(Doubled, 'name', {
+    value: 'A$1$2',
+  });
+  return validateType(new Doubled(), 'A$1', 'loc', 'v', true, warn, 0) === true;
+}
 const tests = [
   testPlatformIdentityPasses,
   testPlatformSubclassPasses,
@@ -88,5 +140,8 @@ const tests = [
   testRegisteredUnrelatedFails,
   testSameNameDuplicatePasses,
   testUnknownNameFailsClosed,
+  testRenamedSubclassSatisfiesBase,
+  testRenamedUnrelatedStillFails,
+  testDoublySuffixedMatchesSingleSuffix,
 ];
 export {tests};

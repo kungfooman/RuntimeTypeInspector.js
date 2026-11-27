@@ -42,7 +42,7 @@ class UnionFactory {
     return this._make;
   }
 }
-registerClass(UnionFactory);
+registerClass(UnionFactory, 'UnionFactory');
 registerTypedef('UnionFactory', {
   "type": "object",
   "properties": {

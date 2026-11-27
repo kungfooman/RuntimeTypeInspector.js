@@ -17,7 +17,7 @@ class Script {
   }
   update() {}
 }
-registerClass(Script);
+registerClass(Script, 'Script');
 registerTypedef('Script', {
   "type": "object",
   "properties": {
@@ -33,7 +33,7 @@ class PlayerController extends Script {
     this.speed = 1;
   }
 }
-registerClass(PlayerController);
+registerClass(PlayerController, 'PlayerController');
 registerTypedef('PlayerController', {
   "type": "object",
   "properties": {
@@ -48,7 +48,7 @@ class TurboPlayer extends PlayerController {
     this.boost = 2;
   }
 }
-registerClass(TurboPlayer);
+registerClass(TurboPlayer, 'TurboPlayer');
 registerTypedef('TurboPlayer', {
   "type": "object",
   "properties": {
@@ -61,7 +61,7 @@ class Unrelated {
     this.label = 'x';
   }
 }
-registerClass(Unrelated);
+registerClass(Unrelated, 'Unrelated');
 registerTypedef('Unrelated', {
   "type": "object",
   "properties": {

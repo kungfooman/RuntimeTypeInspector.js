@@ -24,6 +24,8 @@ import {docReaderBoth         } from './jsdoc-parsing-ts/docReaderBoth.js';
 import {markTypeofRequirements} from './markTypeofRequirements.js';
 import {ignoredParamsIn       } from './ignoredParamsIn.js';
 import {runtimeImportNames    } from './runtimeImportNames.js';
+import {resolveTypeBinding    } from './resolveTypeBinding.js';
+import {simplifyType          } from './simplifyType.js';
 import {simplifyTypeToSource  } from './simplifyTypeToSource.js';
 import {statReset             } from './stat.js';
 import {Stringifier           } from './Stringifier.js';
@@ -387,7 +389,15 @@ class Asserter extends Stringifier {
     const {id} = node;
     const id_ = this.toSource(id);
     let out = super.ClassDeclaration(node);
-    out += `${this.spaces}registerClass(${id_});`;
+    if (id && id.name) {
+      // Canonical spelling rides along by value: after minification the
+      // binding (and `constructor.name`) may be `e`, but the string here
+      // was frozen at instrument time, so registration, tags and the
+      // diagnosis path keep the original name.
+      out += `${this.spaces}registerClass(${id_}, '${id.name}');`;
+    } else {
+      out += `${this.spaces}registerClass(${id_});`;
+    }
     const harvested = harvestClassShape(node, {
       expandType: this.expandType,
       warn: this.warn.bind(this),
@@ -987,6 +997,56 @@ class Asserter extends Stringifier {
         first = false;
       }
     }
+    // Emits a type literal with a live binding attached. Two shapes:
+    // a bare name that resolves lexically (`Vec` with `class Vec` in
+    // scope) becomes an explicit reference node (`{type: 'reference',
+    // name: 'Vec', args: [], ref: Vec}`); a `reference` node from a
+    // generic spelling (`Box<T>`) gains `ref` the same way. Minifiers
+    // rename the binding but keep binding-use consistent, so `ref`
+    // survives while `constructor.name` does not. Unresolvable names
+    // (externals, circular imports, template params) serialize exactly
+    // as before and take the name-based fallback at runtime.
+    const self = this;
+    function withRefs(type) {
+      const simplified = simplifyType(type);
+      if (typeof simplified === 'string') {
+        const ref = resolveTypeBinding(self, node, simplified);
+        if (ref === undefined) {
+          return JSON.stringify(simplified, null, 2);
+        }
+        return jsonWithRef({
+          type: 'reference',
+          name: simplified,
+          args: [],
+        }, ref);
+      }
+      const isNamedReference = simplified && typeof simplified === 'object' &&
+        simplified.type === 'reference' && typeof simplified.name === 'string';
+      if (isNamedReference) {
+        const ref = resolveTypeBinding(self, node, simplified.name);
+        if (ref !== undefined) {
+          return jsonWithRef(simplified, ref);
+        }
+      }
+      return JSON.stringify(simplified, null, 2);
+    }
+    // JSON with one exception: the `ref` value is a live expression, not
+    // data. Serialize with a quoted placeholder, then splice the live
+    // expression in: every other byte (including pretty-print newlines)
+    // stays identical to a plain stringify, so golden diffs show exactly
+    // one added property on its own line.
+    function jsonWithRef(obj, ref) {
+      const placeholder = '__RTI_REF__';
+      const withMarker = {
+        ...obj,
+        ref: placeholder,
+      };
+      const text = JSON.stringify(withMarker, null, 2);
+      return text.replace(JSON.stringify(placeholder), ref);
+    }
+    function typeSource(type) {
+      return withRefs(type).replaceAll('\n', '\n' + spaces);
+    }
     //out += `${spaces}/*${spaces}  node.type=${node.type}\n${spaces}
     //  ${JSON.stringify(jsdoc)}\n${parent}\n${spaces}*/\n`;
     for (let name in params) {
@@ -1038,7 +1098,7 @@ class Asserter extends Stringifier {
                   this.warn('Only Identifier case handled right now');
                   continue;
                 }
-                const t = simplifyTypeToSource(type.elementType).replaceAll('\n', '\n' + spaces);
+                const t = typeSource(type.elementType);
                 newlineBeforeFirst();
                 const atLoc = escapeName(loc);
                 const atName = escapeName(nameFancy);
@@ -1082,7 +1142,7 @@ class Asserter extends Stringifier {
                     this.warn("missing subtype information in JSDoc");
                     continue;
                   }
-                  const t = simplifyTypeToSource(subType).replaceAll('\n', '\n' + spaces);
+                  const t = typeSource(subType);
                   newlineBeforeFirst();
                   const atLoc = escapeName(loc);
                   const atName = escapeName(nameFancy);
@@ -1130,7 +1190,7 @@ class Asserter extends Stringifier {
           continue;
         }
       }
-      let t = simplifyTypeToSource(type).replaceAll('\n', '\n' + spaces);
+      let t = typeSource(type);
       if (type === 'this') {
         const classDecl = this.findParentOfType(node, 'ClassDeclaration');
         if (!classDecl?.id) {
@@ -1818,6 +1878,9 @@ class Asserter extends Stringifier {
     for (const name of this.addLaterImportNamespaceSpecifier) {
       out += `\nregisterImportNamespaceSpecifier('${name}', ${name});`;
     }
+    // Flushed per statement: without the reset every later import in the
+    // same module re-emits every earlier registration.
+    this.addLaterImportNamespaceSpecifier = [];
     return out;
   }
   /**

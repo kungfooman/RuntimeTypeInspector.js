@@ -35,7 +35,7 @@ class KeyedBox {
     this._first = first;
   }
 }
-registerClass(KeyedBox);
+registerClass(KeyedBox, 'KeyedBox');
 // @ts-expect-error: tsc pins K to 'a' and rejects 'b'; RTI widens and accepts
 
 const okBox = new KeyedBox(['a', 'b'], 'a'); // ok under RTI widening

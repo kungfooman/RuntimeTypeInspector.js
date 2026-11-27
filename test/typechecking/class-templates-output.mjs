@@ -53,7 +53,7 @@ class Asset {
     this.type = type;
   }
 }
-registerClass(Asset);
+registerClass(Asset, 'Asset');
 registerTypedef('Asset', {
   "type": "object",
   "properties": {
@@ -100,7 +100,7 @@ class Box {
     this.value = value;
   }
 }
-registerClass(Box);
+registerClass(Box, 'Box');
 registerTypedef('Box', {
   "type": "object",
   "properties": {
@@ -135,7 +135,7 @@ export class ExportedBox {
     this.x = x;
   }
 }
-registerClass(ExportedBox);
+registerClass(ExportedBox, 'ExportedBox');
 new ExportedBox('a'); // ok
 
 new ExportedBox(1); // warns: 1 is not a string
@@ -162,7 +162,7 @@ class Bare {
     this.x = x;
   }
 }
-registerClass(Bare);
+registerClass(Bare, 'Bare');
 new Bare('x'); // ok
 
 
@@ -212,7 +212,7 @@ class Pair {
     return [x, y];
   }
 }
-registerClass(Pair);
+registerClass(Pair, 'Pair');
 registerTypedef('Pair', {
   "type": "object",
   "properties": {

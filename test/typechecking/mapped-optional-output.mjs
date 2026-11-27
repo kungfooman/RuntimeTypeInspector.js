@@ -98,7 +98,7 @@ class Vec3 {
     this.z = 0;
   }
 }
-registerClass(Vec3);
+registerClass(Vec3, 'Vec3');
 registerTypedef('Vec3', {
   "type": "object",
   "properties": {

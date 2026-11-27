@@ -107,7 +107,7 @@ class Vec4 {
     this.w = w;
   }
 }
-registerClass(Vec4);
+registerClass(Vec4, 'Vec4');
 new Vec4(); // ok
 
 new Vec4(1, 2, 3, 4); // ok
@@ -715,7 +715,7 @@ class Box {
     return value;
   }
 }
-registerClass(Box);
+registerClass(Box, 'Box');
 new Box(1); // ok
 
 new Box('ok'); // ok

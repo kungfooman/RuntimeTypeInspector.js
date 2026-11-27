@@ -7,7 +7,7 @@
  */
 const RTI_INFO = {
   "version": "6.0.0",
-  "commit": "91b59684495dbecaf46102cb01b4bb0ef5d03d60",
-  "subject": "Static blocks, full node coverage (#324)",
+  "commit": "cc50fd575512d708730d5f1392b7d80a473084b9",
+  "subject": "Fix `{array}` runtime crash (any-array hole) + cross-realm `{Array}` subclasses (#329)",
 };
 export {RTI_INFO};
